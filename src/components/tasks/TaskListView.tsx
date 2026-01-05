@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Circle, CircleCheck } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,12 @@ const priorityColors: Record<string, string> = {
   Medium: "bg-warning",
   Low: "bg-success",
 };
+
+// Strip HTML tags for description preview
+function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+}
 
 export function TaskListView({
   tasks,
@@ -138,8 +144,8 @@ export function TaskListView({
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-card">
       {/* Header */}
-      <div className="flex items-center gap-md h-9 px-md bg-muted/50 border-b border-border text-metadata font-medium text-muted-foreground uppercase tracking-wide">
-        <div className="w-6 flex-shrink-0">
+      <div className="flex items-center h-9 px-3 bg-muted/50 border-b border-border text-metadata font-medium text-muted-foreground uppercase tracking-wide">
+        <div className="w-7 flex-shrink-0">
           <Checkbox
             checked={allSelected}
             onCheckedChange={handleSelectAll}
@@ -148,9 +154,9 @@ export function TaskListView({
         </div>
         <div className="w-3 flex-shrink-0" /> {/* Priority dot */}
         <div className="flex-1 min-w-0">Task</div>
-        <div className="w-32 flex-shrink-0 hidden md:block">Assignee</div>
-        <div className="w-24 flex-shrink-0 hidden sm:block">Tags</div>
-        <div className="w-16 flex-shrink-0 text-right">Due</div>
+        <div className="w-24 flex-shrink-0 hidden lg:block">Tags</div>
+        <div className="w-28 flex-shrink-0 hidden md:block">Assignee</div>
+        <div className="w-14 flex-shrink-0 text-right">Due</div>
         <div className="w-8 flex-shrink-0" /> {/* Actions */}
       </div>
 
@@ -161,19 +167,21 @@ export function TaskListView({
           const overdue = isOverdue(task);
           const focused = index === focusedIndex;
           const selected = selectedIds.includes(task.id);
-          const isProcessing = processingId === task.id;
           
           // Get first tag
           const firstTag = task.labels?.[0];
           const tagDef = firstTag ? TASK_TAGS.find(t => t.value === firstTag) : null;
           const extraTagCount = (task.labels?.length || 0) - 1;
+          
+          // Description preview
+          const descPreview = stripHtml(task.description || '').slice(0, 60);
 
           return (
             <div
               key={task.id}
               onClick={() => onTaskClick(task.id, task)}
               className={cn(
-                "group flex items-center gap-md h-10 px-md cursor-pointer transition-colors",
+                "group flex items-center h-11 px-3 cursor-pointer transition-colors",
                 "border-b border-border/50 last:border-b-0",
                 "hover:bg-muted/30",
                 completed && "opacity-50",
@@ -183,7 +191,7 @@ export function TaskListView({
               )}
             >
               {/* Selection Checkbox */}
-              <div className="w-6 flex-shrink-0">
+              <div className="w-7 flex-shrink-0">
                 <Checkbox
                   checked={selected}
                   onCheckedChange={(checked) => handleSelect(task.id, checked as boolean, { stopPropagation: () => {} } as any)}
@@ -203,30 +211,28 @@ export function TaskListView({
                 />
               </div>
 
-              {/* Task Title */}
-              <div className="flex-1 min-w-0">
-                <span className={cn(
-                  "truncate text-body-sm block",
+              {/* Task Title + Description */}
+              <div className="flex-1 min-w-0 pl-2">
+                <div className={cn(
+                  "truncate text-body-sm leading-tight",
                   completed && "line-through text-muted-foreground"
                 )}>
                   {task.title}
-                </span>
-              </div>
-
-              {/* Assignee - Full name */}
-              <div className="w-32 flex-shrink-0 hidden md:block">
-                <span className="text-body-sm text-muted-foreground truncate block">
-                  {getAssigneeName(task) || '—'}
-                </span>
+                </div>
+                {descPreview && (
+                  <div className="truncate text-metadata text-muted-foreground/70 leading-tight">
+                    {descPreview}
+                  </div>
+                )}
               </div>
 
               {/* Tags */}
-              <div className="w-24 flex-shrink-0 hidden sm:flex items-center gap-1">
+              <div className="w-24 flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
                 {tagDef ? (
                   <>
                     <Badge 
                       variant="outline" 
-                      className={cn("text-[10px] px-1.5 h-5 truncate max-w-[70px]", tagDef.color)}
+                      className={cn("text-[10px] px-1.5 h-5 truncate max-w-[68px]", tagDef.color)}
                     >
                       {tagDef.label}
                     </Badge>
@@ -239,16 +245,23 @@ export function TaskListView({
                 )}
               </div>
 
+              {/* Assignee - Full name */}
+              <div className="w-28 flex-shrink-0 hidden md:block px-1">
+                <span className="text-body-sm text-muted-foreground truncate block">
+                  {getAssigneeName(task) || '—'}
+                </span>
+              </div>
+
               {/* Due Date */}
               <div className={cn(
-                "w-16 flex-shrink-0 text-right text-metadata tabular-nums",
+                "w-14 flex-shrink-0 text-right text-metadata tabular-nums",
                 overdue && !completed ? "text-destructive font-medium" : "text-muted-foreground"
               )}>
                 {task.due_at ? format(new Date(task.due_at), 'MMM d') : '—'}
               </div>
 
               {/* Actions */}
-              <div className="w-8 flex-shrink-0">
+              <div className="w-8 flex-shrink-0 flex justify-end">
                 <DropdownMenu>
                   <DropdownMenuTrigger 
                     onClick={(e) => e.stopPropagation()}
