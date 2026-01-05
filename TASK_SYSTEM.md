@@ -162,6 +162,30 @@ interface TasksTableProps {
 
 ---
 
+## Keyboard Navigation
+
+The task system supports comprehensive keyboard shortcuts:
+
+| Key | Action |
+|-----|--------|
+| `j` / `↓` | Move focus down |
+| `k` / `↑` | Move focus up |
+| `Enter` | Open focused task in side panel |
+| `Escape` | Close side panel / clear selection / unfocus |
+| `n` | Open new task dialog |
+| `x` | Toggle selection on focused task |
+| `Shift+x` | Range select from last selected to focused |
+| `Space` | Complete focused task |
+| `Cmd/Ctrl+a` | Select all visible tasks |
+
+### Visual Focus
+Focused rows display with `ring-2 ring-inset ring-primary/50` for clear visibility.
+
+### Shift+Click Selection
+Hold Shift and click a task to select all tasks between the last selected and clicked task.
+
+---
+
 ## Patterns
 
 ### Opening Side Panel
@@ -183,20 +207,19 @@ const handleSelect = (taskId: string, selected: boolean) => {
 };
 ```
 
+### Range Selection (Shift+Click)
+```tsx
+const handleShiftSelect = (taskId: string, shiftKey: boolean) => {
+  if (shiftKey && lastSelectedIndex !== null) {
+    const rangeIds = paginatedTasks.slice(start, end + 1).map(t => t.id);
+    setSelectedTaskIds([...new Set([...selectedTaskIds, ...rangeIds])]);
+  }
+};
+```
+
 ### Grouping Logic
 Groups are sorted by `order` property:
 - Priority: High=0, Medium=1, Low=2
 - Due Date: Overdue=0, Today=1, Tomorrow=2, This Week=3, Later=4, No Date=99
 - Assignee: Named=0, Unassigned=99
 - Tags: Tagged=0, Untagged=99
-
----
-
-## Migration Notes
-
-When converting old table code to use TaskRow:
-1. Replace inline row rendering with `<TaskRow />`
-2. Use `h-row-compact` instead of fixed heights like `h-10` or `h-16`
-3. Use `gap-xxs` for tight element spacing
-4. Use 20px avatars (h-5 w-5) instead of 24px
-5. Include InlineTaskCreator at the bottom of lists

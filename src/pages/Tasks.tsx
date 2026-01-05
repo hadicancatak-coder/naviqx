@@ -167,6 +167,29 @@ export default function Tasks() {
 
   // Keyboard navigation
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  
+  // Shift+Click range selection handler
+  const handleShiftSelect = useCallback((taskId: string, shiftKey: boolean) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedTasks = finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage);
+    const currentIndex = paginatedTasks.findIndex(t => t.id === taskId);
+    
+    if (shiftKey && lastSelectedIndex !== null && currentIndex !== -1) {
+      const start = Math.min(lastSelectedIndex, currentIndex);
+      const end = Math.max(lastSelectedIndex, currentIndex);
+      const rangeIds = paginatedTasks.slice(start, end + 1).map(t => t.id);
+      const newSelection = Array.from(new Set([...selectedTaskIds, ...rangeIds]));
+      setSelectedTaskIds(newSelection);
+    } else {
+      setLastSelectedIndex(currentIndex);
+      if (selectedTaskIds.includes(taskId)) {
+        setSelectedTaskIds(selectedTaskIds.filter(id => id !== taskId));
+      } else {
+        setSelectedTaskIds([...selectedTaskIds, taskId]);
+      }
+    }
+  }, [currentPage, itemsPerPage, finalFilteredTasks, lastSelectedIndex, selectedTaskIds]);
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -175,6 +198,9 @@ export default function Tasks() {
       
       const startIndex = (currentPage - 1) * itemsPerPage;
       const paginatedTasks = finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage);
+      const focusedTask = focusedIndex >= 0 && focusedIndex < paginatedTasks.length 
+        ? paginatedTasks[focusedIndex] 
+        : null;
       
       switch (e.key) {
         case 'j':
@@ -188,13 +214,17 @@ export default function Tasks() {
           setFocusedIndex(prev => Math.max(prev - 1, 0));
           break;
         case 'Enter':
-          if (focusedIndex >= 0 && focusedIndex < paginatedTasks.length) {
-            handleTaskClick(paginatedTasks[focusedIndex].id, paginatedTasks[focusedIndex]);
+          if (focusedTask) {
+            handleTaskClick(focusedTask.id, focusedTask);
           }
           break;
         case 'Escape':
           if (selectedTaskId) {
             handleCloseSidePanel();
+          } else if (selectedTaskIds.length > 0) {
+            setSelectedTaskIds([]);
+          } else {
+            setFocusedIndex(-1);
           }
           break;
         case 'n':
@@ -203,12 +233,36 @@ export default function Tasks() {
             setDialogOpen(true);
           }
           break;
+        case 'x':
+          // Toggle selection on focused task
+          if (focusedTask) {
+            e.preventDefault();
+            handleShiftSelect(focusedTask.id, e.shiftKey);
+          }
+          break;
+        case ' ':
+          // Complete focused task
+          if (focusedTask && focusedTask.status !== 'Completed') {
+            e.preventDefault();
+            completeTasksBulk([focusedTask.id]).then(() => {
+              queryClient.invalidateQueries({ queryKey: ['tasks'] });
+              toast({ title: "Task completed", duration: 1500 });
+            });
+          }
+          break;
+        case 'a':
+          // Select all (with Cmd/Ctrl)
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            setSelectedTaskIds(paginatedTasks.map(t => t.id));
+          }
+          break;
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskId, handleTaskClick, handleCloseSidePanel]);
+  }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskId, selectedTaskIds, handleTaskClick, handleCloseSidePanel, handleShiftSelect, queryClient, toast]);
 
   const tasks = data || [];
   const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks;
@@ -495,6 +549,8 @@ export default function Tasks() {
                           onSelectionChange={setSelectedTaskIds} 
                           groupBy={tableGroupBy}
                           onTaskClick={handleTaskClick}
+                          focusedIndex={focusedIndex}
+                          onShiftSelect={handleShiftSelect}
                         />
                       )
                     )}

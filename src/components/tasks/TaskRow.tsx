@@ -16,6 +16,7 @@ interface TaskRowProps {
   onDelete?: (taskId: string) => void;
   isSelected?: boolean;
   onSelect?: (taskId: string, selected: boolean) => void;
+  onShiftSelect?: (taskId: string, shiftKey: boolean) => void;
   showSelectionCheckbox?: boolean;
   showDragHandle?: boolean;
   dragHandleProps?: any;
@@ -24,6 +25,7 @@ interface TaskRowProps {
   userRole?: string | null;
   subtaskCount?: number;
   subtaskCompletedCount?: number;
+  isFocused?: boolean;
 }
 
 const priorityDot: Record<string, string> = {
@@ -40,6 +42,7 @@ export function TaskRow({
   onDelete,
   isSelected = false,
   onSelect,
+  onShiftSelect,
   showSelectionCheckbox = false,
   showDragHandle = false,
   dragHandleProps,
@@ -48,6 +51,7 @@ export function TaskRow({
   userRole,
   subtaskCount = 0,
   subtaskCompletedCount = 0,
+  isFocused = false,
 }: TaskRowProps) {
   const [openDropdown, setOpenDropdown] = useState(false);
 
@@ -64,6 +68,16 @@ export function TaskRow({
     onComplete?.(task.id, checked);
   };
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Shift+Click for range selection
+    if (e.shiftKey && onShiftSelect) {
+      e.preventDefault();
+      onShiftSelect(task.id, true);
+      return;
+    }
+    onClick(task.id, task);
+  };
+
   return (
     <div
       className={cn(
@@ -72,9 +86,10 @@ export function TaskRow({
         isOverdue && !isExternalDep && "border-l-2 border-l-destructive",
         isExternalDep && "border-l-2 border-l-warning bg-warning/5",
         isCompleted && "opacity-60",
-        isSelected && "bg-primary/5"
+        isSelected && "bg-primary/5",
+        isFocused && "ring-2 ring-inset ring-primary/50 bg-primary/5"
       )}
-      onClick={() => onClick(task.id, task)}
+      onClick={handleRowClick}
     >
       {/* Drag Handle */}
       {showDragHandle && (

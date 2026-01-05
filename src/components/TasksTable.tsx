@@ -30,6 +30,8 @@ interface TasksTableProps {
   onSelectionChange?: (ids: string[]) => void;
   groupBy?: 'none' | 'dueDate' | 'priority' | 'assignee' | 'tags';
   onTaskClick?: (taskId: string, task?: any) => void;
+  focusedIndex?: number;
+  onShiftSelect?: (taskId: string, shiftKey: boolean) => void;
 }
 
 export const TasksTable = ({ 
@@ -38,7 +40,9 @@ export const TasksTable = ({
   selectedIds = [], 
   onSelectionChange, 
   groupBy = 'none', 
-  onTaskClick 
+  onTaskClick,
+  focusedIndex = -1,
+  onShiftSelect 
 }: TasksTableProps) => {
   const { toast } = useToast();
   const { user, userRole } = useAuth();
@@ -269,23 +273,33 @@ export const TasksTable = ({
 
   const allSelected = tasks.length > 0 && selectedIds.length === tasks.length;
 
+  // Get flat index for a task across groups
+  const getTaskFlatIndex = (taskId: string) => {
+    return tasks.findIndex(t => t.id === taskId);
+  };
+
   const renderTaskList = (taskList: any[]) => (
     <div className="divide-y divide-border">
-      {taskList.map((task) => (
-        <TaskRow
-          key={task.id}
-          task={task}
-          onClick={handleRowClick}
-          onComplete={handleComplete}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-          isSelected={selectedIds.includes(task.id)}
-          onSelect={handleSelect}
-          showSelectionCheckbox
-          processingAction={processingAction}
-          userRole={userRole}
-        />
-      ))}
+      {taskList.map((task) => {
+        const flatIndex = getTaskFlatIndex(task.id);
+        return (
+          <TaskRow
+            key={task.id}
+            task={task}
+            onClick={handleRowClick}
+            onComplete={handleComplete}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+            isSelected={selectedIds.includes(task.id)}
+            onSelect={handleSelect}
+            onShiftSelect={onShiftSelect}
+            showSelectionCheckbox
+            processingAction={processingAction}
+            userRole={userRole}
+            isFocused={flatIndex === focusedIndex}
+          />
+        );
+      })}
     </div>
   );
 
