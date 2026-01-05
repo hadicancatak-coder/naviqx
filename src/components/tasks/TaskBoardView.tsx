@@ -106,7 +106,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
             {/* Column Header */}
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
               <h3 className="font-medium text-body-sm text-foreground">{group}</h3>
-              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+              <Badge variant="secondary" className="text-metadata h-5 px-1.5">
                 {groupTasks.length}
               </Badge>
             </div>
@@ -185,7 +185,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
                           {/* Due Date */}
                           {task.due_at && (
                             <span className={cn(
-                              "text-[11px] tabular-nums",
+                              "text-metadata tabular-nums",
                               overdue ? "text-destructive font-medium" : "text-muted-foreground"
                             )}>
                               {format(new Date(task.due_at), 'MMM d')}

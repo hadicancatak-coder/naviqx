@@ -234,7 +234,7 @@ export function TaskRow({
         <Badge 
           variant="outline" 
           className={cn(
-            "text-[10px] px-1.5 py-0 h-4 flex-shrink-0 rounded",
+            "text-metadata px-1.5 py-0 h-4 flex-shrink-0 rounded",
             tagDef.color
           )}
         >
@@ -244,19 +244,19 @@ export function TaskRow({
 
       {/* Badges (subtasks, recurring, external) */}
       {subtaskCount > 0 && !compact && (
-        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
+        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
           <ListChecks className="h-2.5 w-2.5 mr-0.5" />
           {subtaskCompletedCount}/{subtaskCount}
         </Badge>
       )}
       {isRecurring && !compact && (
-        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
+        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
           <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
           {getRecurrenceLabel(task)}
         </Badge>
       )}
       {isExternalDep && !compact && (
-        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
+        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
           <ExternalLink className="h-2.5 w-2.5" />
         </Badge>
       )}
@@ -284,7 +284,7 @@ export function TaskRow({
       {task.due_at && (
         <span
           className={cn(
-            "text-[11px] flex-shrink-0 min-w-[40px] text-right tabular-nums",
+            "text-metadata flex-shrink-0 min-w-[40px] text-right tabular-nums",
             isOverdue && !isExternalDep ? "text-destructive font-medium" : "text-muted-foreground"
           )}
         >

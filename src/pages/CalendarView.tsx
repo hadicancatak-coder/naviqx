@@ -48,8 +48,8 @@ function KanbanCard({ task, onTaskClick }: any) {
     >
       <p className="text-body-sm font-medium text-foreground line-clamp-2">{task.title}</p>
       <div className="flex items-center gap-2 mt-2">
-        <Badge variant="outline" className={cn(
-          "text-[10px] px-1.5 py-0",
+      <Badge variant="outline" className={cn(
+          "text-metadata px-1.5 py-0",
           task.priority === 'High' && 'border-destructive/50 text-destructive',
           task.priority === 'Medium' && 'border-primary/50 text-primary',
           task.priority === 'Low' && 'border-border text-muted-foreground'
@@ -58,7 +58,7 @@ function KanbanCard({ task, onTaskClick }: any) {
         </Badge>
         {task.due_at && (
           <span className={cn(
-            "text-[10px]",
+            "text-metadata",
             isOverdue && !isExternalDep ? "text-destructive" : "text-muted-foreground"
           )}>
             {format(new Date(task.due_at), 'MMM d')}
@@ -389,14 +389,14 @@ export default function CalendarView() {
         <header className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-[24px] font-semibold text-foreground tracking-tight">My Agenda</h1>
-              <p className="text-[14px] text-muted-foreground mt-1">{getDateLabel()}</p>
+              <h1 className="text-heading-lg font-semibold text-foreground tracking-tight">My Agenda</h1>
+              <p className="text-body-sm text-muted-foreground mt-1">{getDateLabel()}</p>
             </div>
             <div className="flex items-center gap-3">
               {/* Admin User Filter */}
               {userRole === 'admin' && (
                 <Select value={selectedUserId || user?.id || ''} onValueChange={(v) => setSelectedUserId(v === user?.id ? null : v)}>
-                  <SelectTrigger className="w-[200px] h-10 rounded-xl bg-card border-border text-[14px]">
+                  <SelectTrigger className="w-[200px] h-10 rounded-xl bg-card border-border text-body-sm">
                     <Users className="h-4 w-4 mr-2 text-muted-foreground" />
                     <SelectValue placeholder="View user agenda" />
                   </SelectTrigger>
@@ -409,7 +409,7 @@ export default function CalendarView() {
                   </SelectContent>
                 </Select>
               )}
-              <Button onClick={() => setCreateTaskOpen(true)} className="rounded-full px-6 h-10 gap-2 shadow-sm text-[14px] font-medium">
+              <Button onClick={() => setCreateTaskOpen(true)} className="rounded-full px-6 h-10 gap-2 shadow-sm text-body-sm font-medium">
                 <Plus className="h-4 w-4" />
                 New Task
               </Button>
@@ -424,17 +424,17 @@ export default function CalendarView() {
                 if (v !== "custom") setDateRange(null);
               }}>
                 <TabsList className="h-10 rounded-xl bg-muted p-1">
-                  <TabsTrigger value="today" className="h-8 px-4 rounded-lg text-[13px] data-[state=active]:bg-card data-[state=active]:shadow-sm">Today</TabsTrigger>
-                  <TabsTrigger value="tomorrow" className="h-8 px-4 rounded-lg text-[13px] data-[state=active]:bg-card data-[state=active]:shadow-sm">Tomorrow</TabsTrigger>
-                  <TabsTrigger value="week" className="h-8 px-4 rounded-lg text-[13px] data-[state=active]:bg-card data-[state=active]:shadow-sm">Week</TabsTrigger>
-                  <TabsTrigger value="custom" className="h-8 px-4 rounded-lg text-[13px] data-[state=active]:bg-card data-[state=active]:shadow-sm">Custom</TabsTrigger>
+                  <TabsTrigger value="today" className="h-8 px-4 rounded-lg text-body-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">Today</TabsTrigger>
+                  <TabsTrigger value="tomorrow" className="h-8 px-4 rounded-lg text-body-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">Tomorrow</TabsTrigger>
+                  <TabsTrigger value="week" className="h-8 px-4 rounded-lg text-body-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">Week</TabsTrigger>
+                  <TabsTrigger value="custom" className="h-8 px-4 rounded-lg text-body-sm data-[state=active]:bg-card data-[state=active]:shadow-sm">Custom</TabsTrigger>
                 </TabsList>
               </Tabs>
 
               {dateView === "custom" && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-10 px-4 rounded-xl text-[13px] border-border">
+                    <Button variant="outline" className="h-10 px-4 rounded-xl text-body-sm border-border">
                       <CalendarIcon className="h-4 w-4 mr-2" />
                       Pick date
                     </Button>
@@ -529,7 +529,7 @@ export default function CalendarView() {
                       )}>
                         <h3 className="font-semibold text-body-sm">{col.day}</h3>
                         <p className="text-metadata text-muted-foreground">{format(col.date, 'MMM d')}</p>
-                        {!col.isWorkingDay && <Badge variant="outline" className="text-[10px] mt-1 text-warning">Off</Badge>}
+                        {!col.isWorkingDay && <Badge variant="outline" className="text-metadata mt-1 text-warning">Off</Badge>}
                       </div>
                       <ScrollArea className="h-[420px] p-3">
                         <div className="space-y-2">
@@ -592,14 +592,14 @@ export default function CalendarView() {
                   onCheckedChange={selectAll}
                   className="border-border"
                 />
-                <span className="text-[14px] text-muted-foreground">
+                <span className="text-body-sm text-muted-foreground">
                   {selectedIds.size > 0 ? `${selectedIds.size} selected` : `${activeTasks.length} tasks`}
                 </span>
               </div>
               
               <div className="flex items-center gap-2">
                 {selectedIds.size > 0 && (
-                  <Button variant="outline" size="sm" onClick={handleBulkComplete} className="rounded-lg h-8 text-[13px]">
+                  <Button variant="outline" size="sm" onClick={handleBulkComplete} className="rounded-lg h-8 text-body-sm">
                     <Check className="h-4 w-4 mr-1.5" />
                     Complete
                   </Button>
@@ -608,7 +608,7 @@ export default function CalendarView() {
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value)}
-                  className="h-8 px-3 text-[13px] bg-muted border-0 rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-8 px-3 text-body-sm bg-muted border-0 rounded-lg text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="priority">Priority</option>
                   <option value="due_time">Due Date</option>
@@ -633,8 +633,8 @@ export default function CalendarView() {
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                           <CalendarIcon className="h-8 w-8 text-muted-foreground" />
                         </div>
-                        <p className="text-[16px] font-medium text-foreground mb-1">No tasks due</p>
-                        <p className="text-[14px] text-muted-foreground">
+                        <p className="text-body font-medium text-foreground mb-1">No tasks due</p>
+                        <p className="text-body-sm text-muted-foreground">
                           Create a new task to get started
                         </p>
                       </div>
@@ -663,7 +663,7 @@ export default function CalendarView() {
                 <CollapsibleTrigger asChild>
                   <div className="flex items-center gap-2 px-4 py-3 border-t border-border bg-muted/20 cursor-pointer hover:bg-muted/40 transition-smooth">
                     {completedExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                    <span className="text-[14px] font-medium text-muted-foreground">
+                    <span className="text-body-sm font-medium text-muted-foreground">
                       Completed ({completedTasks.length})
                     </span>
                   </div>
