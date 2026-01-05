@@ -7,24 +7,22 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TasksTable } from "@/components/TasksTable";
-import { TasksTableVirtualized } from "@/components/TasksTableVirtualized";
 import { UnifiedTaskDialog } from "@/components/UnifiedTaskDialog";
 import { AssigneeFilterBar } from "@/components/AssigneeFilterBar";
 import { TaskDateFilterBar } from "@/components/TaskDateFilterBar";
 import { StatusMultiSelect } from "@/components/tasks/StatusMultiSelect";
-import { TaskBoardView } from "@/components/tasks/TaskBoardView";
 import { FilteredTasksDialog } from "@/components/tasks/FilteredTasksDialog";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { ViewSwitcher, type ViewMode, type BoardGroupBy } from "@/components/tasks/ViewSwitcher";
-import { PageContainer, PageHeader, DataCard, EmptyState, FilterBar } from "@/components/layout";
+import { TaskListView } from "@/components/tasks/TaskListView";
+import { TaskBoardView } from "@/components/tasks/TaskBoardView";
+import { PageContainer, PageHeader, EmptyState, FilterBar } from "@/components/layout";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
 import { TASK_TAGS } from "@/lib/constants";
-import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { TaskBulkActionsBar } from "@/components/tasks/TaskBulkActionsBar";
 import { exportTasksToCSV } from "@/lib/taskExport";
 import { isTaskOverdue } from "@/lib/overdueHelpers";
@@ -54,7 +52,7 @@ export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   
-  // View state - simplified to just list/board
+  // View state
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('tasksViewMode');
     return (saved === 'list' || saved === 'board') ? saved : 'board';
@@ -64,17 +62,16 @@ export default function Tasks() {
     return (saved === 'status' || saved === 'date' || saved === 'assignee') ? saved : 'status';
   });
   
-  // Side panel state (Asana-style)
+  // Side panel state
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [filteredDialogOpen, setFilteredDialogOpen] = useState(false);
   const [filteredDialogType, setFilteredDialogType] = useState<'all' | 'overdue' | 'ongoing' | 'completed'>('all');
   const [hideRecurring, setHideRecurring] = useState(true);
   const [showMyTasks, setShowMyTasks] = useState(false);
-  const [tableGroupBy, setTableGroupBy] = useState<'none' | 'dueDate' | 'priority' | 'assignee' | 'tags'>('none');
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   // Persist view preferences
@@ -86,7 +83,7 @@ export default function Tasks() {
     localStorage.setItem('tasksBoardGroupBy', boardGroupBy);
   }, [boardGroupBy]);
 
-  // Handle URL filter parameters from MyTasks dashboard
+  // Handle URL filter parameters
   useEffect(() => {
     const filter = searchParams.get('filter');
     if (!filter) return;
@@ -129,13 +126,11 @@ export default function Tasks() {
     localStorage.setItem('tasksItemsPerPage', String(itemsPerPage));
   }, [itemsPerPage]);
 
-  // Task click handler - opens side panel
   const handleTaskClick = useCallback((taskId: string, task?: any) => {
     setSelectedTaskId(taskId);
     setSelectedTask(task || null);
   }, []);
 
-  // Close side panel
   const handleCloseSidePanel = useCallback(() => {
     setSelectedTaskId(null);
     setSelectedTask(null);
@@ -152,19 +147,16 @@ export default function Tasks() {
 
   const filteredTasks = useMemo(() => {
     return (data || []).filter((task: any) => {
-      // "My Tasks" toggle - only show tasks assigned to current user
       if (showMyTasks && user) {
         if (!isUserAssignedToTask(task, user.id)) return false;
       }
       
-      // Assignee multi-select filter
       const assigneeMatch = taskMatchesAssigneeFilter(task, selectedAssignees);
       let dateMatch = true;
       if (dateFilter) {
         if (!task.due_at) { dateMatch = dateFilter.label === "Backlog"; } 
         else { const dueDate = new Date(task.due_at); dateMatch = dueDate >= dateFilter.startDate && dueDate <= dateFilter.endDate; }
       }
-      // Handle Backlog/Pending mapping in status filter
       const statusMatch = statusFilters.length === 0 || statusFilters.some(s => {
         if (s === 'Backlog') return task.status === 'Pending' || task.status === 'Backlog';
         return task.status === s;
@@ -186,11 +178,9 @@ export default function Tasks() {
 
   useEffect(() => { setCurrentPage(1); }, [selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, activeQuickFilter]);
 
-  // Keyboard navigation
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   
-  // Shift+Click range selection handler
   const handleShiftSelect = useCallback((taskId: string, shiftKey: boolean) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedTasks = finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage);
@@ -214,7 +204,6 @@ export default function Tasks() {
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       
       const startIndex = (currentPage - 1) * itemsPerPage;
@@ -255,14 +244,12 @@ export default function Tasks() {
           }
           break;
         case 'x':
-          // Toggle selection on focused task
           if (focusedTask) {
             e.preventDefault();
             handleShiftSelect(focusedTask.id, e.shiftKey);
           }
           break;
         case ' ':
-          // Complete focused task
           if (focusedTask && focusedTask.status !== 'Completed') {
             e.preventDefault();
             completeTasksBulk([focusedTask.id]).then(() => {
@@ -272,7 +259,6 @@ export default function Tasks() {
           }
           break;
         case 'a':
-          // Select all (with Cmd/Ctrl)
           if (e.metaKey || e.ctrlKey) {
             e.preventDefault();
             setSelectedTaskIds(paginatedTasks.map(t => t.id));
@@ -310,13 +296,7 @@ export default function Tasks() {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
     setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
-    setShowMyTasks(false); setTableGroupBy('none');
-  };
-
-  const handleQuickFilter = (filterLabel: string) => {
-    const filter = quickFilters.find(f => f.label === filterLabel);
-    if (activeQuickFilter === filterLabel) { setActiveQuickFilter(null); } 
-    else { if (filter?.clearOtherFilters) clearAllFilters(); setActiveQuickFilter(filterLabel); }
+    setShowMyTasks(false);
   };
 
   const handleBulkComplete = async () => {
@@ -360,12 +340,6 @@ export default function Tasks() {
     const result = await setPriorityBulk(selectedTaskIds, priority as 'Low' | 'Medium' | 'High');
     if (result.success) {
       toast({ title: `${result.successCount} task(s) priority updated`, duration: 2000 });
-    } else {
-      toast({ 
-        title: "Some tasks failed to update", 
-        description: `${result.successCount} succeeded, ${result.failedCount} failed`,
-        variant: "destructive" 
-      });
     }
     setSelectedTaskIds([]);
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -375,12 +349,6 @@ export default function Tasks() {
     const result = await deleteTasksBulk(selectedTaskIds);
     if (result.success) {
       toast({ title: `${result.successCount} task(s) deleted`, duration: 2000 });
-    } else {
-      toast({ 
-        title: "Some tasks failed to delete", 
-        description: `${result.successCount} succeeded, ${result.failedCount} failed`,
-        variant: "destructive" 
-      });
     }
     setSelectedTaskIds([]);
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -391,10 +359,15 @@ export default function Tasks() {
     exportTasksToCSV(selectedTasks); 
   };
 
-  // Main content component
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTasks = viewMode === 'list' 
+    ? finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage)
+    : finalFilteredTasks;
+  const totalPages = Math.ceil(finalFilteredTasks.length / itemsPerPage);
+
   const TaskListContent = () => (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-auto p-md space-y-md">
+      <div className="flex-1 overflow-auto p-md space-y-4">
         <PageHeader
           icon={ListTodo}
           title="Tasks"
@@ -456,47 +429,6 @@ export default function Tasks() {
             <TooltipContent>{hideRecurring ? "Show Recurring Tasks" : "Hide Recurring Tasks"}</TooltipContent>
           </Tooltip>
 
-          {viewMode === 'list' && (
-            <Popover>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant={tableGroupBy !== 'none' ? "default" : "outline"} 
-                      size="icon"
-                    >
-                      <Layers className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>Group By</TooltipContent>
-              </Tooltip>
-              <PopoverContent className="w-40 p-1" align="end">
-                {[
-                  { value: 'none', label: 'No Grouping' },
-                  { value: 'dueDate', label: 'Due Date' },
-                  { value: 'priority', label: 'Priority' },
-                  { value: 'assignee', label: 'Assignee' },
-                  { value: 'tags', label: 'Tags' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setTableGroupBy(option.value as any)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 rounded-md text-body-sm transition-smooth",
-                      tableGroupBy === option.value 
-                        ? "bg-primary text-primary-foreground" 
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </PopoverContent>
-            </Popover>
-          )}
-
-          {/* View Switcher */}
           <div className="ml-auto">
             <ViewSwitcher 
               viewMode={viewMode} 
@@ -507,7 +439,7 @@ export default function Tasks() {
           </div>
         </FilterBar>
 
-        {/* Clear Filters */}
+        {/* Active filters indicator */}
         {hasActiveFilters && (
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={clearAllFilters}>
@@ -518,96 +450,92 @@ export default function Tasks() {
           </div>
         )}
 
-        {/* Task Views */}
+        {/* Task Content - NO WRAPPER CARDS */}
         {finalFilteredTasks.length === 0 ? (
-          <DataCard>
-            <EmptyState
-              icon={CheckCircle2}
-              title="All Clear!"
-              description={tasks.length === 0 ? "You don't have any tasks yet. Create your first task to get started." : "No tasks found matching your filters. Try adjusting your search."}
-              action={tasks.length === 0 ? { label: "Create Your First Task", onClick: () => setDialogOpen(true) } : undefined}
-            />
-          </DataCard>
+          <div className="py-16 text-center">
+            <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <h3 className="text-heading-sm font-medium text-foreground mb-2">All Clear!</h3>
+            <p className="text-body-sm text-muted-foreground mb-4">
+              {tasks.length === 0 ? "You don't have any tasks yet." : "No tasks match your filters."}
+            </p>
+            {tasks.length === 0 && (
+              <Button onClick={() => setDialogOpen(true)}>Create Your First Task</Button>
+            )}
+          </div>
         ) : (
           <>
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between">
-              <span className="text-metadata text-muted-foreground">
-                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, finalFilteredTasks.length)}-{Math.min(currentPage * itemsPerPage, finalFilteredTasks.length)} of {finalFilteredTasks.length} tasks
-              </span>
-              <div className="flex items-center gap-3">
-                <span className="text-metadata text-muted-foreground">Items per page:</span>
-                <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
-                  <SelectTrigger className="w-[80px] h-10 rounded-lg bg-card border-border text-body-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl bg-popover border-border shadow-lg">
-                    {[10, 20, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            {/* Pagination info for list view */}
+            {viewMode === 'list' && (
+              <div className="flex items-center justify-between text-metadata text-muted-foreground">
+                <span>
+                  {Math.min(startIndex + 1, finalFilteredTasks.length)}-{Math.min(startIndex + itemsPerPage, finalFilteredTasks.length)} of {finalFilteredTasks.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span>Per page:</span>
+                  <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-[70px] h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[20, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            )}
 
-            <DataCard noPadding>
-              {(() => {
-                const startIndex = (currentPage - 1) * itemsPerPage;
-                const paginatedTasks = finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage);
-                const totalPages = Math.ceil(finalFilteredTasks.length / itemsPerPage);
+            {/* Views - FLAT, NO CARDS */}
+            {viewMode === 'list' ? (
+              <TaskListView
+                tasks={paginatedTasks}
+                selectedIds={selectedTaskIds}
+                onSelectionChange={setSelectedTaskIds}
+                onTaskClick={handleTaskClick}
+                onShiftSelect={handleShiftSelect}
+                focusedIndex={focusedIndex}
+                onRefresh={refetch}
+              />
+            ) : (
+              <TaskBoardView 
+                tasks={paginatedTasks} 
+                onTaskClick={handleTaskClick} 
+                groupBy={boardGroupBy} 
+              />
+            )}
 
-                return (
-                  <>
-                    {viewMode === 'list' && (
-                      finalFilteredTasks.length > 100 ? (
-                        <TasksTableVirtualized tasks={finalFilteredTasks} onTaskUpdate={refetch} onTaskClick={handleTaskClick} />
-                      ) : (
-                        <TasksTable 
-                          tasks={paginatedTasks} 
-                          onTaskUpdate={refetch} 
-                          selectedIds={selectedTaskIds} 
-                          onSelectionChange={setSelectedTaskIds} 
-                          groupBy={tableGroupBy}
-                          onTaskClick={handleTaskClick}
-                          focusedIndex={focusedIndex}
-                          onShiftSelect={handleShiftSelect}
-                        />
-                      )
-                    )}
-                    {viewMode === 'board' && (
-                      <div className="p-4">
-                        <TaskBoardView tasks={finalFilteredTasks} onTaskClick={handleTaskClick} groupBy={boardGroupBy} />
-                      </div>
-                    )}
-
-                    {totalPages > 1 && viewMode === 'list' && (
-                      <div className="border-t border-border p-4">
-                        <Pagination>
-                          <PaginationContent>
-                            <PaginationItem>
-                              <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className={cn(currentPage === 1 && "pointer-events-none opacity-50")} />
-                            </PaginationItem>
-                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                              let pageNum;
-                              if (totalPages <= 5) pageNum = i + 1;
-                              else if (currentPage <= 3) pageNum = i + 1;
-                              else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                              else pageNum = currentPage - 2 + i;
-                              return (
-                                <PaginationItem key={pageNum}>
-                                  <PaginationLink onClick={() => setCurrentPage(pageNum)} isActive={currentPage === pageNum}>{pageNum}</PaginationLink>
-                                </PaginationItem>
-                              );
-                            })}
-                            <PaginationItem>
-                              <PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className={cn(currentPage === totalPages && "pointer-events-none opacity-50")} />
-                            </PaginationItem>
-                          </PaginationContent>
-                        </Pagination>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </DataCard>
+            {/* Pagination for list view */}
+            {viewMode === 'list' && totalPages > 1 && (
+              <div className="flex justify-center pt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                        className={cn(currentPage === 1 && "pointer-events-none opacity-50")} 
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink onClick={() => setCurrentPage(pageNum)} isActive={currentPage === pageNum}>{pageNum}</PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                        className={cn(currentPage === totalPages && "pointer-events-none opacity-50")} 
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -627,7 +555,6 @@ export default function Tasks() {
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Main Task List */}
         <ResizablePanel 
           defaultSize={selectedTaskId ? 60 : 100} 
           minSize={40}
@@ -636,7 +563,6 @@ export default function Tasks() {
           <TaskListContent />
         </ResizablePanel>
 
-        {/* Side Panel - Task Detail (Asana-style) */}
         {selectedTaskId && (
           <>
             <ResizableHandle withHandle />
@@ -660,10 +586,8 @@ export default function Tasks() {
         )}
       </ResizablePanelGroup>
 
-      {/* Create Task Dialog */}
       <UnifiedTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} mode="create" />
       
-      {/* Filtered Tasks Dialog */}
       <FilteredTasksDialog
         open={filteredDialogOpen}
         onOpenChange={setFilteredDialogOpen}
