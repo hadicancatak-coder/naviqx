@@ -3490,6 +3490,7 @@ export type Database = {
           jira_links: Json | null
           labels: string[] | null
           order_index: number | null
+          parent_id: string | null
           pending_approval: boolean | null
           pending_changes: Json | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -3538,6 +3539,7 @@ export type Database = {
           jira_links?: Json | null
           labels?: string[] | null
           order_index?: number | null
+          parent_id?: string | null
           pending_approval?: boolean | null
           pending_changes?: Json | null
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -3586,6 +3588,7 @@ export type Database = {
           jira_links?: Json | null
           labels?: string[] | null
           order_index?: number | null
+          parent_id?: string | null
           pending_approval?: boolean | null
           pending_changes?: Json | null
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -3626,6 +3629,13 @@ export type Database = {
             columns: ["blocker_id"]
             isOneToOne: false
             referencedRelation: "blockers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {
