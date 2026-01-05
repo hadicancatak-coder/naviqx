@@ -148,13 +148,13 @@ export function TaskRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-xxs h-row-compact px-sm transition-smooth cursor-pointer group border-b border-border last:border-0",
-        "hover:bg-card-hover",
-        isOverdue && !isExternalDep && "border-l-2 border-l-destructive",
-        isExternalDep && "border-l-2 border-l-warning bg-warning/5",
-        isCompleted && "opacity-60",
-        isSelected && "bg-primary/5",
-        isFocused && "ring-2 ring-inset ring-primary/50 bg-primary/5"
+        "flex items-center gap-xxs h-row-compact px-sm transition-smooth cursor-pointer group",
+        "hover:bg-card-hover odd:bg-muted/20",
+        isOverdue && !isExternalDep && "border-l-2 border-l-destructive/50",
+        isExternalDep && "border-l-2 border-l-warning/50",
+        isCompleted && "opacity-50",
+        isSelected && "bg-primary/10",
+        isFocused && "ring-1 ring-inset ring-primary/40 bg-primary/5"
       )}
       onClick={handleRowClick}
     >

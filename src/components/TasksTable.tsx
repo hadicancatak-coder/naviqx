@@ -312,7 +312,7 @@ export const TasksTable = ({
   );
 
   const renderTaskList = (taskList: any[]) => (
-    <div className="divide-y divide-border">
+    <div>
       {taskList.map((task) => {
         const flatIndex = getTaskFlatIndex(task.id);
         return (
@@ -338,9 +338,9 @@ export const TasksTable = ({
 
   return (
     <>
-      <div className="w-full bg-card rounded-lg border border-border overflow-hidden">
+<div className="w-full">
         {/* Header Row */}
-        <div className="flex items-center gap-xxs h-row-compact px-sm bg-muted/50 border-b border-border">
+        <div className="flex items-center gap-xxs h-row-compact px-sm text-muted-foreground">
           <Checkbox
             checked={allSelected}
             onCheckedChange={(checked) => {
@@ -362,13 +362,13 @@ export const TasksTable = ({
           // Grouped view
           groupedTasks.map((group) => (
             <div key={group.key}>
-              <button
-                onClick={() => toggleGroup(group.key)}
-                className={cn(
-                  "flex items-center gap-2 w-full h-row-compact px-sm",
-                  "bg-muted/30 hover:bg-muted/50 transition-smooth border-b border-border"
-                )}
-              >
+                <button
+                  onClick={() => toggleGroup(group.key)}
+                  className={cn(
+                    "flex items-center gap-2 w-full h-row-compact px-sm",
+                    "hover:bg-subtle transition-smooth"
+                  )}
+                >
                 {collapsedGroups.has(group.key) ? (
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 ) : (
@@ -388,7 +388,7 @@ export const TasksTable = ({
         )}
 
         {/* Inline Task Creator */}
-        <InlineTaskCreator onTaskCreated={onTaskUpdate} className="border-t border-border" />
+        <InlineTaskCreator onTaskCreated={onTaskUpdate} />
       </div>
 
       {/* Delete Confirmation Dialog */}
