@@ -27,6 +27,16 @@ const priorityColors: Record<string, string> = {
   Low: "bg-success",
 };
 
+const statusColors: Record<string, string> = {
+  Pending: "bg-muted text-muted-foreground",
+  Backlog: "bg-muted text-muted-foreground",
+  Ongoing: "bg-primary/15 text-primary border-primary/30",
+  "In Progress": "bg-primary/15 text-primary border-primary/30",
+  Blocked: "bg-destructive/15 text-destructive border-destructive/30",
+  Completed: "bg-success/15 text-success border-success/30",
+  Failed: "bg-destructive/15 text-destructive border-destructive/30",
+};
+
 // Strip HTML tags for description preview
 function stripHtml(html: string): string {
   if (!html) return '';
@@ -153,9 +163,11 @@ export function TaskListView({
           />
         </div>
         <div className="w-3 flex-shrink-0" /> {/* Priority dot */}
-        <div className="flex-1 min-w-0">Task</div>
-        <div className="w-24 flex-shrink-0 hidden lg:block">Tags</div>
-        <div className="w-28 flex-shrink-0 hidden md:block">Assignee</div>
+        <div className="flex-1 min-w-0 max-w-[40%]">Task</div>
+        <div className="w-24 flex-shrink-0 hidden xl:block">Entity</div>
+        <div className="w-20 flex-shrink-0 hidden lg:block">Status</div>
+        <div className="w-32 flex-shrink-0 hidden lg:block">Tags</div>
+        <div className="w-36 flex-shrink-0 hidden md:block">Assignee</div>
         <div className="w-14 flex-shrink-0 text-right">Due</div>
         <div className="w-8 flex-shrink-0" /> {/* Actions */}
       </div>
@@ -168,20 +180,22 @@ export function TaskListView({
           const focused = index === focusedIndex;
           const selected = selectedIds.includes(task.id);
           
-          // Get first tag
-          const firstTag = task.labels?.[0];
-          const tagDef = firstTag ? TASK_TAGS.find(t => t.value === firstTag) : null;
-          const extraTagCount = (task.labels?.length || 0) - 1;
+          // Get first 2 tags
+          const tags = task.labels?.slice(0, 2) || [];
+          const extraTagCount = (task.labels?.length || 0) - 2;
           
           // Description preview
           const descPreview = stripHtml(task.description || '').slice(0, 60);
+
+          // Status styling
+          const statusStyle = statusColors[task.status] || statusColors.Pending;
 
           return (
             <div
               key={task.id}
               onClick={() => onTaskClick(task.id, task)}
               className={cn(
-                "group flex items-center h-11 px-3 cursor-pointer transition-colors",
+                "group flex items-center h-12 px-3 cursor-pointer transition-colors",
                 "border-b border-border/50 last:border-b-0",
                 "hover:bg-muted/30",
                 completed && "opacity-50",
@@ -212,7 +226,7 @@ export function TaskListView({
               </div>
 
               {/* Task Title + Description */}
-              <div className="flex-1 min-w-0 pl-2">
+              <div className="flex-1 min-w-0 max-w-[40%] pl-2">
                 <div className={cn(
                   "truncate text-body-sm leading-tight",
                   completed && "line-through text-muted-foreground"
@@ -226,16 +240,39 @@ export function TaskListView({
                 )}
               </div>
 
-              {/* Tags */}
-              <div className="w-24 flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
-                {tagDef ? (
+              {/* Entity */}
+              <div className="w-24 flex-shrink-0 hidden xl:block px-1">
+                <span className="text-metadata text-muted-foreground truncate block">
+                  {task.entity || '—'}
+                </span>
+              </div>
+
+              {/* Status Badge */}
+              <div className="w-20 flex-shrink-0 hidden lg:block px-1">
+                <Badge 
+                  variant="outline" 
+                  className={cn("text-[10px] px-1.5 h-5 font-medium", statusStyle)}
+                >
+                  {task.status || 'Pending'}
+                </Badge>
+              </div>
+
+              {/* Tags - show 2 max */}
+              <div className="w-32 flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
+                {tags.length > 0 ? (
                   <>
-                    <Badge 
-                      variant="outline" 
-                      className={cn("text-[10px] px-1.5 h-5 truncate max-w-[68px]", tagDef.color)}
-                    >
-                      {tagDef.label}
-                    </Badge>
+                    {tags.map((tag: string) => {
+                      const tagDef = TASK_TAGS.find(t => t.value === tag);
+                      return (
+                        <Badge 
+                          key={tag}
+                          variant="outline" 
+                          className={cn("text-[10px] px-1.5 h-5 truncate max-w-[56px]", tagDef?.color)}
+                        >
+                          {tagDef?.label || tag}
+                        </Badge>
+                      );
+                    })}
                     {extraTagCount > 0 && (
                       <span className="text-[10px] text-muted-foreground">+{extraTagCount}</span>
                     )}
@@ -246,7 +283,7 @@ export function TaskListView({
               </div>
 
               {/* Assignee - Full name */}
-              <div className="w-28 flex-shrink-0 hidden md:block px-1">
+              <div className="w-36 flex-shrink-0 hidden md:block px-1">
                 <span className="text-body-sm text-muted-foreground truncate block">
                   {getAssigneeName(task) || '—'}
                 </span>
