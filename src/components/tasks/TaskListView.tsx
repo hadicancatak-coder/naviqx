@@ -203,23 +203,10 @@ export function TaskListView({
                 />
               </div>
 
-              {/* Task Title with completion icon */}
-              <div className="flex-1 min-w-0 flex items-center gap-sm">
-                <button
-                  onClick={(e) => handleComplete(task, e)}
-                  className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : completed ? (
-                    <CircleCheck className="h-4 w-4 text-success" />
-                  ) : (
-                    <Circle className="h-4 w-4" />
-                  )}
-                </button>
+              {/* Task Title */}
+              <div className="flex-1 min-w-0">
                 <span className={cn(
-                  "truncate text-body-sm",
+                  "truncate text-body-sm block",
                   completed && "line-through text-muted-foreground"
                 )}>
                   {task.title}
