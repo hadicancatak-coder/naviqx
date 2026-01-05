@@ -6,6 +6,8 @@ import { useTasks } from "@/hooks/useTasks";
 import { useQueryClient } from "@tanstack/react-query";
 import { UnifiedTaskDialog } from "@/components/UnifiedTaskDialog";
 import { TaskDetail } from "@/components/tasks/TaskDetail";
+import { TaskRow } from "@/components/tasks/TaskRow";
+import { SortableTaskRow } from "@/components/tasks/SortableTaskRow";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, addDays, addWeeks, startOfWeek, isSameDay } from "date-fns";
 import { isDateWorkingDay } from "@/lib/workingDaysHelper";
@@ -13,15 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, GripVertical, RotateCcw, Plus, AlertTriangle, Check, Table, LayoutGrid, GanttChart, ChevronDown, ChevronRight, ChevronLeft, Users, ExternalLink, X } from "lucide-react";
+import { CalendarIcon, Plus, Check, Table, LayoutGrid, GanttChart, ChevronDown, ChevronRight, ChevronLeft, Users, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DateRangePicker, DateRange } from "@/components/ui/date-range-picker";
 import { cn } from "@/lib/utils";
-import { getRecurrenceLabel, expandRecurringTask } from "@/lib/recurrenceExpander";
+import { expandRecurringTask } from "@/lib/recurrenceExpander";
 import { useToast } from "@/hooks/use-toast";
 import { isTaskOverdue } from "@/lib/overdueHelpers";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,123 +31,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DayBrief } from "@/components/calendar/DayBrief";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-// Sortable Task Item Component
-function SortableTaskItem({ task, onTaskClick, onTaskComplete, onMarkExternalDependency, isManualMode = false }: any) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
-    id: task.id,
-    disabled: !isManualMode
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const isOverdue = task.due_at && new Date(task.due_at) < new Date() && task.status !== 'Completed';
-  const isCompleted = task.status === 'Completed';
-  const isExternalDep = task.is_external_dependency;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "flex items-center gap-sm py-sm px-md transition-smooth cursor-pointer group border-b border-border last:border-0",
-        "hover:bg-card-hover",
-        isDragging && "z-overlay bg-card shadow-lg rounded-xl border-2 border-dashed border-primary",
-        isOverdue && !isCompleted && !isExternalDep && "border-l-4 border-l-destructive",
-        isExternalDep && "border-l-4 border-l-warning bg-warning/5",
-        isCompleted && "opacity-60"
-      )}
-      onClick={() => onTaskClick(task.id, task)}
-    >
-      {isManualMode && (
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing opacity-40 hover:opacity-100"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </div>
-      )}
-      
-      {/* Single completion checkbox */}
-      <Checkbox
-        checked={isCompleted}
-        onCheckedChange={(checked) => onTaskComplete(task.id, checked as boolean)}
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          "border-border",
-          isCompleted && "bg-success border-success"
-        )}
-      />
-      
-      <div className="flex-1 min-w-0 flex items-center gap-sm">
-        <span className={cn(
-          "text-body-sm font-medium text-foreground truncate",
-          isCompleted && "line-through text-muted-foreground"
-        )}>
-          {task.title}
-        </span>
-        <Badge variant="outline" className={cn(
-          "text-metadata px-1.5 py-0 flex-shrink-0 rounded-full",
-          task.priority === 'High' && 'border-destructive/50 text-destructive bg-destructive/10',
-          task.priority === 'Medium' && 'border-primary/50 text-primary bg-primary/10',
-          task.priority === 'Low' && 'border-border text-muted-foreground bg-muted'
-        )}>
-          {task.priority}
-        </Badge>
-        {(task.isRecurringOccurrence || task.task_type === 'recurring' || task.recurrence_rrule) && (
-          <Badge variant="outline" className="text-metadata px-1.5 py-0 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
-            <RotateCcw className="h-2.5 w-2.5 mr-1" />
-            {getRecurrenceLabel(task)}
-          </Badge>
-        )}
-        {isExternalDep && (
-          <Badge variant="outline" className="text-metadata px-1.5 py-0 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
-            <ExternalLink className="h-2.5 w-2.5 mr-1" />
-            External
-          </Badge>
-        )}
-        {task.due_at && (
-          <span className={cn(
-            "text-metadata flex-shrink-0",
-            isOverdue && !isExternalDep ? "text-destructive" : "text-muted-foreground"
-          )}>
-            {isOverdue && !isExternalDep ? "Overdue: " : ""}{format(new Date(task.due_at), 'MMM d')}
-          </span>
-        )}
-      </div>
-      
-      {/* Mark as External Dependency button for overdue non-completed tasks */}
-      {isOverdue && !isCompleted && !isExternalDep && onMarkExternalDependency && (
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMarkExternalDependency(task.id);
-          }}
-          className="opacity-0 group-hover:opacity-100"
-          title="Mark as External Dependency"
-        >
-          <ExternalLink className="h-3.5 w-3.5 text-warning hover:text-warning" />
-        </Button>
-      )}
-    </div>
-  );
-}
-
-// Kanban Card Component
+// Kanban Card Component - compact card for week view
 function KanbanCard({ task, onTaskClick }: any) {
   const isOverdue = task.due_at && new Date(task.due_at) < new Date() && task.status !== 'Completed';
   const isExternalDep = task.is_external_dependency;
@@ -765,15 +650,15 @@ export default function CalendarView() {
                       </div>
                     ) : (
                       activeTasks.map((task) => (
-                        <SortableTaskItem
+                        <SortableTaskRow
                           key={task.id}
                           task={task}
-                          onTaskClick={handleTaskClick}
-                          onTaskComplete={handleTaskComplete}
-                          onMarkExternalDependency={handleMarkExternalDependency}
-                          isManualMode={sortOption === "manual"}
+                          onClick={handleTaskClick}
+                          onComplete={handleTaskComplete}
                           isSelected={selectedIds.has(task.id)}
-                          onSelect={toggleSelection}
+                          onSelect={(taskId, selected) => toggleSelection(taskId)}
+                          showSelectionCheckbox
+                          disabled={sortOption !== "manual"}
                         />
                       ))
                     )}
@@ -796,14 +681,13 @@ export default function CalendarView() {
                 <CollapsibleContent>
                   <div className="bg-muted/10">
                     {completedTasks.map((task) => (
-                      <div
+                      <TaskRow
                         key={task.id}
-                        className="flex items-center gap-3 py-3 px-4 border-b border-border last:border-0 cursor-pointer hover:bg-muted/20 transition-smooth"
-                        onClick={() => handleTaskClick(task.id, task)}
-                      >
-                        <Checkbox checked disabled className="opacity-50 border-border" />
-                        <span className="text-[14px] text-muted-foreground line-through">{task.title}</span>
-                      </div>
+                        task={task}
+                        onClick={handleTaskClick}
+                        onComplete={handleTaskComplete}
+                        compact
+                      />
                     ))}
                   </div>
                 </CollapsibleContent>
