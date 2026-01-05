@@ -197,7 +197,7 @@ export const TasksTable = ({
         onSettled: () => setProcessingAction(null)
       });
     } else {
-      // Reopen task
+      // Reopen task - use Pending as DB value
       supabase.from('tasks').update({ status: 'Pending' as const }).eq('id', taskId)
         .then(() => {
           queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -338,23 +338,24 @@ export const TasksTable = ({
 
   return (
     <>
-<div className="w-full">
+      <div className="w-full">
         {/* Header Row */}
-        <div className="flex items-center gap-xxs h-row-compact px-sm text-muted-foreground">
+        <div className="flex items-center gap-2 h-8 px-2 border-b border-border bg-muted/30">
           <Checkbox
             checked={allSelected}
             onCheckedChange={(checked) => {
               onSelectionChange?.(checked ? tasks.map(t => t.id) : []);
             }}
-            className="flex-shrink-0"
+            className="flex-shrink-0 h-3.5 w-3.5"
           />
-          <span className="text-metadata font-medium text-muted-foreground uppercase tracking-wide flex-1 ml-1">
+          <span className="w-4" /> {/* Space for priority dot */}
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide flex-1">
             Task
           </span>
-          <span className="text-metadata font-medium text-muted-foreground uppercase tracking-wide w-20 text-right">
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide w-16 text-right">
             Due
           </span>
-          <div className="w-6" /> {/* Spacer for actions */}
+          <div className="w-4" /> {/* Spacer for actions */}
         </div>
 
         {/* Task Rows */}
@@ -362,20 +363,20 @@ export const TasksTable = ({
           // Grouped view
           groupedTasks.map((group) => (
             <div key={group.key}>
-                <button
-                  onClick={() => toggleGroup(group.key)}
-                  className={cn(
-                    "flex items-center gap-2 w-full h-row-compact px-sm",
-                    "hover:bg-subtle transition-smooth"
-                  )}
-                >
+              <button
+                onClick={() => toggleGroup(group.key)}
+                className={cn(
+                  "flex items-center gap-2 w-full h-8 px-2",
+                  "hover:bg-muted/50 transition-smooth border-b border-border/50"
+                )}
+              >
                 {collapsedGroups.has(group.key) ? (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
                 <span className="font-medium text-body-sm">{group.label}</span>
-                <Badge variant="secondary" className="text-metadata h-5">
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
                   {group.tasks.length}
                 </Badge>
               </button>
