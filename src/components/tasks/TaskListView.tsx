@@ -136,8 +136,11 @@ export function TaskListView({
           bVal = b.title?.toLowerCase() || '';
           break;
         case 'entity':
-          aVal = a.entity?.toLowerCase() || '';
-          bVal = b.entity?.toLowerCase() || '';
+          // entity can be string or array
+          const aEntity = Array.isArray(a.entity) ? a.entity[0] : a.entity;
+          const bEntity = Array.isArray(b.entity) ? b.entity[0] : b.entity;
+          aVal = (aEntity || '').toLowerCase();
+          bVal = (bEntity || '').toLowerCase();
           break;
         case 'status':
           aVal = a.status?.toLowerCase() || '';
@@ -328,7 +331,7 @@ export function TaskListView({
         </div>
         <div style={{ width: columnWidths.priority }} className="flex-shrink-0" />
         
-        <div style={{ width: columnWidths.task }} className="min-w-0 pl-2 relative group">
+        <div style={{ minWidth: columnWidths.task }} className="flex-1 min-w-0 pl-2 relative group">
           <SortHeader field="title">Task</SortHeader>
           <ResizeHandle column="task" />
         </div>
@@ -426,7 +429,7 @@ export function TaskListView({
               </div>
 
               {/* Task Title + Description */}
-              <div style={{ width: columnWidths.task }} className="min-w-0 pl-2">
+              <div style={{ minWidth: columnWidths.task }} className="flex-1 min-w-0 pl-2 pr-2">
                 <div className={cn(
                   "truncate text-body-sm font-medium leading-tight",
                   completed && "line-through text-muted-foreground"
@@ -443,7 +446,7 @@ export function TaskListView({
               {/* Entity */}
               <div style={{ width: columnWidths.entity }} className="flex-shrink-0 hidden xl:block px-1">
                 <span className="text-body-sm text-muted-foreground truncate block">
-                  {task.entity || '—'}
+                  {Array.isArray(task.entity) ? task.entity[0] : task.entity || '—'}
                 </span>
               </div>
 
