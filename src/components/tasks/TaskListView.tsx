@@ -53,7 +53,7 @@ const DEFAULT_WIDTHS = {
   task: 280,
   entity: 100,
   status: 90,
-  tags: 120,
+  tags: 160,
   assignee: 140,
   created: 80,
   age: 56,
@@ -321,7 +321,7 @@ export function TaskListView({
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-card">
       {/* Header */}
-      <div className="flex items-center h-10 px-3 bg-muted/50 border-b border-border text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="flex items-center h-10 px-3 bg-muted/50 border-b border-border text-body-sm font-medium text-muted-foreground tracking-wide">
         <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
           <Checkbox
             checked={allSelected}
@@ -403,8 +403,7 @@ export function TaskListView({
                 "hover:bg-muted/30",
                 completed && "opacity-50",
                 selected && "bg-primary/10",
-                focused && "ring-1 ring-inset ring-primary/50 bg-primary/5",
-                overdue && !completed && "bg-destructive/5"
+                focused && "ring-1 ring-inset ring-primary/50 bg-primary/5"
               )}
             >
               {/* Selection Checkbox */}
