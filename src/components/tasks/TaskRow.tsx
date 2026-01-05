@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { getRecurrenceLabel } from "@/lib/recurrenceExpander";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TaskRowProps {
   task: any;
@@ -26,6 +29,7 @@ interface TaskRowProps {
   subtaskCount?: number;
   subtaskCompletedCount?: number;
   isFocused?: boolean;
+  enableInlineEdit?: boolean;
 }
 
 const priorityDot: Record<string, string> = {
@@ -52,8 +56,13 @@ export function TaskRow({
   subtaskCount = 0,
   subtaskCompletedCount = 0,
   isFocused = false,
+  enableInlineEdit = true,
 }: TaskRowProps) {
+  const queryClient = useQueryClient();
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(task.title);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isCompleted = task.status === 'Completed';
   const isOverdue = task.due_at && new Date(task.due_at) < new Date() && !isCompleted && task.status !== 'Backlog';
@@ -68,7 +77,65 @@ export function TaskRow({
     onComplete?.(task.id, checked);
   };
 
+  // Inline editing handlers
+  const startEditing = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (enableInlineEdit && !isCompleted) {
+      setIsEditing(true);
+      setEditValue(task.title);
+    }
+  }, [enableInlineEdit, isCompleted, task.title]);
+
+  const cancelEditing = useCallback(() => {
+    setIsEditing(false);
+    setEditValue(task.title);
+  }, [task.title]);
+
+  const saveTitle = useCallback(async () => {
+    const trimmed = editValue.trim();
+    if (!trimmed || trimmed === task.title) {
+      cancelEditing();
+      return;
+    }
+    
+    // Optimistic update
+    queryClient.setQueryData(['tasks'], (old: any[]) => 
+      old?.map(t => t.id === task.id ? { ...t, title: trimmed } : t)
+    );
+    
+    setIsEditing(false);
+    
+    const { error } = await supabase
+      .from('tasks')
+      .update({ title: trimmed })
+      .eq('id', task.id);
+      
+    if (error) {
+      // Revert on error
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    }
+  }, [editValue, task.id, task.title, queryClient, cancelEditing]);
+
+  const handleEditKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitle();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditing();
+    }
+  }, [saveTitle, cancelEditing]);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   const handleRowClick = (e: React.MouseEvent) => {
+    if (isEditing) return;
     // Shift+Click for range selection
     if (e.shiftKey && onShiftSelect) {
       e.preventDefault();
@@ -134,15 +201,29 @@ export function TaskRow({
         title={task.priority}
       />
 
-      {/* Title */}
-      <span
-        className={cn(
-          "flex-1 text-body-sm font-medium text-foreground truncate min-w-0",
-          isCompleted && "line-through text-muted-foreground"
-        )}
-      >
-        {task.title}
-      </span>
+      {/* Title - Inline Editable */}
+      {isEditing ? (
+        <Input
+          ref={inputRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={saveTitle}
+          onKeyDown={handleEditKeyDown}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 h-6 text-body-sm font-medium py-0 px-1 border-primary"
+        />
+      ) : (
+        <span
+          onDoubleClick={startEditing}
+          className={cn(
+            "flex-1 text-body-sm font-medium text-foreground truncate min-w-0 cursor-text",
+            isCompleted && "line-through text-muted-foreground cursor-default"
+          )}
+          title="Double-click to edit"
+        >
+          {task.title}
+        </span>
+      )}
 
       {/* Badges (subtasks, recurring, external) */}
       {subtaskCount > 0 && !compact && (
