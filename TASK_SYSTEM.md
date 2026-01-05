@@ -42,6 +42,12 @@ interface TaskRowProps {
 - Avatar size: 20px (h-5 w-5)
 - Badge size: h-4 with text-[9px]
 
+**Features:**
+- Double-click title to edit inline
+- Shift+Click for range selection
+- Focus ring when keyboard-navigated
+- Drag handle on hover (when enabled)
+
 **Usage:**
 ```tsx
 <TaskRow
@@ -219,6 +225,31 @@ Focused rows display with `ring-2 ring-inset ring-primary/50` for clear visibili
 
 ### Shift+Click Selection
 Hold Shift and click a task to select all tasks between the last selected and clicked task.
+
+---
+
+## Inline Editing
+
+### Title Editing
+Double-click on a task title to edit inline. Changes are saved on:
+- Press `Enter`
+- Click outside (blur)
+
+Cancel editing with `Escape`.
+
+```tsx
+// TaskRow handles inline editing internally
+<TaskRow
+  task={task}
+  enableInlineEdit={true}  // default: true
+  onClick={handleTaskClick}
+/>
+```
+
+**Implementation:**
+- Optimistic update to React Query cache
+- Automatic focus and text selection on edit start
+- Revert on save failure
 
 ---
 
