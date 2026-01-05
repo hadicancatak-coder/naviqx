@@ -7,9 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
 import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
@@ -45,6 +45,14 @@ export function TaskDetailFields() {
       saveField('title', title.trim());
     }
     setIsEditingTitle(false);
+  };
+
+  const getAgeText = (createdAt: string | null) => {
+    if (!createdAt) return '—';
+    const days = differenceInDays(new Date(), new Date(createdAt));
+    if (days === 0) return 'Today';
+    if (days === 1) return '1 day';
+    return `${days} days`;
   };
 
   return (
@@ -179,6 +187,33 @@ export function TaskDetailFields() {
             saveField('labels', newTags);
           }}
         />
+      </div>
+
+      <Separator />
+
+      {/* Date Metadata */}
+      <div className="grid grid-cols-3 gap-sm">
+        <div className="space-y-0.5">
+          <Label className="text-metadata text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Created
+          </Label>
+          <p className="text-body-sm text-foreground">
+            {task?.created_at ? format(new Date(task.created_at), 'MMM d, yyyy') : '—'}
+          </p>
+        </div>
+        <div className="space-y-0.5">
+          <Label className="text-metadata text-muted-foreground">Updated</Label>
+          <p className="text-body-sm text-foreground">
+            {task?.updated_at ? formatDistanceToNow(new Date(task.updated_at), { addSuffix: true }) : '—'}
+          </p>
+        </div>
+        <div className="space-y-0.5">
+          <Label className="text-metadata text-muted-foreground">Age</Label>
+          <p className="text-body-sm text-foreground">
+            {getAgeText(task?.created_at)}
+          </p>
+        </div>
       </div>
     </div>
   );

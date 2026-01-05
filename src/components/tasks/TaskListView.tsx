@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
+
+type SortField = 'title' | 'entity' | 'status' | 'assignee' | 'created_at' | 'updated_at' | 'due_at';
+type SortOrder = 'asc' | 'desc';
 
 interface TaskListViewProps {
   tasks: any[];
@@ -56,8 +59,64 @@ export function TaskListView({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortField | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const allSelected = tasks.length > 0 && selectedIds.length === tasks.length;
+
+  const toggleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedTasks = useMemo(() => {
+    if (!sortBy) return tasks;
+    
+    return [...tasks].sort((a, b) => {
+      let aVal: any, bVal: any;
+      
+      switch (sortBy) {
+        case 'title':
+          aVal = a.title?.toLowerCase() || '';
+          bVal = b.title?.toLowerCase() || '';
+          break;
+        case 'entity':
+          aVal = a.entity?.toLowerCase() || '';
+          bVal = b.entity?.toLowerCase() || '';
+          break;
+        case 'status':
+          aVal = a.status?.toLowerCase() || '';
+          bVal = b.status?.toLowerCase() || '';
+          break;
+        case 'assignee':
+          aVal = a.assignees?.[0]?.name?.toLowerCase() || '';
+          bVal = b.assignees?.[0]?.name?.toLowerCase() || '';
+          break;
+        case 'created_at':
+          aVal = new Date(a.created_at || 0).getTime();
+          bVal = new Date(b.created_at || 0).getTime();
+          break;
+        case 'updated_at':
+          aVal = new Date(a.updated_at || 0).getTime();
+          bVal = new Date(b.updated_at || 0).getTime();
+          break;
+        case 'due_at':
+          aVal = a.due_at ? new Date(a.due_at).getTime() : Infinity;
+          bVal = b.due_at ? new Date(b.due_at).getTime() : Infinity;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [tasks, sortBy, sortOrder]);
 
   const handleSelectAll = (checked: boolean) => {
     onSelectionChange(checked ? tasks.map(t => t.id) : []);
@@ -151,14 +210,6 @@ export function TaskListView({
     return name;
   };
 
-  // Calculate subtask progress
-  const getSubtaskProgress = (task: any) => {
-    const total = task.subtask_count || 0;
-    const completed = task.completed_subtask_count || 0;
-    if (total === 0) return null;
-    return { completed, total, percent: Math.round((completed / total) * 100) };
-  };
-
   // Format relative time
   const getRelativeTime = (date: string) => {
     if (!date) return '—';
@@ -168,6 +219,40 @@ export function TaskListView({
       return '—';
     }
   };
+
+  // Calculate task age
+  const getTaskAge = (createdAt: string) => {
+    if (!createdAt) return '—';
+    try {
+      const days = differenceInDays(new Date(), new Date(createdAt));
+      if (days === 0) return 'Today';
+      if (days === 1) return '1d';
+      if (days < 7) return `${days}d`;
+      if (days < 30) return `${Math.floor(days / 7)}w`;
+      if (days < 365) return `${Math.floor(days / 30)}mo`;
+      return `${Math.floor(days / 365)}y`;
+    } catch {
+      return '—';
+    }
+  };
+
+  const SortHeader = ({ field, children, className }: { field: SortField; children: React.ReactNode; className?: string }) => (
+    <button
+      onClick={() => toggleSort(field)}
+      className={cn(
+        "flex items-center gap-0.5 hover:text-foreground transition-colors",
+        sortBy === field && "text-foreground",
+        className
+      )}
+    >
+      {children}
+      {sortBy === field && (
+        sortOrder === 'asc' 
+          ? <ChevronUp className="h-3 w-3" /> 
+          : <ChevronDown className="h-3 w-3" />
+      )}
+    </button>
+  );
 
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-card">
@@ -181,20 +266,35 @@ export function TaskListView({
           />
         </div>
         <div className="w-3 flex-shrink-0" /> {/* Priority dot */}
-        <div className="w-[32%] min-w-0 pl-2">Task</div>
-        <div className="w-20 flex-shrink-0 hidden 2xl:block">Progress</div>
-        <div className="w-[10%] flex-shrink-0 hidden xl:block">Entity</div>
-        <div className="w-[8%] flex-shrink-0 hidden lg:block">Status</div>
-        <div className="w-[12%] flex-shrink-0 hidden lg:block">Tags</div>
-        <div className="w-[14%] flex-shrink-0 hidden md:block">Assignee</div>
-        <div className="w-20 flex-shrink-0 hidden xl:block">Updated</div>
-        <div className="w-16 flex-shrink-0 text-right">Due</div>
+        <div className="w-[28%] min-w-0 pl-2">
+          <SortHeader field="title">Task</SortHeader>
+        </div>
+        <div className="w-[8%] flex-shrink-0 hidden xl:block">
+          <SortHeader field="entity">Entity</SortHeader>
+        </div>
+        <div className="w-[7%] flex-shrink-0 hidden lg:block">
+          <SortHeader field="status">Status</SortHeader>
+        </div>
+        <div className="w-[10%] flex-shrink-0 hidden lg:block">Tags</div>
+        <div className="w-[12%] flex-shrink-0 hidden md:block">
+          <SortHeader field="assignee">Assignee</SortHeader>
+        </div>
+        <div className="w-16 flex-shrink-0 hidden 2xl:block">
+          <SortHeader field="created_at">Created</SortHeader>
+        </div>
+        <div className="w-12 flex-shrink-0 hidden 2xl:block">Age</div>
+        <div className="w-16 flex-shrink-0 hidden xl:block">
+          <SortHeader field="updated_at">Updated</SortHeader>
+        </div>
+        <div className="w-14 flex-shrink-0 text-right">
+          <SortHeader field="due_at" className="justify-end">Due</SortHeader>
+        </div>
         <div className="w-8 flex-shrink-0" /> {/* Actions */}
       </div>
 
       {/* Rows */}
       <div>
-        {tasks.map((task, index) => {
+        {sortedTasks.map((task, index) => {
           const completed = task.status === 'Completed';
           const overdue = isOverdue(task);
           const focused = index === focusedIndex;
@@ -204,14 +304,11 @@ export function TaskListView({
           const tags = task.labels?.slice(0, 2) || [];
           const extraTagCount = (task.labels?.length || 0) - 2;
           
-          // Description preview - expanded to 100 chars
-          const descPreview = stripHtml(task.description || '').slice(0, 100);
+          // Description preview
+          const descPreview = stripHtml(task.description || '').slice(0, 80);
 
           // Status styling
           const statusStyle = statusColors[task.status] || statusColors.Pending;
-
-          // Subtask progress
-          const progress = getSubtaskProgress(task);
 
           return (
             <div
@@ -249,7 +346,7 @@ export function TaskListView({
               </div>
 
               {/* Task Title + Description */}
-              <div className="w-[32%] min-w-0 pl-2">
+              <div className="w-[28%] min-w-0 pl-2">
                 <div className={cn(
                   "truncate text-body-sm leading-tight",
                   completed && "line-through text-muted-foreground"
@@ -263,34 +360,15 @@ export function TaskListView({
                 )}
               </div>
 
-              {/* Progress - subtask completion */}
-              <div className="w-20 flex-shrink-0 hidden 2xl:flex items-center gap-1.5 px-1">
-                {progress ? (
-                  <>
-                    <div className="h-1.5 w-10 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full transition-all" 
-                        style={{ width: `${progress.percent}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {progress.completed}/{progress.total}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground/50 text-metadata">—</span>
-                )}
-              </div>
-
               {/* Entity */}
-              <div className="w-[10%] flex-shrink-0 hidden xl:block px-1">
+              <div className="w-[8%] flex-shrink-0 hidden xl:block px-1">
                 <span className="text-metadata text-muted-foreground truncate block">
                   {task.entity || '—'}
                 </span>
               </div>
 
               {/* Status Badge */}
-              <div className="w-[8%] flex-shrink-0 hidden lg:block px-1">
+              <div className="w-[7%] flex-shrink-0 hidden lg:block px-1">
                 <Badge 
                   variant="outline" 
                   className={cn("text-[10px] px-1.5 h-5 font-medium", statusStyle)}
@@ -300,7 +378,7 @@ export function TaskListView({
               </div>
 
               {/* Tags - show 2 max */}
-              <div className="w-[12%] flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
+              <div className="w-[10%] flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
                 {tags.length > 0 ? (
                   <>
                     {tags.map((tag: string) => {
@@ -309,7 +387,7 @@ export function TaskListView({
                         <Badge 
                           key={tag}
                           variant="outline" 
-                          className={cn("text-[10px] px-1.5 h-5 truncate max-w-[56px]", tagDef?.color)}
+                          className={cn("text-[10px] px-1.5 h-5 truncate max-w-[48px]", tagDef?.color)}
                         >
                           {tagDef?.label || tag}
                         </Badge>
@@ -325,14 +403,28 @@ export function TaskListView({
               </div>
 
               {/* Assignee - Full name */}
-              <div className="w-[14%] flex-shrink-0 hidden md:block px-1">
+              <div className="w-[12%] flex-shrink-0 hidden md:block px-1">
                 <span className="text-body-sm text-muted-foreground truncate block">
                   {getAssigneeName(task) || '—'}
                 </span>
               </div>
 
+              {/* Created Date */}
+              <div className="w-16 flex-shrink-0 hidden 2xl:block px-1">
+                <span className="text-metadata text-muted-foreground truncate block">
+                  {task.created_at ? format(new Date(task.created_at), 'MMM d') : '—'}
+                </span>
+              </div>
+
+              {/* Age */}
+              <div className="w-12 flex-shrink-0 hidden 2xl:block px-1">
+                <span className="text-metadata text-muted-foreground truncate block tabular-nums">
+                  {getTaskAge(task.created_at)}
+                </span>
+              </div>
+
               {/* Last Updated */}
-              <div className="w-20 flex-shrink-0 hidden xl:block px-1">
+              <div className="w-16 flex-shrink-0 hidden xl:block px-1">
                 <span className="text-metadata text-muted-foreground truncate block">
                   {getRelativeTime(task.updated_at)}
                 </span>
@@ -340,7 +432,7 @@ export function TaskListView({
 
               {/* Due Date */}
               <div className={cn(
-                "w-16 flex-shrink-0 text-right text-metadata tabular-nums",
+                "w-14 flex-shrink-0 text-right text-metadata tabular-nums",
                 overdue && !completed ? "text-destructive font-medium" : "text-muted-foreground"
               )}>
                 {task.due_at ? format(new Date(task.due_at), 'MMM d') : '—'}
