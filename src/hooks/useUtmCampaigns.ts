@@ -129,3 +129,73 @@ export const useDeleteUtmCampaign = () => {
     },
   });
 };
+
+export const useUpsertUtmCampaigns = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (campaigns: Array<{
+      name: string;
+      landing_page?: string;
+      campaign_type?: string;
+      description?: string;
+    }>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Fetch existing campaigns to check for matches
+      const { data: existingCampaigns } = await supabase
+        .from("utm_campaigns")
+        .select("id, name");
+
+      const existingMap = new Map(
+        existingCampaigns?.map(c => [c.name.toLowerCase(), c.id]) || []
+      );
+
+      let created = 0;
+      let updated = 0;
+
+      for (const campaign of campaigns) {
+        const existingId = existingMap.get(campaign.name.toLowerCase());
+        
+        if (existingId) {
+          // Update existing
+          const { error } = await supabase
+            .from("utm_campaigns")
+            .update({
+              landing_page: campaign.landing_page || null,
+              campaign_type: campaign.campaign_type || null,
+              description: campaign.description || null,
+            })
+            .eq("id", existingId);
+          
+          if (error) throw error;
+          updated++;
+        } else {
+          // Insert new
+          const { error } = await supabase
+            .from("utm_campaigns")
+            .insert({
+              name: campaign.name,
+              landing_page: campaign.landing_page || null,
+              campaign_type: campaign.campaign_type || null,
+              description: campaign.description || null,
+              created_by: user.id,
+            });
+          
+          if (error) throw error;
+          created++;
+        }
+      }
+
+      return { created, updated };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["utm-campaigns"] });
+      toast.success(`Import complete: ${result.created} created, ${result.updated} updated`);
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to import campaigns: " + error.message);
+    },
+  });
+};
