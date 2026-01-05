@@ -15,14 +15,14 @@ interface AgendaItem {
   created_at: string;
 }
 
-interface UseUserAgendaOptions {
+interface UseMyTasksOptions {
   userId?: string;
   date: Date;
   allTasks: any[];
   completions: any[];
 }
 
-export function useUserAgenda({ userId, date, allTasks, completions }: UseUserAgendaOptions) {
+export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOptions) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const effectiveUserId = userId || user?.id;
@@ -354,14 +354,22 @@ export function useUserAgenda({ userId, date, allTasks, completions }: UseUserAg
   }, [allTasks, agendaTasks, effectiveUserId, isUserAssigned]);
 
   return {
-    agendaItems,
-    agendaTasks,
+    // New naming
+    myTasks: agendaTasks,
     availableTasks,
     isLoading,
-    addToAgenda: addToAgenda.mutate,
-    removeFromAgenda: removeFromAgenda.mutate,
+    addToMyTasks: addToAgenda.mutate,
+    removeFromMyTasks: removeFromAgenda.mutate,
     isAdding: addToAgenda.isPending,
     isRemoving: removeFromAgenda.isPending,
     refetch,
+    // Legacy naming for backwards compatibility
+    agendaItems,
+    agendaTasks,
+    addToAgenda: addToAgenda.mutate,
+    removeFromAgenda: removeFromAgenda.mutate,
   };
 }
+
+// Re-export with old name for backwards compatibility
+export { useMyTasks as useUserAgenda };

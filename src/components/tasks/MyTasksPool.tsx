@@ -4,18 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, ListTodo } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-interface AgendaTaskPoolProps {
+interface MyTasksPoolProps {
   tasks: any[];
-  onAddToAgenda: (taskIds: string[]) => void;
+  onAddToMyTasks: (taskIds: string[]) => void;
   onTaskClick: (taskId: string) => void;
   isAdding?: boolean;
 }
 
-export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: AgendaTaskPoolProps) {
+export function MyTasksPool({ tasks, onAddToMyTasks, onTaskClick, isAdding }: MyTasksPoolProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelection = (taskId: string) => {
@@ -38,7 +38,7 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
 
   const handleAddSelected = () => {
     if (selectedIds.size > 0) {
-      onAddToAgenda(Array.from(selectedIds));
+      onAddToMyTasks(Array.from(selectedIds));
       setSelectedIds(new Set());
     }
   };
@@ -47,9 +47,9 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
     return (
       <Card className="p-lg">
         <div className="text-center text-muted-foreground">
-          <Calendar className="h-8 w-8 mx-auto mb-sm opacity-50" />
-          <p className="text-body-sm">No available tasks to add</p>
-          <p className="text-metadata">All your assigned tasks are already in the agenda</p>
+          <ListTodo className="h-8 w-8 mx-auto mb-sm opacity-50" />
+          <p className="text-body-sm">No available tasks</p>
+          <p className="text-metadata">All your assigned tasks are already in My Tasks</p>
         </div>
       </Card>
     );
@@ -72,10 +72,10 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
           size="sm"
           onClick={handleAddSelected}
           disabled={selectedIds.size === 0 || isAdding}
-          className="h-8"
+          className="h-8 gap-xs"
         >
-          <Plus className="h-4 w-4 mr-1" />
-          Add to Agenda
+          <Plus className="h-4 w-4" />
+          Add to My Tasks
         </Button>
       </div>
 
@@ -86,7 +86,7 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
             <div
               key={task.id}
               className={cn(
-                "flex items-start gap-sm p-sm hover:bg-muted/50 transition-smooth cursor-pointer",
+                "flex items-start gap-sm p-sm hover:bg-card-hover transition-smooth cursor-pointer",
                 selectedIds.has(task.id) && "bg-primary/5"
               )}
             >
@@ -107,26 +107,26 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
                   <Badge 
                     variant="outline" 
                     className={cn(
-                      "text-[10px] px-1.5 py-0",
-                      task.priority === 'High' && 'border-destructive text-destructive',
-                      task.priority === 'Medium' && 'border-primary text-primary',
+                      "text-metadata px-1.5 py-0",
+                      task.priority === 'High' && 'border-destructive/50 text-destructive bg-destructive/10',
+                      task.priority === 'Medium' && 'border-primary/50 text-primary bg-primary/10',
                       task.priority === 'Low' && 'border-border text-muted-foreground'
                     )}
                   >
                     {task.priority}
                   </Badge>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  <Badge variant="outline" className="text-metadata px-1.5 py-0">
                     {task.status}
                   </Badge>
                 </div>
                 {task.due_at && (
-                  <div className="flex items-center gap-1 text-metadata text-muted-foreground">
+                  <div className="flex items-center gap-xs text-metadata text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     <span>Due: {format(new Date(task.due_at), 'MMM dd')}</span>
                   </div>
                 )}
                 {task.description && (
-                  <p className="text-metadata text-muted-foreground line-clamp-1 mt-1">
+                  <p className="text-metadata text-muted-foreground line-clamp-1 mt-xs">
                     {task.description.replace(/<[^>]*>/g, '').substring(0, 80)}
                   </p>
                 )}
@@ -136,9 +136,9 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
                 size="icon-xs"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAddToAgenda([task.id]);
+                  onAddToMyTasks([task.id]);
                 }}
-                title="Add to agenda"
+                title="Add to My Tasks"
                 className="flex-shrink-0"
               >
                 <Plus className="h-4 w-4" />
@@ -150,3 +150,6 @@ export function AgendaTaskPool({ tasks, onAddToAgenda, onTaskClick, isAdding }: 
     </Card>
   );
 }
+
+// Re-export with old name for backwards compatibility
+export { MyTasksPool as AgendaTaskPool };
