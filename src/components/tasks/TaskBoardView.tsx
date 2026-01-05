@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { SortableTaskCard } from './SortableTaskCard';
+import { SortableTaskRow } from './SortableTaskRow';
 import { TASK_TAGS } from "@/lib/constants";
 
 interface TaskBoardViewProps {
@@ -337,22 +337,28 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
                 </div>
                 
                 <ScrollArea className="flex-1 p-sm bg-muted/20 rounded-b-lg">
-                  <div className="space-y-sm">
-                    {groupTasks.map(task => (
-                      <SortableTaskCard
-                        key={task.id}
-                        task={task}
-                        onTaskClick={onTaskClick}
-                        onComplete={handleComplete}
-                        onDuplicate={handleDuplicate}
-                        onDelete={(taskId) => setShowDeleteConfirm(taskId)}
-                        processingAction={processingAction}
-                        openDropdown={openDropdown}
-                        setOpenDropdown={setOpenDropdown}
-                        userRole={userRole}
-                        priorityColors={priorityColors}
-                      />
-                    ))}
+                  <div className="rounded-lg overflow-hidden border border-border bg-card">
+                    {groupTasks.length === 0 ? (
+                      <div className="p-6 text-center text-muted-foreground text-metadata">
+                        No tasks
+                      </div>
+                    ) : (
+                      groupTasks.map(task => (
+                        <SortableTaskRow
+                          key={task.id}
+                          task={task}
+                          onClick={onTaskClick}
+                          onComplete={(taskId, completed) => {
+                            if (completed) handleComplete({ id: taskId } as any, { stopPropagation: () => {} } as any);
+                          }}
+                          onDuplicate={handleDuplicate}
+                          onDelete={(taskId) => setShowDeleteConfirm(taskId)}
+                          processingAction={processingAction}
+                          userRole={userRole}
+                          compact
+                        />
+                      ))
+                    )}
                   </div>
                 </ScrollArea>
               </div>
