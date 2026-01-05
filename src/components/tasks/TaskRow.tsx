@@ -63,7 +63,7 @@ export function TaskRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-sm h-10 px-md transition-smooth cursor-pointer group border-b border-border last:border-0",
+        "flex items-center gap-xxs h-row-compact px-sm transition-smooth cursor-pointer group border-b border-border last:border-0",
         "hover:bg-card-hover",
         isOverdue && !isExternalDep && "border-l-2 border-l-destructive",
         isExternalDep && "border-l-2 border-l-warning bg-warning/5",
@@ -127,13 +127,13 @@ export function TaskRow({
 
       {/* Badges (recurring, external) */}
       {isRecurring && !compact && (
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
+        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
           <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
           {getRecurrenceLabel(task)}
         </Badge>
       )}
       {isExternalDep && !compact && (
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
+        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
           <ExternalLink className="h-2.5 w-2.5" />
         </Badge>
       )}
@@ -142,16 +142,16 @@ export function TaskRow({
       {task.assignees && task.assignees.length > 0 && (
         <div className="flex -space-x-1 flex-shrink-0">
           {task.assignees.slice(0, 2).map((assignee: any) => (
-            <Avatar key={assignee.user_id || assignee.id} className="h-6 w-6 border-2 border-background">
+            <Avatar key={assignee.user_id || assignee.id} className="h-5 w-5 border border-background">
               <AvatarImage src={assignee.avatar_url} />
-              <AvatarFallback className="text-[9px] bg-muted text-muted-foreground">
+              <AvatarFallback className="text-[8px] bg-muted text-muted-foreground">
                 {assignee.name?.charAt(0) || '?'}
               </AvatarFallback>
             </Avatar>
           ))}
           {task.assignees.length > 2 && (
-            <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-              <span className="text-[9px] font-medium text-muted-foreground">+{task.assignees.length - 2}</span>
+            <div className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center">
+              <span className="text-[8px] font-medium text-muted-foreground">+{task.assignees.length - 2}</span>
             </div>
           )}
         </div>

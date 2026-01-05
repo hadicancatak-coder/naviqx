@@ -300,7 +300,13 @@ All colors MUST be HSL.
     --text-heading-lg: 1.5rem;     /* 24px */
     --text-page-title: 1.875rem;   /* 30px */
     
+    /* Row Height Scale (Density) */
+    --row-compact: 1.875rem;       /* 30px - task rows, table rows */
+    --row-default: 2.25rem;        /* 36px - standard interactive rows */
+    --row-comfortable: 2.5rem;     /* 40px - spacious rows */
+    
     /* Spacing Scale */
+    --space-xxs: 0.25rem;          /* 4px - tight spacing */
     --space-xs: 0.5rem;            /* 8px */
     --space-sm: 0.75rem;           /* 12px */
     --space-md: 1rem;              /* 16px */
