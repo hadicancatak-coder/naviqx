@@ -56,6 +56,7 @@ interface TasksTableProps {
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   groupBy?: 'none' | 'dueDate' | 'priority' | 'assignee' | 'tags';
+  onTaskClick?: (taskId: string, task?: any) => void;
 }
 
 const priorityConfig = {
@@ -64,7 +65,7 @@ const priorityConfig = {
   Low: { color: "text-muted-foreground", dot: "bg-muted-foreground" },
 };
 
-export const TasksTable = ({ tasks, onTaskUpdate, selectedIds = [], onSelectionChange, groupBy = 'none' }: TasksTableProps) => {
+export const TasksTable = ({ tasks, onTaskUpdate, selectedIds = [], onSelectionChange, groupBy = 'none', onTaskClick }: TasksTableProps) => {
   const { toast } = useToast();
   const { user, userRole } = useAuth();
   const queryClient = useQueryClient();
@@ -314,9 +315,13 @@ export const TasksTable = ({ tasks, onTaskUpdate, selectedIds = [], onSelectionC
     );
   };
 
-  const handleRowClick = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setDialogOpen(true);
+  const handleRowClick = (taskId: string, task?: any) => {
+    if (onTaskClick) {
+      onTaskClick(taskId, task);
+    } else {
+      setSelectedTaskId(taskId);
+      setDialogOpen(true);
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -341,7 +346,7 @@ export const TasksTable = ({ tasks, onTaskUpdate, selectedIds = [], onSelectionC
           getRowClasses(task),
           task.pending_approval && 'border-l-4 border-l-primary'
         )}
-        onClick={() => handleRowClick(task.id)}
+        onClick={() => handleRowClick(task.id, task)}
       >
         <TableCell className="py-5 px-4" onClick={(e) => e.stopPropagation()}>
           <Checkbox

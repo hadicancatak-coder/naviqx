@@ -50,6 +50,8 @@ export function useTasks(filters?: TaskFilters) {
   const query = useQuery({
     queryKey: ['tasks'],
     queryFn: fetchTasks,
+    staleTime: 30000, // 30 seconds - reduce refetches
+    refetchOnWindowFocus: false, // Don't refetch on tab focus
   });
 
   // Setup realtime subscription using centralized service

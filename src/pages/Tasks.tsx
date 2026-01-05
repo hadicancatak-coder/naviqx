@@ -15,7 +15,9 @@ import { TaskDateFilterBar } from "@/components/TaskDateFilterBar";
 import { StatusMultiSelect } from "@/components/tasks/StatusMultiSelect";
 import { TaskBoardView } from "@/components/tasks/TaskBoardView";
 import { FilteredTasksDialog } from "@/components/tasks/FilteredTasksDialog";
+import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { PageContainer, PageHeader, DataCard, EmptyState, FilterBar } from "@/components/layout";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -51,9 +53,11 @@ export default function Tasks() {
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'kanban-status' | 'kanban-date' | 'kanban-tags'>('table');
   const [boardGroupBy, setBoardGroupBy] = useState<'status' | 'date' | 'tags'>('status');
+  
+  // Side panel state (Asana-style)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [filteredDialogOpen, setFilteredDialogOpen] = useState(false);
@@ -75,7 +79,6 @@ export default function Tasks() {
     const weekEnd = new Date(today);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
-    // Enable My Tasks filter for all dashboard filters
     setShowMyTasks(true);
 
     switch (filter) {
@@ -95,7 +98,6 @@ export default function Tasks() {
         break;
     }
 
-    // Clear URL param after applying filter
     setSearchParams({}, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -108,11 +110,17 @@ export default function Tasks() {
     localStorage.setItem('tasksItemsPerPage', String(itemsPerPage));
   }, [itemsPerPage]);
 
-  const handleTaskClick = (taskId: string, task?: any) => {
+  // Task click handler - opens side panel
+  const handleTaskClick = useCallback((taskId: string, task?: any) => {
     setSelectedTaskId(taskId);
     setSelectedTask(task || null);
-    setTaskDialogOpen(true);
-  };
+  }, []);
+
+  // Close side panel
+  const handleCloseSidePanel = useCallback(() => {
+    setSelectedTaskId(null);
+    setSelectedTask(null);
+  }, []);
 
   const { data, isLoading, refetch } = useTasks();
 
@@ -125,7 +133,6 @@ export default function Tasks() {
 
   const filteredTasks = useMemo(() => {
     return (data || []).filter((task: any) => {
-      // My Tasks filter
       if (showMyTasks && user) {
         const isMyTask = task.assignees?.some((assignee: any) => assignee.user_id === user.id);
         if (!isMyTask) return false;
@@ -155,10 +162,54 @@ export default function Tasks() {
 
   useEffect(() => { setCurrentPage(1); }, [selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, activeQuickFilter]);
 
+  // Keyboard navigation
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const paginatedTasks = finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage);
+      
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.min(prev + 1, paginatedTasks.length - 1));
+          break;
+        case 'k':
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          if (focusedIndex >= 0 && focusedIndex < paginatedTasks.length) {
+            handleTaskClick(paginatedTasks[focusedIndex].id, paginatedTasks[focusedIndex]);
+          }
+          break;
+        case 'Escape':
+          if (selectedTaskId) {
+            handleCloseSidePanel();
+          }
+          break;
+        case 'n':
+          if (!selectedTaskId) {
+            e.preventDefault();
+            setDialogOpen(true);
+          }
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskId, handleTaskClick, handleCloseSidePanel]);
+
   const tasks = data || [];
   const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks;
   
-  // Count my tasks for the button badge
   const myTasksCount = useMemo(() => {
     if (!user || !data) return 0;
     return data.filter((task: any) => 
@@ -208,7 +259,6 @@ export default function Tasks() {
   const handleBulkStatusChange = async (status: string, blockedReason?: string) => {
     const result = await setTasksStatusBulk(selectedTaskIds, status, { blocked_reason: blockedReason });
     
-    // Add comments for blocked tasks if reason provided
     if (blockedReason && user) {
       for (const id of selectedTaskIds) {
         await addTaskComment(id, user.id, `Blocked: ${blockedReason}`);
@@ -257,36 +307,30 @@ export default function Tasks() {
     setSelectedTaskIds([]);
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
   };
-  const handleBulkExport = () => { const selectedTasks = finalFilteredTasks.filter(t => selectedTaskIds.includes(t.id)); exportTasksToCSV(selectedTasks); };
 
-  return (
-    <div className="min-h-screen bg-background relative">
-      <TaskBulkActionsBar
-        selectedCount={selectedTaskIds.length}
-        onClearSelection={() => setSelectedTaskIds([])}
-        onComplete={handleBulkComplete}
-        onDelete={handleBulkDelete}
-        onStatusChange={handleBulkStatusChange}
-        onPriorityChange={handleBulkPriorityChange}
-        onExport={handleBulkExport}
-      />
-      
-      <PageContainer size="wide">
+  const handleBulkExport = () => { 
+    const selectedTasks = finalFilteredTasks.filter(t => selectedTaskIds.includes(t.id)); 
+    exportTasksToCSV(selectedTasks); 
+  };
+
+  // Main content component
+  const TaskListContent = () => (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-auto p-md space-y-md">
         <PageHeader
           icon={ListTodo}
           title="Tasks"
           description="Manage and track your team's tasks"
           actions={
-            <Button onClick={() => setDialogOpen(true)} className="rounded-full px-6 h-10 gap-2 shadow-sm text-[14px] font-medium">
+            <Button onClick={() => setDialogOpen(true)} className="rounded-full px-6 h-10 gap-2 shadow-sm text-body-sm font-medium">
               <Plus className="h-4 w-4" />
               New Task
             </Button>
           }
         />
 
-        {/* Toolbar - Unified filter bar */}
+        {/* Toolbar */}
         <FilterBar search={{ value: searchQuery, onChange: setSearchQuery, placeholder: "Search tasks..." }}>
-          {/* My Tasks Quick Filter */}
           <Button
             variant={showMyTasks ? "default" : "outline"}
             onClick={() => setShowMyTasks(!showMyTasks)}
@@ -321,7 +365,6 @@ export default function Tasks() {
           <AssigneeFilterBar selectedAssignees={selectedAssignees} onAssigneesChange={setSelectedAssignees} />
           <TaskDateFilterBar value={dateFilter ? { from: dateFilter.startDate, to: dateFilter.endDate } : null} onFilterChange={setDateFilter} onStatusChange={() => {}} selectedStatus="all" />
 
-          {/* Recurring Tasks Toggle - Icon Only */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -335,7 +378,6 @@ export default function Tasks() {
             <TooltipContent>{hideRecurring ? "Show Recurring Tasks" : "Hide Recurring Tasks"}</TooltipContent>
           </Tooltip>
 
-          {/* Table Grouping - Icon Only with Popover */}
           {viewMode === 'table' && (
             <Popover>
               <Tooltip>
@@ -426,13 +468,13 @@ export default function Tasks() {
           <>
             {/* Pagination Controls */}
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-metadata text-muted-foreground">
                 Showing {Math.min((currentPage - 1) * itemsPerPage + 1, finalFilteredTasks.length)}-{Math.min(currentPage * itemsPerPage, finalFilteredTasks.length)} of {finalFilteredTasks.length} tasks
               </span>
               <div className="flex items-center gap-3">
-                <span className="text-[13px] text-muted-foreground">Items per page:</span>
+                <span className="text-metadata text-muted-foreground">Items per page:</span>
                 <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
-                  <SelectTrigger className="w-[80px] h-10 rounded-lg bg-card border-border text-[14px]">
+                  <SelectTrigger className="w-[80px] h-10 rounded-lg bg-card border-border text-body-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl bg-popover border-border shadow-lg">
@@ -454,11 +496,21 @@ export default function Tasks() {
                       finalFilteredTasks.length > 100 ? (
                         <TasksTableVirtualized tasks={finalFilteredTasks} onTaskUpdate={refetch} />
                       ) : (
-                        <TasksTable tasks={paginatedTasks} onTaskUpdate={refetch} selectedIds={selectedTaskIds} onSelectionChange={setSelectedTaskIds} groupBy={tableGroupBy} />
+                        <TasksTable 
+                          tasks={paginatedTasks} 
+                          onTaskUpdate={refetch} 
+                          selectedIds={selectedTaskIds} 
+                          onSelectionChange={setSelectedTaskIds} 
+                          groupBy={tableGroupBy}
+                          onTaskClick={handleTaskClick}
+                        />
                       )
                     )}
-                    {/* Grid view removed */}
-                    {(viewMode === 'kanban-status' || viewMode === 'kanban-date' || viewMode === 'kanban-tags') && <div className="p-4"><TaskBoardView tasks={finalFilteredTasks} onTaskClick={handleTaskClick} groupBy={boardGroupBy} /></div>}
+                    {(viewMode === 'kanban-status' || viewMode === 'kanban-date' || viewMode === 'kanban-tags') && (
+                      <div className="p-4">
+                        <TaskBoardView tasks={finalFilteredTasks} onTaskClick={handleTaskClick} groupBy={boardGroupBy} />
+                      </div>
+                    )}
 
                     {totalPages > 1 && (
                       <div className="border-t border-border p-4">
@@ -492,22 +544,72 @@ export default function Tasks() {
             </DataCard>
           </>
         )}
+      </div>
+    </div>
+  );
 
-        <UnifiedTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} mode="create" />
-        {selectedTaskId && <UnifiedTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} mode="view" taskId={selectedTaskId} task={selectedTask} />}
-        <FilteredTasksDialog
-          open={filteredDialogOpen}
-          onOpenChange={setFilteredDialogOpen}
-          filterType={filteredDialogType}
-          tasks={(() => {
-            if (filteredDialogType === 'overdue') return tasks.filter((t: any) => t.due_at && new Date(t.due_at) < new Date() && t.status !== 'Completed');
-            else if (filteredDialogType === 'ongoing') return tasks.filter((t: any) => t.status === 'Ongoing');
-            else if (filteredDialogType === 'completed') return tasks.filter((t: any) => t.status === 'Completed');
-            return tasks;
-          })()}
-          onRefresh={refetch}
-        />
-      </PageContainer>
+  return (
+    <div className="h-[calc(100vh-64px)] bg-background relative">
+      <TaskBulkActionsBar
+        selectedCount={selectedTaskIds.length}
+        onClearSelection={() => setSelectedTaskIds([])}
+        onComplete={handleBulkComplete}
+        onDelete={handleBulkDelete}
+        onStatusChange={handleBulkStatusChange}
+        onPriorityChange={handleBulkPriorityChange}
+        onExport={handleBulkExport}
+      />
+      
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Main Task List */}
+        <ResizablePanel 
+          defaultSize={selectedTaskId ? 60 : 100} 
+          minSize={40}
+          className="overflow-hidden"
+        >
+          <TaskListContent />
+        </ResizablePanel>
+
+        {/* Side Panel - Task Detail (Asana-style) */}
+        {selectedTaskId && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel 
+              defaultSize={40} 
+              minSize={30} 
+              maxSize={50}
+              className="overflow-hidden"
+            >
+              <TaskDetailPanel
+                taskId={selectedTaskId}
+                task={selectedTask}
+                onClose={handleCloseSidePanel}
+                onTaskDeleted={() => {
+                  handleCloseSidePanel();
+                  refetch();
+                }}
+              />
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
+
+      {/* Create Task Dialog */}
+      <UnifiedTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} mode="create" />
+      
+      {/* Filtered Tasks Dialog */}
+      <FilteredTasksDialog
+        open={filteredDialogOpen}
+        onOpenChange={setFilteredDialogOpen}
+        filterType={filteredDialogType}
+        tasks={(() => {
+          if (filteredDialogType === 'overdue') return tasks.filter((t: any) => t.due_at && new Date(t.due_at) < new Date() && t.status !== 'Completed');
+          else if (filteredDialogType === 'ongoing') return tasks.filter((t: any) => t.status === 'Ongoing');
+          else if (filteredDialogType === 'completed') return tasks.filter((t: any) => t.status === 'Completed');
+          return tasks;
+        })()}
+        onRefresh={refetch}
+      />
     </div>
   );
 }
