@@ -342,7 +342,7 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
           ))}
           {task.assignees?.length > 3 && (
             <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-              <span className="text-[10px] font-medium">+{task.assignees.length - 3}</span>
+              <span className="text-metadata font-medium">+{task.assignees.length - 3}</span>
             </div>
           )}
         </div>
