@@ -3501,6 +3501,7 @@ export type Database = {
           recurrence_days_of_week: number[] | null
           recurrence_rrule: string | null
           requested_status: Database["public"]["Enums"]["task_status"] | null
+          sort_order: number | null
           source: Database["public"]["Enums"]["task_source"]
           sprint: string | null
           status: Database["public"]["Enums"]["task_status"]
@@ -3550,6 +3551,7 @@ export type Database = {
           recurrence_days_of_week?: number[] | null
           recurrence_rrule?: string | null
           requested_status?: Database["public"]["Enums"]["task_status"] | null
+          sort_order?: number | null
           source?: Database["public"]["Enums"]["task_source"]
           sprint?: string | null
           status?: Database["public"]["Enums"]["task_status"]
@@ -3599,6 +3601,7 @@ export type Database = {
           recurrence_days_of_week?: number[] | null
           recurrence_rrule?: string | null
           requested_status?: Database["public"]["Enums"]["task_status"] | null
+          sort_order?: number | null
           source?: Database["public"]["Enums"]["task_source"]
           sprint?: string | null
           status?: Database["public"]["Enums"]["task_status"]
