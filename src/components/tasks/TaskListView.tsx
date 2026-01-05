@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 
-type SortField = 'title' | 'entity' | 'status' | 'assignee' | 'created_at' | 'updated_at' | 'due_at';
+type SortField = 'title' | 'entity' | 'status' | 'tags' | 'assignee' | 'created_at' | 'updated_at' | 'due_at';
 type SortOrder = 'asc' | 'desc';
 
 interface TaskListViewProps {
@@ -46,6 +46,22 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
+// Default column widths in pixels
+const DEFAULT_WIDTHS = {
+  checkbox: 32,
+  priority: 16,
+  task: 280,
+  entity: 100,
+  status: 90,
+  tags: 120,
+  assignee: 140,
+  created: 80,
+  age: 56,
+  updated: 80,
+  due: 72,
+  actions: 40,
+};
+
 export function TaskListView({
   tasks,
   selectedIds,
@@ -61,6 +77,8 @@ export function TaskListView({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortField | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [columnWidths, setColumnWidths] = useState(DEFAULT_WIDTHS);
+  const resizingRef = useRef<{ column: keyof typeof DEFAULT_WIDTHS; startX: number; startWidth: number } | null>(null);
 
   const allSelected = tasks.length > 0 && selectedIds.length === tasks.length;
 
@@ -72,6 +90,39 @@ export function TaskListView({
       setSortOrder('asc');
     }
   };
+
+  const handleResizeStart = useCallback((column: keyof typeof DEFAULT_WIDTHS, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingRef.current = {
+      column,
+      startX: e.clientX,
+      startWidth: columnWidths[column],
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizingRef.current) return;
+      const diff = e.clientX - resizingRef.current.startX;
+      const newWidth = Math.max(40, resizingRef.current.startWidth + diff);
+      setColumnWidths(prev => ({
+        ...prev,
+        [resizingRef.current!.column]: newWidth,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      resizingRef.current = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [columnWidths]);
 
   const sortedTasks = useMemo(() => {
     if (!sortBy) return tasks;
@@ -91,6 +142,10 @@ export function TaskListView({
         case 'status':
           aVal = a.status?.toLowerCase() || '';
           bVal = b.status?.toLowerCase() || '';
+          break;
+        case 'tags':
+          aVal = a.labels?.[0]?.toLowerCase() || '';
+          bVal = b.labels?.[0]?.toLowerCase() || '';
           break;
         case 'assignee':
           aVal = a.assignees?.[0]?.name?.toLowerCase() || '';
@@ -199,7 +254,6 @@ export function TaskListView({
     return new Date(task.due_at) < new Date();
   };
 
-  // Get first assignee full name
   const getAssigneeName = (task: any) => {
     if (!task.assignees || task.assignees.length === 0) return null;
     const first = task.assignees[0];
@@ -210,7 +264,6 @@ export function TaskListView({
     return name;
   };
 
-  // Format relative time
   const getRelativeTime = (date: string) => {
     if (!date) return '—';
     try {
@@ -220,7 +273,6 @@ export function TaskListView({
     }
   };
 
-  // Calculate task age
   const getTaskAge = (createdAt: string) => {
     if (!createdAt) return '—';
     try {
@@ -240,56 +292,88 @@ export function TaskListView({
     <button
       onClick={() => toggleSort(field)}
       className={cn(
-        "flex items-center gap-0.5 hover:text-foreground transition-colors",
+        "flex items-center gap-0.5 hover:text-foreground transition-colors text-left",
         sortBy === field && "text-foreground",
         className
       )}
     >
-      {children}
-      {sortBy === field && (
+      <span className="truncate">{children}</span>
+      {sortBy === field ? (
         sortOrder === 'asc' 
-          ? <ChevronUp className="h-3 w-3" /> 
-          : <ChevronDown className="h-3 w-3" />
+          ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" /> 
+          : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" />
+      ) : (
+        <ChevronUp className="h-3.5 w-3.5 flex-shrink-0 opacity-0 group-hover:opacity-30" />
       )}
     </button>
+  );
+
+  const ResizeHandle = ({ column }: { column: keyof typeof DEFAULT_WIDTHS }) => (
+    <div
+      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10"
+      onMouseDown={(e) => handleResizeStart(column, e)}
+    />
   );
 
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-card">
       {/* Header */}
-      <div className="flex items-center h-9 px-3 bg-muted/50 border-b border-border text-metadata font-medium text-muted-foreground uppercase tracking-wide">
-        <div className="w-7 flex-shrink-0">
+      <div className="flex items-center h-10 px-3 bg-muted/50 border-b border-border text-body-sm font-medium text-muted-foreground uppercase tracking-wide">
+        <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
           <Checkbox
             checked={allSelected}
             onCheckedChange={handleSelectAll}
-            className="h-3.5 w-3.5"
+            className="h-4 w-4"
           />
         </div>
-        <div className="w-3 flex-shrink-0" /> {/* Priority dot */}
-        <div className="w-[28%] min-w-0 pl-2">
+        <div style={{ width: columnWidths.priority }} className="flex-shrink-0" />
+        
+        <div style={{ width: columnWidths.task }} className="min-w-0 pl-2 relative group">
           <SortHeader field="title">Task</SortHeader>
+          <ResizeHandle column="task" />
         </div>
-        <div className="w-[8%] flex-shrink-0 hidden xl:block">
+        
+        <div style={{ width: columnWidths.entity }} className="flex-shrink-0 hidden xl:block relative group">
           <SortHeader field="entity">Entity</SortHeader>
+          <ResizeHandle column="entity" />
         </div>
-        <div className="w-[7%] flex-shrink-0 hidden lg:block">
+        
+        <div style={{ width: columnWidths.status }} className="flex-shrink-0 hidden lg:block relative group">
           <SortHeader field="status">Status</SortHeader>
+          <ResizeHandle column="status" />
         </div>
-        <div className="w-[10%] flex-shrink-0 hidden lg:block">Tags</div>
-        <div className="w-[12%] flex-shrink-0 hidden md:block">
+        
+        <div style={{ width: columnWidths.tags }} className="flex-shrink-0 hidden lg:block relative group">
+          <SortHeader field="tags">Tags</SortHeader>
+          <ResizeHandle column="tags" />
+        </div>
+        
+        <div style={{ width: columnWidths.assignee }} className="flex-shrink-0 hidden md:block relative group">
           <SortHeader field="assignee">Assignee</SortHeader>
+          <ResizeHandle column="assignee" />
         </div>
-        <div className="w-16 flex-shrink-0 hidden 2xl:block">
+        
+        <div style={{ width: columnWidths.created }} className="flex-shrink-0 hidden 2xl:block relative group">
           <SortHeader field="created_at">Created</SortHeader>
+          <ResizeHandle column="created" />
         </div>
-        <div className="w-12 flex-shrink-0 hidden 2xl:block">Age</div>
-        <div className="w-16 flex-shrink-0 hidden xl:block">
+        
+        <div style={{ width: columnWidths.age }} className="flex-shrink-0 hidden 2xl:block relative group">
+          <span>Age</span>
+          <ResizeHandle column="age" />
+        </div>
+        
+        <div style={{ width: columnWidths.updated }} className="flex-shrink-0 hidden xl:block relative group">
           <SortHeader field="updated_at">Updated</SortHeader>
+          <ResizeHandle column="updated" />
         </div>
-        <div className="w-14 flex-shrink-0 text-right">
-          <SortHeader field="due_at" className="justify-end">Due</SortHeader>
+        
+        <div style={{ width: columnWidths.due }} className="flex-shrink-0 text-right relative group">
+          <SortHeader field="due_at" className="justify-end w-full">Due</SortHeader>
+          <ResizeHandle column="due" />
         </div>
-        <div className="w-8 flex-shrink-0" /> {/* Actions */}
+        
+        <div style={{ width: columnWidths.actions }} className="flex-shrink-0" />
       </div>
 
       {/* Rows */}
@@ -300,14 +384,10 @@ export function TaskListView({
           const focused = index === focusedIndex;
           const selected = selectedIds.includes(task.id);
           
-          // Get first 2 tags
           const tags = task.labels?.slice(0, 2) || [];
           const extraTagCount = (task.labels?.length || 0) - 2;
           
-          // Description preview
           const descPreview = stripHtml(task.description || '').slice(0, 80);
-
-          // Status styling
           const statusStyle = statusColors[task.status] || statusColors.Pending;
 
           return (
@@ -325,17 +405,17 @@ export function TaskListView({
               )}
             >
               {/* Selection Checkbox */}
-              <div className="w-7 flex-shrink-0">
+              <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
                 <Checkbox
                   checked={selected}
                   onCheckedChange={(checked) => handleSelect(task.id, checked as boolean, { stopPropagation: () => {} } as any)}
                   onClick={(e) => handleSelect(task.id, !selected, e)}
-                  className="h-3.5 w-3.5"
+                  className="h-4 w-4"
                 />
               </div>
 
               {/* Priority Dot */}
-              <div className="w-3 flex-shrink-0 flex justify-center">
+              <div style={{ width: columnWidths.priority }} className="flex-shrink-0 flex justify-center">
                 <div
                   className={cn(
                     "w-2.5 h-2.5 rounded-full",
@@ -346,39 +426,39 @@ export function TaskListView({
               </div>
 
               {/* Task Title + Description */}
-              <div className="w-[28%] min-w-0 pl-2">
+              <div style={{ width: columnWidths.task }} className="min-w-0 pl-2">
                 <div className={cn(
-                  "truncate text-body-sm leading-tight",
+                  "truncate text-body-sm font-medium leading-tight",
                   completed && "line-through text-muted-foreground"
                 )}>
                   {task.title}
                 </div>
                 {descPreview && (
-                  <div className="truncate text-metadata text-muted-foreground/70 leading-tight">
+                  <div className="truncate text-body-sm text-muted-foreground/70 leading-tight">
                     {descPreview}
                   </div>
                 )}
               </div>
 
               {/* Entity */}
-              <div className="w-[8%] flex-shrink-0 hidden xl:block px-1">
-                <span className="text-metadata text-muted-foreground truncate block">
+              <div style={{ width: columnWidths.entity }} className="flex-shrink-0 hidden xl:block px-1">
+                <span className="text-body-sm text-muted-foreground truncate block">
                   {task.entity || '—'}
                 </span>
               </div>
 
               {/* Status Badge */}
-              <div className="w-[7%] flex-shrink-0 hidden lg:block px-1">
+              <div style={{ width: columnWidths.status }} className="flex-shrink-0 hidden lg:block px-1">
                 <Badge 
                   variant="outline" 
-                  className={cn("text-[10px] px-1.5 h-5 font-medium", statusStyle)}
+                  className={cn("text-body-sm px-2 h-6 font-medium", statusStyle)}
                 >
                   {task.status || 'Pending'}
                 </Badge>
               </div>
 
-              {/* Tags - show 2 max */}
-              <div className="w-[10%] flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
+              {/* Tags */}
+              <div style={{ width: columnWidths.tags }} className="flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
                 {tags.length > 0 ? (
                   <>
                     {tags.map((tag: string) => {
@@ -387,59 +467,62 @@ export function TaskListView({
                         <Badge 
                           key={tag}
                           variant="outline" 
-                          className={cn("text-[10px] px-1.5 h-5 truncate max-w-[48px]", tagDef?.color)}
+                          className={cn("text-body-sm px-2 h-6 truncate max-w-[56px]", tagDef?.color)}
                         >
                           {tagDef?.label || tag}
                         </Badge>
                       );
                     })}
                     {extraTagCount > 0 && (
-                      <span className="text-[10px] text-muted-foreground">+{extraTagCount}</span>
+                      <span className="text-body-sm text-muted-foreground">+{extraTagCount}</span>
                     )}
                   </>
                 ) : (
-                  <span className="text-muted-foreground text-metadata">—</span>
+                  <span className="text-muted-foreground text-body-sm">—</span>
                 )}
               </div>
 
-              {/* Assignee - Full name */}
-              <div className="w-[12%] flex-shrink-0 hidden md:block px-1">
+              {/* Assignee */}
+              <div style={{ width: columnWidths.assignee }} className="flex-shrink-0 hidden md:block px-1">
                 <span className="text-body-sm text-muted-foreground truncate block">
                   {getAssigneeName(task) || '—'}
                 </span>
               </div>
 
               {/* Created Date */}
-              <div className="w-16 flex-shrink-0 hidden 2xl:block px-1">
-                <span className="text-metadata text-muted-foreground truncate block">
+              <div style={{ width: columnWidths.created }} className="flex-shrink-0 hidden 2xl:block px-1">
+                <span className="text-body-sm text-muted-foreground truncate block">
                   {task.created_at ? format(new Date(task.created_at), 'MMM d') : '—'}
                 </span>
               </div>
 
               {/* Age */}
-              <div className="w-12 flex-shrink-0 hidden 2xl:block px-1">
-                <span className="text-metadata text-muted-foreground truncate block tabular-nums">
+              <div style={{ width: columnWidths.age }} className="flex-shrink-0 hidden 2xl:block px-1">
+                <span className="text-body-sm text-muted-foreground truncate block tabular-nums">
                   {getTaskAge(task.created_at)}
                 </span>
               </div>
 
               {/* Last Updated */}
-              <div className="w-16 flex-shrink-0 hidden xl:block px-1">
-                <span className="text-metadata text-muted-foreground truncate block">
+              <div style={{ width: columnWidths.updated }} className="flex-shrink-0 hidden xl:block px-1">
+                <span className="text-body-sm text-muted-foreground truncate block">
                   {getRelativeTime(task.updated_at)}
                 </span>
               </div>
 
               {/* Due Date */}
-              <div className={cn(
-                "w-14 flex-shrink-0 text-right text-metadata tabular-nums",
-                overdue && !completed ? "text-destructive font-medium" : "text-muted-foreground"
-              )}>
+              <div 
+                style={{ width: columnWidths.due }} 
+                className={cn(
+                  "flex-shrink-0 text-right text-body-sm tabular-nums",
+                  overdue && !completed ? "text-destructive font-medium" : "text-muted-foreground"
+                )}
+              >
                 {task.due_at ? format(new Date(task.due_at), 'MMM d') : '—'}
               </div>
 
               {/* Actions */}
-              <div className="w-8 flex-shrink-0 flex justify-end">
+              <div style={{ width: columnWidths.actions }} className="flex-shrink-0 flex justify-end">
                 <DropdownMenu>
                   <DropdownMenuTrigger 
                     onClick={(e) => e.stopPropagation()}
