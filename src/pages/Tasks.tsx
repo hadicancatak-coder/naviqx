@@ -27,6 +27,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { TaskBulkActionsBar } from "@/components/tasks/TaskBulkActionsBar";
 import { exportTasksToCSV } from "@/lib/taskExport";
 import { isTaskOverdue } from "@/lib/overdueHelpers";
+import { isUserAssignedToTask, taskMatchesAssigneeFilter } from "@/lib/taskFiltering";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -133,12 +134,13 @@ export default function Tasks() {
 
   const filteredTasks = useMemo(() => {
     return (data || []).filter((task: any) => {
+      // "My Tasks" toggle - only show tasks assigned to current user
       if (showMyTasks && user) {
-        const isMyTask = task.assignees?.some((assignee: any) => assignee.user_id === user.id);
-        if (!isMyTask) return false;
+        if (!isUserAssignedToTask(task, user.id)) return false;
       }
       
-      const assigneeMatch = selectedAssignees.length === 0 || task.assignees?.some((assignee: any) => selectedAssignees.includes(assignee.user_id));
+      // Assignee multi-select filter
+      const assigneeMatch = taskMatchesAssigneeFilter(task, selectedAssignees);
       let dateMatch = true;
       if (dateFilter) {
         if (!task.due_at) { dateMatch = dateFilter.label === "Backlog"; } 

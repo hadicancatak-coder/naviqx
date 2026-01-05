@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { completeTask, setTaskStatus, completeTasksBulk } from "@/domain";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { expandRecurringTask } from "@/lib/recurrenceExpander";
 import { useToast } from "@/hooks/use-toast";
 import { isTaskOverdue } from "@/lib/overdueHelpers";
+import { isUserAssignedToTask } from "@/lib/taskFiltering";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -130,25 +131,15 @@ export default function CalendarView() {
     fetchUserTaskOrder();
   }, [targetUserId]);
 
-  // Helper function to check if a user is assigned to a task
-  const isTaskAssignedToUser = useCallback((task: any, userId: string | undefined) => {
-    if (!userId || !task.assignees || task.assignees.length === 0) return false;
-    return task.assignees.some((a: any) => {
-      const assigneeUserId = a.user_id || a.profiles?.user_id;
-      return assigneeUserId === userId;
-    });
-  }, []);
-
   // Computed: Filter tasks for current view - tasks due on agenda date
   const { activeTasks, completedTasks, allDayTasks } = useMemo(() => {
     if (!tasks || !targetUserId) return { activeTasks: [], completedTasks: [], allDayTasks: [] };
 
     // Filter tasks due on the agenda date or overdue
-    // If admin has selected a specific user, filter by that user's assignments
+    // If admin has selected a specific user, filter by that user; otherwise filter by target user
+    const filterUserId = selectedUserId || targetUserId;
     const relevantTasks = tasks.filter(t => {
-      const isAssigned = selectedUserId 
-        ? isTaskAssignedToUser(t, selectedUserId) 
-        : (userRole === 'admin' || isTaskAssignedToUser(t, targetUserId));
+      const isAssigned = isUserAssignedToTask(t, filterUserId);
       if (!isAssigned) return false;
       
       // Include tasks due on agenda date
@@ -185,7 +176,7 @@ export default function CalendarView() {
     const completed = sorted.filter(t => t.status === 'Completed');
 
     return { activeTasks: active, completedTasks: completed, allDayTasks: relevantTasks };
-  }, [tasks, targetUserId, selectedUserId, agendaDate, userTaskOrder, userRole, isTaskAssignedToUser]);
+  }, [tasks, targetUserId, selectedUserId, agendaDate, userTaskOrder]);
 
   // Get selected user's working days
   const selectedUserWorkingDays = useMemo(() => {
@@ -209,10 +200,9 @@ export default function CalendarView() {
       
       tasks?.forEach(t => {
         if (t.status === 'Completed' || t.status === 'Failed') return;
-        // If admin selected a specific user, filter by that user; otherwise use targetUserId
-        const isAssigned = selectedUserId 
-          ? isTaskAssignedToUser(t, selectedUserId)
-          : isTaskAssignedToUser(t, targetUserId);
+        const filterUserId = selectedUserId || targetUserId;
+        const isAssigned = isUserAssignedToTask(t, filterUserId);
+        if (!isAssigned) return;
         if (!isAssigned) return;
         
         if (t.recurrence_rrule) {
@@ -234,7 +224,7 @@ export default function CalendarView() {
       
       return { day, date, tasks: dayTasks, isWorkingDay };
     });
-  }, [tasks, currentDate, weekOffset, selectedUserWorkingDays, targetUserId, selectedUserId, isTaskAssignedToUser]);
+  }, [tasks, currentDate, weekOffset, selectedUserWorkingDays, targetUserId, selectedUserId]);
 
   // Kanban columns for daily view (by priority)
   const dailyKanbanColumns = useMemo(() => {
