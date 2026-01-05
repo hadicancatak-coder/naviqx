@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   CheckSquare,
-  Calendar, 
   LayoutDashboard as DashboardIcon, 
   LogOut, 
   Megaphone, 
@@ -33,7 +32,6 @@ import {
 
   const coreItems = [
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
-    { title: "Agenda", url: "/calendar", icon: Calendar },
   ];
 
 const adsItems = [
