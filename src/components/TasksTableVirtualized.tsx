@@ -34,11 +34,12 @@ import { cn } from "@/lib/utils";
 interface TasksTableVirtualizedProps {
   tasks: any[];
   onTaskUpdate: () => void;
+  onTaskClick?: (taskId: string, task?: any) => void;
 }
 
 const ROW_HEIGHT = 72;
 
-export const TasksTableVirtualized = ({ tasks, onTaskUpdate }: TasksTableVirtualizedProps) => {
+export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: TasksTableVirtualizedProps) => {
   const { toast } = useToast();
   const { user, userRole } = useAuth();
   const queryClient = useQueryClient();
@@ -142,9 +143,13 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate }: TasksTableVirtual
   };
 
   const handleRowClick = (taskId: string, task: any) => {
-    setSelectedTaskId(taskId);
-    setSelectedTask(task);
-    setDialogOpen(true);
+    if (onTaskClick) {
+      onTaskClick(taskId, task);
+    } else {
+      setSelectedTaskId(taskId);
+      setSelectedTask(task);
+      setDialogOpen(true);
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -406,14 +411,16 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate }: TasksTableVirtual
         </List>
       </div>
 
-      {/* Dialogs */}
-      <UnifiedTaskDialog
-        taskId={selectedTaskId}
-        task={selectedTask}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        mode="view"
-      />
+      {/* Modal dialog fallback - only when onTaskClick is not provided */}
+      {!onTaskClick && (
+        <UnifiedTaskDialog
+          taskId={selectedTaskId}
+          task={selectedTask}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          mode="view"
+        />
+      )}
 
       <AlertDialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
         <AlertDialogContent>
