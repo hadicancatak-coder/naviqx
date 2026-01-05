@@ -3,7 +3,7 @@ import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOv
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GripVertical, ExternalLink, Search, ChevronDown, Plus, Trash2, Loader2, BookOpen } from "lucide-react";
+import { GripVertical, ExternalLink, Search, ChevronDown, Plus, Trash2, Loader2, BookOpen, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { DraggableCampaignCard } from "@/components/campaigns/DraggableCampaignC
 import { UtmCampaignDetailDialog } from "@/components/campaigns/UtmCampaignDetailDialog";
 import { CreateUtmCampaignDialog } from "@/components/campaigns/CreateUtmCampaignDialog";
 import { CampaignBulkActionsBar } from "@/components/campaigns/CampaignBulkActionsBar";
+import { CampaignBulkImportDialog } from "@/components/campaigns/CampaignBulkImportDialog";
 import { useUtmCampaigns, useDeleteUtmCampaign } from "@/hooks/useUtmCampaigns";
 import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
@@ -51,6 +52,7 @@ export default function CampaignsLog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [createCampaignDialogOpen, setCreateCampaignDialogOpen] = useState(false);
+  const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<string>("");
   const [libraryEntityFilter, setLibraryEntityFilter] = useState<string>("all");
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
@@ -273,6 +275,10 @@ export default function CampaignsLog() {
                   expandedCampaigns.has('library') && "rotate-180"
                 )} />
               </CollapsibleTrigger>
+              <Button onClick={() => setBulkImportDialogOpen(true)} variant="outline" size="sm">
+                <Upload />
+                Import
+              </Button>
               <Button onClick={() => setCreateCampaignDialogOpen(true)} size="sm">
                 <Plus />
                 Add Campaign
@@ -349,6 +355,7 @@ export default function CampaignsLog() {
       </DragOverlay>
 
       <CreateUtmCampaignDialog open={createCampaignDialogOpen} onOpenChange={setCreateCampaignDialogOpen} />
+      <CampaignBulkImportDialog open={bulkImportDialogOpen} onOpenChange={setBulkImportDialogOpen} />
       {selectedCampaignId && <UtmCampaignDetailDialog open={!!selectedCampaignId} onOpenChange={(o) => !o && setSelectedCampaignId(null)} campaignId={selectedCampaignId} />}
     </DndContext>
   );
