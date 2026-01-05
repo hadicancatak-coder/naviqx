@@ -6,7 +6,7 @@
 
 ## Overview
 
-The task system follows an Asana-inspired design with compact 30px rows, inline editing, and a side panel detail view.
+The task system follows an Asana-inspired design with compact 30px rows, inline editing, real subtasks stored as task records with `parent_id`, and a side panel detail view.
 
 ---
 

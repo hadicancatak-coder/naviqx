@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ interface TaskRowProps {
   compact?: boolean;
   processingAction?: { taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null;
   userRole?: string | null;
+  subtaskCount?: number;
+  subtaskCompletedCount?: number;
 }
 
 const priorityDot: Record<string, string> = {
@@ -44,6 +46,8 @@ export function TaskRow({
   compact = false,
   processingAction,
   userRole,
+  subtaskCount = 0,
+  subtaskCompletedCount = 0,
 }: TaskRowProps) {
   const [openDropdown, setOpenDropdown] = useState(false);
 
@@ -125,7 +129,13 @@ export function TaskRow({
         {task.title}
       </span>
 
-      {/* Badges (recurring, external) */}
+      {/* Badges (subtasks, recurring, external) */}
+      {subtaskCount > 0 && !compact && (
+        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
+          <ListChecks className="h-2.5 w-2.5 mr-0.5" />
+          {subtaskCompletedCount}/{subtaskCount}
+        </Badge>
+      )}
       {isRecurring && !compact && (
         <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
           <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
