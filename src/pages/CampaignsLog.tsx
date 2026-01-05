@@ -39,7 +39,7 @@ function TrashZone({ isActive }: { isActive: boolean }) {
         isOver && "scale-110"
       )}>
         <Trash2 className="h-10 w-10 text-destructive-foreground" />
-        <span className="text-2xl font-semibold text-destructive-foreground">
+        <span className="text-heading-lg font-semibold text-destructive-foreground">
           {isOver ? "Release to remove" : "Drag here to remove"}
         </span>
       </div>
@@ -256,7 +256,7 @@ export default function CampaignsLog() {
         )}
         
         {/* Campaign Library */}
-        <div className="border-t border-border bg-card rounded-2xl shadow-soft">
+        <div className="border-t border-border bg-card rounded-xl shadow-soft">
           <Collapsible 
             open={expandedCampaigns.has('library')} 
             onOpenChange={(open) => { 
@@ -268,21 +268,23 @@ export default function CampaignsLog() {
             <div className="w-full flex items-center justify-between p-md">
               <CollapsibleTrigger className="flex items-center gap-sm cursor-pointer hover:bg-accent/50 transition-all duration-200 rounded-lg px-sm py-sm flex-1">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-[18px] font-medium text-foreground">Campaign Library</h3>
+                <h3 className="text-heading-sm font-medium text-foreground">Campaign Library</h3>
                 <Badge variant="secondary" className="ml-sm">{filteredCampaigns.length}</Badge>
                 <ChevronDown className={cn(
                   "h-5 w-5 text-muted-foreground transition-transform duration-300 ml-auto",
                   expandedCampaigns.has('library') && "rotate-180"
                 )} />
               </CollapsibleTrigger>
-              <Button onClick={() => setBulkImportDialogOpen(true)} variant="outline" size="sm">
-                <Upload />
-                Import
-              </Button>
-              <Button onClick={() => setCreateCampaignDialogOpen(true)} size="sm">
-                <Plus />
-                Add Campaign
-              </Button>
+              <div className="flex items-center gap-sm">
+                <Button onClick={() => setBulkImportDialogOpen(true)} variant="outline" size="sm">
+                  <Upload />
+                  Import
+                </Button>
+                <Button onClick={() => setCreateCampaignDialogOpen(true)} size="sm">
+                  <Plus />
+                  Add Campaign
+                </Button>
+              </div>
             </div>
             
             <CollapsibleContent className="px-md pb-md space-y-md">
