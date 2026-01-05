@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTasks } from "@/hooks/useTasks";
 import { useQueryClient } from "@tanstack/react-query";
 import { UnifiedTaskDialog } from "@/components/UnifiedTaskDialog";
+import { TaskDetail } from "@/components/tasks/TaskDetail";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, addDays, addWeeks, startOfWeek, isSameDay } from "date-fns";
 import { isDateWorkingDay } from "@/lib/workingDaysHelper";
@@ -12,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, GripVertical, RotateCcw, Plus, AlertTriangle, Check, Table, LayoutGrid, GanttChart, ChevronDown, ChevronRight, ChevronLeft, Users, ExternalLink } from "lucide-react";
+import { CalendarIcon, GripVertical, RotateCcw, Plus, AlertTriangle, Check, Table, LayoutGrid, GanttChart, ChevronDown, ChevronRight, ChevronLeft, Users, ExternalLink, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
@@ -27,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DayBrief } from "@/components/calendar/DayBrief";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 // Sortable Task Item Component
 function SortableTaskItem({ task, onTaskClick, onTaskComplete, onMarkExternalDependency, isManualMode = false }: any) {
@@ -64,7 +66,7 @@ function SortableTaskItem({ task, onTaskClick, onTaskComplete, onMarkExternalDep
         isExternalDep && "border-l-4 border-l-warning bg-warning/5",
         isCompleted && "opacity-60"
       )}
-      onClick={() => onTaskClick(task.id)}
+      onClick={() => onTaskClick(task.id, task)}
     >
       {isManualMode && (
         <div
@@ -148,58 +150,52 @@ function SortableTaskItem({ task, onTaskClick, onTaskComplete, onMarkExternalDep
 function KanbanCard({ task, onTaskClick }: any) {
   const isOverdue = task.due_at && new Date(task.due_at) < new Date() && task.status !== 'Completed';
   const isExternalDep = task.is_external_dependency;
-  
+
   return (
-    <Card 
+    <div
       className={cn(
-        "p-sm cursor-pointer transition-smooth hover:shadow-md hover:border-primary/30",
+        "p-3 rounded-lg border border-border bg-card hover:bg-card-hover cursor-pointer transition-smooth",
         isOverdue && !isExternalDep && "border-l-4 border-l-destructive",
         isExternalDep && "border-l-4 border-l-warning bg-warning/5"
       )}
-      onClick={() => onTaskClick(task.id)}
+      onClick={() => onTaskClick(task.id, task)}
     >
       <p className="text-body-sm font-medium text-foreground line-clamp-2">{task.title}</p>
-      <div className="flex items-center gap-sm mt-sm flex-wrap">
+      <div className="flex items-center gap-2 mt-2">
         <Badge variant="outline" className={cn(
-          "text-metadata px-1.5 py-0 rounded-full",
-          task.priority === 'High' && 'border-destructive/50 text-destructive bg-destructive/10',
-          task.priority === 'Medium' && 'border-primary/50 text-primary bg-primary/10',
-          task.priority === 'Low' && 'border-border text-muted-foreground bg-muted'
+          "text-[10px] px-1.5 py-0",
+          task.priority === 'High' && 'border-destructive/50 text-destructive',
+          task.priority === 'Medium' && 'border-primary/50 text-primary',
+          task.priority === 'Low' && 'border-border text-muted-foreground'
         )}>
           {task.priority}
         </Badge>
-        {isExternalDep && (
-          <Badge variant="outline" className="text-metadata px-1.5 py-0 bg-warning/15 border-warning/30 text-warning rounded-full">
-            <ExternalLink className="h-2.5 w-2.5 mr-1" />
-            External
-          </Badge>
-        )}
         {task.due_at && (
           <span className={cn(
-            "text-metadata",
+            "text-[10px]",
             isOverdue && !isExternalDep ? "text-destructive" : "text-muted-foreground"
           )}>
             {format(new Date(task.due_at), 'MMM d')}
           </span>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
 
-// Main CalendarView Component
 export default function CalendarView() {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks();
-  
-  // State
+  const { data: tasks, isLoading: tasksLoading } = useTasks();
+
+  // View state
   const [dateView, setDateView] = useState<"today" | "tomorrow" | "week" | "custom">("today");
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  
+  // Task selection - now opens side panel instead of modal
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'gantt'>('table');
@@ -490,15 +486,28 @@ export default function CalendarView() {
     }
   };
 
-  const openTaskDialog = (id: string) => {
-    const originalId = id.includes('::') ? id.split('::')[0] : id;
-    const task = tasks?.find(t => t.id === originalId);
-    setSelectedTask(task || null);
+  // Open task in side panel (not modal)
+  const handleTaskClick = (taskId: string, task?: any) => {
+    const originalId = taskId.includes('::') ? taskId.split('::')[0] : taskId;
+    const foundTask = task || tasks?.find(t => t.id === originalId);
+    setSelectedTask(foundTask || null);
     setSelectedTaskId(originalId);
-    setTaskDialogOpen(true);
   };
 
-  return (
+  // Close side panel
+  const handleClosePanel = () => {
+    setSelectedTaskId(null);
+    setSelectedTask(null);
+  };
+
+  // Handle task deletion - close panel and refresh
+  const handleTaskDeleted = () => {
+    handleClosePanel();
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  };
+
+  // Render main content
+  const renderMainContent = () => (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1440px] mx-auto px-6 lg:px-8 pt-8 pb-8">
         {/* Header */}
@@ -654,7 +663,7 @@ export default function CalendarView() {
                               {!col.isWorkingDay ? "Not working" : "No tasks"}
                             </p>
                           ) : (
-                            col.tasks.map(task => <KanbanCard key={task.id} task={task} onTaskClick={openTaskDialog} />)
+                            col.tasks.map(task => <KanbanCard key={task.id} task={task} onTaskClick={handleTaskClick} />)
                           )}
                         </div>
                       </ScrollArea>
@@ -681,7 +690,7 @@ export default function CalendarView() {
                         {col.tasks.length === 0 ? (
                           <p className="text-metadata text-muted-foreground text-center py-4">No tasks</p>
                         ) : (
-                          col.tasks.map(task => <KanbanCard key={task.id} task={task} onTaskClick={openTaskDialog} />)
+                          col.tasks.map(task => <KanbanCard key={task.id} task={task} onTaskClick={handleTaskClick} />)
                         )}
                       </div>
                     </ScrollArea>
@@ -759,7 +768,7 @@ export default function CalendarView() {
                         <SortableTaskItem
                           key={task.id}
                           task={task}
-                          onTaskClick={openTaskDialog}
+                          onTaskClick={handleTaskClick}
                           onTaskComplete={handleTaskComplete}
                           onMarkExternalDependency={handleMarkExternalDependency}
                           isManualMode={sortOption === "manual"}
@@ -790,7 +799,7 @@ export default function CalendarView() {
                       <div
                         key={task.id}
                         className="flex items-center gap-3 py-3 px-4 border-b border-border last:border-0 cursor-pointer hover:bg-muted/20 transition-smooth"
-                        onClick={() => openTaskDialog(task.id)}
+                        onClick={() => handleTaskClick(task.id, task)}
                       >
                         <Checkbox checked disabled className="opacity-50 border-border" />
                         <span className="text-[14px] text-muted-foreground line-through">{task.title}</span>
@@ -804,20 +813,37 @@ export default function CalendarView() {
         )}
       </div>
 
-      {/* Task Dialogs */}
-      <UnifiedTaskDialog
-        open={taskDialogOpen}
-        onOpenChange={setTaskDialogOpen}
-        taskId={selectedTaskId}
-        task={selectedTask}
-        mode="view"
-      />
-      
+      {/* Create Task Dialog - Keep modal for creation */}
       <UnifiedTaskDialog
         open={createTaskOpen}
         onOpenChange={setCreateTaskOpen}
         mode="create"
       />
     </div>
+  );
+
+  return (
+    <>
+      {selectedTaskId ? (
+        // Resizable layout with side panel
+        <ResizablePanelGroup direction="horizontal" className="min-h-screen">
+          <ResizablePanel defaultSize={65} minSize={40}>
+            {renderMainContent()}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+            <TaskDetail
+              taskId={selectedTaskId}
+              task={selectedTask}
+              onClose={handleClosePanel}
+              onTaskDeleted={handleTaskDeleted}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      ) : (
+        // No panel open - full width content
+        renderMainContent()
+      )}
+    </>
   );
 }
