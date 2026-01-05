@@ -48,7 +48,7 @@ export default function Tasks() {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<any>(null);
-  const [statusFilters, setStatusFilters] = useState<string[]>(['Pending', 'Ongoing', 'Blocked', 'Failed']);
+  const [statusFilters, setStatusFilters] = useState<string[]>(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'kanban-status' | 'kanban-date' | 'kanban-tags'>('table');
@@ -84,14 +84,14 @@ export default function Tasks() {
     switch (filter) {
       case 'today':
         setDateFilter({ startDate: today, endDate: tomorrow, label: 'Today' });
-        setStatusFilters(['Pending', 'Ongoing', 'Blocked', 'Failed']);
+        setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
         break;
       case 'overdue':
         setActiveQuickFilter('Overdue');
         break;
       case 'week':
         setDateFilter({ startDate: today, endDate: weekEnd, label: 'This Week' });
-        setStatusFilters(['Pending', 'Ongoing', 'Blocked', 'Failed']);
+        setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
         break;
       case 'in-progress':
         setStatusFilters(['Ongoing']);
@@ -230,7 +230,7 @@ export default function Tasks() {
 
   const clearAllFilters = () => {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
-    setStatusFilters(['Pending', 'Ongoing', 'Blocked', 'Failed']);
+    setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
     setShowMyTasks(false); setTableGroupBy('none');
   };
@@ -494,7 +494,7 @@ export default function Tasks() {
                   <>
                     {viewMode === 'table' && (
                       finalFilteredTasks.length > 100 ? (
-                        <TasksTableVirtualized tasks={finalFilteredTasks} onTaskUpdate={refetch} />
+                        <TasksTableVirtualized tasks={finalFilteredTasks} onTaskUpdate={refetch} onTaskClick={handleTaskClick} />
                       ) : (
                         <TasksTable 
                           tasks={paginatedTasks} 

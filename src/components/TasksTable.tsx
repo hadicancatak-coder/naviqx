@@ -686,7 +686,8 @@ export const TasksTable = ({ tasks, onTaskUpdate, selectedIds = [], onSelectionC
         </Table>
       </div>
 
-      {selectedTaskId && (
+      {/* Modal dialog fallback - only when onTaskClick is not provided */}
+      {selectedTaskId && !onTaskClick && (
         <UnifiedTaskDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
