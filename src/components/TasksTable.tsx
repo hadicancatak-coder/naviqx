@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
 import { TaskRow } from "@/components/tasks/TaskRow";
+import { SortableTaskList } from "@/components/tasks/SortableTaskList";
 import { InlineTaskCreator } from "@/components/tasks/InlineTaskCreator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ interface TasksTableProps {
   onTaskClick?: (taskId: string, task?: any) => void;
   focusedIndex?: number;
   onShiftSelect?: (taskId: string, shiftKey: boolean) => void;
+  enableDragDrop?: boolean;
 }
 
 export const TasksTable = ({ 
@@ -42,7 +44,8 @@ export const TasksTable = ({
   groupBy = 'none', 
   onTaskClick,
   focusedIndex = -1,
-  onShiftSelect 
+  onShiftSelect,
+  enableDragDrop = true,
 }: TasksTableProps) => {
   const { toast } = useToast();
   const { user, userRole } = useAuth();
@@ -51,6 +54,12 @@ export const TasksTable = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [processingAction, setProcessingAction] = useState<{ taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null>(null);
+  const [localTasks, setLocalTasks] = useState<any[]>(tasks);
+  
+  // Keep local tasks in sync with prop
+  useMemo(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   const deleteMutation = useMutation({
     mutationFn: async (taskId: string) => {
@@ -278,6 +287,30 @@ export const TasksTable = ({
     return tasks.findIndex(t => t.id === taskId);
   };
 
+  // Handle drag-drop order change
+  const handleOrderChange = useCallback((newOrder: any[]) => {
+    setLocalTasks(newOrder);
+  }, []);
+
+  // Use SortableTaskList for flat view with drag-drop
+  const renderSortableTaskList = () => (
+    <SortableTaskList
+      tasks={localTasks}
+      selectedIds={selectedIds}
+      focusedIndex={focusedIndex}
+      onSelectionChange={onSelectionChange}
+      onShiftSelect={onShiftSelect}
+      onTaskClick={onTaskClick}
+      onComplete={handleComplete}
+      onDuplicate={handleDuplicate}
+      onDelete={handleDelete}
+      processingAction={processingAction}
+      userRole={userRole}
+      onOrderChange={handleOrderChange}
+      isDragDisabled={!enableDragDrop || groupBy !== 'none'}
+    />
+  );
+
   const renderTaskList = (taskList: any[]) => (
     <div className="divide-y divide-border">
       {taskList.map((task) => {
@@ -350,8 +383,8 @@ export const TasksTable = ({
             </div>
           ))
         ) : (
-          // Flat view
-          renderTaskList(tasks)
+          // Flat view with drag-drop
+          enableDragDrop ? renderSortableTaskList() : renderTaskList(localTasks)
         )}
 
         {/* Inline Task Creator */}

@@ -6,7 +6,7 @@
 
 ## Overview
 
-The task system follows an Asana-inspired design with compact 30px rows, inline editing, real subtasks stored as task records with `parent_id`, and a side panel detail view.
+The task system follows an Asana-inspired design with compact 30px rows, inline editing, real subtasks stored as task records with `parent_id`, drag-and-drop reordering via `sort_order`, and a side panel detail view.
 
 ---
 
@@ -118,6 +118,40 @@ interface InlineTaskCreatorProps {
 
 ---
 
+### SortableTaskList (`src/components/tasks/SortableTaskList.tsx`)
+
+Drag-and-drop wrapper using dnd-kit for manual task reordering.
+
+**Props:**
+```typescript
+interface SortableTaskListProps {
+  tasks: any[];
+  selectedIds?: string[];
+  focusedIndex?: number;
+  onOrderChange?: (tasks: any[]) => void;
+  isDragDisabled?: boolean;
+  // ... other TaskRow props forwarded
+}
+```
+
+**Features:**
+- Drag handle appears on hover (grip icon)
+- 8px activation distance prevents accidental drags
+- Optimistic UI updates with database persistence
+- Keyboard-accessible with sortable keyboard coordinates
+- Disabled when grouping is active
+
+**Usage:**
+```tsx
+<SortableTaskList
+  tasks={tasks}
+  onOrderChange={handleOrderChange}
+  isDragDisabled={groupBy !== 'none'}
+/>
+```
+
+---
+
 ### TasksTable (`src/components/TasksTable.tsx`)
 
 Main table component that renders a list of TaskRow components with grouping support.
@@ -131,6 +165,7 @@ interface TasksTableProps {
   onSelectionChange?: (ids: string[]) => void;
   groupBy?: 'none' | 'dueDate' | 'priority' | 'assignee' | 'tags';
   onTaskClick?: (taskId: string, task?: any) => void;
+  enableDragDrop?: boolean;  // Enable drag-and-drop reordering
 }
 ```
 
@@ -140,6 +175,7 @@ interface TasksTableProps {
 - Includes header row with select-all checkbox
 - Integrates InlineTaskCreator at bottom
 - Delete confirmation dialog
+- Drag-and-drop reordering (flat view only)
 
 ---
 
