@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, List, Columns3, X, CheckCircle2, RefreshCw, Tag, User, Layers } from "lucide-react";
+import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TasksTable } from "@/components/TasksTable";
@@ -16,6 +16,7 @@ import { StatusMultiSelect } from "@/components/tasks/StatusMultiSelect";
 import { TaskBoardView } from "@/components/tasks/TaskBoardView";
 import { FilteredTasksDialog } from "@/components/tasks/FilteredTasksDialog";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
+import { ViewSwitcher, type ViewMode } from "@/components/tasks/ViewSwitcher";
 import { PageContainer, PageHeader, DataCard, EmptyState, FilterBar } from "@/components/layout";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -52,7 +53,7 @@ export default function Tasks() {
   const [statusFilters, setStatusFilters] = useState<string[]>(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'kanban-status' | 'kanban-date' | 'kanban-tags'>('table');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [boardGroupBy, setBoardGroupBy] = useState<'status' | 'date' | 'tags'>('status');
   
   // Side panel state (Asana-style)
@@ -420,28 +421,17 @@ export default function Tasks() {
             </Popover>
           )}
 
-          <div className="ml-auto flex gap-1 flex-shrink-0 bg-card p-1 rounded-lg border border-border">
-            {[
-              { mode: 'table' as const, icon: List, title: 'Table' },
-              { mode: 'kanban-status' as const, icon: Columns3, title: 'Kanban Status' },
-              { mode: 'kanban-date' as const, icon: Clock, title: 'Kanban Date' },
-              { mode: 'kanban-tags' as const, icon: Tag, title: 'Kanban Tags' },
-            ].map(({ mode, icon: Icon, title }) => (
-              <Button 
-                key={mode} 
-                variant={viewMode === mode ? "default" : "ghost"}
-                size="icon-sm"
-                onClick={() => { 
-                  setViewMode(mode); 
-                  if (mode === 'kanban-status') setBoardGroupBy('status'); 
-                  if (mode === 'kanban-date') setBoardGroupBy('date'); 
-                  if (mode === 'kanban-tags') setBoardGroupBy('tags');
-                }} 
-                title={title}
-              >
-                <Icon className="h-4 w-4" />
-              </Button>
-            ))}
+          {/* View Switcher */}
+          <div className="ml-auto">
+            <ViewSwitcher 
+              value={viewMode} 
+              onChange={(mode) => {
+                setViewMode(mode);
+                if (mode === 'kanban-status') setBoardGroupBy('status');
+                if (mode === 'kanban-date') setBoardGroupBy('date');
+                if (mode === 'kanban-tags') setBoardGroupBy('tags');
+              }} 
+            />
           </div>
         </FilterBar>
 

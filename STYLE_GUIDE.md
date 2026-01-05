@@ -50,6 +50,14 @@
 | `rounded-xl` | `rounded-[16px]` | 16px |
 | `rounded-full` | Pills, avatars, circular buttons | 9999px |
 
+### Row Heights (Density Scale)
+
+| Use This | Instead Of | Size | Usage |
+|----------|------------|------|-------|
+| `h-row-compact` | `h-7`, `h-8` | 30px | Task rows, table rows, dense lists |
+| `h-row-default` | `h-9`, `h-10` | 36px | Standard interactive rows |
+| `h-row-comfortable` | `h-10`, `h-11` | 40px | Spacious layouts, form rows |
+
 ---
 
 ## Rule Classification (HARD vs SOFT)

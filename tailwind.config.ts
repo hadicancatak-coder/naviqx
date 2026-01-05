@@ -207,6 +207,7 @@ export default {
         '16': 'var(--spacing-16)',
         '24': 'var(--spacing-24)',
         '48': '12rem', /* 48px rhythm */
+        'xxs': 'var(--space-xxs)',    /* 4px */
         'xs': 'var(--space-xs)',      /* 8px */
         'sm': 'var(--space-sm)',      /* 12px */
         'md': 'var(--space-md)',      /* 16px */
@@ -215,6 +216,16 @@ export default {
         '2xl': 'var(--space-2xl)',    /* 48px */
         'card': 'var(--space-card)',  /* 20px */
         'section': 'var(--space-2xl)', /* 48px - mt-section, mb-section */
+      },
+      height: {
+        'row-compact': 'var(--row-compact)',        /* 30px */
+        'row-default': 'var(--row-default)',        /* 36px */
+        'row-comfortable': 'var(--row-comfortable)', /* 40px */
+      },
+      minHeight: {
+        'row-compact': 'var(--row-compact)',        /* 30px */
+        'row-default': 'var(--row-default)',        /* 36px */
+        'row-comfortable': 'var(--row-comfortable)', /* 40px */
       },
       margin: {
         'section': 'var(--space-2xl)', /* 48px - mt-section, mb-section */
