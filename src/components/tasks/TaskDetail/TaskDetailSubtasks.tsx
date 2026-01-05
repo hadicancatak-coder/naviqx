@@ -122,7 +122,10 @@ export function TaskDetailSubtasks() {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="border border-border rounded-lg overflow-hidden bg-card">
+            <div className={cn(
+              "rounded-lg overflow-hidden",
+              totalCount > 0 && "border border-border bg-card"
+            )}>
               {subtasks.map((subtask) => (
                 <SubtaskRow
                   key={subtask.id}
@@ -140,7 +143,10 @@ export function TaskDetailSubtasks() {
 
               {/* Add Subtask Input */}
               {isAddingSubtask ? (
-                <div className="flex items-center gap-xxs h-row-compact pl-lg pr-sm border-t border-border/50">
+                <div className={cn(
+                  "flex items-center gap-xxs h-row-compact pl-lg pr-sm",
+                  totalCount > 0 ? "border-t border-border/50" : "border border-border rounded-lg bg-card"
+                )}>
                   <Input
                     ref={inputRef}
                     value={newSubtaskTitle}
@@ -163,9 +169,9 @@ export function TaskDetailSubtasks() {
                 <button
                   onClick={() => setIsAddingSubtask(true)}
                   className={cn(
-                    "flex items-center gap-2 w-full h-row-compact pl-lg pr-sm",
-                    "text-body-sm text-muted-foreground hover:text-foreground hover:bg-card-hover transition-smooth",
-                    totalCount > 0 && "border-t border-border/50"
+                    "flex items-center gap-2 w-full h-row-compact px-sm",
+                    "text-body-sm text-muted-foreground hover:text-foreground hover:bg-card-hover transition-smooth rounded-lg",
+                    totalCount > 0 && "border-t border-border/50 rounded-none"
                   )}
                 >
                   <Plus className="h-3 w-3" />
