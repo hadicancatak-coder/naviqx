@@ -53,7 +53,7 @@ const DEFAULT_WIDTHS = {
   task: 280,
   entity: 100,
   status: 90,
-  tags: 160,
+  tags: 200,
   assignee: 140,
   created: 80,
   age: 56,
@@ -460,16 +460,19 @@ export function TaskListView({
               </div>
 
               {/* Tags */}
-              <div style={{ width: columnWidths.tags }} className="flex-shrink-0 hidden lg:flex items-center gap-1 px-1">
+              <div style={{ width: columnWidths.tags }} className="flex-shrink-0 hidden lg:flex items-center gap-1 px-1 overflow-hidden">
                 {tags.length > 0 ? (
                   <>
                     {tags.map((tag: string) => {
-                      const tagDef = TASK_TAGS.find(t => t.value === tag);
+                      const tagDef = TASK_TAGS.find(t => t.value.toLowerCase() === tag.toLowerCase());
                       return (
                         <Badge 
                           key={tag}
                           variant="outline" 
-                          className={cn("text-body-sm px-2 h-6 truncate max-w-[56px]", tagDef?.color)}
+                          className={cn(
+                            "text-metadata px-2 py-0.5 whitespace-nowrap",
+                            tagDef?.color || "bg-muted text-muted-foreground border-border"
+                          )}
                         >
                           {tagDef?.label || tag}
                         </Badge>
