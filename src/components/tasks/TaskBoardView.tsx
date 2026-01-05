@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addDays } from "date-fns";
@@ -12,19 +12,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableTaskRow } from './SortableTaskRow';
-import { TASK_TAGS } from "@/lib/constants";
 
 interface TaskBoardViewProps {
   tasks: any[];
   onTaskClick: (taskId: string) => void;
-  groupBy?: 'status' | 'date' | 'tags';
+  groupBy?: 'status' | 'date' | 'assignee';
 }
 
 export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBoardViewProps) => {
   const { userRole } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<{ taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null>(null);
   
@@ -33,11 +31,28 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
     useSensor(KeyboardSensor)
   );
   
-  const statusGroups = ['Pending', 'Ongoing', 'Blocked', 'Completed', 'Failed'];
+  // Status groups - using Backlog instead of Pending
+  const statusGroups = ['Backlog', 'Ongoing', 'Blocked', 'Completed', 'Failed'];
   const dateGroups = ['Overdue', 'Today', 'Tomorrow', 'This Week', 'Later'];
-  const tagGroups = [...TASK_TAGS.map(t => t.label), 'Untagged'];
   
-  const groups = groupBy === 'status' ? statusGroups : groupBy === 'date' ? dateGroups : tagGroups;
+  // Dynamic assignee groups from tasks
+  const assigneeGroups = useMemo(() => {
+    const assignees = new Map<string, string>();
+    tasks.forEach(task => {
+      if (task.assignees && task.assignees.length > 0) {
+        task.assignees.forEach((a: any) => {
+          const id = a.user_id || a.id;
+          const name = a.name || 'Unknown';
+          if (id && !assignees.has(id)) {
+            assignees.set(id, name);
+          }
+        });
+      }
+    });
+    return [...Array.from(assignees.values()), 'Unassigned'];
+  }, [tasks]);
+  
+  const groups = groupBy === 'status' ? statusGroups : groupBy === 'date' ? dateGroups : assigneeGroups;
 
   const getDateGroup = (task: any): string => {
     if (!task.due_at) return 'Later';
@@ -56,46 +71,24 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
     return 'Later';
   };
 
-  const getTagGroup = (task: any): string => {
-    if (!task.labels || task.labels.length === 0) return 'Untagged';
-    // Find matching tag label for the first label
-    const firstLabel = task.labels[0];
-    const tagDef = TASK_TAGS.find(t => t.value === firstLabel);
-    return tagDef ? tagDef.label : 'Untagged';
+  const getAssigneeGroup = (task: any): string => {
+    if (!task.assignees || task.assignees.length === 0) return 'Unassigned';
+    // Return the first assignee's name
+    return task.assignees[0]?.name || 'Unknown';
   };
 
   const filterTasksByGroup = (group: string) => {
     if (groupBy === 'status') {
+      // Handle Backlog mapping - DB stores 'Pending', UI shows 'Backlog'
+      if (group === 'Backlog') {
+        return tasks.filter(t => t.status === 'Pending' || t.status === 'Backlog');
+      }
       return tasks.filter(t => t.status === group);
     } else if (groupBy === 'date') {
       return tasks.filter(t => getDateGroup(t) === group);
     } else {
-      return tasks.filter(t => getTagGroup(t) === group);
+      return tasks.filter(t => getAssigneeGroup(t) === group);
     }
-  };
-
-  const priorityColors = {
-    High: "priority-high",
-    Medium: "priority-medium",
-    Low: "priority-low",
-  };
-
-  const statusColors: Record<string, string> = {
-    Pending: "bg-info-soft",
-    Ongoing: "bg-purple-soft",
-    Blocked: "bg-orange-soft",
-    Completed: "bg-success-soft",
-    Failed: "bg-destructive-soft",
-  };
-
-  const tagColors: Record<string, string> = {
-    Reporting: "bg-primary/15",
-    Campaigns: "bg-success/15",
-    Tech: "bg-info/15",
-    Problems: "bg-destructive/15",
-    "L&D": "bg-warning/15",
-    Research: "bg-accent",
-    Untagged: "bg-muted/30",
   };
 
   const handleComplete = async (task: any, e: React.MouseEvent) => {
@@ -123,7 +116,6 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
       });
     } finally {
       setProcessingAction(null);
-      setOpenDropdown(null);
     }
   };
 
@@ -173,7 +165,6 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
       });
     } finally {
       setProcessingAction(null);
-      setOpenDropdown(null);
     }
   };
 
@@ -216,7 +207,6 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowDeleteConfirm(null);
-      setOpenDropdown(null);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -241,9 +231,11 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
 
     try {
       if (groupBy === 'status') {
+        // Map Backlog to Pending for DB
+        const dbStatus = targetGroup === 'Backlog' ? 'Pending' : targetGroup;
         await supabase
           .from('tasks')
-          .update({ status: targetGroup as 'Pending' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed' })
+          .update({ status: dbStatus as 'Pending' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed' })
           .eq('id', taskId);
         
         toast({
@@ -281,21 +273,8 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
           title: "Due date updated",
           description: `Task moved to ${targetGroup}`,
         });
-      } else if (groupBy === 'tags') {
-        // Find the tag value from the label
-        const tagDef = TASK_TAGS.find(t => t.label === targetGroup);
-        const newLabels = tagDef ? [tagDef.value] : [];
-        
-        await supabase
-          .from('tasks')
-          .update({ labels: newLabels })
-          .eq('id', taskId);
-        
-        toast({
-          title: "Tag updated",
-          description: `Task moved to ${targetGroup}`,
-        });
       }
+      // Note: Assignee drag-drop would need to update task_assignees table
       
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     } catch (error: any) {
@@ -307,42 +286,49 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
     }
   };
 
-  const getGroupColor = (group: string) => {
-    if (groupBy === 'status') return statusColors[group] || 'bg-muted/30';
-    if (groupBy === 'tags') return tagColors[group] || 'bg-muted/30';
-    return 'bg-muted/30';
+  const getColumnCount = () => {
+    if (groupBy === 'assignee') {
+      return Math.min(groups.length, 6);
+    }
+    return groups.length;
   };
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className={cn(
-        "grid gap-md",
-        groupBy === 'tags' ? "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7" : "grid-cols-1 md:grid-cols-5"
-      )}>
+      <div 
+        className="grid gap-md"
+        style={{
+          gridTemplateColumns: `repeat(${getColumnCount()}, minmax(200px, 1fr))`
+        }}
+      >
         {groups.map(group => {
           const groupTasks = filterTasksByGroup(group);
-          const color = getGroupColor(group);
           const taskIds = groupTasks.map(t => t.id);
           
           return (
             <SortableContext key={group} id={group} items={taskIds} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col min-h-[400px]">
-                <div className="flex items-center justify-between py-2 px-1 mb-2">
+                {/* Column Header */}
+                <div className="flex items-center justify-between py-2 px-1 mb-2 border-b border-border">
                   <h3 className="font-semibold text-body-sm text-foreground">{group}</h3>
                   <Badge variant="secondary" className="text-metadata h-5 px-1.5">
                     {groupTasks.length}
                   </Badge>
                 </div>
                 
+                {/* Column Content */}
                 <ScrollArea className="flex-1">
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {groupTasks.length === 0 ? (
-                      <div className="py-8 text-center text-muted-foreground text-metadata rounded-lg bg-muted/30">
+                      <div className="py-8 text-center text-muted-foreground text-metadata rounded-lg border border-dashed border-border">
                         No tasks
                       </div>
                     ) : (
                       groupTasks.map(task => (
-                        <div key={task.id} className="rounded-lg bg-card border border-border hover:border-primary/30 hover:shadow-sm transition-smooth">
+                        <div 
+                          key={task.id} 
+                          className="rounded-lg bg-card border border-border hover:border-primary/30 hover:shadow-sm transition-smooth"
+                        >
                           <SortableTaskRow
                             task={task}
                             onClick={onTaskClick}

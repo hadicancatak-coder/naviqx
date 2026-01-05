@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { getRecurrenceLabel } from "@/lib/recurrenceExpander";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { TASK_TAGS } from "@/lib/constants";
 
 interface TaskRowProps {
   task: any;
@@ -35,7 +36,7 @@ interface TaskRowProps {
 const priorityDot: Record<string, string> = {
   High: "bg-destructive",
   Medium: "bg-warning",
-  Low: "bg-muted-foreground",
+  Low: "bg-muted-foreground/50",
 };
 
 export function TaskRow({
@@ -65,7 +66,7 @@ export function TaskRow({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isCompleted = task.status === 'Completed';
-  const isOverdue = task.due_at && new Date(task.due_at) < new Date() && !isCompleted && task.status !== 'Backlog';
+  const isOverdue = task.due_at && new Date(task.due_at) < new Date() && !isCompleted && task.status !== 'Backlog' && task.status !== 'Pending';
   const isExternalDep = task.is_external_dependency;
   const isRecurring = task.isRecurringOccurrence || task.task_type === 'recurring' || task.recurrence_rrule;
 
@@ -145,14 +146,18 @@ export function TaskRow({
     onClick(task.id, task);
   };
 
+  // Get first tag for display
+  const firstTag = task.labels?.[0];
+  const tagDef = firstTag ? TASK_TAGS.find(t => t.value === firstTag) : null;
+
   return (
     <div
       className={cn(
-        "flex items-center gap-xxs h-row-compact px-sm transition-smooth cursor-pointer group",
-        "hover:bg-card-hover odd:bg-muted/20",
-        isOverdue && !isExternalDep && "border-l-2 border-l-destructive/50",
-        isExternalDep && "border-l-2 border-l-warning/50",
-        isCompleted && "opacity-50",
+        "flex items-center gap-2 h-8 px-2 transition-smooth cursor-pointer group",
+        "hover:bg-muted/50",
+        isOverdue && !isExternalDep && "border-l-2 border-l-destructive/60",
+        isExternalDep && "border-l-2 border-l-warning/60",
+        isCompleted && "opacity-60",
         isSelected && "bg-primary/10",
         isFocused && "ring-1 ring-inset ring-primary/40 bg-primary/5"
       )}
@@ -162,10 +167,10 @@ export function TaskRow({
       {showDragHandle && (
         <div
           {...dragHandleProps}
-          className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
+          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
         </div>
       )}
 
@@ -175,7 +180,7 @@ export function TaskRow({
           checked={isSelected}
           onCheckedChange={(checked) => onSelect(task.id, checked as boolean)}
           onClick={handleCheckboxClick}
-          className="border-border"
+          className="border-border h-3.5 w-3.5 flex-shrink-0"
         />
       )}
 
@@ -186,7 +191,7 @@ export function TaskRow({
           onCheckedChange={handleCompletionChange}
           onClick={handleCheckboxClick}
           className={cn(
-            "border-border flex-shrink-0",
+            "border-border flex-shrink-0 h-4 w-4",
             isCompleted && "bg-success border-success"
           )}
         />
@@ -195,7 +200,7 @@ export function TaskRow({
       {/* Priority Dot */}
       <div
         className={cn(
-          "w-2 h-2 rounded-full flex-shrink-0",
+          "w-1.5 h-1.5 rounded-full flex-shrink-0",
           priorityDot[task.priority as keyof typeof priorityDot] || priorityDot.Low
         )}
         title={task.priority}
@@ -216,13 +221,25 @@ export function TaskRow({
         <span
           onDoubleClick={startEditing}
           className={cn(
-            "flex-1 text-body-sm font-medium text-foreground truncate min-w-0 cursor-text",
-            isCompleted && "line-through text-muted-foreground cursor-default"
+            "flex-1 text-body-sm text-foreground truncate min-w-0",
+            isCompleted && "line-through text-muted-foreground"
           )}
-          title="Double-click to edit"
         >
           {task.title}
         </span>
+      )}
+
+      {/* Tag Badge (first tag only) */}
+      {tagDef && !compact && (
+        <Badge 
+          variant="outline" 
+          className={cn(
+            "text-[10px] px-1.5 py-0 h-4 flex-shrink-0 rounded",
+            tagDef.color
+          )}
+        >
+          {tagDef.label}
+        </Badge>
       )}
 
       {/* Badges (subtasks, recurring, external) */}
@@ -267,7 +284,7 @@ export function TaskRow({
       {task.due_at && (
         <span
           className={cn(
-            "text-metadata flex-shrink-0 min-w-[48px] text-right",
+            "text-[11px] flex-shrink-0 min-w-[40px] text-right tabular-nums",
             isOverdue && !isExternalDep ? "text-destructive font-medium" : "text-muted-foreground"
           )}
         >
@@ -280,11 +297,11 @@ export function TaskRow({
         <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
           <DropdownMenuTrigger
             onClick={(e) => e.stopPropagation()}
-            className="opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 p-1 rounded hover:bg-muted"
+            className="opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 p-0.5 rounded hover:bg-muted flex-shrink-0"
           >
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+            <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-36">
             {onComplete && (
               <DropdownMenuItem
                 onClick={(e) => {
@@ -293,11 +310,12 @@ export function TaskRow({
                   setOpenDropdown(false);
                 }}
                 disabled={processingAction !== null}
+                className="text-body-sm"
               >
                 {processingAction?.taskId === task.id && processingAction?.action === 'complete' ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle className="mr-2 h-3.5 w-3.5" />
                 )}
                 {isCompleted ? 'Reopen' : 'Complete'}
               </DropdownMenuItem>
@@ -310,11 +328,12 @@ export function TaskRow({
                   setOpenDropdown(false);
                 }}
                 disabled={processingAction !== null}
+                className="text-body-sm"
               >
                 {processingAction?.taskId === task.id && processingAction?.action === 'duplicate' ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="mr-2 h-3.5 w-3.5" />
                 )}
                 Duplicate
               </DropdownMenuItem>
@@ -329,9 +348,9 @@ export function TaskRow({
                     setOpenDropdown(false);
                   }}
                   disabled={processingAction !== null}
-                  className="text-destructive focus:text-destructive"
+                  className="text-destructive focus:text-destructive text-body-sm"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
                   {userRole === 'admin' ? 'Delete' : 'Request Delete'}
                 </DropdownMenuItem>
               </>

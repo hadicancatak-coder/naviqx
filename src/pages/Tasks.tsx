@@ -16,7 +16,7 @@ import { StatusMultiSelect } from "@/components/tasks/StatusMultiSelect";
 import { TaskBoardView } from "@/components/tasks/TaskBoardView";
 import { FilteredTasksDialog } from "@/components/tasks/FilteredTasksDialog";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
-import { ViewSwitcher, type ViewMode } from "@/components/tasks/ViewSwitcher";
+import { ViewSwitcher, type ViewMode, type BoardGroupBy } from "@/components/tasks/ViewSwitcher";
 import { PageContainer, PageHeader, DataCard, EmptyState, FilterBar } from "@/components/layout";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -53,11 +53,16 @@ export default function Tasks() {
   const [statusFilters, setStatusFilters] = useState<string[]>(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
+  
+  // View state - simplified to just list/board
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('tasksViewMode');
-    return (saved as ViewMode) || 'kanban-status';
+    return (saved === 'list' || saved === 'board') ? saved : 'board';
   });
-  const [boardGroupBy, setBoardGroupBy] = useState<'status' | 'date' | 'tags'>('status');
+  const [boardGroupBy, setBoardGroupBy] = useState<BoardGroupBy>(() => {
+    const saved = localStorage.getItem('tasksBoardGroupBy');
+    return (saved === 'status' || saved === 'date' || saved === 'assignee') ? saved : 'status';
+  });
   
   // Side panel state (Asana-style)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -71,6 +76,15 @@ export default function Tasks() {
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [tableGroupBy, setTableGroupBy] = useState<'none' | 'dueDate' | 'priority' | 'assignee' | 'tags'>('none');
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
+
+  // Persist view preferences
+  useEffect(() => {
+    localStorage.setItem('tasksViewMode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('tasksBoardGroupBy', boardGroupBy);
+  }, [boardGroupBy]);
 
   // Handle URL filter parameters from MyTasks dashboard
   useEffect(() => {
@@ -150,7 +164,11 @@ export default function Tasks() {
         if (!task.due_at) { dateMatch = dateFilter.label === "Backlog"; } 
         else { const dueDate = new Date(task.due_at); dateMatch = dueDate >= dateFilter.startDate && dueDate <= dateFilter.endDate; }
       }
-      const statusMatch = statusFilters.length === 0 || statusFilters.includes(task.status);
+      // Handle Backlog/Pending mapping in status filter
+      const statusMatch = statusFilters.length === 0 || statusFilters.some(s => {
+        if (s === 'Backlog') return task.status === 'Pending' || task.status === 'Backlog';
+        return task.status === s;
+      });
       const tagsMatch = selectedTags.length === 0 || selectedTags.some(tag => task.labels?.includes(tag));
       const searchMatch = debouncedSearch === "" || task.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) || (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
       const recurringMatch = !hideRecurring || task.task_type !== 'recurring';
@@ -438,7 +456,7 @@ export default function Tasks() {
             <TooltipContent>{hideRecurring ? "Show Recurring Tasks" : "Hide Recurring Tasks"}</TooltipContent>
           </Tooltip>
 
-          {viewMode === 'table' && (
+          {viewMode === 'list' && (
             <Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -481,14 +499,10 @@ export default function Tasks() {
           {/* View Switcher */}
           <div className="ml-auto">
             <ViewSwitcher 
-              value={viewMode} 
-              onChange={(mode) => {
-                setViewMode(mode);
-                localStorage.setItem('tasksViewMode', mode);
-                if (mode === 'kanban-status') setBoardGroupBy('status');
-                if (mode === 'kanban-date') setBoardGroupBy('date');
-                if (mode === 'kanban-tags') setBoardGroupBy('tags');
-              }} 
+              viewMode={viewMode} 
+              onViewModeChange={setViewMode}
+              boardGroupBy={boardGroupBy}
+              onBoardGroupByChange={setBoardGroupBy}
             />
           </div>
         </FilterBar>
@@ -542,7 +556,7 @@ export default function Tasks() {
 
                 return (
                   <>
-                    {viewMode === 'table' && (
+                    {viewMode === 'list' && (
                       finalFilteredTasks.length > 100 ? (
                         <TasksTableVirtualized tasks={finalFilteredTasks} onTaskUpdate={refetch} onTaskClick={handleTaskClick} />
                       ) : (
@@ -558,13 +572,13 @@ export default function Tasks() {
                         />
                       )
                     )}
-                    {(viewMode === 'kanban-status' || viewMode === 'kanban-date' || viewMode === 'kanban-tags') && (
+                    {viewMode === 'board' && (
                       <div className="p-4">
                         <TaskBoardView tasks={finalFilteredTasks} onTaskClick={handleTaskClick} groupBy={boardGroupBy} />
                       </div>
                     )}
 
-                    {totalPages > 1 && (
+                    {totalPages > 1 && viewMode === 'list' && (
                       <div className="border-t border-border p-4">
                         <Pagination>
                           <PaginationContent>
