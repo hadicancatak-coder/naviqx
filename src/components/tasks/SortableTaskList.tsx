@@ -204,7 +204,7 @@ export function SortableTaskList({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="divide-y divide-border">
+        <div>
           {tasks.map((task, index) => (
             <SortableTaskItem
               key={task.id}

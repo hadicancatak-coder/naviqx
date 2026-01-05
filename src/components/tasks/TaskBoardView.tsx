@@ -326,37 +326,36 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
           
           return (
             <SortableContext key={group} id={group} items={taskIds} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col min-h-[600px]">
-                <div className={cn("rounded-t-lg p-sm border-b", color)}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-body-sm">{group}</h3>
-                    <Badge variant="secondary" className="text-metadata">
-                      {groupTasks.length}
-                    </Badge>
-                  </div>
+              <div className="flex flex-col min-h-[400px]">
+                <div className="flex items-center justify-between py-2 px-1 mb-2">
+                  <h3 className="font-semibold text-body-sm text-foreground">{group}</h3>
+                  <Badge variant="secondary" className="text-metadata h-5 px-1.5">
+                    {groupTasks.length}
+                  </Badge>
                 </div>
                 
-                <ScrollArea className="flex-1 p-sm bg-muted/20 rounded-b-lg">
-                  <div className="rounded-lg overflow-hidden border border-border bg-card">
+                <ScrollArea className="flex-1">
+                  <div className="space-y-1">
                     {groupTasks.length === 0 ? (
-                      <div className="p-6 text-center text-muted-foreground text-metadata">
+                      <div className="py-8 text-center text-muted-foreground text-metadata rounded-lg bg-muted/30">
                         No tasks
                       </div>
                     ) : (
                       groupTasks.map(task => (
-                        <SortableTaskRow
-                          key={task.id}
-                          task={task}
-                          onClick={onTaskClick}
-                          onComplete={(taskId, completed) => {
-                            if (completed) handleComplete({ id: taskId } as any, { stopPropagation: () => {} } as any);
-                          }}
-                          onDuplicate={handleDuplicate}
-                          onDelete={(taskId) => setShowDeleteConfirm(taskId)}
-                          processingAction={processingAction}
-                          userRole={userRole}
-                          compact
-                        />
+                        <div key={task.id} className="rounded-lg bg-card border border-border hover:border-primary/30 hover:shadow-sm transition-smooth">
+                          <SortableTaskRow
+                            task={task}
+                            onClick={onTaskClick}
+                            onComplete={(taskId, completed) => {
+                              if (completed) handleComplete({ id: taskId } as any, { stopPropagation: () => {} } as any);
+                            }}
+                            onDuplicate={handleDuplicate}
+                            onDelete={(taskId) => setShowDeleteConfirm(taskId)}
+                            processingAction={processingAction}
+                            userRole={userRole}
+                            compact
+                          />
+                        </div>
                       ))
                     )}
                   </div>

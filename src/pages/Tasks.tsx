@@ -53,7 +53,10 @@ export default function Tasks() {
   const [statusFilters, setStatusFilters] = useState<string[]>(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('tasksViewMode');
+    return (saved as ViewMode) || 'kanban-status';
+  });
   const [boardGroupBy, setBoardGroupBy] = useState<'status' | 'date' | 'tags'>('status');
   
   // Side panel state (Asana-style)
@@ -481,6 +484,7 @@ export default function Tasks() {
               value={viewMode} 
               onChange={(mode) => {
                 setViewMode(mode);
+                localStorage.setItem('tasksViewMode', mode);
                 if (mode === 'kanban-status') setBoardGroupBy('status');
                 if (mode === 'kanban-date') setBoardGroupBy('date');
                 if (mode === 'kanban-tags') setBoardGroupBy('tags');

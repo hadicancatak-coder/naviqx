@@ -1,4 +1,4 @@
-import { List, Columns3, Clock, Tag } from "lucide-react";
+import { List, Columns3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ViewMode = 'table' | 'kanban-status' | 'kanban-date' | 'kanban-tags';
@@ -11,8 +11,6 @@ interface ViewSwitcherProps {
 const views = [
   { mode: 'table' as const, icon: List, label: 'List' },
   { mode: 'kanban-status' as const, icon: Columns3, label: 'Board' },
-  { mode: 'kanban-date' as const, icon: Clock, label: 'Timeline' },
-  { mode: 'kanban-tags' as const, icon: Tag, label: 'Tags' },
 ];
 
 export function ViewSwitcher({ value, onChange }: ViewSwitcherProps) {
