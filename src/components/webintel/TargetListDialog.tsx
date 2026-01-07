@@ -38,7 +38,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
 
   const [name, setName] = useState("");
   const [entity, setEntity] = useState("");
-  const [description, setDescription] = useState("");
+  
   const [activeTab, setActiveTab] = useState("websites");
   const [bulkInput, setBulkInput] = useState("");
   const [localItems, setLocalItems] = useState<LocalItem[]>([]);
@@ -50,7 +50,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
       if (list) {
         setName(list.name || "");
         setEntity(list.entity || "");
-        setDescription(list.description || "");
+        
         // Load existing items from database
         const existingItems = getItemsByList(list.id);
         setLocalItems(existingItems.map(item => ({
@@ -65,7 +65,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
       } else {
         setName("");
         setEntity("");
-        setDescription("");
+        
         setLocalItems([]);
       }
       setBulkInput("");
@@ -86,7 +86,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
     try {
       if (list) {
         // Update existing list
-        onSave({ name, entity, description });
+        onSave({ name, entity });
         // Add new items (those with temp- prefix) - include ads.txt check results
         const newItems = localItems.filter(item => item.id.startsWith("temp-"));
         if (newItems.length > 0) {
@@ -104,7 +104,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
         }
       } else {
         // Create new list with items - include ads.txt check results
-        const newList = await createList.mutateAsync({ name, entity, description });
+        const newList = await createList.mutateAsync({ name, entity });
         if (newList && localItems.length > 0) {
           await addItems.mutateAsync({
             listId: newList.id,
@@ -120,7 +120,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
         }
         toast.success("Target list created successfully");
       }
-      onSave({ name, entity, description });
+      onSave({ name, entity });
       onOpenChange(false);
     } catch (err) {
       toast.error("Failed to save list");
@@ -402,15 +402,6 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description..."
-              rows={2}
-            />
-          </div>
 
           {/* Import/Export and Stats */}
           <div className="flex items-center justify-between">
