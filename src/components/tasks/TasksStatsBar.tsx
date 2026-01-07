@@ -56,7 +56,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
         </div>
         <div>
           <div className="text-metadata text-muted-foreground">Total Tasks</div>
-          <div className="text-2xl font-semibold text-foreground">{stats.total}</div>
+          <div className="text-heading-lg font-semibold text-foreground">{stats.total}</div>
         </div>
       </div>
       
@@ -68,7 +68,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
         </div>
         <div>
           <div className="text-metadata text-muted-foreground">Completed Today</div>
-          <div className="text-2xl font-semibold text-success">{stats.completedToday}</div>
+          <div className="text-heading-lg font-semibold text-success">{stats.completedToday}</div>
         </div>
       </div>
       
@@ -80,7 +80,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
         </div>
         <div>
           <div className="text-metadata text-muted-foreground">This Week</div>
-          <div className="text-2xl font-semibold text-success">{stats.completedThisWeek}</div>
+          <div className="text-heading-lg font-semibold text-success">{stats.completedThisWeek}</div>
         </div>
       </div>
       
@@ -92,7 +92,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
         </div>
         <div>
           <div className="text-metadata text-muted-foreground">In Progress</div>
-          <div className="text-2xl font-semibold text-primary">{stats.ongoing}</div>
+          <div className="text-heading-lg font-semibold text-primary">{stats.ongoing}</div>
         </div>
       </div>
     </div>

@@ -116,7 +116,7 @@ export default function MfaVerify() {
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-6">
           <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Two-Factor Authentication</h1>
+          <h1 className="text-heading-lg font-bold text-foreground mb-2">Two-Factor Authentication</h1>
           <p className="text-sm text-muted-foreground">
             {useBackupCode 
               ? "Enter one of your backup codes"

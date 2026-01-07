@@ -26,7 +26,7 @@ export function DataCard({
   return (
     <div 
       className={cn(
-        "bg-card border border-border rounded-2xl",
+        "bg-card border border-border rounded-xl",
         // Apple-style layered shadow
         "shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)]",
         "dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)]",

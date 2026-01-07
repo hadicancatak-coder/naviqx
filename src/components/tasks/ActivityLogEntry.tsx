@@ -37,15 +37,15 @@ export function ActivityLogEntry({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-1.5 flex-wrap">
-          <span className="font-medium text-xs">
+          <span className="font-medium text-metadata">
             {profiles?.name || 'System'}
           </span>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-metadata text-muted-foreground">
             {description || `updated ${field_name}`}
           </span>
         </div>
         {old_value !== undefined && new_value !== undefined && !description && (
-          <div className="mt-0.5 text-[10px] text-muted-foreground space-y-0.5">
+          <div className="mt-0.5 text-metadata text-muted-foreground space-y-0.5">
             <div className="flex items-center gap-1.5">
               <span className="text-destructive line-through">{formatValue(old_value)}</span>
               <span>→</span>
@@ -53,7 +53,7 @@ export function ActivityLogEntry({
             </div>
           </div>
         )}
-        <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1 mt-0.5 text-metadata text-muted-foreground">
           <Clock className="h-2.5 w-2.5" />
           {changed_at && format(new Date(changed_at), "MMM d, h:mm a")}
         </div>

@@ -133,7 +133,7 @@ export default function MfaSetup() {
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-6">
             <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">Save Your Backup Codes</h1>
+            <h1 className="text-heading-lg font-bold text-foreground mb-2">Save Your Backup Codes</h1>
             <p className="text-sm text-muted-foreground">
               Store these codes in a safe place. You can use them to access your account if you lose your authenticator.
             </p>
@@ -180,7 +180,7 @@ export default function MfaSetup() {
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-6">
           <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
+          <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
           <p className="text-sm text-muted-foreground">
             Two-factor authentication is required for all accounts
           </p>

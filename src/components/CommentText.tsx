@@ -23,7 +23,7 @@ export function CommentText({
   
   // Mention styling based on context
   const mentionClassName = inverted
-    ? "bg-white/25 text-inherit px-1.5 py-0.5 rounded-md font-semibold text-body-sm inline-block"
+    ? "bg-card/25 text-inherit px-1.5 py-0.5 rounded-md font-semibold text-body-sm inline-block"
     : "bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-md font-semibold text-body-sm inline-block";
   
   return (
