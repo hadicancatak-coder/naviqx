@@ -90,8 +90,8 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
     <ScrollArea className="h-full">
       <div className="p-6 space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold">Campaigns for {entity}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h2 className="text-heading-lg font-semibold">Campaigns for {entity}</h2>
+          <p className="text-body-sm text-muted-foreground mt-1">
             Create a new campaign or select an existing one from the tree
           </p>
         </div>
@@ -126,7 +126,7 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
                     />
                     <label
                       htmlFor={`lang-${lang.code}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      className="text-body-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       {lang.name}
                     </label>
@@ -160,7 +160,7 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
                     className="p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
                     <div className="font-medium">{campaign.name}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-body-sm text-muted-foreground">
                       {campaign.languages?.join(", ")}
                     </div>
                   </div>

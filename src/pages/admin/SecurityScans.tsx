@@ -172,7 +172,7 @@ export default function SecurityScans() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Security Monitoring</h1>
+          <h1 className="text-heading-lg font-bold text-foreground">Security Monitoring</h1>
           <p className="text-muted-foreground mt-1">
             Automated security scanning and suspicious activity tracking
           </p>
@@ -201,7 +201,7 @@ export default function SecurityScans() {
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{latestScan.summary?.total_findings || 0}</div>
+              <div className="text-heading-lg font-bold">{latestScan.summary?.total_findings || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Last scan: {formatDistanceToNow(new Date(latestScan.created_at), { addSuffix: true })}
               </p>
@@ -214,7 +214,7 @@ export default function SecurityScans() {
               <XCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">
+              <div className="text-heading-lg font-bold text-destructive">
                 {latestScan.summary?.by_severity?.critical || 0}
               </div>
               <p className="text-xs text-muted-foreground">High priority issues</p>
@@ -227,7 +227,7 @@ export default function SecurityScans() {
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-heading-lg font-bold text-yellow-600">
                 {(latestScan.summary?.by_severity?.high || 0) + (latestScan.summary?.by_severity?.medium || 0)}
               </div>
               <p className="text-xs text-muted-foreground">Needs attention</p>
@@ -240,7 +240,7 @@ export default function SecurityScans() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{suspiciousActivities.length}</div>
+              <div className="text-heading-lg font-bold">{suspiciousActivities.length}</div>
               <p className="text-xs text-muted-foreground">Suspicious activities</p>
             </CardContent>
           </Card>

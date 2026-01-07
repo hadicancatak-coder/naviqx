@@ -46,8 +46,8 @@ export function LinkPopover({ text, url, linkIndex, onEdit, onRemove, children }
         {!isEditing ? (
           <div className="space-y-3">
             <div className="space-y-1">
-              <p className="text-sm font-medium">{text}</p>
-              <p className="text-xs text-muted-foreground truncate">{url}</p>
+              <p className="text-body-sm font-medium">{text}</p>
+              <p className="text-metadata text-muted-foreground truncate">{url}</p>
             </div>
             <div className="flex gap-2">
               <Button

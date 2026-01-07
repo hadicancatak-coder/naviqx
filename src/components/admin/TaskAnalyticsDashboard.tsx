@@ -178,7 +178,7 @@ export const TaskAnalyticsDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-metadata">Pending</p>
-                <p className="text-3xl font-bold text-foreground">{statusDistribution.pending}</p>
+                <p className="text-heading-lg font-bold text-foreground">{statusDistribution.pending}</p>
               </div>
               <Clock className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -190,7 +190,7 @@ export const TaskAnalyticsDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-metadata">Ongoing</p>
-                <p className="text-3xl font-bold text-primary">{statusDistribution.ongoing}</p>
+                <p className="text-heading-lg font-bold text-primary">{statusDistribution.ongoing}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-primary" />
             </div>
@@ -202,7 +202,7 @@ export const TaskAnalyticsDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-metadata">Completed</p>
-                <p className="text-3xl font-bold text-success">{statusDistribution.completed}</p>
+                <p className="text-heading-lg font-bold text-success">{statusDistribution.completed}</p>
               </div>
               <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
@@ -214,7 +214,7 @@ export const TaskAnalyticsDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-metadata">Blocked</p>
-                <p className="text-3xl font-bold text-destructive">{statusDistribution.blocked}</p>
+                <p className="text-heading-lg font-bold text-destructive">{statusDistribution.blocked}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
@@ -226,7 +226,7 @@ export const TaskAnalyticsDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-metadata">Overdue</p>
-                <p className="text-3xl font-bold text-orange">{statusDistribution.overdue}</p>
+                <p className="text-heading-lg font-bold text-orange">{statusDistribution.overdue}</p>
               </div>
               <TrendingDown className="h-8 w-8 text-orange" />
             </div>
@@ -238,7 +238,7 @@ export const TaskAnalyticsDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-metadata">Total</p>
-                <p className="text-3xl font-bold text-foreground">{totalTasks}</p>
+                <p className="text-heading-lg font-bold text-foreground">{totalTasks}</p>
               </div>
               <Users className="h-8 w-8 text-muted-foreground" />
             </div>

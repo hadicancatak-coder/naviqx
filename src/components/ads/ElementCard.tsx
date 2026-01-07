@@ -101,7 +101,7 @@ export function ElementCard({ element }: ElementCardProps) {
 
   return (
     <>
-      <Card className="p-md hover:shadow-md hover:-translate-y-0.5 transition-smooth cursor-pointer" onClick={handleEdit}>
+      <Card className="p-md hover:shadow-soft hover:-translate-y-0.5 transition-smooth cursor-pointer" onClick={handleEdit}>
         <div className="flex items-start justify-between mb-sm">
           <div className="flex-1">
             {isEditing ? (

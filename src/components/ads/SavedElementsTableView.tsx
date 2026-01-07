@@ -101,7 +101,7 @@ export function SavedElementsTableView({ elements, onRefresh }: SavedElementsTab
     <div className="space-y-4">
       {selectedIds.length > 0 && (
         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-          <span className="text-sm font-medium">{selectedIds.length} selected</span>
+          <span className="text-body-sm font-medium">{selectedIds.length} selected</span>
           <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); setShowBulkDeleteConfirm(true); }}>
@@ -179,25 +179,25 @@ export function SavedElementsTableView({ elements, onRefresh }: SavedElementsTab
                   </Button>
                 </TableCell>
                 <TableCell className="max-w-md">
-                  <p className="line-clamp-2 text-sm">{element.content?.text || element.content}</p>
+                  <p className="line-clamp-2 text-body-sm">{element.content?.text || element.content}</p>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {element.entity?.slice(0, 2).map((ent: string) => (
-                      <Badge key={ent} variant="outline" className="text-xs">{ent}</Badge>
+                      <Badge key={ent} variant="outline" className="text-metadata">{ent}</Badge>
                     ))}
                     {element.entity?.length > 2 && (
-                      <Badge variant="outline" className="text-xs">+{element.entity.length - 2}</Badge>
+                      <Badge variant="outline" className="text-metadata">+{element.entity.length - 2}</Badge>
                     )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className="text-xs">{element.language || 'EN'}</Badge>
+                  <Badge variant="secondary" className="text-metadata">{element.language || 'EN'}</Badge>
                 </TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
-                    className={`text-xs cursor-pointer ${getStatusColor(element.google_status)}`}
+                    className={`text-metadata cursor-pointer ${getStatusColor(element.google_status)}`}
                     onClick={() => {
                       setSelectedElement(element);
                       setStatusDialogOpen(true);
@@ -206,10 +206,10 @@ export function SavedElementsTableView({ elements, onRefresh }: SavedElementsTab
                     {element.google_status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-body-sm text-muted-foreground">
                   {element.use_count || 0}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-body-sm text-muted-foreground">
                   {new Date(element.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">

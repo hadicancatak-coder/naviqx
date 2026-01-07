@@ -124,7 +124,7 @@ export function LpTypesManager() {
                   <TableCell className="text-muted-foreground max-w-xs truncate">
                     {lpType.description || '-'}
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs max-w-xs truncate">
+                  <TableCell className="text-muted-foreground text-metadata max-w-xs truncate">
                     {lpType.default_url_pattern || '-'}
                   </TableCell>
                   <TableCell className="text-right">

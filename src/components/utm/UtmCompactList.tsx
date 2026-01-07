@@ -41,7 +41,7 @@ export const UtmCompactList = ({ links }: UtmCompactListProps) => {
     };
 
     const config = variants[lpType] || { label: lpType, variant: "outline" };
-    return <Badge variant={config.variant} className="text-[10px] py-0 px-1.5">{config.label}</Badge>;
+    return <Badge variant={config.variant} className="text-metadata py-0 px-1.5">{config.label}</Badge>;
   };
 
   return (

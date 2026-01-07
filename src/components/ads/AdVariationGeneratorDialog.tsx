@@ -227,7 +227,7 @@ export function AdVariationGeneratorDialog({
                               <div key={i}>• {h}</div>
                             ))}
                             {variation.headlines.length > 3 && (
-                              <div className="text-xs">+ {variation.headlines.length - 3} more</div>
+                              <div className="text-metadata">+ {variation.headlines.length - 3} more</div>
                             )}
                           </div>
                         </div>
@@ -242,7 +242,7 @@ export function AdVariationGeneratorDialog({
                         </div>
 
                         {variation.sitelinks.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-metadata text-muted-foreground">
                             + {variation.sitelinks.length} sitelinks, {variation.callouts.length} callouts
                           </div>
                         )}
