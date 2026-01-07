@@ -79,8 +79,8 @@ const UtmPlanner = () => {
         <TabsContent value="archive" forceMount hidden={activeTab !== "archive"} className="mt-lg space-y-md">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold">Archived Links</h3>
-              <p className="text-sm text-muted-foreground">
+            <h3 className="text-heading-sm font-semibold">Archived Links</h3>
+              <p className="text-body-sm text-muted-foreground">
                 Links that have been archived and are no longer active
               </p>
             </div>
@@ -91,10 +91,10 @@ const UtmPlanner = () => {
                 <TableSkeleton columns={5} rows={8} />
               </div>
             ) : archivedLinks.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <div className="p-xl text-center text-muted-foreground">
+                <Archive className="h-12 w-12 mx-auto mb-md opacity-50" />
                 <p>No archived links yet</p>
-                <p className="text-sm">Archived links will appear here</p>
+                <p className="text-body-sm">Archived links will appear here</p>
               </div>
             ) : (
               <UtmTableGroupedView links={archivedLinks} />

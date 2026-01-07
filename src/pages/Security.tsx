@@ -187,7 +187,7 @@ export default function Security() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="p-xl space-y-lg max-w-4xl mx-auto animate-fade-in">
       <PageHeader 
         title="Security Settings" 
         description="Manage your account security and authentication"
@@ -195,13 +195,13 @@ export default function Security() {
       />
 
       {/* Change Password */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
+      <Card className="p-lg">
+        <div className="flex items-center gap-xs mb-md">
           <Key className="h-5 w-5 text-primary" />
           <h2 className="text-heading-md font-semibold">Change Password</h2>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div>
             <Label htmlFor="current-password">Current Password</Label>
             <Input
@@ -256,17 +256,17 @@ export default function Security() {
       </Card>
 
       {/* Two-Factor Authentication */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
+      <Card className="p-lg">
+        <div className="flex items-center gap-xs mb-md">
           <Shield className="h-5 w-5 text-primary" />
           <h2 className="text-heading-md font-semibold">Two-Factor Authentication</h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Status</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 {mfaEnabled ? "Two-factor authentication is enabled" : "Two-factor authentication is disabled"}
               </p>
             </div>
@@ -277,7 +277,7 @@ export default function Security() {
 
           {mfaEnabled && mfaEnrolledAt && (
             <div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 Configured {formatDistanceToNow(new Date(mfaEnrolledAt), { addSuffix: true })}
               </p>
             </div>
@@ -294,25 +294,25 @@ export default function Security() {
 
       {/* Backup Codes */}
       {mfaEnabled && (
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+        <Card className="p-lg">
+          <div className="flex items-center gap-xs mb-md">
             <Key className="h-5 w-5 text-primary" />
             <h2 className="text-heading-md font-semibold">Backup Recovery Codes</h2>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-body-sm text-muted-foreground mb-md">
             Use these codes to access your account if you lose access to your authenticator app. Each code can only be used once.
           </p>
 
           {backupCodes.length > 0 ? (
             <>
               <div 
-                className={`bg-muted rounded-lg p-4 mb-4 cursor-pointer transition-all ${!codesRevealed ? 'blur-sm hover:blur-none' : ''}`}
+                className={`bg-muted rounded-lg p-md mb-md cursor-pointer transition-all ${!codesRevealed ? 'blur-sm hover:blur-none' : ''}`}
                 onClick={() => setCodesRevealed(true)}
               >
-                <div className="grid grid-cols-2 gap-2 font-mono text-sm">
+                <div className="grid grid-cols-2 gap-xs font-mono text-body-sm">
                   {backupCodes.map((code, index) => (
-                    <div key={index} className="text-center p-2 bg-background rounded">
+                    <div key={index} className="text-center p-xs bg-background rounded">
                       {code}
                     </div>
                   ))}
@@ -320,12 +320,12 @@ export default function Security() {
               </div>
 
               {!codesRevealed && (
-                <p className="text-xs text-muted-foreground text-center mb-4">
+                <p className="text-metadata text-muted-foreground text-center mb-md">
                   Click to reveal codes
                 </p>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-xs">
                 <Button
                   variant="outline"
                   onClick={copyBackupCodes}
@@ -355,7 +355,7 @@ export default function Security() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">No backup codes available. Set up MFA to generate codes.</p>
+            <p className="text-body-sm text-muted-foreground">No backup codes available. Set up MFA to generate codes.</p>
           )}
         </Card>
       )}

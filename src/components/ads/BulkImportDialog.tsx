@@ -47,7 +47,7 @@ export function BulkImportDialog({ open, onOpenChange, elementType }: BulkImport
           <DialogTitle>Bulk Import {elementType.charAt(0).toUpperCase() + elementType.slice(1)}s</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div>
             <Label htmlFor="entity">Entity (applies to all)</Label>
             <Select value={entity || undefined} onValueChange={setEntity}>
@@ -81,7 +81,7 @@ export function BulkImportDialog({ open, onOpenChange, elementType }: BulkImport
           ) : (
             <>
               <div>
-                <h3 className="font-medium mb-2">Preview ({preview.length} items)</h3>
+                <h3 className="font-medium mb-xs">Preview ({preview.length} items)</h3>
                 <div className="border rounded-lg max-h-60 overflow-y-auto">
                   <Table>
                     <TableHeader>
@@ -104,7 +104,7 @@ export function BulkImportDialog({ open, onOpenChange, elementType }: BulkImport
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-xs">
                 <Button variant="outline" onClick={() => setPreview([])}>
                   Edit
                 </Button>

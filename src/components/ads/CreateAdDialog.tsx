@@ -129,7 +129,7 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0">
-        <DialogHeader className="p-6 pb-4">
+        <DialogHeader className="p-lg pb-md">
           <DialogTitle>Create New Ad</DialogTitle>
           <DialogDescription>
             Create a new search or display ad with live preview
@@ -139,7 +139,7 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Left Panel - Form Inputs */}
           <ResizablePanel defaultSize={50} minSize={40}>
-            <ScrollArea className="h-[calc(95vh-180px)] px-6">
+            <ScrollArea className="h-[calc(95vh-180px)] px-lg">
               <Tabs value="search" className="w-full">
                 <TabsList className="grid w-full grid-cols-1 mb-md">
                   <TabsTrigger value="search">Search Ad</TabsTrigger>

@@ -123,7 +123,7 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
           <DialogTitle>Create Project</DialogTitle>
           <DialogDescription>Add a new project with team members and tasks</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-md">
           <div>
             <Label htmlFor="name">Project Name *</Label>
             <Input
@@ -188,7 +188,7 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
               </SelectContent>
             </Select>
             {selectedMembers.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-xs mt-xs">
                 {selectedMembers.map((id) => {
                   const member = allUsers.find(u => u.user_id === id);
                   return (
@@ -217,7 +217,7 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
               </SelectContent>
             </Select>
             {relatedTasks.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-xs mt-xs">
                 {relatedTasks.map((id) => {
                   const task = allTasks.find(t => t.id === id);
                   return (
@@ -231,7 +231,7 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
             )}
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-xs justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

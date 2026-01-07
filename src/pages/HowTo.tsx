@@ -157,7 +157,7 @@ export default function HowTo() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="p-xl space-y-lg max-w-4xl mx-auto animate-fade-in">
       <PageHeader
         title="How to Use Prisma"
         description="Learn how to get the most out of the platform"
@@ -172,7 +172,7 @@ export default function HowTo() {
       />
 
       {/* Content */}
-      <Card className="p-6 bg-card border-border">
+      <Card className="p-lg bg-card border-border">
         <div className="flex items-center gap-sm mb-lg">
           <BookOpen className="h-5 w-5 text-primary" />
           <h2 className="text-heading-md font-semibold">User Guide</h2>

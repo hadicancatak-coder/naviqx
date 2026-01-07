@@ -200,7 +200,7 @@ export default function Knowledge() {
         }
       />
 
-      <div className="grid grid-cols-[280px_1fr] gap-6 min-h-[600px]">
+      <div className="grid grid-cols-[280px_1fr] gap-lg min-h-[600px]">
         {/* Sidebar */}
         <DataCard className="h-fit max-h-[calc(100vh-200px)] overflow-hidden flex flex-col">
           <div className="p-3 border-b border-border">
@@ -238,7 +238,7 @@ export default function Knowledge() {
               isAdmin={isAdmin}
             />
           ) : pages && pages.length > 0 ? (
-            <div className="p-6">
+            <div className="p-lg">
               <h2 className="text-heading-lg font-semibold text-foreground mb-2">
                 Welcome to Knowledge Base
               </h2>
@@ -252,7 +252,7 @@ export default function Knowledge() {
                     key={page.id}
                     onClick={() => handleNavigate(page)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-4 rounded-xl",
+                      "w-full flex items-center gap-sm p-md rounded-xl",
                       "bg-card hover:bg-card-hover border border-border",
                       "text-left transition-smooth hover-lift"
                     )}
