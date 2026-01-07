@@ -499,7 +499,7 @@ All colors MUST be HSL.
   
   /* Liquid Glass - Base header style (Blue-tinted) */
   .liquid-glass {
-    position: relative;
+    isolation: isolate;
     background: linear-gradient(
       145deg,
       hsl(210 80% 98% / 0.6) 0%,
@@ -535,7 +535,7 @@ All colors MUST be HSL.
   
   /* Liquid Glass - Elevated panels (sidebar, sheets) */
   .liquid-glass-elevated {
-    position: relative;
+    isolation: isolate;
     background: linear-gradient(
       145deg,
       hsl(210 100% 99% / 0.78) 0%,
@@ -602,7 +602,7 @@ All colors MUST be HSL.
 
   /* Liquid Glass - Dropdowns and popovers */
   .liquid-glass-dropdown {
-    position: relative;
+    isolation: isolate;
     background: linear-gradient(
       145deg,
       hsl(210 100% 99% / 0.92) 0%,
