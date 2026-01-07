@@ -8,7 +8,7 @@ const Performance = () => {
         description="Performance reports and analytics"
       />
       
-      <div className="mt-6 bg-elevated rounded-xl border border-border overflow-hidden">
+      <div className="mt-lg bg-elevated rounded-xl border border-border overflow-hidden">
         <iframe
           width="100%"
           height="800"

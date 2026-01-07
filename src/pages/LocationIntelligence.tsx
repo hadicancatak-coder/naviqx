@@ -338,7 +338,7 @@ export default function LocationIntelligence() {
             <h3 className="font-semibold">{selectionMode === 'campaign-select' ? 'Selected for Campaign' : 'Selected Locations'} ({selectedLocations.length})</h3>
             {selectionMode === 'campaign-select' && <Badge variant="default" className="text-xs"><Target className="h-3 w-3 mr-1" />Active</Badge>}
           </div>
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-md">
             {selectedLocations.map(loc => (
               <div key={loc.id} className="flex justify-between items-center p-2 bg-background/50 rounded text-sm">
                 <span className="truncate flex-1">{loc.name}</span>

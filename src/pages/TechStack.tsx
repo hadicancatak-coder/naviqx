@@ -222,7 +222,7 @@ export default function TechStack() {
               <h2 className="text-heading-lg font-semibold text-foreground mb-2">
                 Our Tech Stack
               </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-lg">
                 Browse the technologies, services, and tools we use. Select an item to learn more.
               </p>
               

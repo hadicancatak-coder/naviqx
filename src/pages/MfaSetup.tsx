@@ -132,7 +132,7 @@ export default function MfaSetup() {
       <div className="min-h-screen flex items-center justify-center bg-background p-md">
         <Card className="w-full max-w-md p-lg">
           <div className="text-center mb-lg">
-            <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+            <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
             <h1 className="text-heading-lg font-bold text-foreground mb-2">Save Your Backup Codes</h1>
           <p className="text-body-sm text-muted-foreground">
               Store these codes in a safe place. You can use them to access your account if you lose your authenticator.
@@ -152,7 +152,7 @@ export default function MfaSetup() {
           <Button
             onClick={copyBackupCodes}
             variant="outline"
-            className="w-full mb-4"
+            className="w-full mb-md"
           >
             {copiedCodes ? (
               <>
@@ -179,14 +179,14 @@ export default function MfaSetup() {
     <div className="min-h-screen flex items-center justify-center bg-background p-md">
       <Card className="w-full max-w-md p-lg">
         <div className="text-center mb-lg">
-          <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+          <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
           <p className="text-body-sm text-muted-foreground">
             Two-factor authentication is required for all accounts
           </p>
         </div>
 
-        <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+        <Alert className="mb-lg border-amber-500/50 bg-amber-500/10">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertDescription className="text-body-sm text-muted-foreground ml-2">
             <strong>Required:</strong> Scan the QR code with an authenticator app like 
@@ -194,11 +194,11 @@ export default function MfaSetup() {
           </AlertDescription>
         </Alert>
 
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-lg">
           <img src={qrCode} alt="QR Code" className="w-48 h-48" />
         </div>
 
-        <div className="mb-6">
+        <div className="mb-lg">
           <p className="text-metadata text-muted-foreground text-center mb-2">
             Can't scan? Enter this code manually:
           </p>
@@ -230,7 +230,7 @@ export default function MfaSetup() {
             </div>
           </div>
 
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-md">
             <MfaSetupGuide />
           </div>
 

@@ -279,7 +279,7 @@ export default function AdEditorPanel({ ad, onSave, onCancel, isCreating }: AdEd
           <ScrollArea className="h-full">
             <div className="p-lg space-y-lg">
               {/* Basic Info */}
-              <Card className="mt-4">
+              <Card className="mt-md">
                 <CardContent className="pt-lg space-y-md">
                   <div>
                     <Label htmlFor="adName">Ad Name *</Label>

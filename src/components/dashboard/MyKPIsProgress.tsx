@@ -68,7 +68,7 @@ export function MyKPIsProgress() {
         </div>
         <div className="text-center py-xl">
           <Target className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground mb-4">No KPIs set yet</p>
+          <p className="text-muted-foreground mb-md">No KPIs set yet</p>
           <Button onClick={() => navigate('/profile')} variant="outline">
             Set Your KPIs
           </Button>

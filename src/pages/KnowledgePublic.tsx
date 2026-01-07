@@ -57,7 +57,7 @@ export default function KnowledgePublic() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-md" />
           <h1 className="text-heading-lg font-semibold text-foreground mb-2">Page Not Found</h1>
           <p className="text-muted-foreground">
             This page doesn't exist or is no longer shared.

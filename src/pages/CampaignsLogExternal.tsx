@@ -209,7 +209,7 @@ export default function CampaignsLogExternal() {
 
       {/* Usage Guide */}
       <div className="container mx-auto py-6 px-6">
-        <Alert className="mb-6 bg-primary/5 border-primary/20">
+        <Alert className="mb-lg bg-primary/5 border-primary/20">
           <CheckCircle className="h-4 w-4 text-primary" />
           <AlertDescription>
             <div className="space-y-2">

@@ -273,8 +273,8 @@ export default function Profile() {
     <div className="min-h-screen bg-background pt-8 pb-8 px-8 lg:px-12">
       <div className="max-w-[1280px] mx-auto space-y-lg">
         {/* Profile Header Card */}
-        <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-8">
-          <div className="flex flex-col md:flex-row gap-8">
+        <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-lg">
+          <div className="flex flex-col md:flex-row gap-lg">
             <div className="flex flex-col items-center gap-md">
               <Avatar className="h-28 w-28 border-2 border-border">
                 <AvatarImage src={profile.avatar_url} />

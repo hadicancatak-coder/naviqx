@@ -20,7 +20,7 @@ export const CompletedTasksSection = ({
   if (tasks.length === 0) return null;
 
   return (
-    <div className="mt-6">
+    <div className="mt-lg">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center gap-2 w-full py-3 px-4 rounded-lg bg-success/10 hover:bg-success/20 border border-success/30 transition-smooth group"

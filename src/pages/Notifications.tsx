@@ -561,7 +561,7 @@ export default function Notifications() {
 
         {filteredNotifications.length === 0 && !loading && (
           <div className="py-12 text-center">
-            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-md" />
             <p className="text-body text-muted-foreground">
               {searchQuery || typeFilter !== "all" || readFilter !== "all"
                 ? "No notifications match your filters"
