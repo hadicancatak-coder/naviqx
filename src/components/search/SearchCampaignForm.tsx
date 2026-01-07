@@ -88,7 +88,7 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-6">
+      <div className="p-lg space-y-lg">
         <div>
           <h2 className="text-heading-lg font-semibold">Campaigns for {entity}</h2>
           <p className="text-body-sm text-muted-foreground mt-1">

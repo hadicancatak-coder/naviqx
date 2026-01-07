@@ -163,7 +163,7 @@ export function EnhancedMultiSelect({
               Add a new option to the list
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-md">
             <div>
               <Label htmlFor="custom-value">Name</Label>
               <Input 

@@ -105,7 +105,7 @@ export function TaskChecklistSection({ taskId, onUpdate, readOnly = false }: Tas
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-4 w-4" />

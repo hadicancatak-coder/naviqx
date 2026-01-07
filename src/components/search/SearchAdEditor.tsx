@@ -598,7 +598,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-lg">
             <div className="space-y-2">
               <Label htmlFor="ad-name">Ad Name *</Label>
               {isEditMode ? (
@@ -796,7 +796,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                       </Badge>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 space-y-6">
+                  <AccordionContent className="px-md pb-md space-y-lg">
                     {/* Sitelinks */}
                     <div className="space-y-3">
                       <Label>Sitelinks (5 max)</Label>
@@ -933,7 +933,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-lg">
             <div className="space-y-2">
               <Label htmlFor="ad-name">Ad Name *</Label>
               {isEditMode ? (
