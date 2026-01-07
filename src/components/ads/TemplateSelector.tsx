@@ -47,11 +47,11 @@ export function TemplateSelector({ open, onOpenChange, onSelect }: TemplateSelec
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading templates...</div>
         ) : templates && templates.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-md md:grid-cols-2">
             {templates.map((template) => (
               <Card 
                 key={template.id} 
-                className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="p-md hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => {
                   onSelect(template);
                   onOpenChange(false);

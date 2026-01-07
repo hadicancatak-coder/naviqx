@@ -112,9 +112,9 @@ export default function MfaVerify() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-background p-md">
+      <Card className="w-full max-w-md p-lg">
+        <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Two-Factor Authentication</h1>
           <p className="text-body-sm text-muted-foreground">
@@ -132,7 +132,7 @@ export default function MfaVerify() {
           </AlertDescription>
         </Alert>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           {useBackupCode ? (
             <div>
               <label className="text-body-sm font-medium text-foreground block mb-2">

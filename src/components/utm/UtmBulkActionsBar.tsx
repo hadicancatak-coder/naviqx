@@ -49,7 +49,7 @@ export function UtmBulkActionsBar({
   return (
     <>
       <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 shadow-xl border-2 ${className}`}>
-        <div className="flex items-center gap-4 p-4">
+        <div className="flex items-center gap-md p-md">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{selectedCount}</span>
             <span className="text-muted-foreground">selected</span>

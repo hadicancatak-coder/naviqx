@@ -56,7 +56,7 @@ export default function KPIsManagement() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-md">
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -64,7 +64,7 @@ export default function KPIsManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-lg">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-section-title">KPI Management</h2>

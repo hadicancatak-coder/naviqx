@@ -84,7 +84,7 @@ export default function KnowledgePublic() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-start gap-4 mb-8">
+        <div className="flex items-start gap-md mb-lg">
           <div className="p-3 bg-primary/10 rounded-xl">
             <IconComponent className="h-8 w-8 text-primary" />
           </div>

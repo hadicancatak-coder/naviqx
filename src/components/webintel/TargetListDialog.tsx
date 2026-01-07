@@ -380,10 +380,10 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
           <DialogTitle>{list ? "Edit Target List" : "Create Target List"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-lg">
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-md">
+            <div className="space-y-xs">
               <Label>List Name *</Label>
               <Input
                 value={name}
@@ -414,7 +414,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
 
           {/* Import/Export and Stats */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-md">
               <Badge variant="secondary">
                 <Globe className="size-3 mr-1" />
                 {websiteItems.length} Websites
@@ -464,7 +464,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="websites" className="space-y-4 mt-4">
+            <TabsContent value="websites" className="space-y-md mt-md">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                   Add website URLs. We'll check if they have Google in their ads.txt file.
@@ -493,7 +493,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
               {renderItemsTable(websiteItems, true)}
             </TabsContent>
 
-            <TabsContent value="youtube" className="space-y-4 mt-4">
+            <TabsContent value="youtube" className="space-y-md mt-md">
               <p className="text-sm text-muted-foreground">
                 Add YouTube channel URLs or IDs for your GDN targeting.
               </p>
@@ -511,7 +511,7 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
               />
             </TabsContent>
 
-            <TabsContent value="apps" className="space-y-4 mt-4">
+            <TabsContent value="apps" className="space-y-md mt-md">
               <p className="text-sm text-muted-foreground">
                 Add mobile app store URLs or bundle IDs for your GDN targeting.
               </p>
