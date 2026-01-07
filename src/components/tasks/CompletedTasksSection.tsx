@@ -30,7 +30,7 @@ export const CompletedTasksSection = ({
         ) : (
           <ChevronRight className="w-4 h-4 text-success" />
         )}
-        <span className="text-sm font-medium text-success">
+        <span className="text-body-sm font-medium text-success">
           Completed Tasks ({tasks.length})
         </span>
         <Badge variant="secondary" className="ml-auto bg-success/20 text-success border-success/30">
@@ -54,18 +54,18 @@ export const CompletedTasksSection = ({
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm line-through text-muted-foreground">
+                  <h4 className="text-body-sm line-through text-muted-foreground">
                     {task.title}
                   </h4>
                   <Badge
                     variant="outline"
-                    className="border-border/50 text-muted-foreground text-xs"
+                    className="border-border/50 text-muted-foreground text-metadata"
                   >
                     {task.priority}
                   </Badge>
                 </div>
                 {task.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-1">
+                  <p className="text-metadata text-muted-foreground line-clamp-1">
                     {task.description.replace(/<[^>]*>/g, "").substring(0, 100)}
                   </p>
                 )}

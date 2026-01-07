@@ -41,7 +41,7 @@ export const TaskSortDropdown = ({ value, onChange }: TaskSortDropdownProps) => 
               {isManualMode && (
                 <Badge 
                   variant="secondary" 
-                  className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs pointer-events-none animate-pulse"
+                  className="absolute -top-2 -right-2 px-1.5 py-0.5 text-metadata pointer-events-none animate-pulse"
                 >
                   <GripVertical className="w-3 h-3" />
                 </Badge>
@@ -50,7 +50,7 @@ export const TaskSortDropdown = ({ value, onChange }: TaskSortDropdownProps) => 
           </TooltipTrigger>
           {isManualMode && (
             <TooltipContent>
-              <p className="text-xs">Drag & drop enabled - reorder tasks by dragging</p>
+              <p className="text-metadata">Drag & drop enabled - reorder tasks by dragging</p>
             </TooltipContent>
           )}
         </Tooltip>

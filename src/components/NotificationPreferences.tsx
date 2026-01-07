@@ -99,7 +99,7 @@ export function NotificationPreferences() {
             <Label htmlFor={type.id} className="font-medium cursor-pointer">
               {type.label}
             </Label>
-            <p className="text-sm text-muted-foreground">{type.description}</p>
+            <p className="text-body-sm text-muted-foreground">{type.description}</p>
           </div>
           <Switch
             id={type.id}

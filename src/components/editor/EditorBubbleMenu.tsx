@@ -118,7 +118,7 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
   return (
     <>
       <div
-        className="fixed z-overlay flex items-center gap-1 p-1 bg-popover border border-border rounded-lg shadow-lg"
+        className="fixed z-overlay flex items-center gap-1 p-1 bg-popover border border-border rounded-lg shadow-soft"
         style={{
           top: `${position.top}px`,
           left: `${position.left}px`,

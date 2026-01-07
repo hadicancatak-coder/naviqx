@@ -41,7 +41,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
               <Shield className="h-4 w-4" />
               What is Two-Factor Authentication?
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Two-factor authentication (2FA) adds an extra layer of security to your account. 
               Even if someone knows your password, they can't access your account without the 
               second factor - a time-based code from your authenticator app.
@@ -54,10 +54,10 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
               <Smartphone className="h-4 w-4" />
               Which Authenticator App Should I Use?
             </h3>
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-body-sm text-muted-foreground mb-3">
               You can use any TOTP-compatible authenticator app. Popular options include:
             </p>
-            <ul className="text-sm text-muted-foreground space-y-2 ml-4">
+            <ul className="text-body-sm text-muted-foreground space-y-2 ml-4">
               <li className="flex items-start gap-2">
                 <span className="font-medium text-foreground">Google Authenticator</span> 
                 - Simple and reliable (iOS & Android)
@@ -83,7 +83,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
               <QrCode className="h-4 w-4" />
               How to Set Up 2FA
             </h3>
-            <ol className="text-sm text-muted-foreground space-y-3 ml-4 list-decimal">
+            <ol className="text-body-sm text-muted-foreground space-y-3 ml-4 list-decimal">
               <li>
                 <span className="font-medium text-foreground">Download an authenticator app</span>
                 <br />
@@ -115,7 +115,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
               <Key className="h-4 w-4" />
               What Are Backup Codes?
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Backup codes are one-time use codes that let you access your account if you lose your phone 
               or can't use your authenticator app. Each code can only be used once. Store them securely - 
               in a password manager or printed in a safe location.
@@ -128,10 +128,10 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               What If I Lose My Phone?
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Don't worry! You have options:
             </p>
-            <ul className="text-sm text-muted-foreground mt-2 space-y-1 ml-4 list-disc">
+            <ul className="text-body-sm text-muted-foreground mt-2 space-y-1 ml-4 list-disc">
               <li>Use one of your backup codes to log in</li>
               <li>Contact your administrator to reset your 2FA</li>
               <li>If using Authy with cloud backup, restore on a new device</li>
@@ -144,10 +144,10 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
               <Shield className="h-4 w-4" />
               When Will I Be Asked to Verify?
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               For your security, you'll need to verify with 2FA:
             </p>
-            <ul className="text-sm text-muted-foreground mt-2 space-y-1 ml-4 list-disc">
+            <ul className="text-body-sm text-muted-foreground mt-2 space-y-1 ml-4 list-disc">
               <li>When you log in</li>
               <li>If your IP address changes (different network/location)</li>
               <li>After signing out</li>

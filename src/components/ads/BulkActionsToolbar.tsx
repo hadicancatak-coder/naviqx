@@ -30,7 +30,7 @@ export default function BulkActionsToolbar({
   return (
     <Card
       className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-lg",
+        "fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-soft",
         "animate-in slide-in-from-bottom-4 duration-300",
         className
       )}
@@ -39,9 +39,9 @@ export default function BulkActionsToolbar({
         {/* Selection Count */}
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-semibold text-primary">{selectedCount}</span>
+            <span className="text-body-sm font-semibold text-primary">{selectedCount}</span>
           </div>
-          <span className="text-sm font-medium">
+          <span className="text-body-sm font-medium">
             {selectedCount} {selectedCount === 1 ? "ad" : "ads"} selected
           </span>
         </div>

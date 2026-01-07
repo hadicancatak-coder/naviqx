@@ -80,7 +80,7 @@ export function TaskBulkActionsBar({
 
   return (
     <>
-      <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-xl border-2 ${className}`}>
+      <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-soft border-2 ${className}`}>
         <div className="flex items-center gap-4 p-4 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{selectedCount}</span>

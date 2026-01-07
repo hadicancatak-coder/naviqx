@@ -172,20 +172,20 @@ export function TeamKPIsManager() {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-primary/10 rounded-lg">
-              <p className="text-sm text-muted-foreground">Team Members</p>
-              <p className="text-2xl font-bold">{stats.totalMembers}</p>
+              <p className="text-body-sm text-muted-foreground">Team Members</p>
+              <p className="text-heading-lg font-bold">{stats.totalMembers}</p>
             </div>
             <div className="p-4 bg-info-soft rounded-lg">
-              <p className="text-sm text-muted-foreground">With Annual KPIs</p>
-              <p className="text-2xl font-bold text-info-text">{stats.membersWithAnnualKPIs}</p>
+              <p className="text-body-sm text-muted-foreground">With Annual KPIs</p>
+              <p className="text-heading-lg font-bold text-info-text">{stats.membersWithAnnualKPIs}</p>
             </div>
             <div className="p-4 bg-purple-soft rounded-lg">
-              <p className="text-sm text-muted-foreground">With Quarterly KPIs</p>
-              <p className="text-2xl font-bold text-purple-text">{stats.membersWithQuarterlyKPIs}</p>
+              <p className="text-body-sm text-muted-foreground">With Quarterly KPIs</p>
+              <p className="text-heading-lg font-bold text-purple-text">{stats.membersWithQuarterlyKPIs}</p>
             </div>
             <div className="p-4 bg-success-soft rounded-lg">
-              <p className="text-sm text-muted-foreground">Avg KPIs/Person</p>
-              <p className="text-2xl font-bold text-success-text">{stats.avgKPIsPerPerson.toFixed(1)}</p>
+              <p className="text-body-sm text-muted-foreground">Avg KPIs/Person</p>
+              <p className="text-heading-lg font-bold text-success-text">{stats.avgKPIsPerPerson.toFixed(1)}</p>
             </div>
           </div>
 
@@ -218,7 +218,7 @@ export function TeamKPIsManager() {
                       </Avatar>
                       <div className="flex-1">
                         <h4 className="font-semibold">{profile.name}</h4>
-                        <p className="text-sm text-muted-foreground">{profile.email}</p>
+                        <p className="text-body-sm text-muted-foreground">{profile.email}</p>
                       </div>
                     </div>
 
@@ -255,13 +255,13 @@ export function TeamKPIsManager() {
                   {/* Show KPIs inline */}
                   {annualKPIs.length > 0 && (
                     <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs font-semibold text-muted-foreground mb-2">Annual KPIs:</p>
+                      <p className="text-metadata font-semibold text-muted-foreground mb-2">Annual KPIs:</p>
                       <div className="space-y-1">
                         {annualKPIs.map((kpi: any, idx: number) => (
-                          <div key={idx} className="text-sm flex items-center gap-2">
+                          <div key={idx} className="text-body-sm flex items-center gap-2">
                             <TrendingUp className="h-3 w-3 text-info" />
                             <span className="flex-1">{kpi.description}</span>
-                            <Badge variant="secondary" className="text-xs">{kpi.weight}%</Badge>
+                            <Badge variant="secondary" className="text-metadata">{kpi.weight}%</Badge>
                           </div>
                         ))}
                       </div>
@@ -353,7 +353,7 @@ export function TeamKPIsManager() {
               {localKPIs.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No KPIs defined. Click "Add KPI" to create one.</p>
+                  <p className="text-body-sm">No KPIs defined. Click "Add KPI" to create one.</p>
                 </div>
               )}
             </div>

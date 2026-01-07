@@ -134,7 +134,7 @@ export default function MfaSetup() {
           <div className="text-center mb-6">
             <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
             <h1 className="text-heading-lg font-bold text-foreground mb-2">Save Your Backup Codes</h1>
-            <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
               Store these codes in a safe place. You can use them to access your account if you lose your authenticator.
             </p>
           </div>
@@ -181,14 +181,14 @@ export default function MfaSetup() {
         <div className="text-center mb-6">
           <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Two-factor authentication is required for all accounts
           </p>
         </div>
 
         <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
-          <AlertDescription className="text-sm text-muted-foreground ml-2">
+          <AlertDescription className="text-body-sm text-muted-foreground ml-2">
             <strong>Required:</strong> Scan the QR code with an authenticator app like 
             Google Authenticator, Authy, or Microsoft Authenticator.
           </AlertDescription>
@@ -199,17 +199,17 @@ export default function MfaSetup() {
         </div>
 
         <div className="mb-6">
-          <p className="text-xs text-muted-foreground text-center mb-2">
+          <p className="text-metadata text-muted-foreground text-center mb-2">
             Can't scan? Enter this code manually:
           </p>
-          <div className="bg-muted p-3 rounded text-center font-mono text-sm break-all">
+          <div className="bg-muted p-3 rounded text-center font-mono text-body-sm break-all">
             {secret}
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground block mb-2">
+            <label className="text-body-sm font-medium text-foreground block mb-2">
               Enter the 6-digit code from your app
             </label>
             <div className="flex justify-center">

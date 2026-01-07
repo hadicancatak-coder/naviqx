@@ -117,7 +117,7 @@ export default function MfaVerify() {
         <div className="text-center mb-6">
           <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Two-Factor Authentication</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             {useBackupCode 
               ? "Enter one of your backup codes"
               : "Enter the 6-digit code from your authenticator app"
@@ -127,7 +127,7 @@ export default function MfaVerify() {
 
         <Alert className="mb-6 border-primary/50 bg-primary/10">
           <Shield className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-sm text-muted-foreground ml-2">
+          <AlertDescription className="text-body-sm text-muted-foreground ml-2">
             Your session is secured. You'll stay logged in until you sign out, your IP changes, or 24 hours pass.
           </AlertDescription>
         </Alert>
@@ -135,7 +135,7 @@ export default function MfaVerify() {
         <div className="space-y-4">
           {useBackupCode ? (
             <div>
-              <label className="text-sm font-medium text-foreground block mb-2">
+              <label className="text-body-sm font-medium text-foreground block mb-2">
                 Backup Code
               </label>
               <Input
@@ -148,7 +148,7 @@ export default function MfaVerify() {
             </div>
           ) : (
             <div>
-              <label className="text-sm font-medium text-foreground block mb-2">
+              <label className="text-body-sm font-medium text-foreground block mb-2">
                 Verification Code
               </label>
               <div className="flex justify-center">

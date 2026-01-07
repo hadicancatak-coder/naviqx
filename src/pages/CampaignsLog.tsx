@@ -29,13 +29,13 @@ function TrashZone({ isActive }: { isActive: boolean }) {
     <div 
       ref={setNodeRef} 
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-overlay h-28 flex items-center justify-center transition-all duration-300 border-t-4",
+        "fixed bottom-0 left-0 right-0 z-overlay h-28 flex items-center justify-center transition-smooth border-t-4",
         isOver ? "bg-destructive border-destructive-foreground" : "bg-destructive/80 border-destructive/50",
         "animate-in slide-in-from-bottom-10"
       )}
     >
       <div className={cn(
-        "flex items-center gap-md transition-transform duration-200",
+        "flex items-center gap-md transition-smooth",
         isOver && "scale-110"
       )}>
         <Trash2 className="h-10 w-10 text-destructive-foreground" />
@@ -266,12 +266,12 @@ export default function CampaignsLog() {
             }}
           >
             <div className="w-full flex items-center justify-between p-md">
-              <CollapsibleTrigger className="flex items-center gap-sm cursor-pointer hover:bg-accent/50 transition-all duration-200 rounded-lg px-sm py-sm flex-1">
+              <CollapsibleTrigger className="flex items-center gap-sm cursor-pointer hover:bg-accent/50 transition-smooth rounded-lg px-sm py-sm flex-1">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
                 <h3 className="text-heading-sm font-medium text-foreground">Campaign Library</h3>
                 <Badge variant="secondary" className="ml-sm">{filteredCampaigns.length}</Badge>
                 <ChevronDown className={cn(
-                  "h-5 w-5 text-muted-foreground transition-transform duration-300 ml-auto",
+                  "h-5 w-5 text-muted-foreground transition-smooth ml-auto",
                   expandedCampaigns.has('library') && "rotate-180"
                 )} />
               </CollapsibleTrigger>

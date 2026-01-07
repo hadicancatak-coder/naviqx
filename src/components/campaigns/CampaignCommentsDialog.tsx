@@ -83,25 +83,25 @@ export function CampaignCommentsDialog({
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 group">
                   <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-metadata">
                       {comment.author_name?.charAt(0) || "?"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold">
+                      <span className="text-body-sm font-semibold">
                         {comment.author_name}
                       </span>
                       {comment.is_external && comment.author_email && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-metadata text-muted-foreground">
                           ({comment.author_email})
                         </span>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-metadata text-muted-foreground">
                         {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                       </span>
                       {comment.is_external && (
-                        <Badge variant="outline" className="text-xs">External</Badge>
+                        <Badge variant="outline" className="text-metadata">External</Badge>
                       )}
                       {comment.request_type !== 'Comment' && (
                         <Badge 

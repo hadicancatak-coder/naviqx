@@ -192,12 +192,12 @@ export function GlobalSearch() {
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{result.title}</div>
                       {result.description && (
-                        <div className="text-xs text-muted-foreground truncate">
+                        <div className="text-metadata text-muted-foreground truncate">
                           {stripHtml(result.description)}
                         </div>
                       )}
                     </div>
-                    <Badge variant="outline" className="ml-2 text-xs">
+                    <Badge variant="outline" className="ml-2 text-metadata">
                       {result.entity_type.replace('_', ' ')}
                     </Badge>
                   </CommandItem>
