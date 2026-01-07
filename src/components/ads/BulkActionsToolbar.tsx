@@ -35,7 +35,7 @@ export default function BulkActionsToolbar({
         className
       )}
     >
-      <div className="flex items-center gap-4 p-4">
+      <div className="flex items-center gap-md p-md">
         {/* Selection Count */}
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

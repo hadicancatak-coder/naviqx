@@ -69,15 +69,15 @@ export function TaskTimeTrackingSection({
   const percentOver = estimatedNum > 0 ? ((actualNum - estimatedNum) / estimatedNum) * 100 : 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-md">
+      <div className="flex items-center gap-xs">
         <Clock className="h-4 w-4" />
         <h3 className="font-semibold">Time Tracking</h3>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm">Estimated Hours</Label>
+      <div className="grid grid-cols-2 gap-md">
+        <div className="space-y-xs">
+          <Label className="text-body-sm">Estimated Hours</Label>
           <Input
             type="number"
             step="0.5"
@@ -89,8 +89,8 @@ export function TaskTimeTrackingSection({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm">Actual Hours</Label>
+        <div className="space-y-xs">
+          <Label className="text-body-sm">Actual Hours</Label>
           <Input
             type="number"
             step="0.5"
@@ -104,7 +104,7 @@ export function TaskTimeTrackingSection({
       </div>
 
       {estimatedNum > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-xs">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
             <span className="font-medium">
@@ -127,7 +127,7 @@ export function TaskTimeTrackingSection({
       )}
 
       {estimatedNum > 0 && actualNum > 0 && !isOvertime && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-xs">
           <Badge variant="outline" className="bg-success/10 text-success border-success/20">
             On Track
           </Badge>

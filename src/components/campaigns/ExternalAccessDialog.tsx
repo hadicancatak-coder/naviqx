@@ -124,10 +124,10 @@ export function ExternalAccessDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-md py-md">
           {!linkGenerated ? (
             <>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="entity">Entity *</Label>
                 <Select value={selectedEntity} onValueChange={setSelectedEntity}>
                   <SelectTrigger id="entity">
@@ -143,7 +143,7 @@ export function ExternalAccessDialog({
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="reviewer-name">Reviewer Name *</Label>
                 <Input
                   id="reviewer-name"
@@ -153,7 +153,7 @@ export function ExternalAccessDialog({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="reviewer-email">
                   Reviewer Email (@cfi.trade) *
                 </Label>
@@ -169,7 +169,7 @@ export function ExternalAccessDialog({
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="expiration">Link Expiration (Optional)</Label>
                 <Select value={expiration} onValueChange={setExpiration}>
                   <SelectTrigger id="expiration">
@@ -186,7 +186,7 @@ export function ExternalAccessDialog({
               <Button
                 onClick={handleGenerateLink}
                 disabled={loading}
-                className="w-full mt-4"
+                className="w-full mt-md"
               >
                 {loading ? (
                   <>
@@ -200,9 +200,9 @@ export function ExternalAccessDialog({
             </>
           ) : (
             <>
-              <div className="bg-muted p-4 rounded-lg space-y-3">
-                <p className="text-sm font-medium">Review Link:</p>
-                <div className="flex gap-2">
+              <div className="bg-muted p-md rounded-lg space-y-sm">
+                <p className="text-body-sm font-medium">Review Link:</p>
+                <div className="flex gap-xs">
                   <Input value={generatedLink} readOnly className="flex-1" />
                   <Button onClick={copyToClipboard} size="icon" variant="outline">
                     <Copy className="h-4 w-4" />

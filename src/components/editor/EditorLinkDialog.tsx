@@ -46,8 +46,8 @@ export function EditorLinkDialog({
             Enter the URL for the link
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
+        <div className="grid gap-md py-md">
+          <div className="grid gap-xs">
             <Label htmlFor="url">URL</Label>
             <Input
               id="url"

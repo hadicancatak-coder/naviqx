@@ -38,13 +38,13 @@ export function FastLinks() {
 
   return (
     <div>
-      <h2 className="text-section-title text-foreground mb-4">Quick Access</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <h2 className="text-section-title text-foreground mb-md">Quick Access</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-md">
         {links.map((link) => (
           <Card
             key={link.url}
             onClick={() => navigate(link.url)}
-            className="p-4 cursor-pointer hover:shadow-md hover:border-primary/50 transition-smooth group"
+            className="p-md cursor-pointer hover:shadow-soft hover:border-primary/50 transition-smooth group"
           >
             <div className="flex flex-col items-center text-center gap-sm">
               <link.icon className={`h-8 w-8 ${link.color} group-hover:scale-110 transition-smooth`} />

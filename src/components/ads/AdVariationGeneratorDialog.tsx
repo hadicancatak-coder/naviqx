@@ -124,9 +124,9 @@ export function AdVariationGeneratorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-md overflow-hidden">
           {/* Settings */}
-          <div className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+          <div className="grid grid-cols-3 gap-md p-md border rounded-lg">
             <div>
               <Label htmlFor="maxVariations">Max Variations</Label>
               <Input
@@ -171,7 +171,7 @@ export function AdVariationGeneratorDialog({
           </div>
 
           {/* Library Stats */}
-          <div className="flex gap-2 text-sm">
+          <div className="flex gap-xs text-body-sm">
             <Badge variant="outline">
               {elementsByType.headlines.length} Headlines
             </Badge>
@@ -195,7 +195,7 @@ export function AdVariationGeneratorDialog({
           {/* Variations List */}
           {variations.length > 0 && (
             <ScrollArea className="flex-1 border rounded-lg">
-              <div className="p-4 space-y-3">
+              <div className="p-md space-y-sm">
                 {variations.map((variation) => (
                   <Card
                     key={variation.id}
@@ -204,9 +204,9 @@ export function AdVariationGeneratorDialog({
                     }`}
                     onClick={() => setSelectedId(variation.id)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
+                    <CardContent className="p-md">
+                      <div className="flex items-start justify-between mb-sm">
+                        <div className="flex items-center gap-xs">
                           <Badge className={getStrengthColor(variation.strength)}>
                             {variation.strength.toUpperCase()}
                           </Badge>
@@ -219,7 +219,7 @@ export function AdVariationGeneratorDialog({
                         )}
                       </div>
 
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-xs text-body-sm">
                         <div>
                           <span className="font-medium">Headlines ({variation.headlines.length}):</span>
                           <div className="text-muted-foreground mt-1 space-y-0.5">
@@ -265,11 +265,11 @@ export function AdVariationGeneratorDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between pt-md border-t">
+          <p className="text-body-sm text-muted-foreground">
             {variations.length > 0 && `${variations.length} variations generated`}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-xs">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

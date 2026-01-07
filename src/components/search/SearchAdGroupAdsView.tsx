@@ -59,17 +59,17 @@ export function SearchAdGroupAdsView({
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-6">
+      <div className="p-lg space-y-lg">
         <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+          <div className="flex items-center gap-xs text-body-sm text-muted-foreground mb-xs">
             <span>{entity}</span>
             <span>›</span>
             <span>{campaign.name}</span>
             <span>›</span>
             <span className="font-medium text-foreground">{adGroup.name}</span>
           </div>
-          <h2 className="text-2xl font-semibold">Ads</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h2 className="text-heading-lg font-semibold">Ads</h2>
+          <p className="text-body-sm text-muted-foreground mt-xs">
             Create and manage search ads for this ad group
           </p>
         </div>
@@ -96,7 +96,7 @@ export function SearchAdGroupAdsView({
               <CardDescription>Click an ad to edit</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 {ads.map(ad => (
                   <div
                     key={ad.id}

@@ -96,7 +96,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
     <TooltipProvider>
       <div className="relative">
         {selectedIds.size > 0 && (
-          <div className="sticky top-0 z-10 flex items-center gap-4 px-4 py-2 bg-muted border-b border-border">
+          <div className="sticky top-0 z-10 flex items-center gap-md px-md py-xs bg-muted border-b border-border">
             <span className="text-body-sm font-medium">
               {selectedIds.size} selected
             </span>
