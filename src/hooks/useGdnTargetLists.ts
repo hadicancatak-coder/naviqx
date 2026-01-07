@@ -152,6 +152,7 @@ export function useGdnTargetLists() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gdn-target-lists"] });
       queryClient.invalidateQueries({ queryKey: ["gdn-target-items"] });
       toast.success("Items added to list");
     },
