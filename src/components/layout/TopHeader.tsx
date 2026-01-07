@@ -36,11 +36,7 @@ export function TopHeader() {
     <header 
       className={cn(
         "sticky top-0 z-sticky mx-md mt-md rounded-xl",
-        "backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.10)]",
-        "transition-all duration-200",
-        theme === "light" 
-          ? "bg-card/70 border border-border/40" 
-          : "bg-card/70 border border-border/20"
+        "glass transition-all duration-200"
       )}
     >
       <div className="flex items-center justify-between gap-md px-md lg:px-lg py-sm">
