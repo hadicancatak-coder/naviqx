@@ -81,8 +81,8 @@ export function SaveKeywordListDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
+        <div className="grid gap-md py-md">
+          <div className="grid gap-xs">
             <Label htmlFor="name">List Name *</Label>
             <Input
               id="name"
@@ -92,7 +92,7 @@ export function SaveKeywordListDialog({
             />
           </div>
 
-          <div className="grid gap-2">
+          <div className="grid gap-xs">
             <Label htmlFor="entity">Trading Entity *</Label>
             <Select value={entity} onValueChange={setEntity}>
               <SelectTrigger id="entity">
@@ -108,7 +108,7 @@ export function SaveKeywordListDialog({
             </Select>
           </div>
 
-          <div className="grid gap-2">
+          <div className="grid gap-xs">
             <Label htmlFor="description">Description (optional)</Label>
             <Textarea
               id="description"

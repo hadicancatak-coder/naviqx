@@ -81,15 +81,15 @@ export function TaskBulkActionsBar({
   return (
     <>
       <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-soft border-2 ${className}`}>
-        <div className="flex items-center gap-4 p-4 flex-wrap">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-md p-md flex-wrap">
+          <div className="flex items-center gap-xs">
             <span className="font-semibold">{selectedCount}</span>
             <span className="text-muted-foreground">selected</span>
           </div>
 
           <div className="h-6 w-px bg-border" />
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-xs flex-wrap">
             <Button
               variant="ghost"
               size="sm"
@@ -195,8 +195,8 @@ export function TaskBulkActionsBar({
               Please provide a reason why these tasks are blocked. This will be added as a comment to each task.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+          <div className="space-y-md py-md">
+            <div className="space-y-xs">
               <Label htmlFor="blocked-reason">Reason</Label>
               <Textarea
                 id="blocked-reason"

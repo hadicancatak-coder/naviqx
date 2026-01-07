@@ -150,7 +150,7 @@ export function TeamKPIsManager() {
             Team KPIs Overview
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-md">
           {[1, 2, 3].map(i => (
             <Skeleton key={i} className="h-20 w-full" />
           ))}
@@ -170,20 +170,20 @@ export function TeamKPIsManager() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-primary/10 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-md">
+            <div className="p-md bg-primary/10 rounded-lg">
               <p className="text-body-sm text-muted-foreground">Team Members</p>
               <p className="text-heading-lg font-bold">{stats.totalMembers}</p>
             </div>
-            <div className="p-4 bg-info-soft rounded-lg">
+            <div className="p-md bg-info-soft rounded-lg">
               <p className="text-body-sm text-muted-foreground">With Annual KPIs</p>
               <p className="text-heading-lg font-bold text-info-text">{stats.membersWithAnnualKPIs}</p>
             </div>
-            <div className="p-4 bg-purple-soft rounded-lg">
+            <div className="p-md bg-purple-soft rounded-lg">
               <p className="text-body-sm text-muted-foreground">With Quarterly KPIs</p>
               <p className="text-heading-lg font-bold text-purple-text">{stats.membersWithQuarterlyKPIs}</p>
             </div>
-            <div className="p-4 bg-success-soft rounded-lg">
+            <div className="p-md bg-success-soft rounded-lg">
               <p className="text-body-sm text-muted-foreground">Avg KPIs/Person</p>
               <p className="text-heading-lg font-bold text-success-text">{stats.avgKPIsPerPerson.toFixed(1)}</p>
             </div>
@@ -209,9 +209,9 @@ export function TeamKPIsManager() {
               const quarterlyWeight = quarterlyKPIs.reduce((sum: number, kpi: any) => sum + (kpi.weight || 0), 0);
 
               return (
-                <div key={profile.user_id} className="p-4 border rounded-lg hover:bg-muted/50 transition-smooth">
+                <div key={profile.user_id} className="p-md border rounded-lg hover:bg-muted/50 transition-smooth">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center gap-sm flex-1">
                       <Avatar>
                         <AvatarImage src={profile.avatar_url} />
                         <AvatarFallback>{profile.name?.charAt(0) || "U"}</AvatarFallback>
@@ -222,9 +222,9 @@ export function TeamKPIsManager() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-sm">
                       <div className="text-right">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-xs">
                           <Badge variant="outline" className="bg-info-soft text-info-text border-info/30">
                             📊 Annual: {annualKPIs.length} ({annualWeight}%)
                           </Badge>
@@ -236,7 +236,7 @@ export function TeamKPIsManager() {
                             <Edit className="h-4 w-4" />
                           </Button>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-xs mt-1">
                           <Badge variant="outline" className="bg-purple-soft text-purple-text border-purple/30">
                             📈 Quarterly: {quarterlyKPIs.length} ({quarterlyWeight}%)
                           </Badge>
@@ -290,7 +290,7 @@ export function TeamKPIsManager() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-md">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Total Weight: <span className={totalWeight > 100 ? 'text-destructive font-bold' : 'font-medium'}>{totalWeight}%</span>
@@ -301,16 +301,16 @@ export function TeamKPIsManager() {
               </Button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-sm">
               {localKPIs.map((kpi) => (
-                <div key={kpi.id} className="flex items-start gap-3 p-3 border rounded-lg bg-muted/30">
-                  <div className="flex-1 space-y-2">
+                <div key={kpi.id} className="flex items-start gap-sm p-sm border rounded-lg bg-muted/30">
+                  <div className="flex-1 space-y-xs">
                     <Input
                       placeholder="KPI Description"
                       value={kpi.description}
                       onChange={(e) => updateKPI(kpi.id, 'description', e.target.value)}
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-xs">
                       <div className="w-24">
                         <Input
                           type="number"

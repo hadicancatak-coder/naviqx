@@ -20,9 +20,9 @@ export function AdBreadcrumbs({ entity, campaign, adGroup, adName, className }: 
   if (segments.length === 0) return null;
 
   return (
-    <div className={cn("flex items-center gap-2 text-sm text-muted-foreground px-4 py-2 border-b bg-muted/20", className)}>
+    <div className={cn("flex items-center gap-xs text-body-sm text-muted-foreground px-md py-xs border-b bg-muted/20", className)}>
       {segments.map((segment, index) => (
-        <div key={segment!.key} className="flex items-center gap-2">
+        <div key={segment!.key} className="flex items-center gap-xs">
           {index > 0 && <ChevronRight className="h-3 w-3" />}
           <span className={index === segments.length - 1 ? "font-medium text-foreground" : ""}>
             {segment!.label}

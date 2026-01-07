@@ -218,10 +218,10 @@ export function CaptionImportDialog({ open, onOpenChange, onSuccess }: CaptionIm
         </DialogHeader>
 
         {step === "upload" ? (
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-md">
             {/* Template Download */}
-            <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between p-md rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-sm">
                 <FileSpreadsheet className="h-8 w-8 text-primary" />
                 <div>
                   <p className="font-medium text-foreground">Download Template</p>
@@ -252,7 +252,7 @@ export function CaptionImportDialog({ open, onOpenChange, onSuccess }: CaptionIm
                 className="hidden"
                 onChange={handleFileSelect}
               />
-              <Upload className={cn("h-12 w-12 mx-auto mb-4", file ? "text-success" : "text-muted-foreground")} />
+              <Upload className={cn("h-12 w-12 mx-auto mb-md", file ? "text-success" : "text-muted-foreground")} />
               {file ? (
                 <p className="text-success font-medium">{file.name}</p>
               ) : (
@@ -276,15 +276,15 @@ export function CaptionImportDialog({ open, onOpenChange, onSuccess }: CaptionIm
             </div>
           </div>
         ) : (
-          <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
+          <div className="flex-1 space-y-md overflow-hidden flex flex-col">
             {/* Summary */}
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/15 text-success">
+            <div className="flex gap-md">
+              <div className="flex items-center gap-xs px-sm py-xs rounded-lg bg-success/15 text-success">
                 <Check className="h-4 w-4" />
                 <span className="font-medium">{validCount} valid</span>
               </div>
               {invalidCount > 0 && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/15 text-destructive">
+                <div className="flex items-center gap-xs px-sm py-xs rounded-lg bg-destructive/15 text-destructive">
                   <X className="h-4 w-4" />
                   <span className="font-medium">{invalidCount} invalid</span>
                 </div>

@@ -88,7 +88,7 @@ export function FloatingFilterBox({
         {isExpanded && (
           <div className="relative">
             <ScrollArea className="max-h-[calc(100vh-200px)]">
-              <div className="p-4 space-y-4 bg-gradient-to-b from-transparent via-background/10 to-transparent">
+              <div className="p-md space-y-md bg-gradient-to-b from-transparent via-background/10 to-transparent">
                 {/* Cities Filter */}
                 <div className="space-y-2">
                   <label className="text-body-sm font-medium text-foreground">Cities</label>
