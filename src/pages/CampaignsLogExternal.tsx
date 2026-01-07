@@ -143,7 +143,7 @@ export default function CampaignsLogExternal() {
   // Show verification form if not verified
   if (!verified) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-md">
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export default function CampaignsLogExternal() {
               Please verify your @cfi.trade email to access the campaign review
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-md">
             <div className="space-y-2">
               <Label htmlFor="name">Your Name</Label>
               <Input

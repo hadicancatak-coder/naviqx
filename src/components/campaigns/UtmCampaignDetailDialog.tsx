@@ -209,7 +209,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
               </DialogHeader>
 
               <ScrollArea className="flex-1 px-6 py-4">
-                <div className="space-y-6">
+                <div className="space-y-lg">
                   {/* Landing Page */}
                   <div>
                     <Label className="text-sm text-muted-foreground">Landing Page</Label>
@@ -263,7 +263,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
 
                     {/* Add Version Form */}
                     {isAddingVersion && (
-                      <Card className="p-4 mb-4 border-primary/20 bg-background">
+                      <Card className="p-md mb-md border-primary/20 bg-background">
                         <div className="space-y-3">
                           <div>
                             <Label>Version Notes *</Label>
@@ -378,10 +378,10 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                                 </TableRow>
                                 {isExpanded && (
                                   <TableRow key={`${v.id}-details`} className="border-border bg-muted/30">
-                                    <TableCell colSpan={5} className="p-4">
-                                      <div className="space-y-3">
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                          <div className="flex items-center gap-2">
+                                    <TableCell colSpan={5} className="p-md">
+                                      <div className="space-y-sm">
+                                        <div className="grid grid-cols-2 gap-md text-body-sm">
+                                          <div className="flex items-center gap-sm">
                                             <Calendar className="size-4 text-muted-foreground" />
                                             <span className="text-muted-foreground">Created:</span>
                                             <span className="text-foreground">
@@ -404,7 +404,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                                           </div>
                                         )}
 
-                                        <div className="flex gap-4">
+                                        <div className="flex gap-md">
                                           {v.image_url && (
                                             <a 
                                               href={v.image_url} 

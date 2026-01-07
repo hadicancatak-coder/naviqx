@@ -89,7 +89,7 @@ export function MyKPIsProgress() {
         </Button>
       </div>
       
-      <div className="space-y-6">
+      <div className="space-y-lg">
         {/* Annual KPIs */}
         {kpis.length > 0 && (
           <div>

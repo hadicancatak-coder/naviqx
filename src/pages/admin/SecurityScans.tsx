@@ -158,7 +158,7 @@ export default function SecurityScans() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-lg">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -169,7 +169,7 @@ export default function SecurityScans() {
   const latestScan = scans[0];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-lg space-y-lg">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-heading-lg font-bold text-foreground">Security Monitoring</h1>
@@ -194,7 +194,7 @@ export default function SecurityScans() {
 
       {/* Latest Scan Summary */}
       {latestScan && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-md md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Findings</CardTitle>
@@ -247,14 +247,14 @@ export default function SecurityScans() {
         </div>
       )}
 
-      <Tabs defaultValue="findings" className="space-y-4">
+      <Tabs defaultValue="findings" className="space-y-md">
         <TabsList>
           <TabsTrigger value="findings">Security Findings</TabsTrigger>
           <TabsTrigger value="suspicious">Suspicious Activities</TabsTrigger>
           <TabsTrigger value="history">Scan History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="findings" className="space-y-4">
+        <TabsContent value="findings" className="space-y-md">
           <Card>
             <CardHeader>
               <CardTitle>Latest Scan Findings</CardTitle>
@@ -265,11 +265,11 @@ export default function SecurityScans() {
             <CardContent>
               {latestScan?.findings && latestScan.findings.length > 0 ? (
                 <ScrollArea className="h-[500px]">
-                  <div className="space-y-4">
+                  <div className="space-y-md">
                     {latestScan.findings.map((finding: any, index: number) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                      <div key={index} className="border rounded-lg p-md">
+                        <div className="flex items-start justify-between mb-sm">
+                          <div className="flex items-center gap-sm">
                             {getSeverityIcon(finding.severity)}
                             <h3 className="font-semibold">{finding.type.replace(/_/g, ' ').toUpperCase()}</h3>
                           </div>
@@ -298,7 +298,7 @@ export default function SecurityScans() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="suspicious" className="space-y-4">
+        <TabsContent value="suspicious" className="space-y-md">
           <Card>
             <CardHeader>
               <CardTitle>Suspicious Activities</CardTitle>
@@ -356,7 +356,7 @@ export default function SecurityScans() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4">
+        <TabsContent value="history" className="space-y-md">
           <Card>
             <CardHeader>
               <CardTitle>Scan History</CardTitle>

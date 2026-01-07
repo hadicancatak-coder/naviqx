@@ -153,7 +153,7 @@ export default function WebIntel() {
         }
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-md">
         <TabsList>
           <TabsTrigger value="deals" className="gap-2">
             <Handshake className="h-4 w-4" />

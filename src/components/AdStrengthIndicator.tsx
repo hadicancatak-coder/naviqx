@@ -58,7 +58,7 @@ export const AdStrengthIndicator = ({
           {getStrengthBadge(result.strength)}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-md">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">Overall Score</span>

@@ -28,7 +28,7 @@ export const ErrorFallback = ({
   };
 
   return (
-    <div className="min-h-[400px] flex items-center justify-center p-4">
+    <div className="min-h-[400px] flex items-center justify-center p-md">
       <Card className="max-w-md w-full">
         <CardHeader>
           <div className="flex items-center gap-2 text-destructive mb-2">
@@ -37,7 +37,7 @@ export const ErrorFallback = ({
           </div>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-md">
           {error && process.env.NODE_ENV === 'development' && (
             <div className="bg-muted p-3 rounded-md">
               <p className="text-xs font-mono text-muted-foreground break-all">

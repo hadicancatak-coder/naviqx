@@ -129,9 +129,9 @@ export default function MfaSetup() {
 
   if (showBackupCodes) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md p-8">
-          <div className="text-center mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-background p-md">
+        <Card className="w-full max-w-md p-lg">
+          <div className="text-center mb-lg">
             <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
             <h1 className="text-heading-lg font-bold text-foreground mb-2">Save Your Backup Codes</h1>
           <p className="text-body-sm text-muted-foreground">
@@ -139,8 +139,8 @@ export default function MfaSetup() {
             </p>
           </div>
 
-          <div className="bg-muted rounded-lg p-4 mb-4">
-            <div className="grid grid-cols-2 gap-2 font-mono text-sm">
+          <div className="bg-muted rounded-lg p-md mb-md">
+            <div className="grid grid-cols-2 gap-sm font-mono text-body-sm">
               {backupCodes.map((code, index) => (
                 <div key={index} className="text-center p-2 bg-background rounded">
                   {code}
@@ -176,9 +176,9 @@ export default function MfaSetup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-background p-md">
+      <Card className="w-full max-w-md p-lg">
+        <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
           <p className="text-body-sm text-muted-foreground">
@@ -207,7 +207,7 @@ export default function MfaSetup() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div>
             <label className="text-body-sm font-medium text-foreground block mb-2">
               Enter the 6-digit code from your app

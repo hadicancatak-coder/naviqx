@@ -51,7 +51,7 @@ export function CampaignBulkActionsBar({
   return (
     <>
       <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-xl border-2 ${className}`}>
-        <div className="flex items-center gap-4 p-4 flex-wrap">
+        <div className="flex items-center gap-md p-md flex-wrap">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{selectedCount}</span>
             <span className="text-muted-foreground">selected</span>

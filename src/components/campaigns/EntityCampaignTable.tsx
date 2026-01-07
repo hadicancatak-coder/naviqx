@@ -165,7 +165,7 @@ export function EntityCampaignTable({
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="min-h-[300px] p-6">
+          <div className="min-h-[300px] p-lg">
             {entityCampaigns.length === 0 ? (
               <div className="flex items-center justify-center h-[300px] border-2 border-dashed border-muted-foreground/30 rounded-lg">
                 <p className="text-sm text-muted-foreground">
@@ -173,7 +173,7 @@ export function EntityCampaignTable({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-md">
                 {entityCampaigns.map(({ tracking, campaign }) => (
                   campaign && (
                     <CampaignTrackingCard

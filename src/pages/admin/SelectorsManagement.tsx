@@ -32,7 +32,7 @@ function SortableRow({ id, children }: { id: string; children: React.ReactNode }
 
   return (
     <tr ref={setNodeRef} style={style} className="border-b transition-colors hover:bg-muted/50">
-      <td className="p-4">
+      <td className="p-md">
         <div {...attributes} {...listeners} className="cursor-move">
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </div>
@@ -155,7 +155,7 @@ export default function SelectorsManagement() {
   ) || [];
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto p-md md:p-lg space-y-lg max-w-7xl">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-page-title font-bold">Selectors Management</h1>
@@ -186,7 +186,7 @@ export default function SelectorsManagement() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-md">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -275,7 +275,7 @@ export default function SelectorsManagement() {
               {editingCity ? "Update the city details." : "Add a new city to the system."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-md py-md">
             <div className="space-y-2">
               <Label>Name</Label>
               <Input 

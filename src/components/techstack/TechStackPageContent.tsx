@@ -95,7 +95,7 @@ export function TechStackPageContent({
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex items-start justify-between gap-md mb-md">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg">
             <IconComponent className="h-6 w-6 text-primary" />
@@ -138,7 +138,7 @@ export function TechStackPageContent({
 
       {/* Metadata Row */}
       {(page.integrated_at || owner) && (
-        <div className="flex items-center gap-4 mb-6 text-body-sm text-muted-foreground">
+        <div className="flex items-center gap-md mb-lg text-body-sm text-muted-foreground">
           {page.integrated_at && (
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export function GoogleAPISetupGuide() {
   return (
-    <Card className="p-6">
+    <Card className="p-lg">
       <div className="space-y-md">
         <div>
           <h2 className="text-heading-lg font-bold mb-sm">Google Sheets API Setup</h2>

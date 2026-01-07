@@ -150,7 +150,7 @@ export default function About() {
   const currentVersion = pageData?.version || "2.0";
 
   return (
-    <div className="p-8 space-y-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="p-lg space-y-lg max-w-4xl mx-auto animate-fade-in">
       <PageHeader
         title="Prisma"
         description="Comprehensive Task & Campaign Management Platform"
@@ -165,8 +165,8 @@ export default function About() {
       />
 
       {/* App Information */}
-      <Card className="p-8 bg-card border-border">
-        <div className="flex items-start gap-6">
+      <Card className="p-lg bg-card border-border">
+        <div className="flex items-start gap-lg">
           <div className="flex-1">
             <Badge variant="secondary" className="mb-4">
               Version {currentVersion}
@@ -181,14 +181,14 @@ export default function About() {
       </Card>
 
       {/* CMS Content */}
-      <Card className="p-6 bg-card border-border">
-        <div className="flex items-center gap-2 mb-6">
+      <Card className="p-lg bg-card border-border">
+        <div className="flex items-center gap-sm mb-lg">
           <Sparkles className="h-5 w-5 text-primary" />
           <h2 className="text-heading-md font-semibold">What's New</h2>
         </div>
 
         {loading ? (
-          <div className="animate-pulse space-y-4">
+          <div className="animate-pulse space-y-md">
             <div className="h-4 bg-muted rounded w-3/4"></div>
             <div className="h-4 bg-muted rounded w-1/2"></div>
             <div className="h-4 bg-muted rounded w-2/3"></div>
@@ -203,8 +203,8 @@ export default function About() {
       </Card>
 
       {/* Support & Contact */}
-      <Card className="p-6 bg-card border-border">
-        <div className="flex items-center gap-2 mb-4">
+      <Card className="p-lg bg-card border-border">
+        <div className="flex items-center gap-sm mb-md">
           <Mail className="h-5 w-5 text-primary" />
           <h2 className="text-heading-sm font-semibold">Support & Contact</h2>
         </div>
@@ -235,7 +235,7 @@ export default function About() {
           <DialogHeader>
             <DialogTitle>Edit About Page</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto space-y-md py-md">
             <div className="space-y-2">
               <Label>Version</Label>
               <Input
