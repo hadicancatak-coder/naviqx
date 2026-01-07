@@ -131,9 +131,9 @@ All colors MUST be HSL.
     --danger-soft: 0 100% 97%;       /* #ffe9ea */
     --danger-text: 0 100% 35%;       /* #b40000 */
     
-    /* Sidebar - Light */
+    /* Sidebar - Light (high contrast for readability) */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 9% 46%;
+    --sidebar-foreground: 220 14% 25%;
     --sidebar-primary: 211 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 96%;
@@ -271,9 +271,9 @@ All colors MUST be HSL.
     --danger-soft: 0 72% 51% / 0.12;
     --danger-text: 0 72% 70%;
     
-    /* Sidebar - Matches new palette */
+    /* Sidebar - Matches new palette (brighter for dark mode) */
     --sidebar-background: 220 16% 11%;
-    --sidebar-foreground: 220 13% 70%;
+    --sidebar-foreground: 220 13% 85%;
     --sidebar-primary: 211 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 16% 16%;
@@ -552,6 +552,17 @@ All colors MUST be HSL.
       inset 0 -2px 4px hsl(220 50% 50% / 0.06),
       inset 2px 0 3px hsl(200 80% 95% / 0.7),
       inset -2px 0 3px hsl(200 80% 95% / 0.7);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .liquid-glass-elevated:hover {
+    box-shadow: 
+      0 30px 60px hsl(220 60% 30% / 0.12),
+      0 12px 32px hsl(210 80% 50% / 0.08),
+      inset 0 2px 4px hsl(200 90% 98% / 0.95),
+      inset 0 -2px 4px hsl(220 50% 50% / 0.06),
+      inset 2px 0 3px hsl(200 80% 95% / 0.7),
+      inset -2px 0 3px hsl(200 80% 95% / 0.7);
   }
 
   /* Gradient shine overlay for liquid effect */
@@ -570,6 +581,11 @@ All colors MUST be HSL.
     );
     pointer-events: none;
     z-index: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .liquid-glass-elevated:hover::before {
+    opacity: 0.8;
   }
 
   .dark .liquid-glass-elevated {
@@ -587,6 +603,16 @@ All colors MUST be HSL.
       inset 0 -2px 4px hsl(0 0% 0% / 0.35),
       inset 2px 0 3px hsl(200 60% 55% / 0.1),
       inset -2px 0 3px hsl(200 60% 55% / 0.1);
+  }
+
+  .dark .liquid-glass-elevated:hover {
+    box-shadow: 
+      0 30px 60px hsl(220 80% 5% / 0.7),
+      0 12px 32px hsl(210 90% 10% / 0.5),
+      inset 0 2px 4px hsl(210 70% 60% / 0.18),
+      inset 0 -2px 4px hsl(0 0% 0% / 0.35),
+      inset 2px 0 3px hsl(200 60% 55% / 0.12),
+      inset -2px 0 3px hsl(200 60% 55% / 0.12);
   }
 
   .dark .liquid-glass-elevated::before {

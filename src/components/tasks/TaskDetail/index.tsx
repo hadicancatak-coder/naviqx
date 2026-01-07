@@ -56,7 +56,7 @@ function TaskDetailContent({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    <div className="h-full flex flex-col liquid-glass-elevated rounded-l-xl animate-slide-in-right">
+    <div className="h-full flex flex-col liquid-glass-elevated rounded-l-xl animate-slide-in-right relative">
       <TaskDetailHeader onClose={onClose} />
       
       <ScrollArea className="flex-1">
