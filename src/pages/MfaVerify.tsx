@@ -115,7 +115,7 @@ export default function MfaVerify() {
     <div className="min-h-screen flex items-center justify-center bg-background p-md">
       <Card className="w-full max-w-md p-lg">
         <div className="text-center mb-lg">
-          <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+          <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Two-Factor Authentication</h1>
           <p className="text-body-sm text-muted-foreground">
             {useBackupCode 
@@ -125,7 +125,7 @@ export default function MfaVerify() {
           </p>
         </div>
 
-        <Alert className="mb-6 border-primary/50 bg-primary/10">
+        <Alert className="mb-lg border-primary/50 bg-primary/10">
           <Shield className="h-4 w-4 text-primary" />
           <AlertDescription className="text-body-sm text-muted-foreground ml-2">
             Your session is secured. You'll stay logged in until you sign out, your IP changes, or 24 hours pass.

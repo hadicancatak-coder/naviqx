@@ -31,7 +31,7 @@ function renderMarkdown(content: string) {
   const flushList = () => {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`list-${elements.length}`} className="space-y-1 list-disc list-inside ml-4 mb-4">
+        <ul key={`list-${elements.length}`} className="space-y-1 list-disc list-inside ml-md mb-md">
           {listItems.map((item, i) => (
             <li key={i} className="text-body-sm text-muted-foreground">{item}</li>
           ))}
@@ -48,14 +48,14 @@ function renderMarkdown(content: string) {
     if (trimmed.startsWith('## ')) {
       flushList();
       elements.push(
-        <h2 key={index} className="text-heading-md font-semibold mt-6 mb-3 text-foreground">
+        <h2 key={index} className="text-heading-md font-semibold mt-lg mb-sm text-foreground">
           {trimmed.replace('## ', '')}
         </h2>
       );
     } else if (trimmed.startsWith('### ')) {
       flushList();
       elements.push(
-        <h3 key={index} className="text-heading-sm font-semibold mt-4 mb-2 text-foreground">
+        <h3 key={index} className="text-heading-sm font-semibold mt-md mb-sm text-foreground">
           {trimmed.replace('### ', '')}
         </h3>
       );
@@ -168,7 +168,7 @@ export default function About() {
       <Card className="p-lg bg-card border-border">
         <div className="flex items-start gap-lg">
           <div className="flex-1">
-            <Badge variant="secondary" className="mb-4">
+            <Badge variant="secondary" className="mb-md">
               Version {currentVersion}
             </Badge>
             <p className="text-body-sm text-muted-foreground">

@@ -32,7 +32,7 @@ export function WorkspaceCard({
       onClick={onClick}
     >
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-md">
           <div 
             className="w-12 h-12 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: `${resolvedColor}15` }}

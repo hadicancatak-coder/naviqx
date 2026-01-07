@@ -136,7 +136,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl bg-card">
-          <div className="flex items-center justify-center p-8">
+          <div className="flex items-center justify-center p-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </DialogContent>
@@ -253,7 +253,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
 
                   {/* Version History */}
                   <div>
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-md">
                       <h3 className="font-semibold text-foreground">Version History</h3>
                       <Button size="sm" variant="outline" onClick={() => setIsAddingVersion(true)}>
                         <Plus />

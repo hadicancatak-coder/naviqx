@@ -1301,7 +1301,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
 
               {/* Enhanced Compliance Check with Entity Rules */}
               {(headlines.some(h => h.trim()) || descriptions.some(d => d.trim())) && (
-                <div className="border-t border-border pt-4 mt-4">
+                <div className="border-t border-border pt-md mt-md">
                   <h4 className="text-body-sm font-semibold mb-3 text-foreground">
                     Compliance Check
                   </h4>

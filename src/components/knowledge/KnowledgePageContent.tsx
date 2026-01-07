@@ -71,7 +71,7 @@ export function KnowledgePageContent({
   return (
     <div className="h-full flex flex-col">
       {/* Breadcrumbs */}
-      <div className="flex items-center gap-1 text-body-sm text-muted-foreground mb-4">
+      <div className="flex items-center gap-1 text-body-sm text-muted-foreground mb-md">
         <button
           className="hover:text-foreground transition-colors"
           onClick={() => onNavigate?.({ id: '', title: 'Home' } as KnowledgePage)}
@@ -187,7 +187,7 @@ export function KnowledgePageContent({
       {/* Child pages */}
       {page.children && page.children.length > 0 && (
         <div className="mt-8 pt-6 border-t border-border">
-          <h3 className="text-heading-sm font-medium text-foreground mb-4">Sub-pages</h3>
+          <h3 className="text-heading-sm font-medium text-foreground mb-md">Sub-pages</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {page.children.map((child) => {
               const ChildIcon = (LucideIcons as any)[

@@ -242,7 +242,7 @@ export default function Knowledge() {
               <h2 className="text-heading-lg font-semibold text-foreground mb-2">
                 Welcome to Knowledge Base
               </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-lg">
                 Browse documentation, processes, and guides. Select a page to get started.
               </p>
               
