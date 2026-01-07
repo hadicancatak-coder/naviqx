@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,14 +267,14 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
-            <DialogDescription>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader className="pb-4">
+            <SheetTitle>Create New Task</SheetTitle>
+            <SheetDescription>
               Fill in the details to create a new task.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           <form onSubmit={handleSubmit} className="space-y-md">
             {/* Title */}
@@ -492,17 +493,17 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
               </CollapsibleContent>
             </Collapsible>
 
-            <DialogFooter>
+            <SheetFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading ? "Creating..." : "Create Task"}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Reason Dialog for Blocked/Failed status */}
       <Dialog open={showReasonDialog} onOpenChange={cancelStatusChange}>
