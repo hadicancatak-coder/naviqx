@@ -13,6 +13,7 @@ import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { useGdnTargetLists } from "@/hooks/useGdnTargetLists";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TargetListDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ interface LocalItem {
 }
 
 export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetListDialogProps) {
+  const queryClient = useQueryClient();
   const { data: entities = [] } = useSystemEntities();
   const { createList, addItems, deleteItem, updateItem, getItemsByList } = useGdnTargetLists();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +122,9 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
         }
         toast.success("Target list created successfully");
       }
+      // Invalidate queries to ensure fresh data when reopening
+      await queryClient.invalidateQueries({ queryKey: ["gdn-target-lists"] });
+      await queryClient.invalidateQueries({ queryKey: ["gdn-target-items"] });
       onSave({ name, entity });
       onOpenChange(false);
     } catch (err) {
