@@ -265,6 +265,55 @@ const statusConfig = TASK_STATUSES.reduce((acc, s) => ({
 
 ---
 
+## Liquid Glass UI
+
+### Classes
+
+| Class | Usage |
+|-------|-------|
+| `liquid-glass` | Headers, subtle panels, filter bars |
+| `liquid-glass-elevated` | Sidebars, sheets, major panels, modals |
+| `liquid-glass-dropdown` | Dropdowns, popovers, context menus, tooltips |
+
+### Design Characteristics
+
+- **Blue-tinted gradients** in both light and dark modes
+- **Frosted glass effect** via `backdrop-filter: blur() saturate()`
+- **Subtle inset shadows** for depth
+- **Organic flow** with multiple gradient layers
+
+### Important Rules
+
+1. **Never use `position: relative`** on elements with liquid-glass classes if they need different positioning (e.g., `fixed` for sheets)
+2. Liquid glass classes use `isolation: isolate` for proper stacking context
+3. Always combine with appropriate border-radius (`rounded-xl`, `rounded-2xl`)
+4. Use with subtle borders (`border-border/50` or theme-defined borders)
+
+### Correct Pattern
+
+```tsx
+// ✅ CORRECT - Sheet with liquid glass
+<SheetContent className="liquid-glass-elevated rounded-l-2xl">
+  {/* Content */}
+</SheetContent>
+
+// ✅ CORRECT - Dropdown with liquid glass
+<PopoverContent className="liquid-glass-dropdown rounded-xl">
+  {/* Content */}
+</PopoverContent>
+```
+
+### Forbidden Pattern
+
+```tsx
+// ❌ FORBIDDEN - Adding position that conflicts with component needs
+<div className="liquid-glass-elevated relative"> {/* Don't add relative if component needs fixed */}
+  {/* This breaks sheets! */}
+</div>
+```
+
+---
+
 ## Density Levels
 
 ### Core Principle
