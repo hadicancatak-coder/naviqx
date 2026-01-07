@@ -477,13 +477,89 @@ All colors MUST be HSL.
     @apply transition-all duration-150 ease-in-out;
   }
 
-  /* Glass effect utilities */
-  .glass-light {
-    @apply bg-white/70 backdrop-blur-md border border-white/40;
+  /* ========================================
+     GLASS MORPHISM UTILITIES (Apple-inspired)
+     Auto-adapts to light/dark themes
+     ======================================== */
+  
+  /* Glass effect base - translucent with blur */
+  .glass {
+    background: hsl(0 0% 100% / 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(0 0% 100% / 0.5);
+    box-shadow: 
+      0 8px 32px hsl(0 0% 0% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.5);
   }
-
-  .glass-dark {
-    @apply bg-gray-900/70 backdrop-blur-md border border-white/10;
+  
+  .dark .glass {
+    background: hsl(220 15% 13% / 0.75);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+    box-shadow: 
+      0 8px 32px hsl(0 0% 0% / 0.35),
+      inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  }
+  
+  /* Elevated glass - more opaque for panels and sidebars */
+  .glass-elevated {
+    background: hsl(0 0% 100% / 0.85);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid hsl(0 0% 100% / 0.6);
+    box-shadow: 
+      0 25px 50px hsl(0 0% 0% / 0.12),
+      0 8px 24px hsl(0 0% 0% / 0.06),
+      inset 0 1px 0 hsl(0 0% 100% / 0.6);
+  }
+  
+  .dark .glass-elevated {
+    background: hsl(220 15% 15% / 0.88);
+    border: 1px solid hsl(0 0% 100% / 0.1);
+    box-shadow: 
+      0 25px 50px hsl(0 0% 0% / 0.5),
+      0 8px 24px hsl(0 0% 0% / 0.25),
+      inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  }
+  
+  /* Glass dropdown/popover - for menus and tooltips */
+  .glass-dropdown {
+    background: hsl(0 0% 100% / 0.92);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(0 0% 100% / 0.5);
+    box-shadow: 
+      0 16px 48px hsl(0 0% 0% / 0.15),
+      0 4px 16px hsl(0 0% 0% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  }
+  
+  .dark .glass-dropdown {
+    background: hsl(220 14% 16% / 0.95);
+    border: 1px solid hsl(0 0% 100% / 0.12);
+    box-shadow: 
+      0 16px 48px hsl(0 0% 0% / 0.5),
+      0 4px 16px hsl(0 0% 0% / 0.3),
+      inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  }
+  
+  /* Glass gradient overlay for extra depth */
+  .glass-gradient {
+    background-image: linear-gradient(
+      135deg,
+      hsl(0 0% 100% / 0.1) 0%,
+      hsl(0 0% 100% / 0) 50%,
+      hsl(0 0% 0% / 0.02) 100%
+    );
+  }
+  
+  .dark .glass-gradient {
+    background-image: linear-gradient(
+      135deg,
+      hsl(0 0% 100% / 0.05) 0%,
+      hsl(0 0% 100% / 0) 50%,
+      hsl(0 0% 0% / 0.1) 100%
+    );
   }
 
   /* Surface utilities */
