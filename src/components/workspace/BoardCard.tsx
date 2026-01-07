@@ -44,7 +44,7 @@ export function BoardCard({
 
   return (
     <Card 
-      className="card-glow cursor-pointer hover:bg-card-hover transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,82,204,0.3)] relative"
+      className="card-glow cursor-pointer hover:bg-card-hover transition-smooth hover:shadow-[0_0_20px_rgba(0,82,204,0.3)] relative"
       onClick={() => navigate(route)}
     >
       <CardHeader className="pb-sm">

@@ -113,7 +113,7 @@ export function SubtaskRow({
 
       {/* Due Date */}
       {subtask.due_at && (
-        <span className="text-[10px] text-muted-foreground flex-shrink-0">
+        <span className="text-metadata text-muted-foreground flex-shrink-0">
           {format(new Date(subtask.due_at), 'MMM d')}
         </span>
       )}

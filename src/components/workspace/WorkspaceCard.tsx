@@ -28,7 +28,7 @@ export function WorkspaceCard({
 
   return (
     <Card 
-      className="card-glow cursor-pointer hover:bg-card-hover transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,82,204,0.3)]"
+      className="card-glow cursor-pointer hover:bg-card-hover transition-smooth hover:shadow-[0_0_20px_rgba(0,82,204,0.3)]"
       onClick={onClick}
     >
       <CardHeader className="pb-3">
@@ -39,7 +39,7 @@ export function WorkspaceCard({
           >
             <Icon className="h-6 w-6" style={{ color: resolvedColor }} />
           </div>
-          <div className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full font-medium">
+          <div className="text-metadata text-muted-foreground bg-muted px-3 py-1.5 rounded-full font-medium">
             {boardCount} {boardCount === 1 ? 'board' : 'boards'}
           </div>
         </div>
@@ -48,7 +48,7 @@ export function WorkspaceCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <CardDescription className="text-sm text-muted-foreground line-clamp-2">
+        <CardDescription className="text-body-sm text-muted-foreground line-clamp-2">
           {description}
         </CardDescription>
       </CardContent>

@@ -192,7 +192,7 @@ export function MultiAssigneeSelector({
             </AvatarFallback>
           </Avatar>
           <span 
-            className="text-xs cursor-pointer hover:underline" 
+            className="text-metadata cursor-pointer hover:underline" 
             onClick={() => navigate(`/profile/${assignee.user_id}`)}
           >
             {assignee.username || assignee.name}
@@ -214,7 +214,7 @@ export function MultiAssigneeSelector({
             <Button
               variant="outline"
               size="sm"
-              className="h-6 px-2 gap-1 text-xs"
+              className="h-6 px-2 gap-1 text-metadata"
             >
               <UserPlus className="h-3 w-3" />
               Add
@@ -230,7 +230,7 @@ export function MultiAssigneeSelector({
                       onClick={() => {
                         handleAssign(user.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-accent transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-body-sm rounded hover:bg-accent transition-smooth"
                     >
                       <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-[10px]">
@@ -241,7 +241,7 @@ export function MultiAssigneeSelector({
                     </button>
                   ))
                 ) : (
-                  <div className="text-sm text-muted-foreground p-3 text-center">
+                  <div className="text-body-sm text-muted-foreground p-3 text-center">
                     All users assigned
                   </div>
                 )}
@@ -262,7 +262,7 @@ export function MultiAssigneeSelector({
       )}
 
       {assignees.length === 0 && disabled && (
-        <span className="text-xs text-muted-foreground">No assignees</span>
+        <span className="text-metadata text-muted-foreground">No assignees</span>
       )}
     </div>
   );

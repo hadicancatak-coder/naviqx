@@ -51,7 +51,7 @@ export function AssigneeSelector({
           {selectedUser ? (
             <div className="flex items-center gap-2">
               <Avatar className="h-5 w-5">
-                <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-metadata">
                   {getInitials(selectedUser.name)}
                 </AvatarFallback>
               </Avatar>
@@ -68,7 +68,7 @@ export function AssigneeSelector({
           <div className="p-1">
             <div
               className={cn(
-                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-body-sm outline-none hover:bg-accent hover:text-accent-foreground",
                 !selectedUserId && "bg-accent"
               )}
               onClick={() => {
@@ -87,7 +87,7 @@ export function AssigneeSelector({
               <div
                 key={user.user_id}
                 className={cn(
-                  "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                  "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-body-sm outline-none hover:bg-accent hover:text-accent-foreground",
                   selectedUserId === user.user_id && "bg-accent"
                 )}
                 onClick={() => {
@@ -97,7 +97,7 @@ export function AssigneeSelector({
               >
                 <div className="flex items-center gap-2 flex-1">
                   <Avatar className="h-5 w-5">
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-metadata">
                       {getInitials(user.name)}
                     </AvatarFallback>
                   </Avatar>
