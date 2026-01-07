@@ -373,9 +373,12 @@ export default function Tasks() {
           title="Tasks"
           description="Manage and track your team's tasks"
           actions={
-            <Button onClick={() => setDialogOpen(true)} className="rounded-full px-6 h-10 gap-2 shadow-sm text-body-sm font-medium">
-              <Plus className="h-4 w-4" />
-              New Task
+            <Button 
+              onClick={() => setDialogOpen(true)} 
+              size="icon"
+              className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-smooth"
+            >
+              <Plus className="h-5 w-5" />
             </Button>
           }
         />
@@ -559,6 +562,11 @@ export default function Tasks() {
           defaultSize={selectedTaskId ? 60 : 100} 
           minSize={40}
           className="overflow-hidden"
+          onClick={() => {
+            if (selectedTaskId) {
+              handleCloseSidePanel();
+            }
+          }}
         >
           <TaskListContent />
         </ResizablePanel>
