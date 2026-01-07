@@ -133,14 +133,23 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
     const lines = bulkInput.split("\n").filter((l) => l.trim());
     const itemType = activeTab === "websites" ? "website" : activeTab === "youtube" ? "youtube" : "app";
     
-    const newItems: LocalItem[] = lines.map((line) => ({
+    // Filter out URLs that are already in localItems to prevent duplicates
+    const existingUrls = new Set(localItems.map(item => item.url.toLowerCase()));
+    const newLines = lines.filter(line => !existingUrls.has(line.trim().toLowerCase()));
+    
+    if (newLines.length === 0) {
+      toast.info("All URLs already added");
+      return;
+    }
+    
+    const newItems: LocalItem[] = newLines.map((line) => ({
       id: `temp-${Date.now()}-${Math.random()}`,
       item_type: itemType,
       url: line.trim(),
     }));
 
     setLocalItems(prev => [...prev, ...newItems]);
-    setBulkInput("");
+    // Keep the URLs in the textarea - don't clear
     toast.success(`Added ${newItems.length} items`);
   };
 
