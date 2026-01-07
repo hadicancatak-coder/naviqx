@@ -507,8 +507,10 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
                   }
                 }}
                 placeholder="Paste YouTube channel URLs (one per line)&#10;https://youtube.com/@channel&#10;UCxxxxx"
-                rows={4}
+                rows={3}
               />
+              
+              {renderItemsTable(youtubeItems, false)}
             </TabsContent>
 
             <TabsContent value="apps" className="space-y-md mt-md">
@@ -525,8 +527,10 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
                   }
                 }}
                 placeholder="Paste app store URLs or bundle IDs (one per line)&#10;com.example.app&#10;https://play.google.com/store/apps/details?id=..."
-                rows={4}
+                rows={3}
               />
+              
+              {renderItemsTable(appItems, false)}
             </TabsContent>
           </Tabs>
         </div>
