@@ -347,7 +347,7 @@ export function SavedCopiesTableView({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-md">
       <CopywriterBulkActionsBar
         selectedCount={selected.length}
         onClearSelection={() => setSelected([])}

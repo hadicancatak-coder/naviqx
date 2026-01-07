@@ -587,7 +587,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
           <div className="flex-1 flex flex-col">
             {/* HEADER */}
             <div className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-md">
                 <div className="flex items-center gap-3">
                   <DialogTitle className="text-heading-md">
                     {isCreate ? "New Task" : "Task Details"}
@@ -658,7 +658,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
               <form onSubmit={handleSubmit} className="space-y-5 py-4">
                 
                 {/* === BASIC INFO === */}
-                <div className="space-y-4">
+                <div className="space-y-md">
                   {/* Title */}
                   <div className="space-y-2">
                     <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
@@ -685,7 +685,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
                 </div>
 
                 {/* === PLANNING SECTION === */}
-                <div className="space-y-4">
+                <div className="space-y-md">
                   <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">Planning</h3>
                   
                   {/* Row 1: Status, Priority, Due Date */}

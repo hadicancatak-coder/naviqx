@@ -32,7 +32,7 @@ function SortableRow({ id, children }: { id: string; children: React.ReactNode }
 
   return (
     <tr ref={setNodeRef} style={style} className="border-b transition-colors hover:bg-muted/50">
-      <td className="p-4">
+      <td className="p-md">
         <div {...attributes} {...listeners} className="cursor-move">
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </div>
@@ -179,7 +179,7 @@ export function EntitiesManager() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-md">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -273,9 +273,9 @@ export function EntitiesManager() {
               {editingEntity ? 'Update entity details' : 'Create a new business entity'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+          <div className="space-y-md">
+            <div className="grid grid-cols-2 gap-md">
+              <div className="space-y-xs">
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
@@ -294,8 +294,8 @@ export function EntitiesManager() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-md">
+              <div className="space-y-xs">
                 <Label htmlFor="emoji">Emoji</Label>
                 <Input
                   id="emoji"

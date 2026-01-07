@@ -92,8 +92,8 @@ export function KnowledgePageContent({
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between gap-md mb-lg">
+        <div className="flex items-center gap-sm">
           <div className="p-2 bg-primary/10 rounded-lg">
             <IconComponent className="h-6 w-6 text-primary" />
           </div>

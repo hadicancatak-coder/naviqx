@@ -104,9 +104,9 @@ export function UtmPlatformManager() {
   return (
     <>
       <Card>
-        <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">UTM Platforms</h3>
+        <CardContent className="p-lg">
+          <div className="flex justify-between items-center mb-md">
+            <h3 className="text-heading-sm font-semibold">UTM Platforms</h3>
             <Button onClick={() => handleOpenDialog()} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Platform
@@ -171,8 +171,8 @@ export function UtmPlatformManager() {
                 : "Create a new platform and assign its UTM medium."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+          <div className="space-y-md py-md">
+            <div className="space-y-xs">
               <Label htmlFor="platform-name">Platform Name</Label>
               <Input
                 id="platform-name"
