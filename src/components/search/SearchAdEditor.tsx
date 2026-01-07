@@ -542,9 +542,9 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
   if (hidePreview) {
     return (
       <ScrollArea className="h-full">
-        <div className="p-4 lg:p-6 space-y-6">
+        <div className="p-md lg:p-lg space-y-lg">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-md">
               <h2 className="text-2xl font-semibold">
                 {ad?.id ? "Edit Search Ad" : "Create Search Ad"}
               </h2>
@@ -877,9 +877,9 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       {/* Form Panel */}
       <ResizablePanel defaultSize={50} minSize={40} className="min-h-[50vh] lg:min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-4 lg:p-6 space-y-6">
+          <div className="p-md lg:p-lg space-y-lg">
             <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-md">
               <h2 className="text-2xl font-semibold">
                 {ad?.id ? "Edit Search Ad" : "Create Search Ad"}
               </h2>
@@ -1256,8 +1256,8 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
             )}
           </div>
           
-          <ScrollArea className="flex-1 p-4 lg:p-6">
-            <div className="space-y-6">
+          <ScrollArea className="flex-1 p-md lg:p-lg">
+            <div className="space-y-lg">
               <div>
                 <SearchAdPreview
                   headlines={currentCombination.headlines}
@@ -1270,7 +1270,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
               </div>
 
               {/* Ad Strength */}
-              <div className="space-y-2 p-4 border rounded-lg bg-background">
+              <div className="space-y-xs p-md border rounded-lg bg-background">
                 <div className="flex items-center justify-between">
                   <Label>Ad Strength</Label>
                   <Badge variant={adStrength.strength === 'excellent' ? 'default' : adStrength.strength === 'good' ? 'secondary' : 'outline'}>

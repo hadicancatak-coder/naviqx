@@ -133,8 +133,8 @@ export function DuplicateCampaignDialog({ open, onOpenChange, campaign, adGroups
           <DialogTitle>Duplicate Campaign</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
+        <div className="space-y-md py-md">
+          <div className="space-y-xs">
             <Label htmlFor="campaign-name">New Campaign Name *</Label>
             <Input
               id="campaign-name"

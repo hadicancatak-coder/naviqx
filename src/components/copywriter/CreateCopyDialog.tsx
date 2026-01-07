@@ -137,7 +137,7 @@ export function CreateCopyDialog({ open, onOpenChange, editingCopy }: CreateCopy
           <DialogTitle>{editingCopy ? "Edit Copy" : "Create New Copy"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div>
             <Label>Element Type</Label>
             <Select value={elementType} onValueChange={setElementType}>

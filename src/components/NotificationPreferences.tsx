@@ -92,7 +92,7 @@ export function NotificationPreferences() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-md">
       {NOTIFICATION_TYPES.map((type) => (
         <div key={type.id} className="flex items-center justify-between py-2">
           <div className="flex-1">

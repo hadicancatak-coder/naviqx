@@ -417,8 +417,8 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
           {/* Right Panel - Live Preview */}
           <ResizablePanel defaultSize={50} minSize={30}>
             <ScrollArea className="h-[calc(95vh-180px)] px-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 sticky top-0 bg-background py-4 border-b">
+              <div className="space-y-md">
+                <div className="flex items-center gap-xs sticky top-0 bg-background py-md border-b">
                   <Sparkles className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold">Live Preview</h3>
                 </div>

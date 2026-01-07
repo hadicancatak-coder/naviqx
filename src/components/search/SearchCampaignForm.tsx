@@ -103,8 +103,8 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
               Set up a new search campaign for {entity}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+          <CardContent className="space-y-md">
+            <div className="space-y-xs">
               <Label htmlFor="campaign-name">Campaign Name *</Label>
               <Input
                 id="campaign-name"
@@ -114,9 +114,9 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Languages *</Label>
-              <div className="flex gap-4">
+              <div className="flex gap-md">
                 {LANGUAGES.map(lang => (
                   <div key={lang.code} className="flex items-center space-x-2">
                     <Checkbox

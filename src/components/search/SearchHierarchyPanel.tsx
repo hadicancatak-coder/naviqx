@@ -630,7 +630,7 @@ function CreateAdGroupDialog({
         <DialogHeader>
           <DialogTitle>Create Ad Group</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-md py-md">
           <div className="text-sm text-muted-foreground">
             Campaign: <span className="font-medium">{campaignName}</span>
           </div>
