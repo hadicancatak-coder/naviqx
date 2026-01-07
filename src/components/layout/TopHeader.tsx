@@ -35,7 +35,7 @@ export function TopHeader() {
   return (
     <header 
       className={cn(
-        "sticky top-0 z-sticky mx-4 mt-4 rounded-2xl",
+        "sticky top-0 z-sticky mx-4 mt-4 rounded-xl",
         "backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.10)]",
         "transition-all duration-200",
         theme === "light" 

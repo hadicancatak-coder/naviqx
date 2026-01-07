@@ -273,7 +273,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background pt-8 pb-8 px-8 lg:px-12">
       <div className="max-w-[1280px] mx-auto space-y-6">
         {/* Profile Header Card */}
-        <div className="bg-card rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-8">
+        <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="h-28 w-28 border-2 border-border">
@@ -366,9 +366,9 @@ export default function Profile() {
         {/* Notification Preferences - Only for own profile */}
         {isOwnProfile && (
           <Collapsible defaultOpen={false}>
-            <div className="bg-card rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)]">
+            <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)]">
               <CollapsibleTrigger className="w-full">
-                <div className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-2xl px-6 py-5">
+                <div className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl px-6 py-5">
                   <div className="flex items-center justify-between">
                     <div className="text-left">
                       <h3 className="text-heading-sm font-medium text-foreground">Notification Preferences</h3>
@@ -389,7 +389,7 @@ export default function Profile() {
 
         {/* KPIs Section */}
         {profileKPIs.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-6">
+          <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-6">
             <h2 className="text-heading-md font-medium flex items-center gap-sm mb-5 text-foreground">
               <Target className="h-5 w-5 text-primary" />
               Key Performance Indicators ({profileKPIs.length})
@@ -446,7 +446,7 @@ export default function Profile() {
 
         {/* Team Members */}
         {teamMembers.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-6">
+          <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-6">
             <h2 className="text-heading-md font-medium flex items-center gap-sm mb-5 text-foreground">
               <Users className="h-5 w-5 text-primary" />
               Team Members ({teamMembers.length})
@@ -484,7 +484,7 @@ export default function Profile() {
         )}
 
         {/* Tasks Section */}
-        <div className="bg-card rounded-2xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-6">
+        <div className="bg-card rounded-xl border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.15)] p-6">
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="grid w-full max-w-3xl grid-cols-6 h-10 rounded-lg bg-muted/50 p-1">
               <TabsTrigger value="all" className="rounded-md text-body-sm">All ({tasks.all.length})</TabsTrigger>

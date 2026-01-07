@@ -147,7 +147,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
             ) : (
               <div className="h-full flex items-center justify-center p-lg">
                 <div className="text-center space-y-md">
-                  <div className="w-20 h-20 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto">
+                  <div className="w-20 h-20 rounded-xl bg-muted/30 flex items-center justify-center mx-auto">
                     <FileText className="h-10 w-10 text-muted-foreground/50" />
                   </div>
                   <div className="space-y-xs">
@@ -205,7 +205,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
             ) : (
               <div className="h-full flex items-center justify-center p-lg">
                 <div className="text-center space-y-md">
-                  <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto">
+                  <div className="w-16 h-16 rounded-xl bg-muted/50 flex items-center justify-center mx-auto">
                     <Search className="h-8 w-8 text-muted-foreground/40" />
                   </div>
                   <div className="space-y-xs">

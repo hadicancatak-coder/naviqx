@@ -198,7 +198,7 @@ export default function Security() {
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Key className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Change Password</h2>
+          <h2 className="text-heading-md font-semibold">Change Password</h2>
         </div>
         
         <div className="space-y-4">
@@ -259,7 +259,7 @@ export default function Security() {
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
+          <h2 className="text-heading-md font-semibold">Two-Factor Authentication</h2>
         </div>
 
         <div className="space-y-4">
@@ -297,7 +297,7 @@ export default function Security() {
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Key className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Backup Recovery Codes</h2>
+            <h2 className="text-heading-md font-semibold">Backup Recovery Codes</h2>
           </div>
 
           <p className="text-sm text-muted-foreground mb-4">
