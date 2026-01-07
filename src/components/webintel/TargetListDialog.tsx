@@ -468,18 +468,29 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
                 )}
               </div>
               
-              <Textarea
-                value={bulkInput}
-                onChange={(e) => setBulkInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && bulkInput.trim()) {
-                    e.preventDefault();
-                    handleAddItems();
-                  }
-                }}
-                placeholder="Paste URLs here (one per line), press Enter to add&#10;example.com&#10;another-site.com"
-                rows={3}
-              />
+              <div className="flex gap-2">
+                <Textarea
+                  value={bulkInput}
+                  onChange={(e) => setBulkInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && bulkInput.trim()) {
+                      e.preventDefault();
+                      handleAddItems();
+                    }
+                  }}
+                  placeholder="Paste URLs here (one per line)&#10;example.com&#10;another-site.com"
+                  rows={3}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleAddItems}
+                  disabled={!bulkInput.trim()}
+                  className="self-end"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
+                </Button>
+              </div>
 
               {renderItemsTable(websiteItems, true)}
             </TabsContent>
@@ -488,18 +499,29 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
               <p className="text-sm text-muted-foreground">
                 Add YouTube channel URLs or IDs for your GDN targeting.
               </p>
-              <Textarea
-                value={bulkInput}
-                onChange={(e) => setBulkInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && bulkInput.trim()) {
-                    e.preventDefault();
-                    handleAddItems();
-                  }
-                }}
-                placeholder="Paste YouTube channel URLs (one per line)&#10;https://youtube.com/@channel&#10;UCxxxxx"
-                rows={3}
-              />
+              <div className="flex gap-2">
+                <Textarea
+                  value={bulkInput}
+                  onChange={(e) => setBulkInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && bulkInput.trim()) {
+                      e.preventDefault();
+                      handleAddItems();
+                    }
+                  }}
+                  placeholder="Paste YouTube channel URLs (one per line)&#10;https://youtube.com/@channel&#10;UCxxxxx"
+                  rows={3}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleAddItems}
+                  disabled={!bulkInput.trim()}
+                  className="self-end"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
+                </Button>
+              </div>
               
               {renderItemsTable(youtubeItems, false)}
             </TabsContent>
@@ -508,18 +530,29 @@ export function TargetListDialog({ open, onOpenChange, list, onSave }: TargetLis
               <p className="text-sm text-muted-foreground">
                 Add mobile app store URLs or bundle IDs for your GDN targeting.
               </p>
-              <Textarea
-                value={bulkInput}
-                onChange={(e) => setBulkInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && bulkInput.trim()) {
-                    e.preventDefault();
-                    handleAddItems();
-                  }
-                }}
-                placeholder="Paste app store URLs or bundle IDs (one per line)&#10;com.example.app&#10;https://play.google.com/store/apps/details?id=..."
-                rows={3}
-              />
+              <div className="flex gap-2">
+                <Textarea
+                  value={bulkInput}
+                  onChange={(e) => setBulkInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && bulkInput.trim()) {
+                      e.preventDefault();
+                      handleAddItems();
+                    }
+                  }}
+                  placeholder="Paste app store URLs or bundle IDs (one per line)&#10;com.example.app&#10;https://play.google.com/store/apps/details?id=..."
+                  rows={3}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleAddItems}
+                  disabled={!bulkInput.trim()}
+                  className="self-end"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
+                </Button>
+              </div>
               
               {renderItemsTable(appItems, false)}
             </TabsContent>
