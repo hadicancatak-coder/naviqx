@@ -115,7 +115,7 @@ export function AssignKPIDialog({ open, onOpenChange, kpi }: AssignKPIDialogProp
           )}
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div className="space-y-2">
             <Label>Assignment Type</Label>
             <Select

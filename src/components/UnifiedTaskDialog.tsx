@@ -689,7 +689,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
                   <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">Planning</h3>
                   
                   {/* Row 1: Status, Priority, Due Date */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-md">
                     {/* Status */}
                     <div className="space-y-2">
                       <Label>Status</Label>
@@ -785,7 +785,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
                   )}
 
                   {/* Row 2: Assignees, Tags */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-md">
                     {/* Assignees */}
                     <div className="space-y-2">
                       <Label>Assignees</Label>
@@ -816,7 +816,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
 
                 {/* === ADVANCED SETTINGS - View Mode: Show directly if data exists === */}
                 {isReadOnly && taskId && (
-                  <div className="space-y-4 pt-4 border-t border-border">
+                  <div className="space-y-md pt-md border-t border-border">
                     {/* Dependencies - show if task has any */}
                     <div className="space-y-2">
                       <Label>Dependencies</Label>
@@ -880,7 +880,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
                       )}
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-4 pt-4">
+                  <CollapsibleContent className="space-y-md pt-md">
                     
                     {/* Countries/Entity */}
                     <div className="space-y-2">
@@ -1117,7 +1117,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
                 </Button>
               </div>
               
-              <div className="flex-1 overflow-y-auto hide-scrollbar p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto hide-scrollbar p-md space-y-sm">
                 {/* Show failure reason banner if task has one */}
                 {loadedFailureReason && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3">
@@ -1241,7 +1241,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
               </div>
 
               {/* Comment Input */}
-              <div className="p-4 border-t border-border">
+              <div className="p-md border-t border-border">
                 <div className="flex flex-col gap-2">
                   <MentionAutocomplete
                     value={newComment}
@@ -1292,7 +1292,7 @@ export function UnifiedTaskDialog({ open, onOpenChange, mode, taskId, task: cach
                   : 'Please provide a reason why this task is blocked. This will be added as a comment.'}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-md py-md">
               <div className="space-y-2">
                 <Label htmlFor="reason-input">Reason</Label>
                 <Textarea

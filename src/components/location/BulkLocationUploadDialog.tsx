@@ -323,8 +323,8 @@ export function BulkLocationUploadDialog({ open, onClose }: BulkLocationUploadDi
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-auto">
-          <div className="flex items-center gap-4">
+        <div className="space-y-md flex-1 overflow-auto">
+          <div className="flex items-center gap-md">
             <Input
               type="file"
               accept=".csv"
@@ -348,7 +348,7 @@ export function BulkLocationUploadDialog({ open, onClose }: BulkLocationUploadDi
 
           {parsedData.length > 0 && (
             <>
-              <div className="flex gap-4 text-sm">
+              <div className="flex gap-md text-body-sm">
                 <Badge variant="default" className="gap-1">
                   <CheckCircle2 className="h-3 w-3" />
                   {validRowsCount} Valid

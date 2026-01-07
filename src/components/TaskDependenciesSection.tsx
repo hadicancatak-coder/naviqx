@@ -115,7 +115,7 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-md">
       <div className="flex items-center gap-2">
         <Link2 className="h-4 w-4" />
         <h3 className="font-semibold">Dependencies</h3>

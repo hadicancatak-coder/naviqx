@@ -168,7 +168,7 @@ export function TeamKPIsManager() {
             Team KPIs Overview
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-lg">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-md">
             <div className="p-md bg-primary/10 rounded-lg">
