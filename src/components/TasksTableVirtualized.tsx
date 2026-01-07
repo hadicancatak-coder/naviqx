@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
-import { UnifiedTaskDialog } from "./UnifiedTaskDialog";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,9 +44,7 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: Task
   const { user, userRole } = useAuth();
   const queryClient = useQueryClient();
   const { updateStatus, updatePriority, completeTask } = useTaskMutations();
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const { openTaskDrawer } = useTaskDrawer();
   const [editingTitle, setEditingTitle] = useState<{id: string; value: string} | null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -146,9 +144,7 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: Task
     if (onTaskClick) {
       onTaskClick(taskId, task);
     } else {
-      setSelectedTaskId(taskId);
-      setSelectedTask(task);
-      setDialogOpen(true);
+      openTaskDrawer(taskId, task);
     }
   };
 
@@ -411,16 +407,6 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: Task
         </List>
       </div>
 
-      {/* Modal dialog fallback - only when onTaskClick is not provided */}
-      {!onTaskClick && (
-        <UnifiedTaskDialog
-          taskId={selectedTaskId}
-          task={selectedTask}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          mode="view"
-        />
-      )}
 
       <AlertDialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
         <AlertDialogContent>
