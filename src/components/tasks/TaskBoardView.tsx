@@ -95,7 +95,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
 
   return (
     <div 
-      className="grid gap-4"
+      className="grid gap-md"
       style={{ gridTemplateColumns: `repeat(${colCount}, minmax(240px, 1fr))` }}
     >
       {groups.map(group => {

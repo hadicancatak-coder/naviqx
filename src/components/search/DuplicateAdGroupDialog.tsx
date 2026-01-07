@@ -112,8 +112,8 @@ export function DuplicateAdGroupDialog({ open, onOpenChange, adGroup, adsCount, 
           <DialogTitle>Duplicate Ad Group</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
+        <div className="space-y-md py-md">
+          <div className="space-y-xs">
             <Label htmlFor="adgroup-name">New Ad Group Name *</Label>
             <Input
               id="adgroup-name"
@@ -123,7 +123,7 @@ export function DuplicateAdGroupDialog({ open, onOpenChange, adGroup, adsCount, 
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-xs">
             <Label htmlFor="campaign">Target Campaign *</Label>
             <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
               <SelectTrigger id="campaign">

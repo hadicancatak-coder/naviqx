@@ -49,8 +49,8 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
   }, [tasks]);
 
   return (
-    <div className="flex items-center gap-6 py-6 px-2 border-b border-border overflow-x-auto">
-      <div className="flex items-center gap-3 min-w-fit">
+    <div className="flex items-center gap-lg py-lg px-xs border-b border-border overflow-x-auto">
+      <div className="flex items-center gap-sm min-w-fit">
         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <ListTodo className="h-5 w-5 text-primary" />
         </div>
@@ -62,7 +62,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
       
       <div className="h-12 w-px bg-border" />
       
-      <div className="flex items-center gap-3 min-w-fit">
+      <div className="flex items-center gap-sm min-w-fit">
         <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
           <CheckCircle2 className="h-5 w-5 text-success" />
         </div>
@@ -74,7 +74,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
       
       <div className="h-12 w-px bg-border" />
       
-      <div className="flex items-center gap-3 min-w-fit">
+      <div className="flex items-center gap-sm min-w-fit">
         <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
           <CheckCircle2 className="h-5 w-5 text-success" />
         </div>
@@ -86,7 +86,7 @@ export const TasksStatsBar = ({ tasks }: TasksStatsBarProps) => {
       
       <div className="h-12 w-px bg-border" />
       
-      <div className="flex items-center gap-3 min-w-fit">
+      <div className="flex items-center gap-sm min-w-fit">
         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <Clock className="h-5 w-5 text-primary" />
         </div>

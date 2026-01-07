@@ -34,10 +34,10 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-lg py-md">
           {/* What is 2FA */}
           <section>
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground mb-xs flex items-center gap-xs">
               <Shield className="h-4 w-4" />
               What is Two-Factor Authentication?
             </h3>
@@ -50,28 +50,28 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
 
           {/* Which App to Use */}
           <section>
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground mb-xs flex items-center gap-xs">
               <Smartphone className="h-4 w-4" />
               Which Authenticator App Should I Use?
             </h3>
-            <p className="text-body-sm text-muted-foreground mb-3">
+            <p className="text-body-sm text-muted-foreground mb-sm">
               You can use any TOTP-compatible authenticator app. Popular options include:
             </p>
-            <ul className="text-body-sm text-muted-foreground space-y-2 ml-4">
-              <li className="flex items-start gap-2">
+            <ul className="text-body-sm text-muted-foreground space-y-xs ml-md">
+              <li className="flex items-start gap-xs">
                 <span className="font-medium text-foreground">Google Authenticator</span> 
                 - Simple and reliable (iOS & Android)
               </li>
-              <li className="flex items-start gap-2">
-                <span className="font-medium text-foreground">Microsoft Authenticator</span> 
+              <li className="flex items-start gap-xs">
+                <span className="font-medium text-foreground">Microsoft Authenticator</span>
                 - Great for Microsoft accounts too (iOS & Android)
               </li>
-              <li className="flex items-start gap-2">
-                <span className="font-medium text-foreground">Authy</span> 
+              <li className="flex items-start gap-xs">
+                <span className="font-medium text-foreground">Authy</span>
                 - Supports cloud backup (iOS, Android, Desktop)
               </li>
-              <li className="flex items-start gap-2">
-                <span className="font-medium text-foreground">1Password / Bitwarden</span> 
+              <li className="flex items-start gap-xs">
+                <span className="font-medium text-foreground">1Password / Bitwarden</span>
                 - Built into password managers
               </li>
             </ul>
@@ -79,11 +79,11 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
 
           {/* How to Set Up */}
           <section>
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground mb-xs flex items-center gap-xs">
               <QrCode className="h-4 w-4" />
               How to Set Up 2FA
             </h3>
-            <ol className="text-body-sm text-muted-foreground space-y-3 ml-4 list-decimal">
+            <ol className="text-body-sm text-muted-foreground space-y-sm ml-md list-decimal">
               <li>
                 <span className="font-medium text-foreground">Download an authenticator app</span>
                 <br />
@@ -111,7 +111,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
 
           {/* Backup Codes */}
           <section>
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground mb-xs flex items-center gap-xs">
               <Key className="h-4 w-4" />
               What Are Backup Codes?
             </h3>
@@ -123,15 +123,15 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
           </section>
 
           {/* Lost Phone */}
-          <section className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+          <section className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-md">
+            <h3 className="font-semibold text-foreground mb-xs flex items-center gap-xs">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               What If I Lose My Phone?
             </h3>
             <p className="text-body-sm text-muted-foreground">
               Don't worry! You have options:
             </p>
-            <ul className="text-body-sm text-muted-foreground mt-2 space-y-1 ml-4 list-disc">
+            <ul className="text-body-sm text-muted-foreground mt-xs space-y-1 ml-md list-disc">
               <li>Use one of your backup codes to log in</li>
               <li>Contact your administrator to reset your 2FA</li>
               <li>If using Authy with cloud backup, restore on a new device</li>
@@ -140,14 +140,14 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
 
           {/* IP-Based Sessions */}
           <section>
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground mb-xs flex items-center gap-xs">
               <Shield className="h-4 w-4" />
               When Will I Be Asked to Verify?
             </h3>
             <p className="text-body-sm text-muted-foreground">
               For your security, you'll need to verify with 2FA:
             </p>
-            <ul className="text-body-sm text-muted-foreground mt-2 space-y-1 ml-4 list-disc">
+            <ul className="text-body-sm text-muted-foreground mt-xs space-y-1 ml-md list-disc">
               <li>When you log in</li>
               <li>If your IP address changes (different network/location)</li>
               <li>After signing out</li>

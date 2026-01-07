@@ -162,7 +162,7 @@ export function LpTypesManager() {
               Define a landing page category for organizing UTM rules
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-md">
             <div>
               <Label htmlFor="name">Name *</Label>
               <Input

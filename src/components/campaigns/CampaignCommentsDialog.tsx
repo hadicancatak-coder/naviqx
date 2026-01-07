@@ -65,7 +65,7 @@ export function CampaignCommentsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[600px] p-6">
+      <DialogContent className="max-w-[600px] p-lg">
         <DialogHeader className="space-y-sm">
           <DialogTitle>Campaign Comments</DialogTitle>
           <DialogDescription>
@@ -79,9 +79,9 @@ export function CampaignCommentsDialog({
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : comments.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-md">
               {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 group">
+                <div key={comment.id} className="flex gap-sm group">
                   <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarFallback className="text-metadata">
                       {comment.author_name?.charAt(0) || "?"}

@@ -20,9 +20,9 @@ export function CampaignGroupingFilters({
   adGroups,
 }: CampaignGroupingFiltersProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="campaign-filter" className="flex items-center gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+      <div className="space-y-xs">
+        <Label htmlFor="campaign-filter" className="flex items-center gap-xs">
           <FolderOpen className="h-4 w-4" />
           Campaign
         </Label>
@@ -39,8 +39,8 @@ export function CampaignGroupingFilters({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="ad-group-filter" className="flex items-center gap-2">
+      <div className="space-y-xs">
+        <Label htmlFor="ad-group-filter" className="flex items-center gap-xs">
           <Layers className="h-4 w-4" />
           Ad Group
         </Label>

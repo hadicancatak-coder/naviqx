@@ -98,7 +98,7 @@ export function SavedElementsTableView({ elements, onRefresh }: SavedElementsTab
   // Status color now centralized in constants.ts
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-md">
       {selectedIds.length > 0 && (
         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
           <span className="text-body-sm font-medium">{selectedIds.length} selected</span>
