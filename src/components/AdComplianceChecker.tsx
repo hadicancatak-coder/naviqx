@@ -36,11 +36,11 @@ export const AdComplianceChecker = ({
         <CardHeader>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-success" />
-            <CardTitle className="text-lg">Compliance Check - All Clear ✓</CardTitle>
+            <CardTitle className="text-heading-sm">Compliance Check - All Clear ✓</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             No compliance issues detected. Your ad follows brand guidelines.
           </p>
         </CardContent>
@@ -58,7 +58,7 @@ export const AdComplianceChecker = ({
             ) : (
               <AlertTriangle className="h-5 w-5 text-warning" />
             )}
-            <CardTitle className="text-lg">Compliance Issues Found</CardTitle>
+            <CardTitle className="text-heading-sm">Compliance Issues Found</CardTitle>
           </div>
           <div className="flex gap-2">
             {errors.length > 0 && (
@@ -75,14 +75,14 @@ export const AdComplianceChecker = ({
       <CardContent className="space-y-3">
         {errors.length > 0 && (
           <div className="space-y-2">
-            <div className="font-medium text-sm text-destructive">⛔ Errors (Must Fix)</div>
+            <div className="font-medium text-body-sm text-destructive">⛔ Errors (Must Fix)</div>
             <ul className="space-y-2">
               {errors.map((issue, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm p-2 rounded bg-destructive-soft">
+                <li key={idx} className="flex items-start gap-2 text-body-sm p-2 rounded bg-destructive-soft">
                   <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                   <div>
                     <div className="font-medium">{issue.message}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-metadata text-muted-foreground mt-1">
                       Field: {issue.field}
                     </div>
                   </div>
@@ -94,14 +94,14 @@ export const AdComplianceChecker = ({
 
         {warnings.length > 0 && (
           <div className="space-y-2">
-            <div className="font-medium text-sm text-warning">⚠️ Warnings (Recommended)</div>
+            <div className="font-medium text-body-sm text-warning">⚠️ Warnings (Recommended)</div>
             <ul className="space-y-2">
               {warnings.map((issue, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm p-2 rounded bg-warning-soft">
+                <li key={idx} className="flex items-start gap-2 text-body-sm p-2 rounded bg-warning-soft">
                   <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                   <div>
                     <div className="font-medium">{issue.message}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-metadata text-muted-foreground mt-1">
                       Field: {issue.field}
                     </div>
                   </div>

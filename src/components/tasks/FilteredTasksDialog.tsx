@@ -152,7 +152,7 @@ export const FilteredTasksDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center justify-between">
+          <DialogTitle className="text-heading-lg flex items-center justify-between">
             <span>{getFilterTitle()} ({filteredAndSorted.length})</span>
           </DialogTitle>
         </DialogHeader>

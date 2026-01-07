@@ -66,7 +66,7 @@ export function FloatingFilterBox({
             <Filter className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground">Filters</span>
             {hasActiveFilters && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+              <Badge variant="secondary" className="h-5 px-1.5 text-metadata">
                 {activeFilterCount}
               </Badge>
             )}
@@ -91,7 +91,7 @@ export function FloatingFilterBox({
               <div className="p-4 space-y-4 bg-gradient-to-b from-transparent via-background/10 to-transparent">
                 {/* Cities Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Cities</label>
+                  <label className="text-body-sm font-medium text-foreground">Cities</label>
                   <SimpleMultiSelect
                     options={availableCities.map((city) => ({
                       value: city,
@@ -107,7 +107,7 @@ export function FloatingFilterBox({
 
                 {/* Agencies Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Agencies</label>
+                  <label className="text-body-sm font-medium text-foreground">Agencies</label>
                   <SimpleMultiSelect
                     options={availableAgencies.map((agency) => ({
                       value: agency,
@@ -123,7 +123,7 @@ export function FloatingFilterBox({
 
                 {/* Categories Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Categories</label>
+                  <label className="text-body-sm font-medium text-foreground">Categories</label>
                   <SimpleMultiSelect
                     options={categoryOptions}
                     selected={filters.categories}
@@ -136,7 +136,7 @@ export function FloatingFilterBox({
 
                 {/* Campaign Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Campaign</label>
+                  <label className="text-body-sm font-medium text-foreground">Campaign</label>
                   <Select
                     value={filters.campaignId || "all"}
                     onValueChange={(value) =>
@@ -164,14 +164,14 @@ export function FloatingFilterBox({
                 {hasActiveFilters && (
                   <div className="pt-2 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground">
+                      <span className="text-metadata font-medium text-muted-foreground">
                         Active Filters
                       </span>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleClearFilters}
-                        className="h-6 px-2 text-xs"
+                        className="h-6 px-2 text-metadata"
                       >
                         <X className="h-3 w-3 mr-1" />
                         Clear All
@@ -182,7 +182,7 @@ export function FloatingFilterBox({
                         <Badge
                           key={city}
                           variant="secondary"
-                          className="text-xs px-2 py-0.5"
+                          className="text-metadata px-2 py-0.5"
                         >
                           {city}
                           <X
@@ -200,7 +200,7 @@ export function FloatingFilterBox({
                         <Badge
                           key={agency}
                           variant="secondary"
-                          className="text-xs px-2 py-0.5"
+                          className="text-metadata px-2 py-0.5"
                         >
                           {agency}
                           <X
@@ -224,7 +224,7 @@ export function FloatingFilterBox({
                           <Badge
                             key={category}
                             variant="secondary"
-                            className="text-xs px-2 py-0.5"
+                            className="text-metadata px-2 py-0.5"
                           >
                             {categoryOption?.label || category}
                             <X
@@ -244,7 +244,7 @@ export function FloatingFilterBox({
                       {filters.campaignId && (
                         <Badge
                           variant="secondary"
-                          className="text-xs px-2 py-0.5"
+                          className="text-metadata px-2 py-0.5"
                         >
                           {campaigns.find((c) => c.id === filters.campaignId)
                             ?.name || "Campaign"}
