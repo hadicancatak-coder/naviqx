@@ -3,11 +3,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { TaskDrawerProvider } from "./contexts/TaskDrawerContext";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalBubbleMenu } from "@/components/editor/GlobalBubbleMenu";
+import { TaskDrawer } from "./components/tasks/TaskDrawer";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 
@@ -54,8 +56,10 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
+            <TaskDrawerProvider>
             <Sonner position="bottom-right" expand={false} richColors closeButton />
             <GlobalBubbleMenu />
+            <TaskDrawer />
             <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
@@ -103,6 +107,7 @@ const App = () => (
                 </Route>
                 <Route path="*" element={<NotFound />} />
             </Routes>
+            </TaskDrawerProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

@@ -7,21 +7,19 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, Check, Trash2, Search, CheckCheck, ExternalLink } from "lucide-react";
+import { Bell, Check, Trash2, Search, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { UnifiedTaskDialog } from "@/components/UnifiedTaskDialog";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 import { AnnouncementsSection } from "@/components/AnnouncementsSection";
 
 export default function Notifications() {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
+  const { openTaskDrawer } = useTaskDrawer();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [filteredNotifications, setFilteredNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -218,12 +216,8 @@ export default function Notifications() {
     }
   };
 
-  const openTaskDialog = async (taskId: string) => {
-    // Fetch task data for cache-first pattern
-    const { data } = await supabase.from("tasks").select("*").eq("id", taskId).single();
-    setSelectedTask(data);
-    setSelectedTaskId(taskId);
-    setTaskDialogOpen(true);
+  const handleOpenTask = async (taskId: string) => {
+    openTaskDrawer(taskId);
   };
 
   const toggleSelect = (id: string) => {
@@ -469,7 +463,7 @@ export default function Notifications() {
                         const taskId = notification.payload_json?.task_id;
                         if (taskId) {
                           markAsRead(notification.id);
-                          openTaskDialog(taskId);
+                          handleOpenTask(taskId);
                         }
                       }}
                       className={`p-md border border-border rounded transition-smooth ${
@@ -571,14 +565,6 @@ export default function Notifications() {
         )}
       </div>
 
-      {selectedTaskId && (
-        <UnifiedTaskDialog
-          open={taskDialogOpen}
-          onOpenChange={setTaskDialogOpen}
-          mode="view"
-          taskId={selectedTaskId}
-        />
-      )}
     </div>
   );
 }

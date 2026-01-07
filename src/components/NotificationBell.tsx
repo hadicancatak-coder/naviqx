@@ -7,20 +7,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { UnifiedTaskDialog } from "@/components/UnifiedTaskDialog";
-import { useToast } from "@/hooks/use-toast";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 
 export function NotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { openTaskDrawer } = useTaskDrawer();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
-  
-  // Task dialog state
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -100,10 +95,9 @@ export function NotificationBell() {
     
     const payload = notification.payload_json || {};
     
-    // If has task_id, open task dialog
+    // If has task_id, open task drawer
     if (payload.task_id) {
-      setSelectedTaskId(payload.task_id);
-      setTaskDialogOpen(true);
+      openTaskDrawer(payload.task_id);
       setPopoverOpen(false);
       return;
     }
@@ -204,91 +198,79 @@ export function NotificationBell() {
   };
 
   return (
-    <>
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-destructive-foreground">
+              {unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 p-0" align="end">
+        <div className="flex items-center justify-between p-md border-b border-border">
+          <h3 className="text-heading-sm font-semibold">Notifications</h3>
+          <div className="flex items-center gap-2">
             {unreadCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-destructive-foreground">
-                {unreadCount}
-              </Badge>
+              <>
+                <Button variant="ghost" size="sm" onClick={markAllRead} className="text-metadata h-7 px-2">
+                  Clear All
+                </Button>
+                <Badge variant="secondary">{unreadCount}</Badge>
+              </>
             )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-96 p-0" align="end">
-          <div className="flex items-center justify-between p-md border-b border-border">
-            <h3 className="text-heading-sm font-semibold">Notifications</h3>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <>
-                  <Button variant="ghost" size="sm" onClick={markAllRead} className="text-metadata h-7 px-2">
-                    Clear All
-                  </Button>
-                  <Badge variant="secondary">{unreadCount}</Badge>
-                </>
-              )}
+          </div>
+        </div>
+        
+        <ScrollArea className="h-[400px]">
+          {notifications.length === 0 ? (
+            <div className="p-md text-center text-muted-foreground">
+              No new notifications
             </div>
-          </div>
-          
-          <ScrollArea className="h-[400px]">
-            {notifications.length === 0 ? (
-              <div className="p-md text-center text-muted-foreground">
-                No new notifications
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {notifications.map((notification) => (
-                  <button
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className="w-full p-sm hover:bg-card-hover transition-colors text-left flex gap-sm items-start"
-                  >
-                    <div className="text-xl flex-shrink-0">
-                      {getNotificationIcon(notification.type)}
+          ) : (
+            <div className="divide-y divide-border">
+              {notifications.map((notification) => (
+                <button
+                  key={notification.id}
+                  onClick={() => handleNotificationClick(notification)}
+                  className="w-full p-sm hover:bg-card-hover transition-colors text-left flex gap-sm items-start"
+                >
+                  <div className="text-xl flex-shrink-0">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-body-sm">
+                      {getNotificationMessage(notification)}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-body-sm">
-                        {getNotificationMessage(notification)}
-                      </div>
-                      <div className="text-metadata text-muted-foreground mt-1">
-                        {new Date(notification.created_at).toLocaleDateString()} at{" "}
-                        {new Date(notification.created_at).toLocaleTimeString([], { 
-                          hour: "2-digit", 
-                          minute: "2-digit" 
-                        })}
-                      </div>
+                    <div className="text-metadata text-muted-foreground mt-1">
+                      {new Date(notification.created_at).toLocaleDateString()} at{" "}
+                      {new Date(notification.created_at).toLocaleTimeString([], { 
+                        hour: "2-digit", 
+                        minute: "2-digit" 
+                      })}
                     </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-          
-          <div className="p-sm border-t border-border">
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => {
-                setPopoverOpen(false);
-                navigate("/notifications");
-              }}
-            >
-              View All Notifications
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      {/* Task Dialog */}
-      {selectedTaskId && (
-        <UnifiedTaskDialog
-          open={taskDialogOpen}
-          onOpenChange={setTaskDialogOpen}
-          mode="view"
-          taskId={selectedTaskId}
-        />
-      )}
-    </>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+        
+        <div className="p-sm border-t border-border">
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setPopoverOpen(false);
+              navigate("/notifications");
+            }}
+          >
+            View All Notifications
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
