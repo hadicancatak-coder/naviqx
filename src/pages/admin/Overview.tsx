@@ -99,14 +99,14 @@ export default function Overview() {
               className="cursor-pointer transition-smooth hover:shadow-md hover:border-primary/30 group"
               onClick={card.onClick}
             >
-              <CardContent className="p-lg">
+              <CardContent className="p-card pt-card">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-sm">
+                  <div className="space-y-xs">
                     <p className="text-body-sm text-muted-foreground">{card.title}</p>
                     <p className="text-3xl font-bold text-foreground">{card.value}</p>
                     <p className="text-metadata text-muted-foreground">{card.subtitle}</p>
                   </div>
-                  <div className={`p-3 rounded-xl ${card.bgColor}`}>
+                  <div className={`p-sm rounded-xl ${card.bgColor}`}>
                     <card.icon className={`h-5 w-5 ${card.color}`} />
                   </div>
                 </div>
