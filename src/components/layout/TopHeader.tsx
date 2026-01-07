@@ -35,7 +35,7 @@ export function TopHeader() {
   return (
     <header 
       className={cn(
-        "sticky top-0 z-sticky mx-4 mt-4 rounded-xl",
+        "sticky top-0 z-sticky mx-md mt-md rounded-xl",
         "backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.10)]",
         "transition-all duration-200",
         theme === "light" 
@@ -43,11 +43,11 @@ export function TopHeader() {
           : "bg-card/70 border border-border/20"
       )}
     >
-      <div className="flex items-center justify-between gap-4 px-4 lg:px-6 py-3">
+      <div className="flex items-center justify-between gap-md px-md lg:px-lg py-sm">
         {/* Left Side - Sidebar trigger & Breadcrumb */}
         <div className="flex items-center gap-3">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all h-9 w-9" />
-          <div className="hidden sm:flex items-center gap-2 text-sm">
+          <div className="hidden sm:flex items-center gap-xs text-body-sm">
             <span className="font-semibold text-foreground">Prisma</span>
             {pageName && (
               <>
@@ -62,7 +62,7 @@ export function TopHeader() {
         <div className="flex-1" />
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-xs">
           {/* Theme Switcher */}
           <Button
             variant="ghost"

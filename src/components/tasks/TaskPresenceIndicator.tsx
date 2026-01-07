@@ -53,7 +53,7 @@ export function TaskPresenceIndicator({ taskId, editMode }: TaskPresenceIndicato
   if (otherUsers.length === 0) return null;
 
   return (
-    <Alert variant="default" className="mb-4 border-primary/50 bg-primary/5">
+    <Alert variant="default" className="mb-md border-primary/50 bg-primary/5">
       <Users className="h-4 w-4" />
       <AlertDescription>
         <strong>{otherUsers.map(u => u.user).join(', ')}</strong> {otherUsers.length === 1 ? 'is' : 'are'} currently editing this task

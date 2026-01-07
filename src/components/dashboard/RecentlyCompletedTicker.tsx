@@ -67,7 +67,7 @@ export function RecentlyCompletedTicker() {
       className="bg-elevated rounded-lg border border-border overflow-hidden cursor-pointer hover:border-primary/50 transition-smooth"
       onClick={handleClick}
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
+      <div className="flex items-center gap-xs px-sm py-xs border-b border-border bg-muted/30">
         <CheckCircle2 className="h-4 w-4 text-success" />
         <span className="text-xs font-medium text-muted-foreground">Recently Completed</span>
       </div>
@@ -78,7 +78,7 @@ export function RecentlyCompletedTicker() {
         onMouseLeave={() => setIsPaused(false)}
       >
         <div
-          className={`flex gap-6 py-3 px-4 ${isPaused ? "" : "animate-ticker"}`}
+          className={`flex gap-lg py-sm px-md ${isPaused ? "" : "animate-ticker"}`}
           style={{
             width: "max-content",
           }}
@@ -86,7 +86,7 @@ export function RecentlyCompletedTicker() {
           {items.map((task, index) => (
             <div
               key={`${task.id}-${index}`}
-              className="flex items-center gap-2 text-sm whitespace-nowrap hover:text-primary transition-colors"
+              className="flex items-center gap-xs text-body-sm whitespace-nowrap hover:text-primary transition-colors"
             >
               <span className="text-foreground font-medium">
                 {truncateTitle(task.title)}

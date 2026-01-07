@@ -179,13 +179,13 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
           ) : members.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">No users found</div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-md">
               {members.map((member) => (
                 <div
                   key={member.user_id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors"
+                  className="flex items-center justify-between p-md border rounded-lg hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3 flex-1">
+                  <div className="flex items-center gap-sm flex-1">
                     <Avatar>
                       <AvatarImage src={member.avatar_url || ""} />
                       <AvatarFallback>{member.name?.[0] || "U"}</AvatarFallback>
@@ -209,7 +209,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-xs ml-md">
                     <Select
                       value={member.working_days || 'mon-fri'}
                       onValueChange={(value) =>

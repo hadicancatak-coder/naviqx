@@ -175,7 +175,7 @@ export function SavedKeywordListsTab({ onAnalyzeList }: SavedKeywordListsTabProp
           description="Your saved keyword analyses organized by trading entity"
         />
         <ScrollArea className="h-[500px]">
-          <div className="space-y-6">
+          <div className="space-y-lg">
             {Object.entries(listsByEntity).map(([entity, entityLists]) => (
               <div key={entity}>
                 <h3 className="text-heading-sm font-semibold mb-3 flex items-center gap-2">
@@ -184,7 +184,7 @@ export function SavedKeywordListsTab({ onAnalyzeList }: SavedKeywordListsTabProp
                     {entityLists.length} {entityLists.length === 1 ? "list" : "lists"}
                   </span>
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   {entityLists.map((list) => (
                     <Collapsible
                       key={list.id}
@@ -193,7 +193,7 @@ export function SavedKeywordListsTab({ onAnalyzeList }: SavedKeywordListsTabProp
                     >
                       <div className="border border-border rounded-lg overflow-hidden">
                         <CollapsibleTrigger className="w-full">
-                          <div className="flex items-center justify-between p-4 bg-elevated hover:bg-card-hover transition-smooth">
+                          <div className="flex items-center justify-between p-md bg-elevated hover:bg-card-hover transition-smooth">
                             <div className="flex items-center gap-3">
                               <FolderOpen className="h-4 w-4 text-muted-foreground" />
                               <div className="text-left">
@@ -260,7 +260,7 @@ export function SavedKeywordListsTab({ onAnalyzeList }: SavedKeywordListsTabProp
                         <CollapsibleContent>
                           <div className="border-t border-border">
                             {loadingItems ? (
-                              <div className="p-4 text-center text-muted-foreground">Loading keywords...</div>
+                              <div className="p-md text-center text-muted-foreground">Loading keywords...</div>
                             ) : (
                               <Table>
                                 <TableHeader>

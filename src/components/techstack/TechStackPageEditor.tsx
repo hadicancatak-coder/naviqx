@@ -168,9 +168,9 @@ export function TechStackPageEditor({
           <DialogTitle>{page ? "Edit Tech Stack Item" : "Add Tech Stack Item"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-[1fr_120px] gap-4">
-            <div className="space-y-2">
+        <div className="space-y-md py-md">
+          <div className="grid grid-cols-[1fr_120px] gap-md">
+            <div className="space-y-xs">
               <Label>Name</Label>
               <Input
                 value={title}
@@ -179,7 +179,7 @@ export function TechStackPageEditor({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Icon</Label>
               <Select value={icon} onValueChange={setIcon}>
                 <SelectTrigger>
@@ -199,8 +199,8 @@ export function TechStackPageEditor({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-md">
+            <div className="space-y-xs">
               <Label>Status</Label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
@@ -216,7 +216,7 @@ export function TechStackPageEditor({
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>When Integrated</Label>
               <Input
                 type="date"
@@ -225,7 +225,7 @@ export function TechStackPageEditor({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Owner</Label>
               <Select value={ownerId || "none"} onValueChange={(v) => setOwnerId(v === "none" ? null : v)}>
                 <SelectTrigger>
@@ -243,7 +243,7 @@ export function TechStackPageEditor({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-xs">
             <Label>Category</Label>
             <Select
               value={selectedParentId || "none"}
@@ -263,7 +263,7 @@ export function TechStackPageEditor({
             </Select>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-xs">
             <Label>Details</Label>
             <p className="text-metadata text-muted-foreground">
               Include: What it is, Why we use it, Who uses it, Who is responsible, Issues, Future plans

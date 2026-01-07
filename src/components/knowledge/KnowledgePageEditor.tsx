@@ -124,9 +124,9 @@ export function KnowledgePageEditor({
           <DialogTitle>{page ? "Edit Page" : "Create Page"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-[1fr_120px] gap-4">
-            <div className="space-y-2">
+        <div className="space-y-md py-md">
+          <div className="grid grid-cols-[1fr_120px] gap-md">
+            <div className="space-y-xs">
               <Label>Title</Label>
               <Input
                 value={title}
@@ -135,7 +135,7 @@ export function KnowledgePageEditor({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Icon</Label>
               <Select value={icon} onValueChange={setIcon}>
                 <SelectTrigger>
@@ -155,7 +155,7 @@ export function KnowledgePageEditor({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-xs">
             <Label>Parent Page</Label>
             <Select
               value={selectedParentId || "none"}
@@ -175,7 +175,7 @@ export function KnowledgePageEditor({
             </Select>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-xs">
             <Label>Content</Label>
             <div className="border border-border rounded-lg overflow-hidden min-h-[300px]">
               <RichTextEditor

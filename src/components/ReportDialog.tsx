@@ -71,7 +71,7 @@ export function ReportDialog({ open, onOpenChange, onSuccess }: ReportDialogProp
           <DialogTitle>Add Report</DialogTitle>
           <DialogDescription>Add a new report link</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-md">
           <div>
             <Label htmlFor="title">Title *</Label>
             <Input
@@ -108,7 +108,7 @@ export function ReportDialog({ open, onOpenChange, onSuccess }: ReportDialogProp
             </Select>
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-xs justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
