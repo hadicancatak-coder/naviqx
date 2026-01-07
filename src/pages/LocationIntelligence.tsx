@@ -199,7 +199,7 @@ export default function LocationIntelligence() {
   return (
     <div className="relative h-[calc(100vh-64px)] w-full overflow-hidden">
       {selectionMode === 'campaign-select' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-primary/90 backdrop-blur-md text-primary-foreground px-6 py-3 rounded-lg shadow-xl border border-primary-foreground/20 flex items-center gap-3">
+        <div className="absolute top-md left-1/2 -translate-x-1/2 z-20 bg-primary/90 backdrop-blur-md text-primary-foreground px-lg py-sm rounded-lg shadow-xl border border-primary-foreground/20 flex items-center gap-sm">
           <Target className="h-5 w-5" />
           <span className="font-medium">Selection Mode - Click pins to select locations</span>
           <Button size="sm" variant="secondary" onClick={handleExitSelectionMode} className="ml-4">Exit</Button>
@@ -292,7 +292,7 @@ export default function LocationIntelligence() {
         document.body
       )}
 
-      <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 max-w-sm">
+      <div className="absolute top-md left-md z-30 flex flex-col gap-xs max-w-sm">
         <LocationSearch locations={filteredLocations} onLocationSelect={handleLocationSelect} />
         
         {/* Floating Filter Box below search */}
@@ -305,7 +305,7 @@ export default function LocationIntelligence() {
         />
       </div>
 
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
+      <div className="absolute top-md right-md z-10 flex gap-xs">
         <Button onClick={() => setCampaignsListOpen(true)} variant="secondary" className="bg-background/90 backdrop-blur-md shadow-xl border border-border/20">
           <FolderOpen className="h-4 w-4 mr-2" />Campaigns
         </Button>
@@ -325,16 +325,16 @@ export default function LocationIntelligence() {
         )}
       </div>
 
-      <div className="absolute bottom-4 left-4 z-10 bg-background/90 backdrop-blur-md rounded-lg shadow-xl border border-white/10 p-4">
-        <div className="flex gap-4 text-sm">
-          <div><span className="text-muted-foreground">Total:</span><span className="ml-2 font-semibold">{filteredLocations.length}</span></div>
+      <div className="absolute bottom-md left-md z-10 bg-background/90 backdrop-blur-md rounded-lg shadow-xl border border-white/10 p-md">
+        <div className="flex gap-md text-body-sm">
+          <div><span className="text-muted-foreground">Total:</span><span className="ml-xs font-semibold">{filteredLocations.length}</span></div>
           <div><span className="text-muted-foreground">Selected:</span><span className="ml-2 font-semibold text-primary">{selectedLocations.length}</span></div>
         </div>
       </div>
 
       {selectedLocations.length > 0 && (
-        <div className="absolute bottom-4 right-4 z-10 bg-background/90 backdrop-blur-md rounded-lg shadow-xl border border-white/10 p-4 max-w-sm max-h-[400px] overflow-y-auto">
-          <div className="flex items-center justify-between mb-3">
+        <div className="absolute bottom-md right-md z-10 bg-background/90 backdrop-blur-md rounded-lg shadow-xl border border-white/10 p-md max-w-sm max-h-[400px] overflow-y-auto">
+          <div className="flex items-center justify-between mb-sm">
             <h3 className="font-semibold">{selectionMode === 'campaign-select' ? 'Selected for Campaign' : 'Selected Locations'} ({selectedLocations.length})</h3>
             {selectionMode === 'campaign-select' && <Badge variant="default" className="text-xs"><Target className="h-3 w-3 mr-1" />Active</Badge>}
           </div>

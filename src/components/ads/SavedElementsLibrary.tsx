@@ -66,10 +66,10 @@ export function SavedElementsLibrary() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-md">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Saved Elements Library</h2>
-        <div className="flex gap-2">
+        <h2 className="text-heading-lg font-semibold">Saved Elements Library</h2>
+        <div className="flex gap-xs">
           <ToggleGroup type="single" value={viewMode} onValueChange={(v: any) => v && setViewMode(v)}>
             <ToggleGroupItem value="grid" aria-label="Grid view">
               <Grid3x3 className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function SavedElementsLibrary() {
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-xs flex-wrap">
         <Select value={entityFilter} onValueChange={setEntityFilter}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Entity" />
@@ -155,12 +155,12 @@ export function SavedElementsLibrary() {
         </TabsList>
 
         {['headline', 'description', 'sitelink', 'callout'].map((type) => (
-          <TabsContent key={type} value={type} className="space-y-4 mt-4">
+          <TabsContent key={type} value={type} className="space-y-md mt-md">
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading...</div>
             ) : elements && elements.length > 0 ? (
               viewMode === 'grid' ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-md md:grid-cols-2 lg:grid-cols-3">
                   {elements.map((element) => (
                     <ElementCard key={element.id} element={element} />
                   ))}
@@ -170,7 +170,7 @@ export function SavedElementsLibrary() {
               )
             ) : (
               <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground mb-4">No {type}s saved yet</p>
+                <p className="text-muted-foreground mb-md">No {type}s saved yet</p>
                 <Button onClick={() => setShowCreateDialog(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Your First {type.charAt(0).toUpperCase() + type.slice(1)}

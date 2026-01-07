@@ -367,7 +367,7 @@ export default function Tasks() {
 
   const TaskListContent = () => (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-auto p-md space-y-4">
+      <div className="flex-1 overflow-auto p-md space-y-md">
         <PageHeader
           icon={ListTodo}
           title="Tasks"
@@ -441,7 +441,7 @@ export default function Tasks() {
 
         {/* Active filters indicator */}
         {hasActiveFilters && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-sm">
             <Button variant="ghost" size="sm" onClick={clearAllFilters}>
               <X className="h-4 w-4 mr-2" />
               Clear All Filters
@@ -453,9 +453,9 @@ export default function Tasks() {
         {/* Task Content - NO WRAPPER CARDS */}
         {finalFilteredTasks.length === 0 ? (
           <div className="py-16 text-center">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-md" />
             <h3 className="text-heading-sm font-medium text-foreground mb-2">All Clear!</h3>
-            <p className="text-body-sm text-muted-foreground mb-4">
+            <p className="text-body-sm text-muted-foreground mb-md">
               {tasks.length === 0 ? "You don't have any tasks yet." : "No tasks match your filters."}
             </p>
             {tasks.length === 0 && (
@@ -470,7 +470,7 @@ export default function Tasks() {
                 <span>
                   {Math.min(startIndex + 1, finalFilteredTasks.length)}-{Math.min(startIndex + itemsPerPage, finalFilteredTasks.length)} of {finalFilteredTasks.length}
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-xs">
                   <span>Per page:</span>
                   <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
                     <SelectTrigger className="w-[70px] h-8">
@@ -505,7 +505,7 @@ export default function Tasks() {
 
             {/* Pagination for list view */}
             {viewMode === 'list' && totalPages > 1 && (
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center pt-md">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>

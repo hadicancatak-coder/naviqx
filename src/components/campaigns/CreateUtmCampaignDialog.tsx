@@ -131,7 +131,7 @@ export function CreateUtmCampaignDialog({ open, onOpenChange }: CreateUtmCampaig
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-md">
           <div>
             <Label htmlFor="name">Campaign Name *</Label>
             <Input
@@ -174,7 +174,7 @@ export function CreateUtmCampaignDialog({ open, onOpenChange }: CreateUtmCampaig
 
           <div>
             <Label htmlFor="creative">Creative / Image</Label>
-            <div className="mt-1 space-y-2">
+            <div className="mt-1 space-y-xs">
               {imagePreview ? (
                 <div className="relative">
                   <img
@@ -197,8 +197,8 @@ export function CreateUtmCampaignDialog({ open, onOpenChange }: CreateUtmCampaig
                   </Button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                  <FileImage className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <div className="border-2 border-dashed border-border rounded-lg p-lg text-center hover:border-primary/50 transition-colors">
+                  <FileImage className="h-8 w-8 mx-auto mb-xs text-muted-foreground" />
                   <Input
                     id="creative"
                     type="file"
@@ -214,7 +214,7 @@ export function CreateUtmCampaignDialog({ open, onOpenChange }: CreateUtmCampaig
                   </Label>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-metadata text-muted-foreground">
                 Upload campaign creative or use asset link below for larger files
               </p>
             </div>
@@ -235,7 +235,7 @@ export function CreateUtmCampaignDialog({ open, onOpenChange }: CreateUtmCampaig
             </p>
           </div>
 
-          <div className="flex gap-2 justify-end pt-4">
+          <div className="flex gap-xs justify-end pt-md">
             <Button
               type="button"
               variant="outline"

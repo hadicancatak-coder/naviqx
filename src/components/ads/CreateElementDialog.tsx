@@ -55,7 +55,7 @@ export function CreateElementDialog({ open, onOpenChange, elementType }: CreateE
           <DialogTitle>Add {elementType.charAt(0).toUpperCase() + elementType.slice(1)}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-md">
           <div>
             <Label htmlFor="content">Content</Label>
             {elementType === 'description' ? (
@@ -78,8 +78,8 @@ export function CreateElementDialog({ open, onOpenChange, elementType }: CreateE
 
           <div>
             <Label>Countries (Select Multiple)</Label>
-            <ScrollArea className="h-[200px] border rounded-md p-4 mt-2">
-              <div className="space-y-2">
+            <ScrollArea className="h-[200px] border rounded-md p-md mt-xs">
+              <div className="space-y-xs">
                 {ENTITIES.map((entity) => (
                   <div key={entity} className="flex items-center space-x-2">
                     <Checkbox

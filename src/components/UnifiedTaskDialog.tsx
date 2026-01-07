@@ -39,25 +39,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Loading skeleton component for the dialog
 const TaskDialogSkeleton = () => (
-  <div className="px-6 py-4 space-y-5">
-    <div className="space-y-4">
-      <div className="space-y-2">
+  <div className="px-lg py-md space-y-md">
+    <div className="space-y-md">
+      <div className="space-y-xs">
         <Skeleton className="h-4 w-12" />
         <Skeleton className="h-10 w-full" />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-xs">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-24 w-full" />
       </div>
     </div>
-    <div className="space-y-4">
+    <div className="space-y-md">
       <Skeleton className="h-4 w-16" />
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-md">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-md">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>

@@ -34,8 +34,8 @@ export function EditLinkDialog({ open, onOpenChange, text, url, onSave }: EditLi
         <DialogHeader>
           <DialogTitle>Edit Link</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
+        <div className="space-y-md py-md">
+          <div className="space-y-xs">
             <Label htmlFor="edit-link-text">Text</Label>
             <Input
               id="edit-link-text"
@@ -44,7 +44,7 @@ export function EditLinkDialog({ open, onOpenChange, text, url, onSave }: EditLi
               placeholder="Link text"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-xs">
             <Label htmlFor="edit-link-url">URL</Label>
             <Input
               id="edit-link-url"
