@@ -49,14 +49,14 @@ function TaskDetailContent({ onClose }: { onClose?: () => void }) {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col bg-card border-l border-border">
+      <div className="h-full flex flex-col liquid-glass-elevated rounded-l-xl">
         <TaskDetailSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-card animate-slide-in-right">
+    <div className="h-full flex flex-col liquid-glass-elevated rounded-l-xl animate-slide-in-right">
       <TaskDetailHeader onClose={onClose} />
       
       <ScrollArea className="flex-1">
