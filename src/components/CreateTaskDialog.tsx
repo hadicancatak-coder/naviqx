@@ -255,6 +255,37 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
     setShowReasonDialog(false);
   };
 
+  // Auto-save task to backlog when closing with title filled
+  const handleSheetClose = async (isOpen: boolean) => {
+    if (!isOpen && title.trim() && !loading) {
+      // User clicked outside or closed - auto-save to backlog
+      try {
+        const taskData = {
+          title: title.trim(),
+          description: description || null,
+          priority: "Medium" as const,
+          status: "Ongoing" as const,
+          created_by: user!.id,
+          visibility: "global" as const,
+          task_type: "generic" as const,
+        };
+
+        await supabase.from("tasks").insert([taskData]);
+        
+        toast({
+          title: "Task saved",
+          description: "Task auto-saved to backlog",
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        resetForm();
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+      }
+    }
+    onOpenChange(isOpen);
+  };
+
   const weekDays = [
     { value: 0, label: "Sun" },
     { value: 1, label: "Mon" },
@@ -267,7 +298,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
+      <Sheet open={open} onOpenChange={handleSheetClose}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle>Create New Task</SheetTitle>
