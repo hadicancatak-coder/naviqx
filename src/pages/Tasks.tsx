@@ -7,7 +7,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { UnifiedTaskDialog } from "@/components/UnifiedTaskDialog";
+import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { AssigneeFilterBar } from "@/components/AssigneeFilterBar";
 import { TaskDateFilterBar } from "@/components/TaskDateFilterBar";
 import { StatusMultiSelect } from "@/components/tasks/StatusMultiSelect";
@@ -586,7 +586,7 @@ export default function Tasks() {
         )}
       </ResizablePanelGroup>
 
-      <UnifiedTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} mode="create" />
+      <CreateTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} />
       
       <FilteredTasksDialog
         open={filteredDialogOpen}
