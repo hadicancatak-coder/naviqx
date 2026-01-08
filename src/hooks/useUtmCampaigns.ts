@@ -139,6 +139,9 @@ export const useUpsertUtmCampaigns = () => {
       landing_page?: string;
       campaign_type?: string;
       description?: string;
+      asset_link?: string;
+      version_number?: number;
+      version_notes?: string;
     }>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -154,9 +157,11 @@ export const useUpsertUtmCampaigns = () => {
 
       let created = 0;
       let updated = 0;
+      let versionsCreated = 0;
 
       for (const campaign of campaigns) {
         const existingId = existingMap.get(campaign.name.toLowerCase());
+        let campaignId: string;
         
         if (existingId) {
           // Update existing
@@ -170,10 +175,11 @@ export const useUpsertUtmCampaigns = () => {
             .eq("id", existingId);
           
           if (error) throw error;
+          campaignId = existingId;
           updated++;
         } else {
           // Insert new
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from("utm_campaigns")
             .insert({
               name: campaign.name,
@@ -181,18 +187,73 @@ export const useUpsertUtmCampaigns = () => {
               campaign_type: campaign.campaign_type || null,
               description: campaign.description || null,
               created_by: user.id,
-            });
+            })
+            .select("id")
+            .single();
           
           if (error) throw error;
+          campaignId = data.id;
           created++;
+        }
+
+        // Create version if version data is provided
+        const hasVersionData = !!(campaign.asset_link || campaign.version_number || campaign.version_notes);
+        if (hasVersionData && campaignId) {
+          // Get next version number if not provided
+          let versionNumber = campaign.version_number;
+          if (!versionNumber) {
+            const { data: latestVersion } = await supabase
+              .from("utm_campaign_versions")
+              .select("version_number")
+              .eq("utm_campaign_id", campaignId)
+              .order("version_number", { ascending: false })
+              .limit(1)
+              .single();
+            
+            versionNumber = (latestVersion?.version_number || 0) + 1;
+          }
+
+          // Check if version number already exists
+          const { data: existingVersion } = await supabase
+            .from("utm_campaign_versions")
+            .select("id")
+            .eq("utm_campaign_id", campaignId)
+            .eq("version_number", versionNumber)
+            .maybeSingle();
+
+          if (!existingVersion) {
+            const { error: versionError } = await supabase
+              .from("utm_campaign_versions")
+              .insert({
+                utm_campaign_id: campaignId,
+                version_number: versionNumber,
+                name: campaign.name,
+                landing_page: campaign.landing_page || null,
+                description: campaign.description || null,
+                asset_link: campaign.asset_link || null,
+                version_notes: campaign.version_notes || null,
+                created_by: user.id,
+              });
+
+            if (versionError) {
+              console.warn(`Failed to create version for campaign ${campaign.name}:`, versionError);
+            } else {
+              versionsCreated++;
+            }
+          }
         }
       }
 
-      return { created, updated };
+      return { created, updated, versionsCreated };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["utm-campaigns"] });
-      toast.success(`Import complete: ${result.created} created, ${result.updated} updated`);
+      queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
+      const parts = [];
+      if (result.created > 0) parts.push(`${result.created} created`);
+      if (result.updated > 0) parts.push(`${result.updated} updated`);
+      if (result.versionsCreated > 0) parts.push(`${result.versionsCreated} versions added`);
+      toast.success(`Import complete: ${parts.join(", ")}`);
     },
     onError: (error: Error) => {
       toast.error("Failed to import campaigns: " + error.message);
