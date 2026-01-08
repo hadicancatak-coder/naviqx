@@ -40,6 +40,13 @@ export function TopHeader() {
         "relative overflow-hidden"
       )}
     >
+      {/* Self-contained gradient backdrop for liquid glass effect */}
+      <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/25 via-cyan-400/20 to-indigo-500/25 dark:from-blue-500/30 dark:via-cyan-400/25 dark:to-indigo-500/30" />
+        <div className="absolute -top-1/2 -left-1/4 w-[60%] h-[200%] rounded-full bg-gradient-to-br from-blue-400/30 via-cyan-300/20 to-transparent blur-2xl dark:from-blue-500/35 dark:via-cyan-400/25" />
+        <div className="absolute -top-1/2 -right-1/4 w-[60%] h-[200%] rounded-full bg-gradient-to-bl from-indigo-400/30 via-blue-300/20 to-transparent blur-2xl dark:from-indigo-500/35 dark:via-blue-400/25" />
+        <div className="absolute top-0 left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/30" />
+      </div>
       <div className="flex items-center justify-between gap-md px-md lg:px-lg py-sm">
         {/* Left Side - Sidebar trigger & Breadcrumb */}
         <div className="flex items-center gap-3">
