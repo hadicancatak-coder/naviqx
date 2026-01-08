@@ -190,7 +190,7 @@ export function SearchPlannerStructurePanel({
             Entity
           </label>
           <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-            <SelectTrigger className="h-9 bg-card/60 border-input transition-smooth">
+            <SelectTrigger className="h-9 bg-white/10 border-white/20 transition-smooth">
               <SelectValue placeholder="Select entity" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border shadow-lg">
@@ -223,7 +223,7 @@ export function SearchPlannerStructurePanel({
             placeholder="Search campaigns, ads..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 pl-9 bg-card/60 border-input transition-smooth"
+            className="h-9 pl-9 bg-white/10 border-white/20 transition-smooth"
           />
         </div>
       </div>
