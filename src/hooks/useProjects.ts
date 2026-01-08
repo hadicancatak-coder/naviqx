@@ -275,11 +275,21 @@ export function useProjectTimelines(projectId: string | null) {
   });
 
   const updateTimeline = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<ProjectTimeline> & { id: string }) => {
+    mutationFn: async (timeline: Partial<ProjectTimeline> & { id: string }) => {
+      // Only pass valid database columns
+      const updates: Record<string, unknown> = {};
+      if (timeline.phase_name !== undefined) updates.phase_name = timeline.phase_name;
+      if (timeline.start_date !== undefined) updates.start_date = timeline.start_date;
+      if (timeline.end_date !== undefined) updates.end_date = timeline.end_date;
+      if (timeline.description !== undefined) updates.description = timeline.description;
+      if (timeline.color !== undefined) updates.color = timeline.color;
+      if (timeline.progress !== undefined) updates.progress = timeline.progress;
+      if (timeline.order_index !== undefined) updates.order_index = timeline.order_index;
+
       const { data, error } = await supabase
         .from("project_timelines")
         .update(updates)
-        .eq("id", id)
+        .eq("id", timeline.id)
         .select()
         .single();
 
@@ -288,6 +298,10 @@ export function useProjectTimelines(projectId: string | null) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-timelines", projectId] });
+      toast({ title: "Phase updated" });
+    },
+    onError: (error) => {
+      toast({ title: "Failed to update phase", description: error.message, variant: "destructive" });
     },
   });
 
