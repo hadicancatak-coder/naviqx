@@ -92,8 +92,10 @@ export interface TaskDetailProps {
 }
 
 export function TaskDetail({ taskId, task, onClose, onTaskDeleted }: TaskDetailProps) {
+  // Key prop forces remount when taskId changes, ensuring fresh state
   return (
     <TaskDetailProvider 
+      key={taskId}
       taskId={taskId} 
       cachedTask={task} 
       onClose={onClose}
