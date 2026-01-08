@@ -130,7 +130,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
           <ResizableHandle withHandle className="bg-border hover:bg-primary/20 transition-smooth" />
           
           {/* MIDDLE: Ad Editor (form only, no internal preview) */}
-          <ResizablePanel defaultSize={48} minSize={35} className="overflow-hidden bg-background/30 backdrop-blur-sm">
+          <ResizablePanel defaultSize={48} minSize={35} className="overflow-hidden bg-white/5 backdrop-blur-xl">
             {editorContext ? (
               <SearchAdEditor
                 ad={editorContext.ad}
