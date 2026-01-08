@@ -27,6 +27,8 @@ interface TaskDetailContextValue {
   setDueDate: (v: Date | undefined) => void;
   tags: string[];
   setTags: (v: string[]) => void;
+  projectId: string | null;
+  setProjectId: (v: string | null) => void;
   
   // Assignees
   selectedAssignees: string[];
@@ -106,6 +108,7 @@ export function TaskDetailProvider({
   const [dueDate, setDueDate] = useState<Date>();
   const [tags, setTags] = useState<string[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
   
   // Users
   const [users, setUsers] = useState<any[]>([]);
@@ -149,6 +152,7 @@ export function TaskDetailProvider({
     setStatus(mapStatusToUi(data.status));
     setDueDate(data.due_at ? new Date(data.due_at) : undefined);
     setTags(Array.isArray(data.labels) ? data.labels : []);
+    setProjectId(data.project_id || null);
     setLoading(false);
   }, [taskId, toast]);
 
@@ -244,6 +248,7 @@ export function TaskDetailProvider({
     if (field === 'status') updateData.status = mapStatusToDb(value);
     if (field === 'due_at') updateData.due_at = value?.toISOString() || null;
     if (field === 'labels') updateData.labels = value;
+    if (field === 'project_id') updateData.project_id = value;
     
     const { error } = await supabase.from("tasks").update(updateData).eq("id", taskId);
     
@@ -346,6 +351,8 @@ export function TaskDetailProvider({
     setDueDate,
     tags,
     setTags,
+    projectId,
+    setProjectId,
     selectedAssignees,
     setSelectedAssignees,
     realtimeAssignees,

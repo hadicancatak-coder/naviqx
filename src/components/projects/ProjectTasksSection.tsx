@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { Plus, CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useProjectTasks } from "@/hooks/useProjects";
 import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
+import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 
 interface ProjectTasksSectionProps {
   projectId: string;
@@ -29,11 +31,7 @@ const priorityColors: Record<string, string> = {
 export function ProjectTasksSection({ projectId, projectName, isAdmin }: ProjectTasksSectionProps) {
   const { tasks, isLoading } = useProjectTasks(projectId);
   const { openTaskDrawer } = useTaskDrawer();
-
-  const handleCreateTask = () => {
-    // For now, just open drawer - project pre-selection would need CreateTaskDialog updates
-    // openTaskDrawer with no ID doesn't work - we'd need a different approach
-  };
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const handleTaskClick = (taskId: string, task: any) => {
     openTaskDrawer(taskId, task);
@@ -54,12 +52,18 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
           )}
         </div>
         {isAdmin && (
-          <Button variant="outline" size="sm" onClick={handleCreateTask}>
+          <Button variant="outline" size="sm" onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             Add Task
           </Button>
         )}
       </div>
+
+      <CreateTaskDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+        defaultProjectId={projectId}
+      />
 
       {isLoading ? (
         <div className="space-y-2">
@@ -106,7 +110,7 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
         <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
           <p className="text-body-sm">No tasks linked to this project</p>
           {isAdmin && (
-            <Button variant="link" className="mt-2" onClick={handleCreateTask}>
+            <Button variant="link" className="mt-2" onClick={() => setCreateDialogOpen(true)}>
               Create the first task
             </Button>
           )}

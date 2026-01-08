@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers } from "lucide-react";
+import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers, FolderKanban } from "lucide-react";
+import { useProjects } from "@/hooks/useProjects";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
@@ -72,6 +73,9 @@ export default function Tasks() {
   const [filteredDialogType, setFilteredDialogType] = useState<'all' | 'overdue' | 'ongoing' | 'completed'>('all');
   const [hideRecurring, setHideRecurring] = useState(true);
   const [showMyTasks, setShowMyTasks] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  
+  const { projects } = useProjects();
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   // Persist view preferences
@@ -164,7 +168,8 @@ export default function Tasks() {
       const tagsMatch = selectedTags.length === 0 || selectedTags.some(tag => task.labels?.includes(tag));
       const searchMatch = debouncedSearch === "" || task.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) || (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
       const recurringMatch = !hideRecurring || task.task_type !== 'recurring';
-      return assigneeMatch && dateMatch && statusMatch && tagsMatch && searchMatch && recurringMatch;
+      const projectMatch = !selectedProjectId || task.project_id === selectedProjectId;
+      return assigneeMatch && dateMatch && statusMatch && tagsMatch && searchMatch && recurringMatch && projectMatch;
     });
   }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, hideRecurring, showMyTasks, user]);
 
@@ -176,7 +181,7 @@ export default function Tasks() {
     return filteredTasks;
   }, [filteredTasks, activeQuickFilter]);
 
-  useEffect(() => { setCurrentPage(1); }, [selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, activeQuickFilter]);
+  useEffect(() => { setCurrentPage(1); }, [selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, activeQuickFilter, selectedProjectId]);
 
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
@@ -272,7 +277,7 @@ export default function Tasks() {
   }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskId, selectedTaskIds, handleTaskClick, handleCloseSidePanel, handleShiftSelect, queryClient, toast]);
 
   const tasks = data || [];
-  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks;
+  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || selectedProjectId;
   
   const myTasksCount = useMemo(() => {
     if (!user || !data) return 0;
@@ -296,7 +301,7 @@ export default function Tasks() {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
     setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
-    setShowMyTasks(false);
+    setShowMyTasks(false); setSelectedProjectId(null);
   };
 
   const handleBulkComplete = async () => {
@@ -412,6 +417,24 @@ export default function Tasks() {
                   <input type="checkbox" checked={selectedTags.includes(tag.value)} onChange={() => {}} className="cursor-pointer rounded" />
                   <span>{tag.label}</span>
                 </div>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select 
+            value={selectedProjectId || "all"} 
+            onValueChange={(v) => setSelectedProjectId(v === "all" ? null : v)}
+          >
+            <SelectTrigger className="w-[140px]">
+              <FolderKanban className="h-4 w-4 mr-2" />
+              <SelectValue>{selectedProjectId ? projects?.find(p => p.id === selectedProjectId)?.name : "Project"}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects?.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
