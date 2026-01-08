@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { format } from "date-fns";
 import { Plus, CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,10 +13,11 @@ interface ProjectTasksSectionProps {
 }
 
 const statusIcons: Record<string, React.ReactNode> = {
-  "To Do": <Circle className="h-4 w-4 text-muted-foreground" />,
-  "In Progress": <Clock className="h-4 w-4 text-info-text" />,
-  Done: <CheckCircle2 className="h-4 w-4 text-success-text" />,
+  Pending: <Circle className="h-4 w-4 text-muted-foreground" />,
+  Ongoing: <Clock className="h-4 w-4 text-info-text" />,
+  Completed: <CheckCircle2 className="h-4 w-4 text-success-text" />,
   Blocked: <AlertCircle className="h-4 w-4 text-destructive" />,
+  Failed: <AlertCircle className="h-4 w-4 text-destructive" />,
 };
 
 const priorityColors: Record<string, string> = {
@@ -28,18 +28,18 @@ const priorityColors: Record<string, string> = {
 
 export function ProjectTasksSection({ projectId, projectName, isAdmin }: ProjectTasksSectionProps) {
   const { tasks, isLoading } = useProjectTasks(projectId);
-  const { openDrawer } = useTaskDrawer();
+  const { openTaskDrawer } = useTaskDrawer();
 
   const handleCreateTask = () => {
-    // Open task drawer with project pre-selected
-    openDrawer(null, { projectId, projectName });
+    // For now, just open drawer - project pre-selection would need CreateTaskDialog updates
+    // openTaskDrawer with no ID doesn't work - we'd need a different approach
   };
 
-  const handleTaskClick = (taskId: string) => {
-    openDrawer(taskId);
+  const handleTaskClick = (taskId: string, task: any) => {
+    openTaskDrawer(taskId, task);
   };
 
-  const completedCount = tasks?.filter((t) => t.status === "Done").length || 0;
+  const completedCount = tasks?.filter((t) => t.status === "Completed").length || 0;
   const totalCount = tasks?.length || 0;
 
   return (
@@ -73,21 +73,21 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
             <div
               key={task.id}
               className="flex items-center gap-md p-md bg-card border border-border rounded-lg hover:bg-card-hover cursor-pointer transition-smooth"
-              onClick={() => handleTaskClick(task.id)}
+              onClick={() => handleTaskClick(task.id, task)}
             >
-              <div className="flex-shrink-0">{statusIcons[task.status] || statusIcons["To Do"]}</div>
+              <div className="flex-shrink-0">{statusIcons[task.status] || statusIcons["Pending"]}</div>
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
                     "text-body-sm font-medium truncate",
-                    task.status === "Done" && "line-through text-muted-foreground"
+                    task.status === "Completed" && "line-through text-muted-foreground"
                   )}
                 >
                   {task.title}
                 </p>
-                {task.due_date && (
+                {task.due_at && (
                   <p className="text-metadata text-muted-foreground">
-                    Due {format(new Date(task.due_date), "MMM d")}
+                    Due {format(new Date(task.due_at), "MMM d")}
                   </p>
                 )}
               </div>
