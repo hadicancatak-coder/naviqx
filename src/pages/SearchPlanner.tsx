@@ -104,9 +104,9 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
   const callouts = liveFields.callouts.filter(Boolean);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="px-lg py-md border-b border-border bg-card/50">
+      <div className="px-lg py-md border-b border-border/50 liquid-glass">
         <PageHeader
           icon={Search}
           title="Search Ads Planner"
@@ -118,7 +118,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
           {/* LEFT: Structure Panel */}
-          <ResizablePanel defaultSize={22} minSize={18} maxSize={30} className="bg-card">
+          <ResizablePanel defaultSize={22} minSize={18} maxSize={30} className="liquid-glass-elevated border-r border-border/30">
             <SearchPlannerStructurePanel
               onEditAd={handleEditAd}
               onCreateAd={handleCreateAd}
@@ -130,7 +130,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
           <ResizableHandle withHandle className="bg-border hover:bg-primary/20 transition-smooth" />
           
           {/* MIDDLE: Ad Editor (form only, no internal preview) */}
-          <ResizablePanel defaultSize={48} minSize={35} className="overflow-hidden bg-background">
+          <ResizablePanel defaultSize={48} minSize={35} className="overflow-hidden">
             {editorContext ? (
               <SearchAdEditor
                 ad={editorContext.ad}
@@ -147,7 +147,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
             ) : (
               <div className="h-full flex items-center justify-center p-lg">
                 <div className="text-center space-y-md">
-                  <div className="w-20 h-20 rounded-xl bg-muted/30 flex items-center justify-center mx-auto">
+                  <div className="w-20 h-20 rounded-xl bg-muted/50 backdrop-blur-sm flex items-center justify-center mx-auto">
                     <FileText className="h-10 w-10 text-muted-foreground/50" />
                   </div>
                   <div className="space-y-xs">
@@ -164,11 +164,11 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
           <ResizableHandle withHandle className="bg-border hover:bg-primary/20 transition-smooth" />
 
           {/* RIGHT: Preview & Quality Panel */}
-          <ResizablePanel defaultSize={30} minSize={25} maxSize={40} className="bg-muted/30">
+          <ResizablePanel defaultSize={30} minSize={25} maxSize={40} className="liquid-glass-elevated border-l border-border/30">
             {editorContext ? (
               <div className="h-full flex flex-col">
                 {/* Tabs for Preview/Quality */}
-                <div className="border-b border-border bg-card/50 px-md pt-md">
+                <div className="border-b border-border/50 bg-background/50 px-md pt-md">
                   <Tabs value={rightPanelTab} onValueChange={(v) => setRightPanelTab(v as "preview" | "quality")}>
                     <TabsList className="w-full grid grid-cols-2">
                       <TabsTrigger value="preview" className="text-body-sm">

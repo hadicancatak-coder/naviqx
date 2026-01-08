@@ -183,6 +183,15 @@ export default function Tasks() {
 
   useEffect(() => { setCurrentPage(1); }, [selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, activeQuickFilter, selectedProjectId]);
 
+  // Auto-deselect My Tasks when different assignee is selected
+  useEffect(() => {
+    if (showMyTasks && user && selectedAssignees.length > 0) {
+      if (!selectedAssignees.includes(user.id)) {
+        setShowMyTasks(false);
+      }
+    }
+  }, [selectedAssignees, user?.id, showMyTasks]);
+
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   
@@ -392,7 +401,16 @@ export default function Tasks() {
         <FilterBar search={{ value: searchQuery, onChange: setSearchQuery, placeholder: "Search tasks..." }}>
           <Button
             variant={showMyTasks ? "default" : "outline"}
-            onClick={() => setShowMyTasks(!showMyTasks)}
+            onClick={() => {
+              const newValue = !showMyTasks;
+              setShowMyTasks(newValue);
+              if (newValue && user) {
+                // Auto-select current user in assignee filter when enabling My Tasks
+                if (!selectedAssignees.includes(user.id)) {
+                  setSelectedAssignees([user.id]);
+                }
+              }
+            }}
             className="gap-2"
           >
             <User className="h-4 w-4" />

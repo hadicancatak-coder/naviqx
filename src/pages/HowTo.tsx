@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Save, X, BookOpen } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { PageContainer, PageHeader } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -157,7 +157,7 @@ export default function HowTo() {
   };
 
   return (
-    <div className="p-xl space-y-lg max-w-4xl mx-auto animate-fade-in">
+    <PageContainer size="narrow" className="animate-fade-in">
       <PageHeader
         title="How to Use Prisma"
         description="Learn how to get the most out of the platform"
@@ -172,7 +172,7 @@ export default function HowTo() {
       />
 
       {/* Content */}
-      <Card className="p-lg bg-card border-border">
+      <Card className="p-lg liquid-glass-elevated border-border/50">
         <div className="flex items-center gap-sm mb-lg">
           <BookOpen className="h-5 w-5 text-primary" />
           <h2 className="text-heading-md font-semibold">User Guide</h2>
@@ -195,7 +195,7 @@ export default function HowTo() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col liquid-glass-elevated border-border/50">
           <DialogHeader>
             <DialogTitle>Edit How To Page</DialogTitle>
           </DialogHeader>
@@ -222,6 +222,6 @@ export default function HowTo() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

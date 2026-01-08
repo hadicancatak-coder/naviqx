@@ -256,7 +256,7 @@ export default function CampaignsLog() {
         )}
         
         {/* Campaign Library */}
-        <div className="border-t border-border bg-card rounded-xl shadow-soft">
+        <div className="liquid-glass rounded-xl border border-border/50">
           <Collapsible 
             open={expandedCampaigns.has('library')} 
             onOpenChange={(open) => { 
@@ -266,7 +266,7 @@ export default function CampaignsLog() {
             }}
           >
             <div className="w-full flex items-center justify-between p-md">
-              <CollapsibleTrigger className="flex items-center gap-sm cursor-pointer hover:bg-accent/50 transition-smooth rounded-lg px-sm py-sm flex-1">
+              <CollapsibleTrigger className="flex items-center gap-sm cursor-pointer hover:bg-card-hover transition-smooth rounded-lg px-sm py-sm flex-1">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
                 <h3 className="text-heading-sm font-medium text-foreground">Campaign Library</h3>
                 <Badge variant="secondary" className="ml-sm">{filteredCampaigns.length}</Badge>
@@ -295,11 +295,11 @@ export default function CampaignsLog() {
                     placeholder="Search campaigns..." 
                     value={searchTerm} 
                     onChange={(e) => setSearchTerm(e.target.value)} 
-                    className="pl-10 bg-background" 
+                    className="pl-10 bg-card/50" 
                   />
                 </div>
                 <Select value={libraryEntityFilter} onValueChange={setLibraryEntityFilter}>
-                  <SelectTrigger className="w-[180px] bg-background">
+                  <SelectTrigger className="w-[180px] bg-card/50">
                     <SelectValue placeholder="Filter by entity" />
                   </SelectTrigger>
                   <SelectContent>
