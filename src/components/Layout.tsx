@@ -47,9 +47,18 @@ export const Layout = () => {
           <div className="absolute top-0 left-[20%] w-[60%] h-[200px] bg-gradient-to-b from-white/10 via-white/5 to-transparent blur-[40px]" />
         </div>
         <AppSidebar />
-        <main className="flex-1 overflow-auto w-full relative z-10 bg-background">
-          <TopHeader />
-          <Outlet />
+        <main className="flex-1 overflow-auto w-full relative z-10">
+          {/* Solid background for content readability */}
+          <div className="absolute inset-0 bg-background z-0" />
+          {/* Subtle depth glow that shows through glass surfaces */}
+          <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[300px] bg-gradient-to-b from-primary/8 via-primary/4 to-transparent blur-[80px] dark:from-primary/15 dark:via-primary/8" />
+            <div className="absolute bottom-0 right-0 w-[50%] h-[400px] bg-gradient-to-tl from-cyan-500/5 via-transparent to-transparent blur-[60px] dark:from-cyan-400/12" />
+          </div>
+          <div className="relative z-[2]">
+            <TopHeader />
+            <Outlet />
+          </div>
         </main>
       </div>
     </SidebarProvider>
