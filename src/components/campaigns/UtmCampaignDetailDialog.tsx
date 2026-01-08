@@ -320,7 +320,8 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                             <TableHead className="w-16 text-muted-foreground">Version</TableHead>
                             <TableHead className="w-28 text-muted-foreground">Date</TableHead>
                             <TableHead className="text-muted-foreground">Notes</TableHead>
-                            <TableHead className="w-16 text-muted-foreground">Asset</TableHead>
+                            <TableHead className="text-muted-foreground">Asset Link</TableHead>
+                            <TableHead className="w-16 text-muted-foreground">Image</TableHead>
                             <TableHead className="w-12"></TableHead>
                           </TableRow>
                         </TableHeader>
@@ -347,20 +348,39 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                                   <TableCell className="text-sm text-muted-foreground">
                                     {v.created_at ? format(new Date(v.created_at), 'MMM d') : '-'}
                                   </TableCell>
-                                  <TableCell className="text-sm text-foreground">{v.version_notes || '-'}</TableCell>
+                                  <TableCell className="text-sm text-foreground max-w-[150px] truncate">
+                                    {v.version_notes || '-'}
+                                  </TableCell>
+                                  <TableCell className="text-sm max-w-[200px]">
+                                    {v.asset_link ? (
+                                      <a 
+                                        href={v.asset_link} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-primary hover:underline truncate block"
+                                        title={v.asset_link}
+                                      >
+                                        {(() => {
+                                          try {
+                                            return new URL(v.asset_link).hostname;
+                                          } catch {
+                                            return v.asset_link;
+                                          }
+                                        })()}
+                                      </a>
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                                  </TableCell>
                                   <TableCell>
-                                    <div className="flex gap-2">
-                                      {v.image_url && (
-                                        <a href={v.image_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                                          <FileImage className="size-4 text-primary hover:text-primary/80" />
-                                        </a>
-                                      )}
-                                      {v.asset_link && (
-                                        <a href={v.asset_link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                                          <Link2 className="size-4 text-primary hover:text-primary/80" />
-                                        </a>
-                                      )}
-                                    </div>
+                                    {v.image_url ? (
+                                      <a href={v.image_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                        <FileImage className="size-4 text-primary hover:text-primary/80" />
+                                      </a>
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
                                   </TableCell>
                                   <TableCell>
                                     <Button
@@ -378,7 +398,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                                 </TableRow>
                                 {isExpanded && (
                                   <TableRow key={`${v.id}-details`} className="border-border bg-muted/30">
-                                    <TableCell colSpan={5} className="p-md">
+                                    <TableCell colSpan={6} className="p-md">
                                       <div className="space-y-sm">
                                         <div className="grid grid-cols-2 gap-md text-body-sm">
                                           <div className="flex items-center gap-sm">
