@@ -603,11 +603,6 @@ export default function Tasks() {
           defaultSize={selectedTaskId ? 60 : 100} 
           minSize={40}
           className="overflow-hidden"
-          onClick={() => {
-            if (selectedTaskId) {
-              handleCloseSidePanel();
-            }
-          }}
         >
           <TaskListContent />
         </ResizablePanel>
