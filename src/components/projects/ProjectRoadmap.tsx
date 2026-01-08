@@ -103,7 +103,15 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
 
   const handleUpdatePhase = async () => {
     if (!editingPhase) return;
-    await updateTimeline.mutateAsync(editingPhase);
+    await updateTimeline.mutateAsync({
+      id: editingPhase.id,
+      phase_name: editingPhase.phase_name,
+      start_date: editingPhase.start_date,
+      end_date: editingPhase.end_date,
+      description: editingPhase.description,
+      color: editingPhase.color,
+      progress: editingPhase.progress,
+    });
     setEditingPhase(null);
   };
 
