@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { APP_BASE_URL } from "@/lib/constants";
 import { Label } from "@/components/ui/label";
 
 export default function Projects() {
@@ -147,7 +148,7 @@ export default function Projects() {
 
   const copyPublicLink = () => {
     if (selectedProject?.public_token) {
-      const url = `${window.location.origin}/projects/public/${selectedProject.public_token}`;
+      const url = `${APP_BASE_URL}/projects/public/${selectedProject.public_token}`;
       navigator.clipboard.writeText(url);
       toast({ title: "Link copied to clipboard" });
     }
@@ -305,7 +306,7 @@ export default function Projects() {
                 <div className="flex gap-2">
                   <Input
                     readOnly
-                    value={`${window.location.origin}/projects/public/${selectedProject.public_token}`}
+                    value={`${APP_BASE_URL}/projects/public/${selectedProject.public_token}`}
                     className="text-body-sm"
                   />
                   <Button variant="outline" onClick={copyPublicLink}>
