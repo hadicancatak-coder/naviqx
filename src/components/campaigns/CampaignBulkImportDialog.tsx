@@ -20,9 +20,13 @@ interface ParsedRow {
   landing_page: string;
   campaign_type: string;
   description: string;
+  asset_link: string;
+  version_number: string;
+  version_notes: string;
   isValid: boolean;
   errors: string[];
   isUpdate: boolean;
+  hasVersionData: boolean;
 }
 
 export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImportDialogProps) {
@@ -33,9 +37,17 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
   const upsertMutation = useUpsertUtmCampaigns();
 
   const downloadTemplate = () => {
-    const headers = ["name", "landing_page", "campaign_type", "description"];
-    const exampleRow = ["Summer Sale 2025", "https://example.com/promo", "Performance", "Q2 promotional campaign"];
-    const csvContent = [headers.join(","), exampleRow.join(",")].join("\n");
+    const headers = ["name", "landing_page", "campaign_type", "description", "asset_link", "version_number", "version_notes"];
+    const exampleRow = [
+      "Summer Sale 2025",
+      "https://example.com/promo",
+      "Performance",
+      "Q2 promotional campaign",
+      "https://drive.google.com/file/xyz",
+      "1",
+      "Initial version with approved creatives"
+    ];
+    const csvContent = [headers.join(","), exampleRow.map(v => `"${v}"`).join(",")].join("\n");
     
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -54,6 +66,9 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
     const landingPageIdx = headers.indexOf("landing_page");
     const typeIdx = headers.indexOf("campaign_type");
     const descIdx = headers.indexOf("description");
+    const assetLinkIdx = headers.indexOf("asset_link");
+    const versionNumIdx = headers.indexOf("version_number");
+    const versionNotesIdx = headers.indexOf("version_notes");
     
     if (nameIdx === -1) {
       toast.error("CSV must have a 'name' column");
@@ -85,6 +100,9 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
       const landing_page = landingPageIdx >= 0 ? values[landingPageIdx]?.replace(/"/g, "").trim() || "" : "";
       const campaign_type = typeIdx >= 0 ? values[typeIdx]?.replace(/"/g, "").trim() || "" : "";
       const description = descIdx >= 0 ? values[descIdx]?.replace(/"/g, "").trim() || "" : "";
+      const asset_link = assetLinkIdx >= 0 ? values[assetLinkIdx]?.replace(/"/g, "").trim() || "" : "";
+      const version_number = versionNumIdx >= 0 ? values[versionNumIdx]?.replace(/"/g, "").trim() || "" : "";
+      const version_notes = versionNotesIdx >= 0 ? values[versionNotesIdx]?.replace(/"/g, "").trim() || "" : "";
       
       const errors: string[] = [];
       
@@ -98,16 +116,39 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         errors.push(`Invalid type. Valid: ${CAMPAIGN_TYPES.join(", ")}`);
       }
       
+      // Validate version_number if provided
+      if (version_number) {
+        const vNum = parseInt(version_number, 10);
+        if (isNaN(vNum) || vNum <= 0) {
+          errors.push("Version number must be a positive integer");
+        }
+      }
+      
+      // Validate asset_link URL format if provided
+      if (asset_link) {
+        try {
+          new URL(asset_link);
+        } catch {
+          errors.push("Asset link must be a valid URL");
+        }
+      }
+      
       if (name) seenNames.add(name.toLowerCase());
+      
+      const hasVersionData = !!(asset_link || version_number || version_notes);
       
       rows.push({
         name,
         landing_page,
         campaign_type,
         description,
+        asset_link,
+        version_number,
+        version_notes,
         isValid: errors.length === 0,
         errors,
         isUpdate: existingNames.has(name.toLowerCase()),
+        hasVersionData,
       });
     }
     
@@ -149,6 +190,9 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         landing_page: r.landing_page || undefined,
         campaign_type: r.campaign_type || undefined,
         description: r.description || undefined,
+        asset_link: r.asset_link || undefined,
+        version_number: r.version_number ? parseInt(r.version_number, 10) : undefined,
+        version_notes: r.version_notes || undefined,
       })));
       handleClose();
     } catch {
@@ -166,6 +210,7 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
   const validCount = parsedData.filter(r => r.isValid).length;
   const invalidCount = parsedData.filter(r => !r.isValid).length;
   const updateCount = parsedData.filter(r => r.isValid && r.isUpdate).length;
+  const versionCount = parsedData.filter(r => r.isValid && r.hasVersionData).length;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -184,9 +229,11 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
           <div className="space-y-md py-md">
             <Alert>
               <AlertDescription className="text-body-sm">
-                <strong>CSV Format:</strong> name (required), landing_page, campaign_type, description
+                <strong>CSV Format:</strong> name (required), landing_page, campaign_type, description, asset_link, version_number, version_notes
                 <br />
                 <strong>Valid types:</strong> {CAMPAIGN_TYPES.join(", ")}
+                <br />
+                <strong>Version fields:</strong> If provided, a version will be created with the campaign
               </AlertDescription>
             </Alert>
             
@@ -231,6 +278,12 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
                   {updateCount} will update
                 </Badge>
               )}
+              {versionCount > 0 && (
+                <Badge variant="outline" className="border-primary/30 text-primary">
+                  <FileSpreadsheet className="size-3 mr-1" />
+                  {versionCount} with versions
+                </Badge>
+              )}
             </div>
 
             <ScrollArea className="flex-1 border rounded-lg">
@@ -242,6 +295,9 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
                     <TableHead>Landing Page</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Asset Link</TableHead>
+                    <TableHead className="w-[50px]">V#</TableHead>
+                    <TableHead>Version Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -270,8 +326,27 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
                         {row.landing_page || "—"}
                       </TableCell>
                       <TableCell>{row.campaign_type || "—"}</TableCell>
-                      <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                      <TableCell className="max-w-[150px] truncate text-muted-foreground">
                         {row.description || "—"}
+                      </TableCell>
+                      <TableCell className="max-w-[150px] truncate text-muted-foreground">
+                        {row.asset_link ? (
+                          <a 
+                            href={row.asset_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                            title={row.asset_link}
+                          >
+                            {new URL(row.asset_link).hostname}
+                          </a>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {row.version_number || "—"}
+                      </TableCell>
+                      <TableCell className="max-w-[150px] truncate text-muted-foreground" title={row.version_notes}>
+                        {row.version_notes || "—"}
                       </TableCell>
                     </TableRow>
                   ))}
