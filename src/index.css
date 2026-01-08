@@ -271,15 +271,15 @@ All colors MUST be HSL.
     --danger-soft: 0 72% 51% / 0.12;
     --danger-text: 0 72% 70%;
     
-    /* Sidebar - Matches new palette (brighter for dark mode) */
-    --sidebar-background: 220 16% 11%;
-    --sidebar-foreground: 220 13% 85%;
-    --sidebar-primary: 211 100% 50%;
+    /* Sidebar - Brighter, more readable text for dark mode */
+    --sidebar-background: 220 20% 8% / 0.6;
+    --sidebar-foreground: 210 25% 95%;
+    --sidebar-primary: 211 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 16% 16%;
-    --sidebar-accent-foreground: 211 100% 60%;
-    --sidebar-border: 220 18% 20%;
-    --sidebar-ring: 211 100% 50%;
+    --sidebar-accent: 220 30% 22%;
+    --sidebar-accent-foreground: 211 100% 65%;
+    --sidebar-border: 210 40% 35%;
+    --sidebar-ring: 211 100% 55%;
 
     /* Grayscale palette - dark mode (consistent with new tokens) */
     --gray-50: 210 40% 98%;
@@ -538,26 +538,27 @@ All colors MUST be HSL.
   .dark .liquid-glass {
     background: linear-gradient(
       145deg,
-      hsl(220 45% 18% / 0.4) 0%,
-      hsl(215 40% 15% / 0.35) 50%,
-      hsl(225 50% 20% / 0.38) 100%
+      hsl(220 50% 25% / 0.35) 0%,
+      hsl(215 45% 20% / 0.30) 50%,
+      hsl(225 55% 28% / 0.32) 100%
     );
-    border: 1px solid hsl(210 60% 55% / 0.25);
+    border: 1px solid hsl(210 70% 65% / 0.35);
     box-shadow: 
-      0 8px 32px hsl(220 80% 5% / 0.4),
-      inset 0 1px 2px hsl(210 80% 70% / 0.22),
-      inset 0 -1px 2px hsl(0 0% 0% / 0.2),
-      inset 1px 0 1px hsl(200 70% 65% / 0.18),
-      inset -1px 0 1px hsl(200 70% 65% / 0.18);
+      0 8px 32px hsl(220 80% 5% / 0.3),
+      0 4px 16px hsl(210 90% 50% / 0.08),
+      inset 0 1px 3px hsl(210 90% 80% / 0.30),
+      inset 0 -1px 2px hsl(0 0% 0% / 0.15),
+      inset 1px 0 2px hsl(200 80% 75% / 0.25),
+      inset -1px 0 2px hsl(200 80% 75% / 0.25);
   }
 
   .dark .liquid-glass::before {
     background: linear-gradient(
       135deg,
-      hsl(210 80% 70% / 0.15) 0%,
-      hsl(200 60% 65% / 0.08) 30%,
-      transparent 50%,
-      hsl(220 70% 60% / 0.1) 100%
+      hsl(210 90% 85% / 0.20) 0%,
+      hsl(200 70% 75% / 0.12) 25%,
+      hsl(215 60% 70% / 0.08) 50%,
+      hsl(220 80% 70% / 0.15) 100%
     );
   }
   
@@ -619,38 +620,38 @@ All colors MUST be HSL.
   .dark .liquid-glass-elevated {
     background: linear-gradient(
       145deg,
-      hsl(220 40% 15% / 0.85) 0%,
-      hsl(215 38% 13% / 0.8) 50%,
-      hsl(225 45% 16% / 0.82) 100%
+      hsl(220 45% 18% / 0.75) 0%,
+      hsl(215 42% 15% / 0.70) 50%,
+      hsl(225 50% 20% / 0.72) 100%
     );
-    border: 1px solid hsl(210 55% 45% / 0.22);
+    border: 1px solid hsl(210 65% 55% / 0.30);
     box-shadow: 
-      0 25px 50px hsl(220 80% 5% / 0.6),
-      0 8px 24px hsl(210 90% 10% / 0.4),
-      inset 0 2px 4px hsl(210 70% 60% / 0.14),
-      inset 0 -2px 4px hsl(0 0% 0% / 0.35),
-      inset 2px 0 3px hsl(200 60% 55% / 0.1),
-      inset -2px 0 3px hsl(200 60% 55% / 0.1);
+      0 25px 50px hsl(220 80% 5% / 0.4),
+      0 8px 24px hsl(210 90% 30% / 0.15),
+      inset 0 2px 4px hsl(210 80% 75% / 0.22),
+      inset 0 -2px 4px hsl(0 0% 0% / 0.25),
+      inset 2px 0 3px hsl(200 70% 70% / 0.18),
+      inset -2px 0 3px hsl(200 70% 70% / 0.18);
   }
 
   .dark .liquid-glass-elevated:hover {
     box-shadow: 
-      0 30px 60px hsl(220 80% 5% / 0.7),
-      0 12px 32px hsl(210 90% 10% / 0.5),
-      inset 0 2px 4px hsl(210 70% 60% / 0.18),
-      inset 0 -2px 4px hsl(0 0% 0% / 0.35),
-      inset 2px 0 3px hsl(200 60% 55% / 0.12),
-      inset -2px 0 3px hsl(200 60% 55% / 0.12);
+      0 30px 60px hsl(220 80% 5% / 0.5),
+      0 12px 32px hsl(210 90% 30% / 0.2),
+      inset 0 2px 4px hsl(210 80% 75% / 0.28),
+      inset 0 -2px 4px hsl(0 0% 0% / 0.25),
+      inset 2px 0 3px hsl(200 70% 70% / 0.22),
+      inset -2px 0 3px hsl(200 70% 70% / 0.22);
   }
 
   .dark .liquid-glass-elevated::before {
     background: linear-gradient(
       135deg,
-      hsl(210 70% 60% / 0.12) 0%,
-      hsl(200 50% 70% / 0.06) 25%,
-      transparent 45%,
-      transparent 55%,
-      hsl(220 60% 50% / 0.04) 100%
+      hsl(210 80% 80% / 0.18) 0%,
+      hsl(200 60% 75% / 0.10) 25%,
+      hsl(215 50% 70% / 0.06) 45%,
+      hsl(200 70% 80% / 0.08) 55%,
+      hsl(220 70% 65% / 0.12) 100%
     );
   }
 
