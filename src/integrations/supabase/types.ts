@@ -2707,29 +2707,38 @@ export type Database = {
       }
       project_timelines: {
         Row: {
+          color: string | null
           created_at: string
           description: string | null
           end_date: string
           id: string
+          order_index: number | null
           phase_name: string
+          progress: number | null
           project_id: string | null
           start_date: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
           description?: string | null
           end_date: string
           id?: string
+          order_index?: number | null
           phase_name: string
+          progress?: number | null
           project_id?: string | null
           start_date: string
         }
         Update: {
+          color?: string | null
           created_at?: string
           description?: string | null
           end_date?: string
           id?: string
+          order_index?: number | null
           phase_name?: string
+          progress?: number | null
           project_id?: string | null
           start_date?: string
         }
@@ -2745,42 +2754,83 @@ export type Database = {
       }
       projects: {
         Row: {
+          click_count: number | null
           created_at: string
           created_by: string | null
           description: string | null
           due_date: string | null
+          icon: string | null
           id: string
+          is_public: boolean | null
+          last_accessed_at: string | null
           members: string[] | null
           name: string
+          order_index: number | null
+          outcomes: string | null
+          parent_id: string | null
+          public_token: string | null
+          purpose: string | null
           required_time: number | null
+          slug: string | null
+          status: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          click_count?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          icon?: string | null
           id?: string
+          is_public?: boolean | null
+          last_accessed_at?: string | null
           members?: string[] | null
           name: string
+          order_index?: number | null
+          outcomes?: string | null
+          parent_id?: string | null
+          public_token?: string | null
+          purpose?: string | null
           required_time?: number | null
+          slug?: string | null
+          status?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          click_count?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          icon?: string | null
           id?: string
+          is_public?: boolean | null
+          last_accessed_at?: string | null
           members?: string[] | null
           name?: string
+          order_index?: number | null
+          outcomes?: string | null
+          parent_id?: string | null
+          public_token?: string | null
+          purpose?: string | null
           required_time?: number | null
+          slug?: string | null
+          status?: string | null
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_task_completions: {
         Row: {
