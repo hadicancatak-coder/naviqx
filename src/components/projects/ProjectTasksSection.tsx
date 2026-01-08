@@ -1,0 +1,117 @@
+import { useState } from "react";
+import { format } from "date-fns";
+import { Plus, CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { useProjectTasks } from "@/hooks/useProjects";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
+
+interface ProjectTasksSectionProps {
+  projectId: string;
+  projectName: string;
+  isAdmin?: boolean;
+}
+
+const statusIcons: Record<string, React.ReactNode> = {
+  "To Do": <Circle className="h-4 w-4 text-muted-foreground" />,
+  "In Progress": <Clock className="h-4 w-4 text-info-text" />,
+  Done: <CheckCircle2 className="h-4 w-4 text-success-text" />,
+  Blocked: <AlertCircle className="h-4 w-4 text-destructive" />,
+};
+
+const priorityColors: Record<string, string> = {
+  High: "status-destructive",
+  Medium: "status-warning",
+  Low: "status-info",
+};
+
+export function ProjectTasksSection({ projectId, projectName, isAdmin }: ProjectTasksSectionProps) {
+  const { tasks, isLoading } = useProjectTasks(projectId);
+  const { openDrawer } = useTaskDrawer();
+
+  const handleCreateTask = () => {
+    // Open task drawer with project pre-selected
+    openDrawer(null, { projectId, projectName });
+  };
+
+  const handleTaskClick = (taskId: string) => {
+    openDrawer(taskId);
+  };
+
+  const completedCount = tasks?.filter((t) => t.status === "Done").length || 0;
+  const totalCount = tasks?.length || 0;
+
+  return (
+    <div className="space-y-md">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-sm">
+          <h3 className="text-heading-sm font-semibold text-foreground">Tasks</h3>
+          {totalCount > 0 && (
+            <Badge variant="secondary" className="text-metadata">
+              {completedCount}/{totalCount} completed
+            </Badge>
+          )}
+        </div>
+        {isAdmin && (
+          <Button variant="outline" size="sm" onClick={handleCreateTask}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Task
+          </Button>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-14 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+      ) : tasks && tasks.length > 0 ? (
+        <div className="space-y-2">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="flex items-center gap-md p-md bg-card border border-border rounded-lg hover:bg-card-hover cursor-pointer transition-smooth"
+              onClick={() => handleTaskClick(task.id)}
+            >
+              <div className="flex-shrink-0">{statusIcons[task.status] || statusIcons["To Do"]}</div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    "text-body-sm font-medium truncate",
+                    task.status === "Done" && "line-through text-muted-foreground"
+                  )}
+                >
+                  {task.title}
+                </p>
+                {task.due_date && (
+                  <p className="text-metadata text-muted-foreground">
+                    Due {format(new Date(task.due_date), "MMM d")}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {task.priority && (
+                  <Badge className={priorityColors[task.priority]} variant="secondary">
+                    {task.priority}
+                  </Badge>
+                )}
+                <Badge variant="outline">{task.status}</Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
+          <p className="text-body-sm">No tasks linked to this project</p>
+          {isAdmin && (
+            <Button variant="link" className="mt-2" onClick={handleCreateTask}>
+              Create the first task
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
