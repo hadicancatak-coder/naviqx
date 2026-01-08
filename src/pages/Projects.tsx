@@ -136,15 +136,12 @@ export default function Projects() {
     if (!selectedProject) return;
 
     if (isPublic) {
-      await ensurePublicToken.mutateAsync(selectedProject.id);
+      const token = await ensurePublicToken.mutateAsync(selectedProject.id);
+      // Immediately update selectedProject with the returned token
+      setSelectedProject({ ...selectedProject, is_public: true, public_token: token });
     } else {
       await togglePublic.mutateAsync({ id: selectedProject.id, isPublic: false });
-    }
-
-    // Refresh selected project
-    const updated = projects?.find((p) => p.id === selectedProject.id);
-    if (updated) {
-      setSelectedProject({ ...updated, is_public: isPublic });
+      setSelectedProject({ ...selectedProject, is_public: false });
     }
   };
 
