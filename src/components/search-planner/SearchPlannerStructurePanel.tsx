@@ -181,16 +181,16 @@ export function SearchPlannerStructurePanel({
   };
 
   return (
-    <div className="h-full flex flex-col bg-card">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-md border-b border-border bg-card space-y-sm">
+      <div className="p-md border-b border-border/50 space-y-sm">
         {/* Entity Selector */}
         <div className="space-y-xs">
           <label className="text-metadata font-medium text-muted-foreground uppercase tracking-wide">
             Entity
           </label>
           <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-            <SelectTrigger className="h-9 bg-background border-input transition-smooth">
+            <SelectTrigger className="h-9 bg-card/60 border-input transition-smooth">
               <SelectValue placeholder="Select entity" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border shadow-lg">
@@ -223,7 +223,7 @@ export function SearchPlannerStructurePanel({
             placeholder="Search campaigns, ads..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 pl-9 bg-background border-input transition-smooth"
+            className="h-9 pl-9 bg-card/60 border-input transition-smooth"
           />
         </div>
       </div>

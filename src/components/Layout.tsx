@@ -47,7 +47,7 @@ export const Layout = () => {
           <div className="absolute top-0 left-[20%] w-[60%] h-[200px] bg-gradient-to-b from-white/10 via-white/5 to-transparent blur-[40px]" />
         </div>
         <AppSidebar />
-        <main className="flex-1 overflow-auto w-full relative z-10 bg-background">
+        <main className="flex-1 overflow-auto w-full relative z-10">
           <TopHeader />
           <Outlet />
         </main>
