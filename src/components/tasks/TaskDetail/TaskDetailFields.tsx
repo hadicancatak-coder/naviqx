@@ -7,13 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon, Clock, FolderKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
 import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
 import { useTaskDetailContext } from "./TaskDetailContext";
+import { useProjects } from "@/hooks/useProjects";
 
 export function TaskDetailFields() {
   const {
@@ -35,7 +36,11 @@ export function TaskDetailFields() {
     users,
     saveField,
     isCompleted,
+    projectId,
+    setProjectId,
   } = useTaskDetailContext();
+  
+  const { projects } = useProjects();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -187,6 +192,30 @@ export function TaskDetailFields() {
             saveField('labels', newTags);
           }}
         />
+      </div>
+
+      {/* Project */}
+      <div className="space-y-xs">
+        <Label className="text-metadata text-muted-foreground">Project</Label>
+        <Select 
+          value={projectId || "none"} 
+          onValueChange={(v) => {
+            const newValue = v === "none" ? null : v;
+            setProjectId(newValue);
+            saveField('project_id', newValue);
+          }}
+        >
+          <SelectTrigger className="w-full">
+            <FolderKanban className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="No project" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No project</SelectItem>
+            {projects?.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Separator />

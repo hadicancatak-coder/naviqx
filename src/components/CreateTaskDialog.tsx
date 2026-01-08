@@ -25,16 +25,20 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQueryClient } from "@tanstack/react-query";
 import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
+import { useProjects } from "@/hooks/useProjects";
+import { FolderKanban } from "lucide-react";
 
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultProjectId?: string | null;
 }
 
-export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: CreateTaskDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { projects } = useProjects();
   
   // Advanced settings collapsed state
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -54,6 +58,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
   const [workingDaysWarning, setWorkingDaysWarning] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
   
   // Blocked/Failed reason prompt state
   const [showReasonDialog, setShowReasonDialog] = useState(false);
@@ -64,12 +69,13 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
   const blockedReason = reasonType === 'blocked' ? reasonText : "";
   const failureReason = reasonType === 'failed' ? reasonText : "";
 
-  // Fetch users when dialog opens
+  // Initialize projectId from defaultProjectId when dialog opens
   useEffect(() => {
     if (open) {
       fetchUsers();
+      setProjectId(defaultProjectId || null);
     }
-  }, [open]);
+  }, [open, defaultProjectId]);
 
   // Working days validation
   useEffect(() => {
@@ -143,6 +149,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
         task_type: (recurrence !== "none" ? "recurring" : "generic") as "generic" | "recurring" | "campaign",
         visibility: "global" as const,
         failure_reason: status === "Failed" && failureReason.trim() ? failureReason.trim() : null,
+        project_id: projectId || null,
       };
 
       const { data: createdTask, error } = await supabase
@@ -223,6 +230,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
     setReasonText("");
     setReasonType(null);
     setPendingStatus(null);
+    setProjectId(null);
   };
 
   const handleStatusChange = (value: string) => {
@@ -417,6 +425,23 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                   onChange={setTags}
                 />
               </div>
+            </div>
+
+            {/* Project */}
+            <div className="space-y-2">
+              <Label>Project</Label>
+              <Select value={projectId || "none"} onValueChange={(v) => setProjectId(v === "none" ? null : v)}>
+                <SelectTrigger>
+                  <FolderKanban className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="No project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No project</SelectItem>
+                  {projects?.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Advanced Settings */}
