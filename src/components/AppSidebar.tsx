@@ -14,7 +14,8 @@ import {
   BookOpen,
   Server,
   BarChart3,
-  Search
+  Search,
+  FolderKanban
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +55,7 @@ const operationsItems = [
 
 const resourcesItems = [
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
+  { title: "Projects", url: "/projects", icon: FolderKanban },
   { title: "Tech Stack", url: "/tech-stack", icon: Server },
 ];
 

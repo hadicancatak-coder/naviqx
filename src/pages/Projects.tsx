@@ -177,7 +177,7 @@ export default function Projects() {
               <Plus className="h-4 w-4 mr-2" />
               New Project
             </Button>
-          )
+          ) : undefined
         }
       />
 
@@ -239,13 +239,13 @@ export default function Projects() {
                 title="No projects yet"
                 description="Create your first project to start tracking work with roadmaps and linked tasks"
                 action={
-                  isAdmin && (
-                    <Button onClick={() => handleCreateProject()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create First Project
-            </Button>
-          ) : undefined
-        }
+                  isAdmin
+                    ? {
+                        label: "Create First Project",
+                        onClick: () => handleCreateProject(),
+                      }
+                    : undefined
+                }
               />
             )}
           </div>

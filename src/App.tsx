@@ -48,6 +48,8 @@ import KnowledgePublic from "./pages/KnowledgePublic";
 import TechStack from "./pages/TechStack";
 import Performance from "./pages/Performance";
 import KeywordIntel from "./pages/KeywordIntel";
+import Projects from "./pages/Projects";
+import ProjectsPublic from "./pages/ProjectsPublic";
 
 
 const App = () => (
@@ -67,6 +69,7 @@ const App = () => (
             <Route path="/campaigns-log/review/:token" element={<CampaignReview />} />
             <Route path="/campaigns-log/external/:token" element={<CampaignsLogExternal />} />
             <Route path="/knowledge/public/:token" element={<KnowledgePublic />} />
+            <Route path="/projects/public/:token" element={<ProjectsPublic />} />
                 <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/tasks" element={<Tasks />} />
@@ -102,6 +105,7 @@ const App = () => (
                   <Route path="/about" element={<About />} />
                   <Route path="/how-to" element={<HowTo />} />
                   <Route path="/knowledge" element={<Knowledge />} />
+                  <Route path="/projects" element={<Projects />} />
                   <Route path="/tech-stack" element={<TechStack />} />
                   <Route path="/performance" element={<Performance />} />
                 </Route>
