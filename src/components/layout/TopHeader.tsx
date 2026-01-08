@@ -36,7 +36,8 @@ export function TopHeader() {
     <header 
       className={cn(
         "sticky top-0 z-sticky mx-md mt-md rounded-xl",
-        "liquid-glass transition-all duration-200"
+        "liquid-glass transition-all duration-200",
+        "relative overflow-hidden"
       )}
     >
       <div className="flex items-center justify-between gap-md px-md lg:px-lg py-sm">
