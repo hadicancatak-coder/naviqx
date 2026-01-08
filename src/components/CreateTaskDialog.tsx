@@ -272,7 +272,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
           title: title.trim(),
           description: description || null,
           priority: "Medium" as const,
-          status: "Ongoing" as const,
+          status: "Pending" as const,
           created_by: user!.id,
           visibility: "global" as const,
           task_type: "generic" as const,
