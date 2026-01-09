@@ -15,7 +15,8 @@ import {
   Server,
   BarChart3,
   Search,
-  FolderKanban
+  FolderKanban,
+  Presentation
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,7 @@ const resourcesItems = [
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
   { title: "Projects", url: "/projects", icon: FolderKanban },
   { title: "Tech Stack", url: "/tech-stack", icon: Server },
+  { title: "Whiteboard", url: "/whiteboard", icon: Presentation },
 ];
 
 export function AppSidebar() {
