@@ -57,6 +57,7 @@ export const useWebIntelSites = () => {
       if (error) throw error;
       return data as WebIntelSite[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
   });
 
   const { data: allPrices = [] } = useQuery({
@@ -70,6 +71,7 @@ export const useWebIntelSites = () => {
       if (error) throw error;
       return data as HistoricPrice[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
   });
 
   const { data: allCampaigns = [] } = useQuery({
@@ -83,6 +85,7 @@ export const useWebIntelSites = () => {
       if (error) throw error;
       return data as PastCampaign[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
   });
 
   const createSite = useMutation({

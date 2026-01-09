@@ -91,6 +91,8 @@ export function useProjects() {
       if (error) throw error;
       return data as Project[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const tree = projects ? buildTree(projects) : [];

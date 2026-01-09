@@ -19,32 +19,30 @@ export function RecentlyCompletedTicker() {
   const { data: tasks } = useQuery({
     queryKey: ["recently-completed-ticker"],
     queryFn: async () => {
+      // Single query with join - eliminates N+1 problem
       const { data: completedTasks, error } = await supabase
         .from("tasks")
-        .select("id, title, updated_at")
+        .select(`
+          id, 
+          title, 
+          updated_at,
+          task_assignees(profiles:user_id(name))
+        `)
         .eq("status", "Completed")
         .order("updated_at", { ascending: false })
         .limit(10);
 
       if (error) throw error;
 
-      // Get user names for completed tasks
-      const tasksWithUsers: CompletedTask[] = [];
-      for (const task of completedTasks || []) {
-        const { data: assignees } = await supabase
-          .from("task_assignees")
-          .select("profiles!inner(name)")
-          .eq("task_id", task.id)
-          .limit(1);
-
-        tasksWithUsers.push({
-          ...task,
-          completed_by: (assignees?.[0] as any)?.profiles?.name || null,
-        });
-      }
-
-      return tasksWithUsers;
+      // Transform data to expected format
+      return (completedTasks || []).map(task => ({
+        id: task.id,
+        title: task.title,
+        updated_at: task.updated_at,
+        completed_by: (task.task_assignees as any)?.[0]?.profiles?.name || null,
+      })) as CompletedTask[];
     },
+    staleTime: 30 * 1000, // 30 seconds cache
   });
 
   const truncateTitle = (title: string, maxLength = 30) => {

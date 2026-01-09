@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 interface PresenceUser {
   user: string;
   timestamp: number;
+  taskId: string;
 }
 
 interface TaskPresenceIndicatorProps {
@@ -14,21 +15,31 @@ interface TaskPresenceIndicatorProps {
   editMode: boolean;
 }
 
+// Shared presence channel for all task editing - reduces channel count
+const SHARED_PRESENCE_CHANNEL = 'task-editing-presence';
+
 export function TaskPresenceIndicator({ taskId, editMode }: TaskPresenceIndicatorProps) {
   const { user } = useAuth();
   const [editingUsers, setEditingUsers] = useState<PresenceUser[]>([]);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!taskId || !user) return;
 
-    const channel = supabase.channel(`task-editing-${taskId}`)
+    // Use a single shared channel for all task presence
+    const channel = supabase.channel(SHARED_PRESENCE_CHANNEL)
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
         Object.values(state).forEach((presences: any) => {
           presences.forEach((presence: any) => {
-            if (presence.user && presence.timestamp) {
-              users.push({ user: presence.user, timestamp: presence.timestamp });
+            // Only show users editing the same task
+            if (presence.user && presence.timestamp && presence.taskId === taskId) {
+              users.push({ 
+                user: presence.user, 
+                timestamp: presence.timestamp,
+                taskId: presence.taskId
+              });
             }
           });
         });
@@ -38,13 +49,19 @@ export function TaskPresenceIndicator({ taskId, editMode }: TaskPresenceIndicato
         if (status === 'SUBSCRIBED' && editMode) {
           await channel.track({ 
             user: user.email?.split('@')[0] || 'Unknown',
-            timestamp: Date.now() 
+            timestamp: Date.now(),
+            taskId // Include taskId in presence payload
           });
         }
       });
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      // Untrack but don't remove channel (other components may use it)
+      if (channelRef.current) {
+        channelRef.current.untrack();
+      }
     };
   }, [taskId, editMode, user]);
 

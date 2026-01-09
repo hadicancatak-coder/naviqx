@@ -73,6 +73,7 @@ export const usePlannedCampaigns = () => {
       if (error) throw error;
       return data as PlannedCampaign[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
   });
 
   const { data: allPlacements = [] } = useQuery({
@@ -85,6 +86,7 @@ export const usePlannedCampaigns = () => {
       if (error) throw error;
       return data as CampaignPlacement[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
   });
 
   const createCampaign = useMutation({
