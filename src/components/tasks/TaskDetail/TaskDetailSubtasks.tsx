@@ -10,10 +10,12 @@ import { Separator } from "@/components/ui/separator";
 import { SubtaskRow } from "@/components/tasks/SubtaskRow";
 import { useSubtasks } from "@/hooks/useSubtasks";
 import { useTaskDetailContext } from "./TaskDetailContext";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { cn } from "@/lib/utils";
 
 export function TaskDetailSubtasks() {
   const { taskId, status, blocker, setBlockerDialogOpen } = useTaskDetailContext();
+  const { openTaskDrawer } = useTaskDrawer();
   const [subtasksExpanded, setSubtasksExpanded] = useState(true);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
@@ -75,6 +77,13 @@ export function TaskDetailSubtasks() {
     updateSubtask.mutate({ id, updates: { title } });
   };
 
+  const handleSubtaskClick = (subtaskId: string) => {
+    const subtask = subtasks.find(s => s.id === subtaskId);
+    if (subtask) {
+      openTaskDrawer(subtaskId, subtask);
+    }
+  };
+
   return (
     <div className="space-y-md">
       {/* Subtasks Section */}
@@ -133,6 +142,7 @@ export function TaskDetailSubtasks() {
                   onComplete={handleComplete}
                   onDelete={handleDelete}
                   onTitleChange={handleTitleChange}
+                  onClick={handleSubtaskClick}
                   isProcessing={
                     completeSubtask.isPending || 
                     deleteSubtask.isPending || 

@@ -34,6 +34,7 @@ export function useTasks(filters?: TaskFilters) {
         ),
         task_comment_counts(comment_count)
       `)
+      .is('parent_id', null) // Only fetch top-level tasks, not subtasks
       .order("created_at", { ascending: false });
 
     if (error) throw error;

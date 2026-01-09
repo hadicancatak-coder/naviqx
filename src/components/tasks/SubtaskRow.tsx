@@ -13,6 +13,7 @@ interface SubtaskRowProps {
   onComplete: (id: string, completed: boolean) => void;
   onDelete: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
+  onClick?: (subtaskId: string) => void;
   isProcessing?: boolean;
 }
 
@@ -21,6 +22,7 @@ export function SubtaskRow({
   onComplete, 
   onDelete, 
   onTitleChange,
+  onClick,
   isProcessing 
 }: SubtaskRowProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -83,13 +85,21 @@ export function SubtaskRow({
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleSaveTitle}
           onKeyDown={handleKeyDown}
+          onClick={(e) => e.stopPropagation()}
           className="h-6 text-body-sm flex-1 border-border"
         />
       ) : (
         <span
-          onDoubleClick={() => setIsEditing(true)}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.(subtask.id);
+          }}
           className={cn(
-            "flex-1 text-body-sm text-foreground truncate min-w-0 cursor-text",
+            "flex-1 text-body-sm text-foreground truncate min-w-0 cursor-pointer hover:text-primary transition-colors",
             isCompleted && "line-through text-muted-foreground"
           )}
         >
