@@ -87,6 +87,15 @@ export default function Tasks() {
     localStorage.setItem('tasksBoardGroupBy', boardGroupBy);
   }, [boardGroupBy]);
 
+  // Handle URL task parameter - open task directly
+  useEffect(() => {
+    const taskId = searchParams.get('task');
+    if (taskId) {
+      setSelectedTaskId(taskId);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   // Handle URL filter parameters
   useEffect(() => {
     const filter = searchParams.get('filter');
