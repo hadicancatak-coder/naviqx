@@ -87,14 +87,7 @@ export default function Tasks() {
     localStorage.setItem('tasksBoardGroupBy', boardGroupBy);
   }, [boardGroupBy]);
 
-  // Handle URL task parameter - open task directly
-  useEffect(() => {
-    const taskId = searchParams.get('task');
-    if (taskId) {
-      setSelectedTaskId(taskId);
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
+  
 
   // Handle URL filter parameters
   useEffect(() => {
@@ -150,6 +143,17 @@ export default function Tasks() {
   }, []);
 
   const { data, isLoading, refetch } = useTasks();
+
+  // Handle URL task parameter - open task directly with cached data
+  useEffect(() => {
+    const taskId = searchParams.get('task');
+    if (taskId && !isLoading && data) {
+      const cachedTask = data.find((t: any) => t.id === taskId);
+      setSelectedTaskId(taskId);
+      setSelectedTask(cachedTask || null);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, data, isLoading]);
 
   const quickFilters = [
     { label: "Overdue", Icon: AlertCircle, filter: (task: any) => isTaskOverdue(task), clearOtherFilters: true },
