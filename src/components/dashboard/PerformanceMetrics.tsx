@@ -1,54 +1,16 @@
-import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, ListTodo, TrendingUp, Calendar } from "lucide-react";
-
-interface TaskStats {
-  total: number;
-  completed: number;
-  completedThisWeek: number;
-  completionRate: number;
-}
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export function PerformanceMetrics() {
-  const [stats, setStats] = useState<TaskStats>({
+  const { data, isLoading } = useDashboardData();
+
+  const stats = data?.taskStats ?? {
     total: 0,
     completed: 0,
     completedThisWeek: 0,
     completionRate: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchStats() {
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      const [totalRes, completedRes, weekRes] = await Promise.all([
-        supabase.from("tasks").select("id", { count: "exact", head: true }),
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("status", "Completed"),
-        supabase.from("tasks").select("id", { count: "exact", head: true })
-          .eq("status", "Completed")
-          .gte("updated_at", startOfWeek.toISOString()),
-      ]);
-
-      const total = totalRes.count || 0;
-      const completed = completedRes.count || 0;
-      const completedThisWeek = weekRes.count || 0;
-
-      setStats({
-        total,
-        completed,
-        completedThisWeek,
-        completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
-      });
-
-      setLoading(false);
-    }
-
-    fetchStats();
-  }, []);
+  };
 
   const statCards = [
     { label: "Total Tasks", value: stats.total, icon: ListTodo, color: "text-primary" },
@@ -57,11 +19,11 @@ export function PerformanceMetrics() {
     { label: "This Week", value: stats.completedThisWeek, icon: Calendar, color: "text-primary" },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-md">
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="p-card animate-pulse">
               <div className="h-16 bg-muted rounded" />
             </Card>
