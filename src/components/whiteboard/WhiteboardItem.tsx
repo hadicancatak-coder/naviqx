@@ -1,7 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { CheckSquare, StickyNote, Type, GripVertical } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import { cn } from "@/lib/utils";
 import type { WhiteboardItem as WhiteboardItemData } from "@/hooks/useWhiteboard";
+import { TextFormatToolbar } from "./TextFormatToolbar";
 
 interface WhiteboardItemProps {
   item: WhiteboardItemData;
@@ -60,12 +66,48 @@ export function WhiteboardItem({
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, itemX: 0, itemY: 0 });
   const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, width: 0, height: 0 });
 
+  // TipTap editor for rich text editing (text type only)
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
+      Underline,
+      TextStyle,
+      Color,
+    ],
+    content: item.content || "",
+    editable: isEditing,
+    onUpdate: ({ editor }) => {
+      onContentChange(item.id, editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: "prose prose-sm max-w-none focus:outline-none h-full w-full p-md [&>*]:m-0 [&>h1]:text-heading-lg [&>h2]:text-heading-md [&>h3]:text-heading-sm",
+      },
+    },
+  });
+
   useEffect(() => {
-    if (isEditing && textareaRef.current) {
+    if (isEditing && textareaRef.current && item.type === "sticky") {
       textareaRef.current.focus();
       textareaRef.current.select();
     }
-  }, [isEditing]);
+    if (isEditing && editor && item.type === "text") {
+      editor.setEditable(true);
+      editor.commands.focus("end");
+    }
+    if (!isEditing && editor) {
+      editor.setEditable(false);
+    }
+  }, [isEditing, editor, item.type]);
+
+  // Sync editor content with item content when it changes externally
+  useEffect(() => {
+    if (editor && !isEditing && item.content !== editor.getHTML()) {
+      editor.commands.setContent(item.content || "");
+    }
+  }, [editor, item.content, isEditing]);
 
   const handleDragStart = (e: React.PointerEvent) => {
     if (isEditing || isResizing) return;
@@ -136,10 +178,15 @@ export function WhiteboardItem({
     }
   };
 
-  const handleBlur = () => {
-    setIsEditing(false);
-    onSave(item.id);
-  };
+  const handleBlur = useCallback(() => {
+    // Delay to allow clicking on format toolbar
+    setTimeout(() => {
+      if (!containerRef.current?.contains(document.activeElement)) {
+        setIsEditing(false);
+        onSave(item.id);
+      }
+    }, 100);
+  }, [item.id, onSave]);
 
   const handleConnectionPointClick = (e: React.MouseEvent, side: "top" | "right" | "bottom" | "left") => {
     e.stopPropagation();
@@ -194,31 +241,51 @@ export function WhiteboardItem({
       );
     }
 
-    if (isEditing) {
+    // Sticky notes use simple textarea
+    if (item.type === "sticky") {
+      if (isEditing) {
+        return (
+          <textarea
+            ref={textareaRef}
+            value={item.content || ""}
+            onChange={(e) => onContentChange(item.id, e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={(e) => { if (e.key === "Escape") { setIsEditing(false); onSave(item.id); } }}
+            className="w-full h-full resize-none border-none outline-none bg-transparent p-md text-body"
+            placeholder="Add note..."
+          />
+        );
+      }
+
       return (
-        <textarea
-          ref={textareaRef}
-          value={item.content || ""}
-          onChange={(e) => onContentChange(item.id, e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={(e) => { if (e.key === "Escape") { setIsEditing(false); onSave(item.id); } }}
-          className="w-full h-full resize-none border-none outline-none bg-transparent p-md text-body"
-          placeholder={item.type === "sticky" ? "Add note..." : "Add text..."}
-        />
+        <div className="w-full h-full p-md overflow-hidden">
+          <div className="flex items-start gap-sm">
+            <StickyNote className="h-4 w-4 text-foreground/50 flex-shrink-0 mt-0.5" />
+            <p className={cn("whitespace-pre-wrap break-words flex-1 text-body", !item.content && "text-muted-foreground")}>
+              {item.content || "Double-click to edit"}
+            </p>
+          </div>
+        </div>
       );
     }
 
-    return (
-      <div className="w-full h-full p-md overflow-hidden">
-        <div className="flex items-start gap-sm">
-          {item.type === "sticky" && <StickyNote className="h-4 w-4 text-foreground/50 flex-shrink-0 mt-0.5" />}
-          {item.type === "text" && <Type className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
-          <p className={cn("whitespace-pre-wrap break-words flex-1 text-body", !item.content && "text-muted-foreground")}>
-            {item.content || "Double-click to edit"}
-          </p>
+    // Text items use TipTap rich text editor
+    if (item.type === "text") {
+      return (
+        <div className="w-full h-full relative" onBlur={handleBlur}>
+          {isEditing && <TextFormatToolbar editor={editor} />}
+          {!isEditing && !item.content && (
+            <div className="w-full h-full p-md flex items-start gap-sm">
+              <Type className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <span className="text-muted-foreground text-body">Double-click to edit</span>
+            </div>
+          )}
+          <EditorContent editor={editor} className="h-full" />
         </div>
-      </div>
-    );
+      );
+    }
+
+    return null;
   };
 
   const ConnectionPoint = ({ side }: { side: "top" | "right" | "bottom" | "left" }) => {
@@ -256,13 +323,13 @@ export function WhiteboardItem({
       className={cn(
         "group select-none transition-shadow rounded-lg",
         item.type === "sticky" && "shadow-md",
-        item.type === "text" && "border border-dashed border-border",
+        item.type === "text" && "border border-dashed border-border bg-card",
         item.type === "task" && "bg-card border border-border shadow-sm",
         isDragging && "shadow-xl cursor-grabbing z-50",
         isSelected && !isDragging && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-        !isDragging && !isResizing && "cursor-grab hover:shadow-lg"
+        !isDragging && !isResizing && !isEditing && "cursor-grab hover:shadow-lg"
       )}
-      onPointerDown={handleDragStart}
+      onPointerDown={isEditing ? undefined : handleDragStart}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onDoubleClick={handleDoubleClick}
@@ -284,7 +351,7 @@ export function WhiteboardItem({
         </div>
       )}
 
-      {(isSelected || showConnectionPoints) && (
+      {(isSelected || showConnectionPoints) && !isEditing && (
         <>
           <ConnectionPoint side="top" />
           <ConnectionPoint side="right" />
