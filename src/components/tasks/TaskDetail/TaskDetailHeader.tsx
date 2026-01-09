@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, MoreHorizontal, Trash2, X } from "lucide-react";
+import { Check, MoreHorizontal, Trash2, X, CornerDownRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTaskDetailContext } from "./TaskDetailContext";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 
 interface TaskDetailHeaderProps {
   onClose?: () => void;
@@ -31,9 +32,12 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
     title, 
     saving, 
     isCompleted, 
+    isSubtask,
+    parentTask,
     markComplete, 
     deleteTask 
   } = useTaskDetailContext();
+  const { openTaskDrawer } = useTaskDrawer();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -44,9 +48,27 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
 
   return (
     <>
-      <div className="flex-shrink-0 px-md py-sm border-b border-border flex items-center justify-between gap-sm">
-        <div className="flex items-center gap-sm">
-          <Button
+      <div className="flex-shrink-0 px-md py-sm border-b border-border">
+        {/* Parent task breadcrumb for subtasks */}
+        {isSubtask && parentTask && (
+          <div className="flex items-center gap-xs text-metadata text-muted-foreground mb-xs">
+            <CornerDownRight className="h-3 w-3" />
+            <span>Subtask of</span>
+            <button 
+              onClick={() => openTaskDrawer(parentTask.id, { id: parentTask.id, title: parentTask.title })}
+              className="text-primary hover:underline font-medium"
+            >
+              {parentTask.title}
+            </button>
+          </div>
+        )}
+        
+        <div className="flex items-center justify-between gap-sm">
+          <div className="flex items-center gap-sm">
+            {isSubtask && (
+              <Badge variant="secondary" className="text-metadata">Subtask</Badge>
+            )}
+            <Button
             variant={isCompleted ? "default" : "outline"}
             size="sm"
             onClick={markComplete}
@@ -59,12 +81,12 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
             <Check className="h-4 w-4" />
             {isCompleted ? "Completed" : "Complete"}
           </Button>
-          {saving && (
-            <Badge variant="secondary" className="text-metadata">Saving...</Badge>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-xs">
+            {saving && (
+              <Badge variant="secondary" className="text-metadata">Saving...</Badge>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-xs">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-sm">
@@ -82,11 +104,12 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {showCloseButton && onClose && (
-            <Button variant="ghost" size="icon-sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+            {showCloseButton && onClose && (
+              <Button variant="ghost" size="icon-sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ interface TaskDetailContextValue {
   // Task data
   taskId: string;
   task: any;
+  parentTask: { id: string; title: string } | null;
   loading: boolean;
   saving: boolean;
   
@@ -61,6 +62,7 @@ interface TaskDetailContextValue {
   
   // UI state
   isCompleted: boolean;
+  isSubtask: boolean;
   
   // Refs
   messagesEndRef: React.RefObject<HTMLDivElement>;
@@ -99,6 +101,7 @@ export function TaskDetailProvider({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [task, setTask] = useState<any>(null);
+  const [parentTask, setParentTask] = useState<{ id: string; title: string } | null>(null);
   
   // Editable fields
   const [title, setTitle] = useState("");
@@ -210,9 +213,21 @@ export function TaskDetailProvider({
     setBlocker(data);
   }, [taskId]);
 
+  // Fetch parent task if this is a subtask
+  const fetchParentTask = useCallback(async (parentId: string) => {
+    const { data } = await supabase
+      .from("tasks")
+      .select("id, title")
+      .eq("id", parentId)
+      .single();
+
+    setParentTask(data);
+  }, []);
+
   // Initial load
   useEffect(() => {
     setLoading(true);
+    setParentTask(null);
     
     // Populate from cached task if available
     if (cachedTask) {
@@ -223,12 +238,25 @@ export function TaskDetailProvider({
       setStatus(mapStatusToUi(cachedTask.status));
       setDueDate(cachedTask.due_at ? new Date(cachedTask.due_at) : undefined);
       setTags(Array.isArray(cachedTask.labels) ? cachedTask.labels : []);
+      setProjectId(cachedTask.project_id || null);
       setLoading(false);
+      
+      // Fetch parent if subtask
+      if (cachedTask.parent_id) {
+        fetchParentTask(cachedTask.parent_id);
+      }
     }
     
     // Fetch fresh data in parallel
     Promise.all([fetchTask(), fetchComments(), fetchUsers(), fetchBlocker()]);
-  }, [taskId, cachedTask, fetchTask, fetchComments, fetchUsers, fetchBlocker]);
+  }, [taskId, cachedTask, fetchTask, fetchComments, fetchUsers, fetchBlocker, fetchParentTask]);
+
+  // Fetch parent task when task loads
+  useEffect(() => {
+    if (task?.parent_id && !parentTask) {
+      fetchParentTask(task.parent_id);
+    }
+  }, [task?.parent_id, parentTask, fetchParentTask]);
 
   // Sync realtime assignees
   useEffect(() => {
@@ -333,10 +361,12 @@ export function TaskDetailProvider({
   }, [taskId, toast, queryClient, onTaskDeleted, onClose]);
 
   const isCompleted = status === 'Completed';
+  const isSubtask = !!task?.parent_id;
 
   const value: TaskDetailContextValue = {
     taskId,
     task,
+    parentTask,
     loading,
     saving,
     title,
@@ -373,6 +403,7 @@ export function TaskDetailProvider({
     markComplete,
     deleteTask,
     isCompleted,
+    isSubtask,
     messagesEndRef,
   };
 
