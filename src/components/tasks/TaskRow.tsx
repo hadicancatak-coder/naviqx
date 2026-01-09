@@ -3,7 +3,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks, Link2 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -302,6 +303,19 @@ export function TaskRow({
             <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                const url = `${window.location.origin}/tasks?task=${task.id}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Task link copied");
+                setOpenDropdown(false);
+              }}
+              className="text-body-sm"
+            >
+              <Link2 className="mr-2 h-3.5 w-3.5" />
+              Copy Link
+            </DropdownMenuItem>
             {onComplete && (
               <DropdownMenuItem
                 onClick={(e) => {

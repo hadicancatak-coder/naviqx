@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, MoreHorizontal, Trash2, X, CornerDownRight } from "lucide-react";
+import { Check, MoreHorizontal, Trash2, X, CornerDownRight, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,7 @@ interface TaskDetailHeaderProps {
 
 export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetailHeaderProps) {
   const { 
+    taskId,
     title, 
     saving, 
     isCompleted, 
@@ -44,6 +47,12 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   const handleDelete = async () => {
     await deleteTask();
     setShowDeleteDialog(false);
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/tasks?task=${taskId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Task link copied to clipboard");
   };
 
   return (
@@ -94,6 +103,11 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCopyLink}>
+                <Link2 className="h-4 w-4 mr-2" />
+                Copy Link
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive focus:text-destructive"
                 onClick={() => setShowDeleteDialog(true)}
