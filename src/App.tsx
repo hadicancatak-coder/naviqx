@@ -73,6 +73,7 @@ const App = () => (
             <Route path="/projects/public/:token" element={<ProjectsPublic />} />
                 <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Navigate to="/" replace />} />
                   <Route path="/tasks" element={<Tasks />} />
                   
                   
