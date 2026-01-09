@@ -50,7 +50,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   };
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/tasks?task=${taskId}`;
+    const url = `https://prismax1.lovable.app/tasks?task=${taskId}`;
     navigator.clipboard.writeText(url);
     toast.success("Task link copied to clipboard");
   };
