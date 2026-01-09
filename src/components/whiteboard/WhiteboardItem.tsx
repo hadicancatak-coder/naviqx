@@ -1,22 +1,41 @@
 import { useState, useRef, useEffect } from "react";
+import { CheckSquare, StickyNote, Type, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { WhiteboardItem as WhiteboardItemType } from "@/hooks/useWhiteboard";
-import { Badge } from "@/components/ui/badge";
+import type { WhiteboardItem as WhiteboardItemData } from "@/hooks/useWhiteboard";
 
 interface WhiteboardItemProps {
-  item: WhiteboardItemType;
+  item: WhiteboardItemData;
   isSelected: boolean;
   onSelect: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, width: number, height: number) => void;
   onContentChange: (id: string, content: string) => void;
   onSave: (id: string) => void;
+  onStartConnect?: (id: string, side: "top" | "right" | "bottom" | "left") => void;
   canvasWidth: number;
   canvasHeight: number;
+  showConnectionPoints?: boolean;
 }
 
-const MIN_WIDTH = 100;
-const MIN_HEIGHT = 60;
+const MIN_WIDTH = 120;
+const MIN_HEIGHT = 80;
+
+// Connection point positions relative to item
+export function getConnectionPoint(
+  item: { x: number; y: number; width: number; height: number },
+  side: "top" | "right" | "bottom" | "left"
+): { x: number; y: number } {
+  switch (side) {
+    case "top":
+      return { x: item.x + item.width / 2, y: item.y };
+    case "right":
+      return { x: item.x + item.width, y: item.y + item.height / 2 };
+    case "bottom":
+      return { x: item.x + item.width / 2, y: item.y + item.height };
+    case "left":
+      return { x: item.x, y: item.y + item.height / 2 };
+  }
+}
 
 export function WhiteboardItem({
   item,
@@ -26,18 +45,21 @@ export function WhiteboardItem({
   onResize,
   onContentChange,
   onSave,
+  onStartConnect,
   canvasWidth,
   canvasHeight,
+  showConnectionPoints,
 }: WhiteboardItemProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const dragStartRef = useRef({ mouseX: 0, mouseY: 0, itemX: 0, itemY: 0 });
+  const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, width: 0, height: 0 });
 
-  // Focus textarea when editing starts
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
@@ -45,82 +67,73 @@ export function WhiteboardItem({
     }
   }, [isEditing]);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (isEditing) return;
-    
+  const handleDragStart = (e: React.PointerEvent) => {
+    if (isEditing || isResizing) return;
     e.stopPropagation();
+    e.preventDefault();
+    
     onSelect(item.id);
-
-    // Check if clicking resize handle
-    const target = e.target as HTMLElement;
-    if (target.dataset.resize === "true") {
-      setIsResizing(true);
-      setResizeStart({
-        x: e.clientX,
-        y: e.clientY,
-        width: item.width,
-        height: item.height,
-      });
-    } else {
-      setIsDragging(true);
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-      }
-    }
-
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      itemX: item.x,
+      itemY: item.y,
+    };
+    
+    setIsDragging(true);
+    containerRef.current?.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (isDragging && containerRef.current) {
-      const parentRect = containerRef.current.parentElement?.getBoundingClientRect();
-      if (!parentRect) return;
-
-      const newX = Math.max(0, Math.min(
-        canvasWidth - item.width,
-        e.clientX - parentRect.left - dragOffset.x
-      ));
-      const newY = Math.max(0, Math.min(
-        canvasHeight - item.height,
-        e.clientY - parentRect.top - dragOffset.y
-      ));
-
+    if (isDragging) {
+      const deltaX = e.clientX - dragStartRef.current.mouseX;
+      const deltaY = e.clientY - dragStartRef.current.mouseY;
+      
+      const newX = Math.max(0, Math.min(canvasWidth - item.width, dragStartRef.current.itemX + deltaX));
+      const newY = Math.max(0, Math.min(canvasHeight - item.height, dragStartRef.current.itemY + deltaY));
+      
       onMove(item.id, Math.round(newX), Math.round(newY));
-    }
-
-    if (isResizing) {
-      const deltaX = e.clientX - resizeStart.x;
-      const deltaY = e.clientY - resizeStart.y;
-
-      const newWidth = Math.max(MIN_WIDTH, Math.min(
-        canvasWidth - item.x,
-        resizeStart.width + deltaX
-      ));
-      const newHeight = Math.max(MIN_HEIGHT, Math.min(
-        canvasHeight - item.y,
-        resizeStart.height + deltaY
-      ));
-
+    } else if (isResizing) {
+      const deltaX = e.clientX - resizeStartRef.current.mouseX;
+      const deltaY = e.clientY - resizeStartRef.current.mouseY;
+      
+      const newWidth = Math.max(MIN_WIDTH, Math.min(canvasWidth - item.x, resizeStartRef.current.width + deltaX));
+      const newHeight = Math.max(MIN_HEIGHT, Math.min(canvasHeight - item.y, resizeStartRef.current.height + deltaY));
+      
       onResize(item.id, Math.round(newWidth), Math.round(newHeight));
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (isDragging || isResizing) {
+      containerRef.current?.releasePointerCapture(e.pointerId);
+      setIsDragging(false);
+      setIsResizing(false);
       onSave(item.id);
     }
-    setIsDragging(false);
-    setIsResizing(false);
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
+  const handleResizeStart = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    resizeStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      width: item.width,
+      height: item.height,
+    };
+    
+    setIsResizing(true);
+    containerRef.current?.setPointerCapture(e.pointerId);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsEditing(true);
+    if (item.type !== "task") {
+      setIsEditing(true);
+    }
   };
 
   const handleBlur = () => {
@@ -128,121 +141,156 @@ export function WhiteboardItem({
     onSave(item.id);
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onContentChange(item.id, e.target.value);
+  const handleConnectionPointClick = (e: React.MouseEvent, side: "top" | "right" | "bottom" | "left") => {
+    e.stopPropagation();
+    onStartConnect?.(item.id, side);
   };
 
-  const getItemStyles = () => {
-    const baseStyles: React.CSSProperties = {
-      position: "absolute",
-      left: item.x,
-      top: item.y,
-      width: item.width,
-      height: item.height,
-      cursor: isDragging ? "grabbing" : "grab",
+  const metadata = item.metadata as { status?: string; priority?: string; task_id?: string } | null;
+
+  const getStatusClass = (status: string) => {
+    const statusMap: Record<string, string> = {
+      "To Do": "bg-muted text-muted-foreground",
+      "In Progress": "bg-info-soft text-info-text",
+      "In Review": "bg-warning-soft text-warning-text",
+      "Done": "bg-success-soft text-success-text",
+      "Blocked": "bg-destructive-soft text-destructive-text",
     };
+    return statusMap[status] || "bg-muted text-muted-foreground";
+  };
 
-    if (item.type === "sticky") {
-      return {
-        ...baseStyles,
-        backgroundColor: item.color || "#fef08a",
-      };
-    }
-
-    if (item.type === "text") {
-      return baseStyles;
-    }
-
-    // Task type
-    return baseStyles;
+  const getPriorityClass = (priority: string) => {
+    const priorityMap: Record<string, string> = {
+      "High": "bg-destructive-soft text-destructive-text",
+      "Medium": "bg-warning-soft text-warning-text",
+      "Low": "bg-muted text-muted-foreground",
+    };
+    return priorityMap[priority] || "bg-muted text-muted-foreground";
   };
 
   const renderContent = () => {
+    if (item.type === "task") {
+      return (
+        <div className="p-md h-full flex flex-col gap-sm overflow-hidden">
+          <div className="flex items-start gap-sm">
+            <CheckSquare className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+            <p className="text-body font-medium text-foreground line-clamp-3 flex-1">
+              {item.content || "Untitled Task"}
+            </p>
+          </div>
+          <div className="flex gap-xs flex-wrap mt-auto">
+            {metadata?.status && (
+              <span className={cn("px-2 py-0.5 rounded-sm text-metadata font-medium", getStatusClass(metadata.status))}>
+                {metadata.status}
+              </span>
+            )}
+            {metadata?.priority && (
+              <span className={cn("px-2 py-0.5 rounded-sm text-metadata font-medium", getPriorityClass(metadata.priority))}>
+                {metadata.priority}
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     if (isEditing) {
       return (
         <textarea
           ref={textareaRef}
-          value={item.content}
-          onChange={handleContentChange}
+          value={item.content || ""}
+          onChange={(e) => onContentChange(item.id, e.target.value)}
           onBlur={handleBlur}
-          className="w-full h-full resize-none border-none outline-none bg-transparent p-sm text-body"
-          style={{ cursor: "text" }}
+          onKeyDown={(e) => { if (e.key === "Escape") { setIsEditing(false); onSave(item.id); } }}
+          className="w-full h-full resize-none border-none outline-none bg-transparent p-md text-body"
+          placeholder={item.type === "sticky" ? "Add note..." : "Add text..."}
         />
       );
     }
 
-    if (item.type === "sticky") {
-      return (
-        <div className="p-sm h-full overflow-hidden">
-          <p className="text-body text-foreground whitespace-pre-wrap break-words">
-            {item.content || "Double-click to edit"}
-          </p>
-        </div>
-      );
-    }
-
-    if (item.type === "text") {
-      return (
-        <div className="p-sm h-full overflow-hidden">
-          <p className="text-body text-foreground whitespace-pre-wrap break-words">
-            {item.content || "Double-click to edit"}
-          </p>
-        </div>
-      );
-    }
-
-    // Task type
-    const metadata = item.metadata as { status?: string; priority?: string; task_id?: string };
     return (
-      <div className="p-sm h-full flex flex-col gap-xs overflow-hidden">
-        <p className="text-body-sm font-medium text-foreground line-clamp-2">
-          {item.content || "Task"}
-        </p>
-        <div className="flex gap-xs flex-wrap mt-auto">
-          {metadata.status && (
-            <Badge variant="secondary" className="text-metadata">
-              {metadata.status}
-            </Badge>
-          )}
-          {metadata.priority && (
-            <Badge variant="outline" className="text-metadata">
-              {metadata.priority}
-            </Badge>
-          )}
+      <div className="w-full h-full p-md overflow-hidden">
+        <div className="flex items-start gap-sm">
+          {item.type === "sticky" && <StickyNote className="h-4 w-4 text-foreground/50 flex-shrink-0 mt-0.5" />}
+          {item.type === "text" && <Type className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
+          <p className={cn("whitespace-pre-wrap break-words flex-1 text-body", !item.content && "text-muted-foreground")}>
+            {item.content || "Double-click to edit"}
+          </p>
         </div>
       </div>
+    );
+  };
+
+  const ConnectionPoint = ({ side }: { side: "top" | "right" | "bottom" | "left" }) => {
+    const positions: Record<string, string> = {
+      top: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2",
+      right: "top-1/2 right-0 translate-x-1/2 -translate-y-1/2",
+      bottom: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
+      left: "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2",
+    };
+
+    return (
+      <button
+        className={cn(
+          "absolute w-3 h-3 rounded-full bg-primary border-2 border-background",
+          "opacity-0 group-hover:opacity-100 hover:scale-125 transition-all cursor-crosshair z-10",
+          positions[side]
+        )}
+        onClick={(e) => handleConnectionPointClick(e, side)}
+      />
     );
   };
 
   return (
     <div
       ref={containerRef}
-      style={getItemStyles()}
+      style={{
+        position: "absolute",
+        left: item.x,
+        top: item.y,
+        width: item.width,
+        height: item.height,
+        backgroundColor: item.type === "sticky" ? (item.color || "#fef08a") : undefined,
+        willChange: isDragging || isResizing ? "transform" : "auto",
+      }}
       className={cn(
-        "rounded-lg shadow-sm transition-shadow select-none touch-none",
+        "group select-none transition-shadow rounded-lg",
         item.type === "sticky" && "shadow-md",
         item.type === "text" && "border border-dashed border-border",
-        item.type === "task" && "bg-card border border-border",
-        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-        isDragging && "shadow-lg z-50"
+        item.type === "task" && "bg-card border border-border shadow-sm",
+        isDragging && "shadow-xl cursor-grabbing z-50",
+        isSelected && !isDragging && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+        !isDragging && !isResizing && "cursor-grab hover:shadow-lg"
       )}
-      onPointerDown={handlePointerDown}
+      onPointerDown={handleDragStart}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onDoubleClick={handleDoubleClick}
+      onClick={(e) => { e.stopPropagation(); onSelect(item.id); }}
     >
+      {isSelected && !isEditing && (
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 opacity-50">
+          <GripVertical className="h-4 w-4 text-foreground/50" />
+        </div>
+      )}
+
       {renderContent()}
 
-      {/* Resize handle */}
-      {isSelected && (
-        <div
-          data-resize="true"
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-          style={{
-            background: "linear-gradient(135deg, transparent 50%, hsl(var(--primary)) 50%)",
-            borderBottomRightRadius: "inherit",
-          }}
-        />
+      {isSelected && !isEditing && (
+        <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize" onPointerDown={handleResizeStart}>
+          <svg viewBox="0 0 16 16" className="w-full h-full text-muted-foreground">
+            <path d="M14 14L8 14L14 8Z" fill="currentColor" opacity={0.5} />
+          </svg>
+        </div>
+      )}
+
+      {(isSelected || showConnectionPoints) && (
+        <>
+          <ConnectionPoint side="top" />
+          <ConnectionPoint side="right" />
+          <ConnectionPoint side="bottom" />
+          <ConnectionPoint side="left" />
+        </>
       )}
     </div>
   );

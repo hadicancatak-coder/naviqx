@@ -10,50 +10,21 @@ export default function Whiteboard() {
   const {
     whiteboard,
     items,
+    connectors,
     isLoading,
     createItem,
     updateItem,
     saveItem,
     deleteItem,
+    createConnector,
+    deleteConnector,
   } = useWhiteboard();
 
   const [showSidebar, setShowSidebar] = useState(true);
 
-  const handleCreateItem = (params: {
-    type: "sticky" | "text" | "task";
-    x: number;
-    y: number;
-    color?: string;
-  }) => {
-    createItem(params);
-  };
-
-  const handleUpdateItem = (params: {
-    id: string;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    content?: string;
-    color?: string;
-  }) => {
-    updateItem(params);
-  };
-
-  const handleSaveItem = (params: { id: string }) => {
-    saveItem(params);
-  };
-
-  const handleAddTaskFromSidebar = (
-    taskId: string,
-    taskTitle: string,
-    status: string,
-    priority: string
-  ) => {
-    // Add task as a whiteboard item at a random position
+  const handleAddTaskFromSidebar = (taskId: string, taskTitle: string, status: string, priority: string) => {
     const x = 100 + Math.random() * 400;
     const y = 100 + Math.random() * 300;
-
     createItem({
       type: "task",
       x: Math.round(x),
@@ -66,10 +37,7 @@ export default function Whiteboard() {
   if (isLoading) {
     return (
       <PageContainer>
-        <PageHeader
-          title="Whiteboard"
-          description="Visual planning and ideation space"
-        />
+        <PageHeader title="Whiteboard" description="Visual planning and ideation space" />
         <div className="flex items-center justify-center h-[600px]">
           <Skeleton className="w-[1200px] h-[675px] rounded-xl" />
         </div>
@@ -80,27 +48,9 @@ export default function Whiteboard() {
   return (
     <PageContainer size="full">
       <div className="flex items-center justify-between mb-md">
-        <PageHeader
-          title={whiteboard?.name || "Whiteboard"}
-          description="Visual planning and ideation space"
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="gap-xs"
-        >
-          {showSidebar ? (
-            <>
-              <PanelRightClose className="h-4 w-4" />
-              Hide Tasks
-            </>
-          ) : (
-            <>
-              <PanelRightOpen className="h-4 w-4" />
-              Show Tasks
-            </>
-          )}
+        <PageHeader title={whiteboard?.name || "Whiteboard"} description="Visual planning and ideation space" />
+        <Button variant="outline" size="sm" onClick={() => setShowSidebar(!showSidebar)} className="gap-xs">
+          {showSidebar ? <><PanelRightClose className="h-4 w-4" />Hide Tasks</> : <><PanelRightOpen className="h-4 w-4" />Show Tasks</>}
         </Button>
       </div>
 
@@ -108,16 +58,16 @@ export default function Whiteboard() {
         <div className="flex-1 overflow-auto">
           <WhiteboardContainer
             items={items}
-            onCreateItem={handleCreateItem}
-            onUpdateItem={handleUpdateItem}
-            onSaveItem={handleSaveItem}
+            connectors={connectors}
+            onCreateItem={createItem}
+            onUpdateItem={updateItem}
+            onSaveItem={saveItem}
             onDeleteItem={deleteItem}
+            onCreateConnector={createConnector}
+            onDeleteConnector={deleteConnector}
           />
         </div>
-
-        {showSidebar && (
-          <WhiteboardSidebar onAddTask={handleAddTaskFromSidebar} />
-        )}
+        {showSidebar && <WhiteboardSidebar onAddTask={handleAddTaskFromSidebar} />}
       </div>
     </PageContainer>
   );
