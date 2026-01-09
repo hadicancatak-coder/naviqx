@@ -4745,6 +4745,86 @@ export type Database = {
           },
         ]
       }
+      whiteboard_items: {
+        Row: {
+          color: string | null
+          content: string | null
+          created_at: string
+          height: number
+          id: string
+          metadata: Json | null
+          order_index: number | null
+          type: string
+          updated_at: string
+          whiteboard_id: string
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          height?: number
+          id?: string
+          metadata?: Json | null
+          order_index?: number | null
+          type: string
+          updated_at?: string
+          whiteboard_id: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          height?: number
+          id?: string
+          metadata?: Json | null
+          order_index?: number | null
+          type?: string
+          updated_at?: string
+          whiteboard_id?: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whiteboard_items_whiteboard_id_fkey"
+            columns: ["whiteboard_id"]
+            isOneToOne: false
+            referencedRelation: "whiteboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whiteboards: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workspaces: {
         Row: {
           color: string | null

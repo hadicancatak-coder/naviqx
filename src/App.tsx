@@ -50,6 +50,7 @@ import Performance from "./pages/Performance";
 import KeywordIntel from "./pages/KeywordIntel";
 import Projects from "./pages/Projects";
 import ProjectsPublic from "./pages/ProjectsPublic";
+import Whiteboard from "./pages/Whiteboard";
 
 
 const App = () => (
@@ -108,6 +109,7 @@ const App = () => (
                   <Route path="/projects" element={<Projects />} />
                   <Route path="/tech-stack" element={<TechStack />} />
                   <Route path="/performance" element={<Performance />} />
+                  <Route path="/whiteboard" element={<Whiteboard />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
             </Routes>
