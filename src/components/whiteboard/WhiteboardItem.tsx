@@ -66,6 +66,9 @@ export function WhiteboardItem({
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, itemX: 0, itemY: 0 });
   const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, width: 0, height: 0 });
 
+  // Track previous item ID to detect external changes
+  const prevItemIdRef = useRef(item.id);
+
   // TipTap editor for rich text editing (text type only)
   const editor = useEditor({
     extensions: [
@@ -76,10 +79,13 @@ export function WhiteboardItem({
       TextStyle,
       Color,
     ],
-    content: item.content || "",
+    content: item.type === "text" ? (item.content || "<p></p>") : "",
     editable: true,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onContentChange(item.id, editor.getHTML());
+      if (item.type === "text") {
+        onContentChange(item.id, editor.getHTML());
+      }
     },
     editorProps: {
       attributes: {
@@ -90,7 +96,7 @@ export function WhiteboardItem({
         ),
       },
     },
-  }, [item.type]);
+  }, [item.id, item.type]);
 
   useEffect(() => {
     if (isEditing && textareaRef.current && item.type === "sticky") {
@@ -102,12 +108,13 @@ export function WhiteboardItem({
     }
   }, [isEditing, editor, item.type]);
 
-  // Sync editor content with item content when it changes externally
+  // Only sync content when item ID changes (item was replaced)
   useEffect(() => {
-    if (editor && item.content !== editor.getHTML()) {
-      editor.commands.setContent(item.content || "");
+    if (editor && prevItemIdRef.current !== item.id) {
+      editor.commands.setContent(item.content || "<p></p>");
+      prevItemIdRef.current = item.id;
     }
-  }, [editor, item.content]);
+  }, [editor, item.id, item.content]);
 
   const handleDragStart = (e: React.PointerEvent) => {
     if (isEditing || isResizing) return;
