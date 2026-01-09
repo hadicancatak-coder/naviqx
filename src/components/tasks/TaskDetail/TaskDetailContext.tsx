@@ -229,7 +229,7 @@ export function TaskDetailProvider({
     setLoading(true);
     setParentTask(null);
     
-    // Populate from cached task if available
+    // Populate from cached task if available (including assignees)
     if (cachedTask) {
       setTask(cachedTask);
       setTitle(cachedTask.title || "");
@@ -239,6 +239,12 @@ export function TaskDetailProvider({
       setDueDate(cachedTask.due_at ? new Date(cachedTask.due_at) : undefined);
       setTags(Array.isArray(cachedTask.labels) ? cachedTask.labels : []);
       setProjectId(cachedTask.project_id || null);
+      
+      // Use cached assignees immediately if available
+      if (cachedTask.assignees && cachedTask.assignees.length > 0) {
+        setSelectedAssignees(cachedTask.assignees.map((a: any) => a.id));
+      }
+      
       setLoading(false);
       
       // Fetch parent if subtask
@@ -258,9 +264,14 @@ export function TaskDetailProvider({
     }
   }, [task?.parent_id, parentTask, fetchParentTask]);
 
-  // Sync realtime assignees
+  // Sync realtime assignees - only update if different from current state
   useEffect(() => {
-    setSelectedAssignees(realtimeAssignees.map(a => a.id));
+    const realtimeIds = realtimeAssignees.map(a => a.id).sort();
+    const currentIds = [...selectedAssignees].sort();
+    // Only update if realtime data differs (avoids overwriting cached data)
+    if (realtimeIds.length > 0 && JSON.stringify(realtimeIds) !== JSON.stringify(currentIds)) {
+      setSelectedAssignees(realtimeIds);
+    }
   }, [realtimeAssignees]);
 
   // Save field
