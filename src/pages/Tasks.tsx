@@ -605,29 +605,40 @@ export default function Tasks() {
         onExport={handleBulkExport}
       />
       
-      <ResizablePanelGroup direction="horizontal" className="h-full">
+      {/* Overlay to close panel on outside click */}
+      {selectedTaskId && (
+        <div 
+          className="absolute inset-0 z-10" 
+          onClick={handleCloseSidePanel}
+          aria-hidden="true"
+        />
+      )}
+      
+      <ResizablePanelGroup direction="horizontal" className="h-full relative z-20">
         <ResizablePanel 
           defaultSize={selectedTaskId ? 60 : 100} 
           minSize={40}
           className="overflow-hidden"
+          onClick={(e) => {
+            // Close panel when clicking on the left panel area
+            if (selectedTaskId) {
+              handleCloseSidePanel();
+            }
+          }}
         >
-          <TaskListContent />
+          <div onClick={(e) => e.stopPropagation()}>
+            <TaskListContent />
+          </div>
         </ResizablePanel>
 
         {selectedTaskId && (
           <>
-            {/* Invisible overlay to close panel on outside click */}
-            <div 
-              className="absolute inset-0 z-10 cursor-default" 
-              onClick={handleCloseSidePanel}
-              aria-hidden="true"
-            />
-            <ResizableHandle withHandle className="relative z-20" />
+            <ResizableHandle withHandle />
             <ResizablePanel 
               defaultSize={40} 
               minSize={30} 
               maxSize={50}
-              className="overflow-hidden relative z-20"
+              className="overflow-hidden"
             >
               <TaskDetailPanel
                 taskId={selectedTaskId}
