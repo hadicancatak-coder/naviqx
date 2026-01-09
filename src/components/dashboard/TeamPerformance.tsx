@@ -1,127 +1,11 @@
-import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
 import { Users } from "lucide-react";
-import { subDays, format } from "date-fns";
-
-interface UserPerformance {
-  userId: string;
-  name: string;
-  avatar?: string;
-  totalTasks: number;
-  completedTasks: number;
-  visitsLast30Days: number;
-  taskScore: number;
-  engagementScore: number;
-  score: number;
-}
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export function TeamPerformance() {
-  const [users, setUsers] = useState<UserPerformance[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchTeamPerformance() {
-      // Get all profiles
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, user_id, name, avatar_url");
-
-      if (!profiles) {
-        setLoading(false);
-        return;
-      }
-
-      // Get ALL task assignees (no date filter)
-      const { data: allAssignees } = await supabase
-        .from("task_assignees")
-        .select("user_id, task_id");
-
-      // Get ALL completed task assignees
-      const { data: completedAssignees } = await supabase
-        .from("task_assignees")
-        .select("user_id, task_id, tasks!inner(id, status)")
-        .eq("tasks.status", "Completed");
-
-      // Get user visits from last 30 days for engagement score
-      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-      const { data: userVisits } = await supabase
-        .from("user_visits")
-        .select("user_id, visited_at")
-        .gte("visited_at", thirtyDaysAgo);
-
-      const userStats: Record<string, { total: number; completed: number; visits: number }> = {};
-
-      // Initialize all users with 0 stats
-      profiles.forEach((p) => {
-        userStats[p.id] = { total: 0, completed: 0, visits: 0 };
-      });
-
-      // Count total tasks per user (using profile.id which matches task_assignees.user_id)
-      allAssignees?.forEach((a) => {
-        if (userStats[a.user_id]) {
-          userStats[a.user_id].total++;
-        }
-      });
-
-      // Count completed tasks per user
-      completedAssignees?.forEach((a) => {
-        if (userStats[a.user_id]) {
-          userStats[a.user_id].completed++;
-        }
-      });
-
-      // Count visits per user (user_visits.user_id is auth.users id, need to match via profiles.user_id)
-      const profileUserIdMap = new Map(profiles.map(p => [p.user_id, p.id]));
-      userVisits?.forEach((v) => {
-        const profileId = profileUserIdMap.get(v.user_id);
-        if (profileId && userStats[profileId]) {
-          userStats[profileId].visits++;
-        }
-      });
-
-      // Calculate engagement score based on visits
-      const getEngagementScore = (visits: number): number => {
-        if (visits >= 20) return 10; // Daily user
-        if (visits >= 12) return 8;  // Regular user
-        if (visits >= 8) return 6;   // Weekly user
-        if (visits >= 4) return 4;   // Occasional user
-        if (visits >= 1) return 2;   // Rare user
-        return 0;
-      };
-
-      // Build user performance list - show ALL users
-      const performance: UserPerformance[] = profiles
-        .map((p) => {
-          const stats = userStats[p.id] || { total: 0, completed: 0, visits: 0 };
-          const taskScore = stats.total > 0
-            ? Math.min(10, Math.round((stats.completed / stats.total) * 10 * 10) / 10)
-            : 0;
-          const engagementScore = getEngagementScore(stats.visits);
-          // Weighted score: 70% task performance, 30% engagement
-          const score = Math.round((taskScore * 0.7 + engagementScore * 0.3) * 10) / 10;
-
-          return {
-            userId: p.user_id,
-            name: p.name || "Unknown",
-            avatar: p.avatar_url || undefined,
-            totalTasks: stats.total,
-            completedTasks: stats.completed,
-            visitsLast30Days: stats.visits,
-            taskScore,
-            engagementScore,
-            score,
-          };
-        })
-        .sort((a, b) => b.score - a.score || b.totalTasks - a.totalTasks);
-
-      setUsers(performance);
-      setLoading(false);
-    }
-
-    fetchTeamPerformance();
-  }, []);
+  const { data, isLoading } = useDashboardData();
+  const users = data?.teamPerformance ?? [];
 
   const getScoreColor = (score: number) => {
     if (score >= 7) return "bg-success/15 text-success";
@@ -138,7 +22,7 @@ export function TeamPerformance() {
       .slice(0, 2);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="p-card">
         <div className="animate-pulse space-y-md">
@@ -161,9 +45,8 @@ export function TeamPerformance() {
         Team Performance
       </h2>
       
-      {/* Header Row */}
       <div className="flex items-center gap-md px-sm py-xs text-metadata text-muted-foreground border-b border-border mb-sm">
-        <div className="w-9" /> {/* Avatar space */}
+        <div className="w-9" />
         <div className="flex-1">Name</div>
         <div className="w-14 text-center">Total</div>
         <div className="w-14 text-center">Done</div>
