@@ -306,7 +306,7 @@ export function TaskRow({
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
-                const url = `${window.location.origin}/tasks?task=${task.id}`;
+                const url = `https://prismax1.lovable.app/tasks?task=${task.id}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Task link copied");
                 setOpenDropdown(false);
