@@ -5,10 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addDays, format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useTaskMutations } from "@/hooks/useTaskMutations";
 
 interface TaskBoardViewProps {
   tasks: any[];
@@ -26,8 +23,7 @@ const priorityColors: Record<string, string> = {
 };
 
 export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBoardViewProps) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { updateStatus } = useTaskMutations();
 
   // Dynamic assignee groups
   const assigneeGroups = useMemo(() => {
@@ -78,12 +74,10 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
     }
   };
 
-  const handleComplete = async (task: any, e: React.MouseEvent) => {
+  const handleComplete = (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
-    await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id);
-    queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    toast({ title: newStatus === 'Completed' ? "Task completed" : "Task reopened" });
+    updateStatus.mutate({ id: task.id, status: newStatus });
   };
 
   const isOverdue = (task: any) => {

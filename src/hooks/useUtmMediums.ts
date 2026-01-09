@@ -22,8 +22,7 @@ export const useUtmMediums = () => {
       if (error) throw error;
       return data as UtmMedium[];
     },
-    refetchOnWindowFocus: true,
-    staleTime: 0
+    staleTime: 5 * 60 * 1000, // 5 minutes - medium data rarely changes
   });
 };
 

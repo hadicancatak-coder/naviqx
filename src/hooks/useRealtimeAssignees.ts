@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { realtimeService } from "@/lib/realtimeService";
 
 interface User {
   id: string;
@@ -8,65 +9,63 @@ interface User {
   username?: string;
 }
 
-export function useRealtimeAssignees(
-  entityType: "task" | "project" | "campaign" | "blocker",
-  entityId: string
-) {
+type EntityType = "task" | "project" | "campaign" | "blocker";
+
+const TABLE_MAP: Record<EntityType, string> = {
+  task: "task_assignees",
+  project: "project_assignees",
+  campaign: "campaign_assignees",
+  blocker: "blocker_assignees",
+};
+
+const ENTITY_ID_COLUMN: Record<EntityType, string> = {
+  task: "task_id",
+  project: "project_id",
+  campaign: "campaign_id",
+  blocker: "blocker_id",
+};
+
+export function useRealtimeAssignees(entityType: EntityType, entityId: string) {
   const [assignees, setAssignees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchAssignees = async () => {
-    // Skip query if entityId is empty or undefined
+  const tableName = TABLE_MAP[entityType];
+  const idColumn = ENTITY_ID_COLUMN[entityType];
+
+  const fetchAssignees = useCallback(async () => {
     if (!entityId || entityId === '') {
       setAssignees([]);
       setLoading(false);
       return;
     }
 
-    let data: any = null;
+    try {
+      const { data, error } = await supabase
+        .from(tableName as any)
+        .select("user_id")
+        .eq(idColumn, entityId);
 
-    if (entityType === "task") {
-      const result = await supabase
-        .from("task_assignees")
-        .select("user_id")
-        .eq("task_id", entityId);
-      data = result.data;
-    } else if (entityType === "project") {
-      const result = await supabase
-        .from("project_assignees")
-        .select("user_id")
-        .eq("project_id", entityId);
-      data = result.data;
-    } else if (entityType === "campaign") {
-      const result = await supabase
-        .from("campaign_assignees")
-        .select("user_id")
-        .eq("campaign_id", entityId);
-      data = result.data;
-    } else if (entityType === "blocker") {
-      const result = await supabase
-        .from("blocker_assignees")
-        .select("user_id")
-        .eq("blocker_id", entityId);
-      data = result.data;
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const userIds = data.map((d: any) => d.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, user_id, name, username")
+          .in("id", userIds);
+
+        setAssignees((profiles as User[]) || []);
+      } else {
+        setAssignees([]);
+      }
+    } catch (err) {
+      console.error(`Error fetching ${entityType} assignees:`, err);
+    } finally {
+      setLoading(false);
     }
-
-    if (data && data.length > 0) {
-      const profileIds = data.map((d: any) => d.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, user_id, name, username")
-        .in("id", profileIds);
-
-      setAssignees(profiles || []);
-    } else {
-      setAssignees([]);
-    }
-    setLoading(false);
-  };
+  }, [entityId, tableName, idColumn, entityType]);
 
   useEffect(() => {
-    // Skip subscription setup if entityId is empty
     if (!entityId || entityId === '') {
       setAssignees([]);
       setLoading(false);
@@ -75,44 +74,17 @@ export function useRealtimeAssignees(
 
     fetchAssignees();
 
-    const tableName =
-      entityType === "task"
-        ? "task_assignees"
-        : entityType === "project"
-        ? "project_assignees"
-        : entityType === "campaign"
-        ? "campaign_assignees"
-        : "blocker_assignees";
+    // Use centralized realtime service - subscribe to table changes
+    // Filter by entity ID in callback to avoid creating per-entity channels
+    const unsubscribe = realtimeService.subscribe(tableName, (payload) => {
+      // Only refetch if the change is for our entity
+      if (payload.new?.[idColumn] === entityId || payload.old?.[idColumn] === entityId) {
+        fetchAssignees();
+      }
+    });
 
-    const filterColumn =
-      entityType === "task"
-        ? "task_id"
-        : entityType === "project"
-        ? "project_id"
-        : entityType === "campaign"
-        ? "campaign_id"
-        : "blocker_id";
-
-    const channel = supabase
-      .channel(`${entityType}-assignees-${entityId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: tableName,
-          filter: `${filterColumn}=eq.${entityId}`,
-        },
-        () => {
-          fetchAssignees();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [entityType, entityId]);
+    return unsubscribe;
+  }, [fetchAssignees, tableName, idColumn, entityId]);
 
   return { assignees, loading, refetch: fetchAssignees };
 }

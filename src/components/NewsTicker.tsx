@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Megaphone, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { realtimeService } from "@/lib/realtimeService";
 import {
   Dialog,
   DialogContent,
@@ -12,35 +14,31 @@ import {
 } from "@/components/ui/dialog";
 
 export function NewsTicker() {
-  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null);
   const [emblaRef] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000, stopOnInteraction: false })]);
+  const queryClient = useQueryClient();
 
+  const { data: announcements = [] } = useQuery({
+    queryKey: ["announcements"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return data || [];
+    },
+    staleTime: 60 * 1000, // 1 minute cache
+  });
+
+  // Use centralized realtime service
   useEffect(() => {
-    fetchAnnouncements();
-
-    const channel = supabase
-      .channel("ticker-announcements")
-      .on("postgres_changes", { event: "*", schema: "public", table: "announcements" }, () => {
-        fetchAnnouncements();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchAnnouncements = async () => {
-    const { data } = await supabase
-      .from("announcements")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    setAnnouncements(data || []);
-  };
+    const unsubscribe = realtimeService.subscribe("announcements", () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

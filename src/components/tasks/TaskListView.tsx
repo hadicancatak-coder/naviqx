@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
+import { useTaskMutations } from "@/hooks/useTaskMutations";
 
 type SortField = 'title' | 'entity' | 'status' | 'tags' | 'assignee' | 'created_at' | 'updated_at' | 'due_at';
 type SortOrder = 'asc' | 'desc';
@@ -74,6 +75,7 @@ export function TaskListView({
   const { user, userRole } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { updateStatus } = useTaskMutations();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortField | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
@@ -191,19 +193,14 @@ export function TaskListView({
     }
   };
 
-  const handleComplete = async (task: any, e: React.MouseEvent) => {
+  const handleComplete = (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
     setProcessingId(task.id);
-    try {
-      const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
-      await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id);
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({ title: newStatus === 'Completed' ? "Task completed" : "Task reopened" });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setProcessingId(null);
-    }
+    const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+    updateStatus.mutate(
+      { id: task.id, status: newStatus },
+      { onSettled: () => setProcessingId(null) }
+    );
   };
 
   const handleDuplicate = async (task: any, e: React.MouseEvent) => {

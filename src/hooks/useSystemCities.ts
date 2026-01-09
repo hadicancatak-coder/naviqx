@@ -37,8 +37,7 @@ export const useAllCities = () => {
       if (error) throw error;
       return data as SeminarCity[];
     },
-    refetchOnWindowFocus: true,
-    staleTime: 0
+    staleTime: 5 * 60 * 1000, // 5 minutes - city data rarely changes
   });
 };
 

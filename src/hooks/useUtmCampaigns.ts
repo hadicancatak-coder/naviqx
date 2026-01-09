@@ -25,6 +25,7 @@ export const useUtmCampaigns = () => {
       if (error) throw error;
       return data as UtmCampaign[];
     },
+    staleTime: 30 * 1000, // 30 seconds cache
   });
 };
 
