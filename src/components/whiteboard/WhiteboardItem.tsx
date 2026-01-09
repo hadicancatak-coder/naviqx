@@ -77,16 +77,20 @@ export function WhiteboardItem({
       Color,
     ],
     content: item.content || "",
-    editable: isEditing,
+    editable: true,
     onUpdate: ({ editor }) => {
       onContentChange(item.id, editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none h-full w-full p-md [&>*]:m-0 [&>h1]:text-heading-lg [&>h2]:text-heading-md [&>h3]:text-heading-sm",
+        class: cn(
+          "prose prose-sm max-w-none focus:outline-none h-full w-full p-md",
+          "[&>*]:m-0 [&>p]:text-body [&>h1]:text-heading-lg [&>h1]:font-bold",
+          "[&>h2]:text-heading-md [&>h2]:font-semibold [&>h3]:text-heading-sm [&>h3]:font-medium"
+        ),
       },
     },
-  });
+  }, [item.type]);
 
   useEffect(() => {
     if (isEditing && textareaRef.current && item.type === "sticky") {
@@ -94,20 +98,16 @@ export function WhiteboardItem({
       textareaRef.current.select();
     }
     if (isEditing && editor && item.type === "text") {
-      editor.setEditable(true);
       editor.commands.focus("end");
-    }
-    if (!isEditing && editor) {
-      editor.setEditable(false);
     }
   }, [isEditing, editor, item.type]);
 
   // Sync editor content with item content when it changes externally
   useEffect(() => {
-    if (editor && !isEditing && item.content !== editor.getHTML()) {
+    if (editor && item.content !== editor.getHTML()) {
       editor.commands.setContent(item.content || "");
     }
-  }, [editor, item.content, isEditing]);
+  }, [editor, item.content]);
 
   const handleDragStart = (e: React.PointerEvent) => {
     if (isEditing || isResizing) return;
@@ -271,16 +271,25 @@ export function WhiteboardItem({
 
     // Text items use TipTap rich text editor
     if (item.type === "text") {
+      const isEmpty = !item.content || item.content === "<p></p>";
       return (
-        <div className="w-full h-full relative" onBlur={handleBlur}>
+        <div 
+          className="w-full h-full relative" 
+          onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+        >
           {isEditing && <TextFormatToolbar editor={editor} />}
-          {!isEditing && !item.content && (
-            <div className="w-full h-full p-md flex items-start gap-sm">
+          {isEmpty && !isEditing && (
+            <div className="absolute inset-0 p-md flex items-start gap-sm pointer-events-none">
               <Type className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <span className="text-muted-foreground text-body">Double-click to edit</span>
+              <span className="text-muted-foreground text-body">Click to edit text</span>
             </div>
           )}
-          <EditorContent editor={editor} className="h-full" />
+          <div 
+            className={cn("h-full", isEditing && "ring-2 ring-primary/20 rounded")}
+            onBlur={handleBlur}
+          >
+            <EditorContent editor={editor} className="h-full [&_.ProseMirror]:h-full [&_.ProseMirror]:outline-none" />
+          </div>
         </div>
       );
     }

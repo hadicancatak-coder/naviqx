@@ -73,6 +73,7 @@ interface UpdateConnectorParams {
 }
 
 interface UpdateWhiteboardParams {
+  id?: string;
   name?: string;
   description?: string;
   project_id?: string | null;
@@ -298,8 +299,10 @@ export function useWhiteboard() {
   // Whiteboard CRUD
   const updateWhiteboardMutation = useMutation({
     mutationFn: async (params: UpdateWhiteboardParams) => {
-      if (!whiteboard?.id) throw new Error("No whiteboard");
-      const { error } = await supabase.from("whiteboards").update(params).eq("id", whiteboard.id);
+      const targetId = params.id || whiteboard?.id;
+      if (!targetId) throw new Error("No whiteboard");
+      const { id, ...updates } = params;
+      const { error } = await supabase.from("whiteboards").update(updates).eq("id", targetId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -317,21 +320,31 @@ export function useWhiteboard() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as Whiteboard;
+    },
+    onSuccess: (newBoard) => {
+      queryClient.invalidateQueries({ queryKey: ["whiteboards", user?.id] });
+      // Auto-switch to new board
+      queryClient.setQueryData(["whiteboard", user?.id], newBoard);
+    },
+  });
+
+  const deleteWhiteboardMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("whiteboards").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["whiteboards", user?.id] });
-      toast.success("Whiteboard created");
+      queryClient.invalidateQueries({ queryKey: ["whiteboard", user?.id] });
     },
   });
 
   const switchWhiteboardMutation = useMutation({
     mutationFn: async (whiteboardId: string) => {
-      // Just update the local state - the main query will refetch
       return whiteboardId;
     },
     onSuccess: (whiteboardId) => {
-      // Set the selected whiteboard directly
       const selectedBoard = allWhiteboards.find(w => w.id === whiteboardId);
       if (selectedBoard) {
         queryClient.setQueryData(["whiteboard", user?.id], selectedBoard);
@@ -356,6 +369,8 @@ export function useWhiteboard() {
     deleteConnector: deleteConnectorMutation.mutate,
     updateWhiteboard: updateWhiteboardMutation.mutate,
     createWhiteboard: createWhiteboardMutation.mutate,
+    deleteWhiteboard: deleteWhiteboardMutation.mutate,
     switchWhiteboard: switchWhiteboardMutation.mutate,
+    clearSelection: () => queryClient.setQueryData(["whiteboard", user?.id], null),
   };
 }

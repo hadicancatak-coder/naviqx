@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { PageContainer } from "@/components/layout";
-import { WhiteboardContainer, WhiteboardSidebar, WhiteboardHeader } from "@/components/whiteboard";
+import { WhiteboardContainer, WhiteboardHeader, WhiteboardGallery } from "@/components/whiteboard";
 import { useWhiteboard } from "@/hooks/useWhiteboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function Whiteboard() {
   const {
@@ -22,29 +22,25 @@ export default function Whiteboard() {
     deleteConnector,
     updateWhiteboard,
     createWhiteboard,
+    deleteWhiteboard,
     switchWhiteboard,
+    clearSelection,
   } = useWhiteboard();
 
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showGallery, setShowGallery] = useState(true);
 
-  // Get task IDs that are already on the whiteboard
-  const tasksOnBoard = useMemo(() => {
-    return items
-      .filter(item => item.type === "task" && item.metadata)
-      .map(item => (item.metadata as { task_id?: string })?.task_id)
-      .filter((id): id is string => !!id);
-  }, [items]);
+  const handleSelectWhiteboard = (id: string) => {
+    switchWhiteboard(id);
+    setShowGallery(false);
+  };
 
-  const handleAddTaskFromSidebar = (taskId: string, taskTitle: string, status: string, priority: string) => {
-    const x = 100 + Math.random() * 400;
-    const y = 100 + Math.random() * 300;
-    createItem({
-      type: "task",
-      x: Math.round(x),
-      y: Math.round(y),
-      content: taskTitle,
-      metadata: { task_id: taskId, status, priority },
-    });
+  const handleRenameWhiteboard = (id: string, name: string) => {
+    updateWhiteboard({ id, name });
+  };
+
+  const handleBackToGallery = () => {
+    clearSelection();
+    setShowGallery(true);
   };
 
   if (isLoading) {
@@ -53,15 +49,40 @@ export default function Whiteboard() {
         <div className="mb-md">
           <Skeleton className="h-10 w-64" />
         </div>
-        <div className="flex items-center justify-center h-[600px]">
-          <Skeleton className="w-[1200px] h-[675px] rounded-xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-lg" />
+          ))}
         </div>
       </PageContainer>
     );
   }
 
+  // Show gallery view by default
+  if (showGallery || !whiteboard) {
+    return (
+      <PageContainer size="full">
+        <WhiteboardGallery
+          whiteboards={allWhiteboards}
+          onSelectWhiteboard={handleSelectWhiteboard}
+          onCreateWhiteboard={createWhiteboard}
+          onDeleteWhiteboard={deleteWhiteboard}
+          onRenameWhiteboard={handleRenameWhiteboard}
+        />
+      </PageContainer>
+    );
+  }
+
+  // Show whiteboard editor
   return (
     <PageContainer size="full">
+      <div className="flex items-center gap-md mb-md">
+        <Button variant="ghost" size="sm" onClick={handleBackToGallery} className="gap-xs">
+          <ArrowLeft className="h-4 w-4" />
+          All Whiteboards
+        </Button>
+      </div>
+
       <WhiteboardHeader
         whiteboard={whiteboard}
         allWhiteboards={allWhiteboards}
@@ -69,12 +90,6 @@ export default function Whiteboard() {
         onCreateWhiteboard={createWhiteboard}
         onSwitchWhiteboard={switchWhiteboard}
       />
-
-      <div className="flex items-center justify-end mb-sm">
-        <Button variant="outline" size="sm" onClick={() => setShowSidebar(!showSidebar)} className="gap-xs">
-          {showSidebar ? <><PanelRightClose className="h-4 w-4" />Hide Tasks</> : <><PanelRightOpen className="h-4 w-4" />Show Tasks</>}
-        </Button>
-      </div>
 
       <div className="flex bg-muted/30 rounded-xl overflow-hidden border border-border">
         <div className="flex-1 overflow-auto">
@@ -90,12 +105,6 @@ export default function Whiteboard() {
             onDeleteConnector={deleteConnector}
           />
         </div>
-        {showSidebar && (
-          <WhiteboardSidebar 
-            onAddTask={handleAddTaskFromSidebar} 
-            tasksOnBoard={tasksOnBoard}
-          />
-        )}
       </div>
     </PageContainer>
   );
