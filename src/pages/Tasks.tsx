@@ -616,12 +616,18 @@ export default function Tasks() {
 
         {selectedTaskId && (
           <>
-            <ResizableHandle withHandle />
+            {/* Invisible overlay to close panel on outside click */}
+            <div 
+              className="absolute inset-0 z-10 cursor-default" 
+              onClick={handleCloseSidePanel}
+              aria-hidden="true"
+            />
+            <ResizableHandle withHandle className="relative z-20" />
             <ResizablePanel 
               defaultSize={40} 
               minSize={30} 
               maxSize={50}
-              className="overflow-hidden"
+              className="overflow-hidden relative z-20"
             >
               <TaskDetailPanel
                 taskId={selectedTaskId}
