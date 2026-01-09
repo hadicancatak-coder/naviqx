@@ -1,8 +1,12 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { WhiteboardItem, getConnectionPoint } from "./WhiteboardItem";
 import { WhiteboardConnector } from "./WhiteboardConnector";
 import { WhiteboardToolbar, ToolType } from "./WhiteboardToolbar";
-import type { WhiteboardItem as WhiteboardItemData, WhiteboardConnector as WhiteboardConnectorData } from "@/hooks/useWhiteboard";
+import type { 
+  WhiteboardItem as WhiteboardItemData, 
+  WhiteboardConnector as WhiteboardConnectorData,
+  ConnectorLineStyle 
+} from "@/hooks/useWhiteboard";
 
 interface WhiteboardContainerProps {
   items: WhiteboardItemData[];
@@ -25,6 +29,7 @@ interface WhiteboardContainerProps {
   onSaveItem: (params: { id: string }) => void;
   onDeleteItem: (id: string) => void;
   onCreateConnector: (fromItemId: string, toItemId: string) => void;
+  onUpdateConnector: (params: { id: string; label?: string; line_style?: ConnectorLineStyle; color?: string }) => void;
   onDeleteConnector: (id: string) => void;
 }
 
@@ -39,6 +44,7 @@ export function WhiteboardContainer({
   onSaveItem,
   onDeleteItem,
   onCreateConnector,
+  onUpdateConnector,
   onDeleteConnector,
 }: WhiteboardContainerProps) {
   const [activeTool, setActiveTool] = useState<ToolType>("select");
@@ -54,6 +60,11 @@ export function WhiteboardContainer({
 
   // Local state for optimistic updates during drag/resize
   const [localItems, setLocalItems] = useState<Map<string, Partial<WhiteboardItemData>>>(new Map());
+
+  const selectedConnector = useMemo(() => 
+    connectors.find(c => c.id === selectedConnectorId) || null,
+    [connectors, selectedConnectorId]
+  );
 
   const getItemWithLocalUpdates = useCallback((item: WhiteboardItemData) => {
     const localUpdate = localItems.get(item.id);
@@ -226,6 +237,24 @@ export function WhiteboardContainer({
     setSelectedConnectorId(null);
   };
 
+  const handleConnectorLabelChange = (label: string) => {
+    if (selectedConnectorId) {
+      onUpdateConnector({ id: selectedConnectorId, label });
+    }
+  };
+
+  const handleConnectorLineStyleChange = (line_style: ConnectorLineStyle) => {
+    if (selectedConnectorId) {
+      onUpdateConnector({ id: selectedConnectorId, line_style });
+    }
+  };
+
+  const handleConnectorColorChange = (color: string) => {
+    if (selectedConnectorId) {
+      onUpdateConnector({ id: selectedConnectorId, color });
+    }
+  };
+
   // Calculate connector endpoints
   const getConnectorEndpoints = (connector: WhiteboardConnectorData) => {
     const fromItem = items.find(i => i.id === connector.from_item_id);
@@ -297,9 +326,12 @@ export function WhiteboardContainer({
                 to={endpoints.to}
                 color={connector.color}
                 strokeWidth={connector.stroke_width}
+                lineStyle={connector.line_style}
+                label={connector.label}
                 isSelected={selectedConnectorId === connector.id}
                 onSelect={() => handleConnectorSelect(connector.id)}
                 onDelete={() => handleConnectorDelete(connector.id)}
+                onLabelChange={(label) => onUpdateConnector({ id: connector.id, label })}
               />
             );
           })}
@@ -338,6 +370,13 @@ export function WhiteboardContainer({
           onColorChange={handleColorChange}
           onDelete={handleDelete}
           hasSelection={!!selectedItemId || !!selectedConnectorId}
+          selectedConnectorId={selectedConnectorId}
+          connectorLabel={selectedConnector?.label}
+          connectorLineStyle={selectedConnector?.line_style}
+          connectorColor={selectedConnector?.color}
+          onConnectorLabelChange={handleConnectorLabelChange}
+          onConnectorLineStyleChange={handleConnectorLineStyleChange}
+          onConnectorColorChange={handleConnectorColorChange}
         />
       </div>
     </div>

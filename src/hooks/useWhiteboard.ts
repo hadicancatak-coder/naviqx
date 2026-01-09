@@ -22,6 +22,8 @@ export interface WhiteboardItem {
   updated_at: string;
 }
 
+export type ConnectorLineStyle = "solid" | "dashed" | "dotted";
+
 export interface WhiteboardConnector {
   id: string;
   whiteboard_id: string;
@@ -29,12 +31,16 @@ export interface WhiteboardConnector {
   to_item_id: string;
   color: string;
   stroke_width: number;
+  label: string;
+  line_style: ConnectorLineStyle;
   created_at: string;
 }
 
 export interface Whiteboard {
   id: string;
   name: string;
+  description: string;
+  project_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -59,9 +65,38 @@ interface UpdateItemParams {
   content?: string;
 }
 
+interface UpdateConnectorParams {
+  id: string;
+  label?: string;
+  line_style?: ConnectorLineStyle;
+  color?: string;
+}
+
+interface UpdateWhiteboardParams {
+  name?: string;
+  description?: string;
+  project_id?: string | null;
+}
+
 export function useWhiteboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Fetch all whiteboards for the user
+  const { data: allWhiteboards = [], isLoading: isLoadingAllWhiteboards } = useQuery({
+    queryKey: ["whiteboards", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("whiteboards")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Whiteboard[];
+    },
+    enabled: !!user?.id,
+  });
 
   const { data: whiteboard, isLoading: isLoadingWhiteboard } = useQuery({
     queryKey: ["whiteboard", user?.id],
@@ -71,6 +106,8 @@ export function useWhiteboard() {
         .from("whiteboards")
         .select("*")
         .eq("created_by", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
         .maybeSingle();
       if (fetchError) throw fetchError;
       if (existing) return existing as Whiteboard;
@@ -110,7 +147,11 @@ export function useWhiteboard() {
         .select("*")
         .eq("whiteboard_id", whiteboard.id);
       if (error) throw error;
-      return (data || []) as WhiteboardConnector[];
+      return (data || []).map(c => ({
+        ...c,
+        label: c.label || "",
+        line_style: (c.line_style || "solid") as ConnectorLineStyle,
+      })) as WhiteboardConnector[];
     },
     enabled: !!whiteboard?.id,
   });
@@ -142,14 +183,46 @@ export function useWhiteboard() {
     },
   });
 
+  // Optimistic update for items to prevent lag
   const updateItemMutation = useMutation({
     mutationFn: async (params: UpdateItemParams) => {
       const { id, ...updates } = params;
       const { error } = await supabase.from("whiteboard_items").update(updates).eq("id", id);
       if (error) throw error;
+      return params;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["whiteboard-items", whiteboard?.id] });
+    onMutate: async (params) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["whiteboard-items", whiteboard?.id] });
+
+      // Snapshot the previous value
+      const previousItems = queryClient.getQueryData<WhiteboardItem[]>(["whiteboard-items", whiteboard?.id]);
+
+      // Optimistically update to the new value
+      if (previousItems) {
+        queryClient.setQueryData<WhiteboardItem[]>(
+          ["whiteboard-items", whiteboard?.id],
+          previousItems.map(item =>
+            item.id === params.id ? { ...item, ...params } : item
+          )
+        );
+      }
+
+      return { previousItems };
+    },
+    onError: (err, params, context) => {
+      // Rollback on error
+      if (context?.previousItems) {
+        queryClient.setQueryData(["whiteboard-items", whiteboard?.id], context.previousItems);
+      }
+      toast.error("Failed to update item");
+    },
+    // Don't invalidate on success - optimistic update is already applied
+    onSettled: () => {
+      // Optionally refetch in background after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["whiteboard-items", whiteboard?.id] });
+      }, 2000);
     },
   });
 
@@ -185,6 +258,33 @@ export function useWhiteboard() {
     },
   });
 
+  const updateConnectorMutation = useMutation({
+    mutationFn: async (params: UpdateConnectorParams) => {
+      const { id, ...updates } = params;
+      const { error } = await supabase.from("whiteboard_connectors").update(updates).eq("id", id);
+      if (error) throw error;
+      return params;
+    },
+    onMutate: async (params) => {
+      await queryClient.cancelQueries({ queryKey: ["whiteboard-connectors", whiteboard?.id] });
+      const previousConnectors = queryClient.getQueryData<WhiteboardConnector[]>(["whiteboard-connectors", whiteboard?.id]);
+      if (previousConnectors) {
+        queryClient.setQueryData<WhiteboardConnector[]>(
+          ["whiteboard-connectors", whiteboard?.id],
+          previousConnectors.map(c =>
+            c.id === params.id ? { ...c, ...params } : c
+          )
+        );
+      }
+      return { previousConnectors };
+    },
+    onError: (err, params, context) => {
+      if (context?.previousConnectors) {
+        queryClient.setQueryData(["whiteboard-connectors", whiteboard?.id], context.previousConnectors);
+      }
+    },
+  });
+
   const deleteConnectorMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("whiteboard_connectors").delete().eq("id", id);
@@ -195,16 +295,67 @@ export function useWhiteboard() {
     },
   });
 
+  // Whiteboard CRUD
+  const updateWhiteboardMutation = useMutation({
+    mutationFn: async (params: UpdateWhiteboardParams) => {
+      if (!whiteboard?.id) throw new Error("No whiteboard");
+      const { error } = await supabase.from("whiteboards").update(params).eq("id", whiteboard.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whiteboard", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["whiteboards", user?.id] });
+    },
+  });
+
+  const createWhiteboardMutation = useMutation({
+    mutationFn: async (name: string) => {
+      if (!user?.id) throw new Error("No user");
+      const { data, error } = await supabase
+        .from("whiteboards")
+        .insert({ name, created_by: user.id })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whiteboards", user?.id] });
+      toast.success("Whiteboard created");
+    },
+  });
+
+  const switchWhiteboardMutation = useMutation({
+    mutationFn: async (whiteboardId: string) => {
+      // Just update the local state - the main query will refetch
+      return whiteboardId;
+    },
+    onSuccess: (whiteboardId) => {
+      // Set the selected whiteboard directly
+      const selectedBoard = allWhiteboards.find(w => w.id === whiteboardId);
+      if (selectedBoard) {
+        queryClient.setQueryData(["whiteboard", user?.id], selectedBoard);
+        queryClient.invalidateQueries({ queryKey: ["whiteboard-items", whiteboardId] });
+        queryClient.invalidateQueries({ queryKey: ["whiteboard-connectors", whiteboardId] });
+      }
+    },
+  });
+
   return {
     whiteboard,
+    allWhiteboards,
     items,
     connectors,
-    isLoading: isLoadingWhiteboard || isLoadingItems || isLoadingConnectors,
+    isLoading: isLoadingWhiteboard || isLoadingItems || isLoadingConnectors || isLoadingAllWhiteboards,
     createItem: createItemMutation.mutate,
     updateItem: updateItemMutation.mutate,
     saveItem: (_: { id: string }) => {},
     deleteItem: deleteItemMutation.mutate,
     createConnector: (fromItemId: string, toItemId: string) => createConnectorMutation.mutate({ fromItemId, toItemId }),
+    updateConnector: updateConnectorMutation.mutate,
     deleteConnector: deleteConnectorMutation.mutate,
+    updateWhiteboard: updateWhiteboardMutation.mutate,
+    createWhiteboard: createWhiteboardMutation.mutate,
+    switchWhiteboard: switchWhiteboardMutation.mutate,
   };
 }

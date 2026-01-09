@@ -4751,6 +4751,8 @@ export type Database = {
           created_at: string | null
           from_item_id: string
           id: string
+          label: string | null
+          line_style: string | null
           stroke_width: number | null
           to_item_id: string
           whiteboard_id: string
@@ -4760,6 +4762,8 @@ export type Database = {
           created_at?: string | null
           from_item_id: string
           id?: string
+          label?: string | null
+          line_style?: string | null
           stroke_width?: number | null
           to_item_id: string
           whiteboard_id: string
@@ -4769,6 +4773,8 @@ export type Database = {
           created_at?: string | null
           from_item_id?: string
           id?: string
+          label?: string | null
+          line_style?: string | null
           stroke_width?: number | null
           to_item_id?: string
           whiteboard_id?: string
@@ -4857,25 +4863,39 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          description: string | null
           id: string
           name: string
+          project_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by: string
+          description?: string | null
           id?: string
           name?: string
+          project_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string
+          description?: string | null
           id?: string
           name?: string
+          project_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whiteboards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspaces: {
         Row: {
