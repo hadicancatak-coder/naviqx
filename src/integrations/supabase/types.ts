@@ -4745,6 +4745,58 @@ export type Database = {
           },
         ]
       }
+      whiteboard_connectors: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          from_item_id: string
+          id: string
+          stroke_width: number | null
+          to_item_id: string
+          whiteboard_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          from_item_id: string
+          id?: string
+          stroke_width?: number | null
+          to_item_id: string
+          whiteboard_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          from_item_id?: string
+          id?: string
+          stroke_width?: number | null
+          to_item_id?: string
+          whiteboard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whiteboard_connectors_from_item_id_fkey"
+            columns: ["from_item_id"]
+            isOneToOne: false
+            referencedRelation: "whiteboard_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whiteboard_connectors_to_item_id_fkey"
+            columns: ["to_item_id"]
+            isOneToOne: false
+            referencedRelation: "whiteboard_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whiteboard_connectors_whiteboard_id_fkey"
+            columns: ["whiteboard_id"]
+            isOneToOne: false
+            referencedRelation: "whiteboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whiteboard_items: {
         Row: {
           color: string | null
