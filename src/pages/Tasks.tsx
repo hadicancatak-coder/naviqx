@@ -218,7 +218,14 @@ export default function Tasks() {
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const target = e.target as HTMLElement;
+      // Skip if user is typing in any editable element
+      if (
+        target instanceof HTMLInputElement || 
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable ||
+        target.closest('[contenteditable="true"]')
+      ) return;
       
       const startIndex = (currentPage - 1) * itemsPerPage;
       const paginatedTasks = finalFilteredTasks.slice(startIndex, startIndex + itemsPerPage);
