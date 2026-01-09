@@ -28,7 +28,7 @@ export function WhiteboardHeader({
   const [newBoardName, setNewBoardName] = useState("");
   const [showNewBoardInput, setShowNewBoardInput] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { projects } = useProjects();
+  const { projects = [] } = useProjects();
 
   useEffect(() => {
     setLocalName(whiteboard?.name || "");
