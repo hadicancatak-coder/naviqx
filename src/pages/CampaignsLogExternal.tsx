@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Eye, ExternalLink as ExternalLinkIcon, MessageSquare, MousePointerClick, CheckCircle } from "lucide-react";
+import { Eye, ExternalLink as ExternalLinkIcon, MessageSquare, MousePointerClick, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +10,9 @@ import { useExternalAccess } from "@/hooks/useExternalAccess";
 import { useUtmCampaigns } from "@/hooks/useUtmCampaigns";
 import { EntityCampaignTable } from "@/components/campaigns/EntityCampaignTable";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { GlassBackground } from "@/components/layout/GlassBackground";
 
 export default function CampaignsLogExternal() {
   const { token } = useParams<{ token: string }>();
@@ -143,8 +143,8 @@ export default function CampaignsLogExternal() {
   // Show verification form if not verified
   if (!verified) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-md">
-        <Card className="max-w-md w-full">
+      <GlassBackground variant="centered">
+        <Card className="max-w-md w-full glass-elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
@@ -190,14 +190,14 @@ export default function CampaignsLogExternal() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </GlassBackground>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <GlassBackground variant="full">
       {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+      <div className="border-b glass-elevated sticky top-0 z-40">
         <div className="container mx-auto py-4 px-6">
           <PageHeader 
             title={`Campaign Review: ${accessData?.entity}`}
@@ -243,13 +243,13 @@ export default function CampaignsLogExternal() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-muted/30 mt-8">
+      <footer className="border-t border-border glass-elevated mt-8">
         <div className="container mx-auto px-6 py-6 text-center">
           <p className="text-body-sm text-muted-foreground">
             Proudly presented by the Performance Marketing Team at CFI Group. This page was built internally with AI. Do not share with third parties; internal use only.
           </p>
         </div>
       </footer>
-    </div>
+    </GlassBackground>
   );
 }

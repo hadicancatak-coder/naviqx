@@ -1,5 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { GlassBackground } from "@/components/layout/GlassBackground";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,15 +13,18 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
+    <GlassBackground variant="centered">
+      <Card className="glass-elevated p-lg text-center max-w-md w-full">
         <h1 className="mb-md text-4xl font-bold text-foreground">404</h1>
-        <p className="mb-md text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/80">
-          Return to Home
-        </a>
-      </div>
-    </div>
+        <p className="mb-lg text-xl text-muted-foreground">Oops! Page not found</p>
+        <Button asChild>
+          <a href="/">
+            <Home className="h-4 w-4 mr-2" />
+            Return to Home
+          </a>
+        </Button>
+      </Card>
+    </GlassBackground>
   );
 };
 
