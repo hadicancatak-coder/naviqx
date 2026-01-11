@@ -112,8 +112,15 @@ export default function MfaVerify() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-md">
-      <Card className="w-full max-w-md p-lg">
+    <div className="min-h-screen flex items-center justify-center bg-background p-md relative overflow-hidden">
+      {/* Decorative glass orbs - matching Auth.tsx design */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/15 blur-[140px]" />
+        <div className="absolute bottom-[-20%] left-[-15%] w-[700px] h-[700px] rounded-full bg-info/12 blur-[160px]" />
+        <div className="absolute top-[30%] left-[20%] w-[400px] h-[400px] rounded-full bg-success/8 blur-[120px]" />
+      </div>
+      
+      <Card className="w-full max-w-md p-lg glass-elevated relative z-10">
         <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Two-Factor Authentication</h1>

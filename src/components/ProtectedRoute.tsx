@@ -69,7 +69,19 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           // Token exists but not verified yet - trigger validation and wait
           console.log('🔄 MFA token found, validating session...');
           setMfaValidating(true);
-          validateMfaSession().finally(() => setMfaValidating(false));
+          validateMfaSession().then((isValid) => {
+            setMfaValidating(false);
+            // If validation failed and we're not on a self-handling route, redirect
+            if (!isValid) {
+              const isSelfHandlingRoute = MFA_SELF_HANDLING_ROUTES.some(route => 
+                location.pathname === route || location.pathname.startsWith(route + '/')
+              );
+              if (!isSelfHandlingRoute) {
+                console.log('🔒 MFA validation failed, redirecting to verification');
+                navigate("/mfa-verify");
+              }
+            }
+          });
           return; // Don't redirect yet, wait for validation
         }
         
