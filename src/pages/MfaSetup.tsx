@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Shield, Copy, Check, AlertTriangle } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -11,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import QRCode from "qrcode";
 import { useAuth } from "@/hooks/useAuth";
 import { MfaSetupGuide } from "@/components/MfaSetupGuide";
+import { GlassBackground } from "@/components/layout/GlassBackground";
 
 export default function MfaSetup() {
   const [loading, setLoading] = useState(true);
@@ -121,32 +121,20 @@ export default function MfaSetup() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-        {/* Decorative glass orbs */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/15 blur-[140px]" />
-          <div className="absolute bottom-[-20%] left-[-15%] w-[700px] h-[700px] rounded-full bg-info/12 blur-[160px]" />
-          <div className="absolute top-[30%] left-[20%] w-[400px] h-[400px] rounded-full bg-success/8 blur-[120px]" />
-        </div>
-        <Loader2 className="h-8 w-8 animate-spin text-primary relative z-10" />
-      </div>
+      <GlassBackground variant="centered">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </GlassBackground>
     );
   }
 
   if (showBackupCodes) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-md relative overflow-hidden">
-        {/* Decorative glass orbs */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/15 blur-[140px]" />
-          <div className="absolute bottom-[-20%] left-[-15%] w-[700px] h-[700px] rounded-full bg-info/12 blur-[160px]" />
-          <div className="absolute top-[30%] left-[20%] w-[400px] h-[400px] rounded-full bg-success/8 blur-[120px]" />
-        </div>
-        <Card className="w-full max-w-md p-lg glass-elevated relative z-10">
+      <GlassBackground variant="centered">
+        <Card className="w-full max-w-md p-lg glass-elevated">
           <div className="text-center mb-lg">
             <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
             <h1 className="text-heading-lg font-bold text-foreground mb-2">Save Your Backup Codes</h1>
-          <p className="text-body-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Store these codes in a safe place. You can use them to access your account if you lose your authenticator.
             </p>
           </div>
@@ -183,19 +171,13 @@ export default function MfaSetup() {
             I've Saved My Codes
           </Button>
         </Card>
-      </div>
+      </GlassBackground>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-md relative overflow-hidden">
-      {/* Decorative glass orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/15 blur-[140px]" />
-        <div className="absolute bottom-[-20%] left-[-15%] w-[700px] h-[700px] rounded-full bg-info/12 blur-[160px]" />
-        <div className="absolute top-[30%] left-[20%] w-[400px] h-[400px] rounded-full bg-success/8 blur-[120px]" />
-      </div>
-      <Card className="w-full max-w-md p-lg glass-elevated relative z-10">
+    <GlassBackground variant="centered">
+      <Card className="w-full max-w-md p-lg glass-elevated">
         <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
@@ -268,6 +250,6 @@ export default function MfaSetup() {
           </Button>
         </div>
       </Card>
-    </div>
+    </GlassBackground>
   );
 }

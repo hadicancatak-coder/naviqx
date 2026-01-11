@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authPasswordSchema } from "@/lib/validationSchemas";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
+import { GlassBackground } from "@/components/layout/GlassBackground";
 
 const authSchema = z.object({
   email: z.string()
@@ -127,14 +128,8 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-md relative overflow-hidden">
-      {/* Decorative glass orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/15 blur-[140px]" />
-        <div className="absolute bottom-[-20%] left-[-15%] w-[700px] h-[700px] rounded-full bg-info/12 blur-[160px]" />
-        <div className="absolute top-[30%] left-[20%] w-[400px] h-[400px] rounded-full bg-success/8 blur-[120px]" />
-      </div>
-      <Card className="w-full max-w-md p-lg glass-elevated relative z-10">
+    <GlassBackground variant="centered">
+      <Card className="w-full max-w-md p-lg glass-elevated">
         <div className="text-center mb-lg">
           <h1 className="text-3xl font-bold text-foreground mb-sm">Prisma</h1>
           <p className="text-muted-foreground">
@@ -206,6 +201,6 @@ export default function Auth() {
           </button>
         </div>
       </Card>
-    </div>
+    </GlassBackground>
   );
 }

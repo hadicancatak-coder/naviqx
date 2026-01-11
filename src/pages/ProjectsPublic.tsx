@@ -9,6 +9,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { GlassBackground } from "@/components/layout/GlassBackground";
+import { Card } from "@/components/ui/card";
 
 const phaseColors: Record<string, { bg: string; border: string; text: string }> = {
   primary: { bg: "bg-primary/20", border: "border-primary/40", text: "text-primary" },
@@ -141,21 +143,21 @@ export default function ProjectsPublic() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <GlassBackground variant="centered">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+      </GlassBackground>
     );
   }
 
   if (error || !project) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <GlassBackground variant="centered">
+        <Card className="glass-elevated p-lg text-center max-w-md w-full">
           <FolderKanban className="h-16 w-16 text-muted-foreground mx-auto mb-md" />
           <h1 className="text-heading-lg font-semibold text-foreground mb-2">Project Not Found</h1>
           <p className="text-muted-foreground">This project doesn't exist or is no longer shared.</p>
-        </div>
-      </div>
+        </Card>
+      </GlassBackground>
     );
   }
 
@@ -167,9 +169,9 @@ export default function ProjectsPublic() {
   const statusInfo = statusLabels[project.status] || statusLabels.planning;
 
   return (
-    <div className="min-h-screen bg-background">
+    <GlassBackground variant="full">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border glass-elevated">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center gap-2 text-muted-foreground text-body-sm">
             <FolderKanban className="h-4 w-4" />
@@ -332,7 +334,7 @@ export default function ProjectsPublic() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-12 bg-muted/30">
+      <footer className="border-t border-border mt-12 glass-elevated">
         <div className="max-w-5xl mx-auto px-6 py-6 text-center">
           <p className="text-body-sm text-muted-foreground">
             Proudly presented by the Performance Marketing Team at CFI Group. This page was built internally with AI.
@@ -340,6 +342,6 @@ export default function ProjectsPublic() {
           </p>
         </div>
       </footer>
-    </div>
+    </GlassBackground>
   );
 }

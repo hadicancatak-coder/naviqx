@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import DOMPurify from "dompurify";
 import * as LucideIcons from "lucide-react";
 import { useEffect } from "react";
+import { GlassBackground } from "@/components/layout/GlassBackground";
+import { Card } from "@/components/ui/card";
 
 export default function KnowledgePublic() {
   const { token } = useParams<{ token: string }>();
@@ -47,23 +49,23 @@ export default function KnowledgePublic() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <GlassBackground variant="centered">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+      </GlassBackground>
     );
   }
 
   if (error || !page) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <GlassBackground variant="centered">
+        <Card className="glass-elevated p-lg text-center max-w-md w-full">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-md" />
           <h1 className="text-heading-lg font-semibold text-foreground mb-2">Page Not Found</h1>
           <p className="text-muted-foreground">
             This page doesn't exist or is no longer shared.
           </p>
-        </div>
-      </div>
+        </Card>
+      </GlassBackground>
     );
   }
 
@@ -71,9 +73,9 @@ export default function KnowledgePublic() {
   const IconComponent = (LucideIcons as any)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] || FileText;
 
   return (
-    <div className="min-h-screen bg-background">
+    <GlassBackground variant="full" className="pb-0">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border glass-elevated mb-lg">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center gap-2 text-muted-foreground text-body-sm">
             <BookOpen className="h-4 w-4" />
@@ -113,13 +115,13 @@ export default function KnowledgePublic() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-12 bg-muted/30">
+      <footer className="border-t border-border mt-12 glass-elevated">
         <div className="max-w-4xl mx-auto px-6 py-6 text-center">
           <p className="text-body-sm text-muted-foreground">
             Proudly presented by the Performance Marketing Team at CFI Group. This page was built internally with AI. Do not share with third parties; internal use only.
           </p>
         </div>
       </footer>
-    </div>
+    </GlassBackground>
   );
 }

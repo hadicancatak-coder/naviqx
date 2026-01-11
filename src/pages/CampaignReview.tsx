@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { formatDistanceToNow } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { GlassBackground } from "@/components/layout/GlassBackground";
 
 export default function CampaignReview() {
   const { token } = useParams<{ token: string }>();
@@ -240,17 +241,17 @@ export default function CampaignReview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <GlassBackground variant="centered">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      </GlassBackground>
     );
   }
 
   // Show error if no access data or invalid token
   if (!accessData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-md">
-        <Card className="w-full max-w-md">
+      <GlassBackground variant="centered">
+        <Card className="w-full max-w-md glass-elevated">
           <CardHeader>
             <CardTitle className="text-heading-lg text-destructive">Invalid Review Link</CardTitle>
           </CardHeader>
@@ -262,15 +263,15 @@ export default function CampaignReview() {
             </Alert>
           </CardContent>
         </Card>
-      </div>
+      </GlassBackground>
     );
   }
 
   // Show verification form if not verified
   if (!verified) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-md">
-        <Card className="w-full max-w-md">
+      <GlassBackground variant="centered">
+        <Card className="w-full max-w-md glass-elevated">
           <CardHeader>
             <div className="flex items-center gap-sm mb-sm">
               <Eye className="h-6 w-6 text-primary" />
@@ -331,13 +332,13 @@ export default function CampaignReview() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </GlassBackground>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+    <GlassBackground variant="full" className="pb-20">
+      <div className="border-b glass-elevated sticky top-0 z-40">
         <div className="container mx-auto py-md px-md">
           <div className="flex items-center gap-sm">
             <Eye className="h-6 w-6 text-primary" />
@@ -493,6 +494,6 @@ export default function CampaignReview() {
           </p>
         </div>
       </div>
-    </div>
+    </GlassBackground>
   );
 }
