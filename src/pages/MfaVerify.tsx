@@ -143,6 +143,12 @@ export default function MfaVerify() {
                 placeholder="Enter backup code"
                 value={backupCode}
                 onChange={(e) => setBackupCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && backupCode.length >= 8) {
+                    e.preventDefault();
+                    verifyOtp();
+                  }
+                }}
                 className="font-mono"
               />
             </div>
@@ -156,6 +162,7 @@ export default function MfaVerify() {
                   maxLength={6}
                   value={otp}
                   onChange={setOtp}
+                  onComplete={() => verifyOtp()}
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />

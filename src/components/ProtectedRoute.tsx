@@ -14,6 +14,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
   const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(null);
   const [checkingMfa, setCheckingMfa] = useState(true);
+  const [mfaValidating, setMfaValidating] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,15 +61,29 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       }
 
       // If MFA is enabled but not verified in current session, require verification
+      // BUT wait for validation to complete if we have a token in localStorage
       if (mfaEnabled && !mfaVerified) {
-        console.log('🔒 MFA enabled but not verified, redirecting to verification');
-        navigate("/mfa-verify");
-        return;
+        const hasStoredToken = localStorage.getItem('mfa_session_data');
+        
+        if (hasStoredToken && !mfaValidating) {
+          // Token exists but not verified yet - trigger validation and wait
+          console.log('🔄 MFA token found, validating session...');
+          setMfaValidating(true);
+          validateMfaSession().finally(() => setMfaValidating(false));
+          return; // Don't redirect yet, wait for validation
+        }
+        
+        // Only redirect if no token exists (never verified) or validation just failed
+        if (!hasStoredToken) {
+          console.log('🔒 MFA enabled but not verified and no token, redirecting to verification');
+          navigate("/mfa-verify");
+          return;
+        }
       }
     }
-  }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, checkingMfa, navigate, location]);
+  }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, checkingMfa, navigate, location, mfaValidating, validateMfaSession]);
 
-  if (loading || checkingMfa) {
+  if (loading || checkingMfa || mfaValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
