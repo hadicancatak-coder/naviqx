@@ -59,7 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [roleLoading, setRoleLoading] = useState(false);
   const [userRole, setUserRole] = useState<"admin" | "member" | null>(null);
-  const [mfaVerified, setMfaVerified] = useState<boolean>(false);
+  // Initialize mfaVerified immediately from localStorage to prevent race conditions
+  const [mfaVerified, setMfaVerified] = useState<boolean>(() => {
+    const sessionToken = getMfaSessionToken();
+    return !!sessionToken; // Trust local token immediately for faster rendering
+  });
   const [skipNextValidation, setSkipNextValidation] = useState(false);
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
