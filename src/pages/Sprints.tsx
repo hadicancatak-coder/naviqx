@@ -6,6 +6,7 @@ import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { SprintHeader } from "@/components/sprints/SprintHeader";
 import { SprintBacklog } from "@/components/sprints/SprintBacklog";
 import { UnifiedTaskBoard } from "@/components/tasks/UnifiedTaskBoard";
+import { TaskListView } from "@/components/tasks/TaskListView";
 import { SprintCompleteDialog } from "@/components/sprints/SprintCompleteDialog";
 import { CreateSprintDialog } from "@/components/sprints/CreateSprintDialog";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -297,12 +298,24 @@ export default function Sprints() {
           onTaskClick={handleTaskClick}
         />
 
-        {/* Sprint Board */}
-        <UnifiedTaskBoard
-          tasks={sprintTasks}
-          onTaskClick={handleTaskClick}
-          groupBy="status"
-        />
+        {/* Sprint Board/List */}
+        {view === 'list' ? (
+          <TaskListView
+            tasks={sprintTasks}
+            selectedIds={[]}
+            onSelectionChange={() => {}}
+            onTaskClick={handleTaskClick}
+            onShiftSelect={() => {}}
+            focusedIndex={-1}
+            onRefresh={() => {}}
+          />
+        ) : (
+          <UnifiedTaskBoard
+            tasks={sprintTasks}
+            onTaskClick={handleTaskClick}
+            groupBy="status"
+          />
+        )}
       </div>
 
       {/* Dialogs */}
