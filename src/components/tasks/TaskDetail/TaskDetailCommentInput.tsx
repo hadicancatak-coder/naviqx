@@ -13,7 +13,7 @@ export function TaskDetailCommentInput() {
   } = useTaskDetailContext();
 
   return (
-    <div className="flex-shrink-0 p-md border-t border-border/50 dark:border-white/10 bg-card/30 dark:bg-white/5">
+    <div className="flex-shrink-0 p-md border-t border-border/30 dark:border-white/10">
       <div className="flex flex-col gap-xs">
         <MentionAutocomplete
           value={newComment}
