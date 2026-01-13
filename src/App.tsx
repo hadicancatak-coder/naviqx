@@ -12,7 +12,8 @@ import { GlobalBubbleMenu } from "@/components/editor/GlobalBubbleMenu";
 import { TaskDrawer } from "./components/tasks/TaskDrawer";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
-
+import Sprints from "./pages/Sprints";
+import SprintsManagement from "./pages/admin/SprintsManagement";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Overview from "./pages/admin/Overview";
 import UsersManagement from "./pages/admin/UsersManagement";
@@ -75,7 +76,7 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/dashboard" element={<Navigate to="/" replace />} />
                   <Route path="/tasks" element={<Tasks />} />
-                  
+                  <Route path="/sprints" element={<Sprints />} />
                   
                   <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                     <Route index element={<Navigate to="overview" replace />} />
@@ -89,6 +90,7 @@ const App = () => (
                     <Route path="ad-rules" element={<AdRulesManagement />} />
                     <Route path="errors" element={<ErrorLogs />} />
                     <Route path="security-scans" element={<SecurityScans />} />
+                    <Route path="sprints" element={<SprintsManagement />} />
                   </Route>
                   <Route path="/ads" element={<Navigate to="/ads/search" replace />} />
                   <Route path="/ads/search" element={<SearchPlanner adType="search" key="search" />} />

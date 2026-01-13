@@ -259,11 +259,67 @@ export const useTaskMutations = () => {
     }
   });
 
+  // Bulk mutation for setting sprint on multiple tasks
+  const setSprintBulk = useMutation({
+    mutationFn: async ({ taskIds, sprintId }: { taskIds: string[]; sprintId: string | null }) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ sprint: sprintId })
+        .in('id', taskIds)
+        .select();
+      
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ taskIds, sprintId }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      const previousTasks = queryClient.getQueryData(['tasks']);
+      
+      queryClient.setQueryData(['tasks'], (old: any) => {
+        if (!old) return old;
+        return old.map((task: any) =>
+          taskIds.includes(task.id) 
+            ? { ...task, sprint: sprintId, updated_at: new Date().toISOString() } 
+            : task
+        );
+      });
+      
+      return { previousTasks };
+    },
+    onError: (err: any, variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+      }
+      toast({
+        title: "Failed to update sprint",
+        description: err.message,
+        variant: "destructive"
+      });
+    },
+    onSuccess: (data, variables) => {
+      const action = variables.sprintId ? 'added to sprint' : 'moved to backlog';
+      toast({ 
+        title: `${variables.taskIds.length} task${variables.taskIds.length > 1 ? 's' : ''} ${action}`, 
+        duration: 2000 
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    }
+  });
+
+  // Helper function to call setSprintBulk mutation
+  const setSprintBulkFn = (taskIds: string[], sprintId: string | null) => {
+    setSprintBulk.mutate({ taskIds, sprintId });
+  };
+
   return { 
     updateTask, 
     completeTask, 
     updateDeadline, 
     updateStatus, 
-    updatePriority 
+    updatePriority,
+    setSprintBulk: setSprintBulkFn,
+    isSettingSprintBulk: setSprintBulk.isPending,
   };
 };

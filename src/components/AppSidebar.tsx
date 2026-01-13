@@ -16,7 +16,8 @@ import {
   BarChart3,
   Search,
   FolderKanban,
-  Presentation
+  Presentation,
+  Zap
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ import {
 
   const coreItems = [
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
+    { title: "Sprints", url: "/sprints", icon: Zap },
   ];
 
 const adsItems = [
