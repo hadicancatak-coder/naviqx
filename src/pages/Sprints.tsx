@@ -351,30 +351,14 @@ export default function Sprints() {
   );
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-background relative">
-      {/* Overlay to close panel on outside click */}
-      {selectedTaskId && (
-        <div 
-          className="absolute inset-0 z-10" 
-          onClick={handleCloseSidePanel}
-          aria-hidden="true"
-        />
-      )}
-      
-      <ResizablePanelGroup direction="horizontal" className="h-full relative z-20">
+    <div className="h-[calc(100vh-64px)] bg-background">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel 
           defaultSize={selectedTaskId ? 60 : 100} 
           minSize={40}
           className="overflow-hidden"
-          onClick={(e) => {
-            if (selectedTaskId) {
-              handleCloseSidePanel();
-            }
-          }}
         >
-          <div onClick={(e) => e.stopPropagation()}>
-            <SprintContent />
-          </div>
+          <SprintContent />
         </ResizablePanel>
 
         {selectedTaskId && (
