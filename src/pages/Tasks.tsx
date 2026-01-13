@@ -73,7 +73,7 @@ export default function Tasks() {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [filteredDialogOpen, setFilteredDialogOpen] = useState(false);
   const [filteredDialogType, setFilteredDialogType] = useState<'all' | 'overdue' | 'ongoing' | 'completed'>('all');
-  const [hideRecurring, setHideRecurring] = useState(true);
+  const [hideRecurring, setHideRecurring] = useState(false);
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);

@@ -15,6 +15,7 @@ import { TASK_TAGS } from "@/lib/constants";
 import { StaleBadge } from "@/components/tasks/StaleBadge";
 import { DependencyBadge } from "@/components/tasks/DependencyBadge";
 import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
+import { RecurringStreakBadge } from "@/components/tasks/RecurringStreakBadge";
 
 interface TaskRowProps {
   task: any;
@@ -254,10 +255,13 @@ export function TaskRow({
         </Badge>
       )}
       {isRecurring && !compact && (
-        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
-          <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
-          {getRecurrenceLabel(task)}
-        </Badge>
+        <>
+          <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
+            <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
+            {getRecurrenceLabel(task)}
+          </Badge>
+          <RecurringStreakBadge task={task} compact />
+        </>
       )}
       {isExternalDep && !compact && (
         <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
