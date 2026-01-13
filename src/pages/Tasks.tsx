@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers, FolderKanban } from "lucide-react";
+import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers, FolderKanban, Zap, Timer } from "lucide-react";
+import { useSprints } from "@/hooks/useSprints";
+import { isTaskStale } from "@/lib/staleTaskHelpers";
 import { useProjects } from "@/hooks/useProjects";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -36,7 +38,11 @@ import {
   setTasksStatusBulk, 
   deleteTasksBulk, 
   setPriorityBulk,
-  addTaskComment 
+  addTaskComment,
+  setSprintBulk,
+  setDueDateBulk,
+  setAssigneesBulk,
+  addLabelsBulk
 } from "@/domain";
 
 export default function Tasks() {
@@ -74,6 +80,9 @@ export default function Tasks() {
   const [hideRecurring, setHideRecurring] = useState(true);
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
+  
+  const { sprints } = useSprints();
   
   const { projects } = useProjects();
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
@@ -118,6 +127,9 @@ export default function Tasks() {
       case 'in-progress':
         setStatusFilters(['Ongoing']);
         break;
+      case 'stale':
+        setActiveQuickFilter('Stale');
+        break;
     }
 
     setSearchParams({}, { replace: true });
@@ -159,7 +171,8 @@ export default function Tasks() {
     { label: "Overdue", Icon: AlertCircle, filter: (task: any) => isTaskOverdue(task), clearOtherFilters: true },
     { label: "Due Soon", Icon: Clock, filter: (task: any) => { if (!task.due_at) return false; const dueDate = new Date(task.due_at); const threeDaysFromNow = addDays(new Date(), 3); return dueDate <= threeDaysFromNow && dueDate >= new Date() && task.status !== 'Completed'; }},
     { label: "Blocked", Icon: Shield, filter: (task: any) => task.status === 'Blocked' },
-    { label: "High Priority", Icon: TrendingUp, filter: (task: any) => task.priority === 'High' && task.status !== 'Completed' }
+    { label: "High Priority", Icon: TrendingUp, filter: (task: any) => task.priority === 'High' && task.status !== 'Completed' },
+    { label: "Stale", Icon: Timer, filter: (task: any) => isTaskStale(task) }
   ];
 
   const filteredTasks = useMemo(() => {
@@ -182,9 +195,10 @@ export default function Tasks() {
       const searchMatch = debouncedSearch === "" || task.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) || (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
       const recurringMatch = !hideRecurring || task.task_type !== 'recurring';
       const projectMatch = !selectedProjectId || task.project_id === selectedProjectId;
-      return assigneeMatch && dateMatch && statusMatch && tagsMatch && searchMatch && recurringMatch && projectMatch;
+      const sprintMatch = !selectedSprintId || task.sprint === selectedSprintId;
+      return assigneeMatch && dateMatch && statusMatch && tagsMatch && searchMatch && recurringMatch && projectMatch && sprintMatch;
     });
-  }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, hideRecurring, showMyTasks, user]);
+  }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, hideRecurring, showMyTasks, user, selectedProjectId, selectedSprintId]);
 
   const finalFilteredTasks = useMemo(() => {
     if (activeQuickFilter) {
@@ -306,7 +320,7 @@ export default function Tasks() {
   }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskId, selectedTaskIds, handleTaskClick, handleCloseSidePanel, handleShiftSelect, queryClient, toast]);
 
   const tasks = data || [];
-  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || selectedProjectId;
+  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || selectedProjectId || selectedSprintId;
   
   const myTasksCount = useMemo(() => {
     if (!user || !data) return 0;
@@ -330,7 +344,7 @@ export default function Tasks() {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
     setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
-    setShowMyTasks(false); setSelectedProjectId(null);
+    setShowMyTasks(false); setSelectedProjectId(null); setSelectedSprintId(null);
   };
 
   const handleBulkComplete = async () => {
@@ -391,6 +405,42 @@ export default function Tasks() {
   const handleBulkExport = () => { 
     const selectedTasks = finalFilteredTasks.filter(t => selectedTaskIds.includes(t.id)); 
     exportTasksToCSV(selectedTasks); 
+  };
+
+  const handleBulkSprintChange = async (sprintId: string | null) => {
+    const result = await setSprintBulk(selectedTaskIds, sprintId);
+    if (result.success) {
+      toast({ title: `${result.successCount} task(s) sprint updated`, duration: 2000 });
+    }
+    setSelectedTaskIds([]);
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  };
+
+  const handleBulkDueDateChange = async (dueDate: string | null) => {
+    const result = await setDueDateBulk(selectedTaskIds, dueDate);
+    if (result.success) {
+      toast({ title: `${result.successCount} task(s) due date updated`, duration: 2000 });
+    }
+    setSelectedTaskIds([]);
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  };
+
+  const handleBulkAssign = async (userIds: string[]) => {
+    const result = await setAssigneesBulk(selectedTaskIds, userIds);
+    if (result.success) {
+      toast({ title: `${result.successCount} task(s) assignees updated`, duration: 2000 });
+    }
+    setSelectedTaskIds([]);
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  };
+
+  const handleBulkAddTags = async (tags: string[]) => {
+    const result = await addLabelsBulk(selectedTaskIds, tags);
+    if (result.success) {
+      toast({ title: `Tags added to ${result.successCount} task(s)`, duration: 2000 });
+    }
+    setSelectedTaskIds([]);
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -472,6 +522,25 @@ export default function Tasks() {
               {projects?.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select 
+            value={selectedSprintId || "all"} 
+            onValueChange={(v) => setSelectedSprintId(v === "all" ? null : v)}
+          >
+            <SelectTrigger className="w-[130px]">
+              <Zap className="h-4 w-4 mr-2" />
+              <SelectValue>{selectedSprintId ? sprints?.find(s => s.id === selectedSprintId)?.name : "Sprint"}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sprints</SelectItem>
+              <SelectItem value="none">No Sprint</SelectItem>
+              {sprints?.map((sprint) => (
+                <SelectItem key={sprint.id} value={sprint.id}>
+                  {sprint.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -616,6 +685,11 @@ export default function Tasks() {
         onStatusChange={handleBulkStatusChange}
         onPriorityChange={handleBulkPriorityChange}
         onExport={handleBulkExport}
+        onSprintChange={handleBulkSprintChange}
+        onDueDateChange={handleBulkDueDateChange}
+        onAssign={handleBulkAssign}
+        onAddTags={handleBulkAddTags}
+        sprints={sprints}
       />
       
       {/* Overlay to close panel on outside click */}

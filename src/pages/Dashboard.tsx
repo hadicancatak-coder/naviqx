@@ -5,6 +5,7 @@ import { TeamPerformance } from "@/components/dashboard/TeamPerformance";
 import { RecentlyCompletedTicker } from "@/components/dashboard/RecentlyCompletedTicker";
 import { MyTasks } from "@/components/dashboard/MyTasks";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { SprintProgress } from "@/components/dashboard/SprintProgress";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -33,6 +34,8 @@ export default function Dashboard() {
       <RecentlyCompletedTicker />
 
       <TeamPerformance />
+
+      <SprintProgress />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
         <MyTasks />
