@@ -22,7 +22,7 @@ export function PageContainer({
   return (
     <div 
       className={cn(
-        "min-h-screen bg-background",
+        "min-h-screen",
         // Consistent vertical spacing
         "pt-xl pb-xl",
         // Consistent horizontal padding
