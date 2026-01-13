@@ -1,15 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSprints } from "@/hooks/useSprints";
 import { useTasks } from "@/hooks/useTasks";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
-import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { SprintHeader } from "@/components/sprints/SprintHeader";
 import { SprintBacklog } from "@/components/sprints/SprintBacklog";
 import { UnifiedTaskBoard } from "@/components/tasks/UnifiedTaskBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
+import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { SprintCompleteDialog } from "@/components/sprints/SprintCompleteDialog";
 import { CreateSprintDialog } from "@/components/sprints/CreateSprintDialog";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +33,8 @@ const priorityColors: Record<string, string> = {
 
 export default function Sprints() {
   const navigate = useNavigate();
-  const { openTaskDrawer } = useTaskDrawer();
   const { sprints, activeSprint, upcomingSprints, createSprint, updateSprint, isCreating, isUpdating } = useSprints();
-  const { data: allTasks, isLoading: tasksLoading } = useTasks();
+  const { data: allTasks, isLoading: tasksLoading, refetch } = useTasks();
   const { setSprintBulk } = useTaskMutations();
 
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
@@ -42,6 +42,10 @@ export default function Sprints() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
+  
+  // Task detail panel state (same as Tasks page)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   // Determine which sprint to show
   const currentSprint = selectedSprintId 
@@ -67,9 +71,15 @@ export default function Sprints() {
     blocked: sprintTasks.filter(t => t.status === 'Blocked').length,
   }), [sprintTasks]);
 
-  const handleTaskClick = (taskId: string) => {
-    openTaskDrawer(taskId);
-  };
+  const handleTaskClick = useCallback((taskId: string, task?: any) => {
+    setSelectedTaskId(taskId);
+    setSelectedTask(task || allTasks?.find(t => t.id === taskId) || null);
+  }, [allTasks]);
+
+  const handleCloseSidePanel = useCallback(() => {
+    setSelectedTaskId(null);
+    setSelectedTask(null);
+  }, []);
 
   const handleBacklogTaskSelect = (taskId: string) => {
     setSelectedBacklogTasks(prev => 
@@ -215,8 +225,8 @@ export default function Sprints() {
     );
   }
 
-  return (
-    <PageContainer size="wide" className="flex flex-col h-[calc(100vh-200px)]">
+  const SprintContent = () => (
+    <PageContainer size="wide" className="flex flex-col h-full">
       {/* Header with Sprint Selector */}
       <div className="flex items-center justify-between mb-md">
         <div className="flex items-center gap-md">
@@ -307,7 +317,7 @@ export default function Sprints() {
             onTaskClick={handleTaskClick}
             onShiftSelect={() => {}}
             focusedIndex={-1}
-            onRefresh={() => {}}
+            onRefresh={refetch}
           />
         ) : (
           <UnifiedTaskBoard
@@ -338,5 +348,57 @@ export default function Sprints() {
         />
       )}
     </PageContainer>
+  );
+
+  return (
+    <div className="h-[calc(100vh-64px)] bg-background relative">
+      {/* Overlay to close panel on outside click */}
+      {selectedTaskId && (
+        <div 
+          className="absolute inset-0 z-10" 
+          onClick={handleCloseSidePanel}
+          aria-hidden="true"
+        />
+      )}
+      
+      <ResizablePanelGroup direction="horizontal" className="h-full relative z-20">
+        <ResizablePanel 
+          defaultSize={selectedTaskId ? 60 : 100} 
+          minSize={40}
+          className="overflow-hidden"
+          onClick={(e) => {
+            if (selectedTaskId) {
+              handleCloseSidePanel();
+            }
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <SprintContent />
+          </div>
+        </ResizablePanel>
+
+        {selectedTaskId && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel 
+              defaultSize={40} 
+              minSize={30} 
+              maxSize={50}
+              className="overflow-hidden"
+            >
+              <TaskDetailPanel
+                taskId={selectedTaskId}
+                task={selectedTask}
+                onClose={handleCloseSidePanel}
+                onTaskDeleted={() => {
+                  handleCloseSidePanel();
+                  refetch();
+                }}
+              />
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
+    </div>
   );
 }
