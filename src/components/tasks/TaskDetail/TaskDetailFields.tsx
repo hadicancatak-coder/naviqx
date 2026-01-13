@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Clock, FolderKanban, Zap } from "lucide-react";
+import { CalendarIcon, Clock, FolderKanban, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
@@ -61,8 +61,26 @@ export function TaskDetailFields() {
     return `${days} days`;
   };
 
+  const isSubtask = !!task?.parent_id;
+  const isRecurring = task?.task_type === 'recurring';
+
   return (
     <div className="space-y-md">
+      {/* Task type badges */}
+      {(isSubtask || isRecurring) && (
+        <div className="flex items-center gap-sm">
+          {isSubtask && (
+            <Badge variant="secondary" className="text-metadata">Subtask</Badge>
+          )}
+          {isRecurring && (
+            <Badge variant="secondary" className="text-metadata bg-info/10 text-info border-info/30">
+              <Repeat className="h-3 w-3 mr-1" />
+              Recurring
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* Title - Inline editable */}
       <div>
         {isEditingTitle ? (
@@ -84,7 +102,7 @@ export function TaskDetailFields() {
         ) : (
           <h2 
             className={cn(
-              "text-heading-md font-semibold cursor-text hover:bg-muted/50 rounded-md px-1 -mx-1 py-0.5 transition-smooth",
+              "text-heading-md font-semibold cursor-text hover:bg-muted/50 rounded-lg px-1 -mx-1 py-0.5 transition-smooth",
               isCompleted && "line-through text-muted-foreground"
             )}
             onClick={() => setIsEditingTitle(true)}

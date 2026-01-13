@@ -62,10 +62,10 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
 
   return (
     <>
-      <div className="flex-shrink-0 px-md py-sm border-b border-border">
-        {/* Parent task navigation for subtasks - prominent back button */}
+      <div className="flex-shrink-0 px-md py-sm border-b border-border space-y-sm">
+        {/* Parent task navigation for subtasks */}
         {isSubtask && parentTask && (
-          <div className="flex items-center gap-sm p-sm mb-sm rounded-lg bg-muted/50 border border-border">
+          <div className="flex items-center gap-sm p-sm rounded-lg bg-muted/50 border border-border">
             <Button 
               variant="ghost" 
               size="sm"
@@ -80,16 +80,10 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
           </div>
         )}
         
-        <div className="flex items-center justify-between gap-sm">
-          <div className="flex items-center gap-sm flex-wrap">
-            {isSubtask && (
-              <Badge variant="secondary" className="text-metadata">Subtask</Badge>
-            )}
-            {isRecurring && (
-              <Badge variant="secondary" className="text-metadata bg-info/10 text-info border-info/30">Recurring</Badge>
-            )}
-            
-            {/* Show recurring toggle for recurring tasks, regular complete for others */}
+        {/* Main header row - clean layout */}
+        <div className="flex items-center justify-between gap-md">
+          {/* Left: Action buttons */}
+          <div className="flex items-center gap-sm">
             {isRecurring ? (
               <RecurringCompletionToggle taskId={taskId} />
             ) : (
@@ -108,35 +102,37 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
               </Button>
             )}
             
+            <TaskWatchButton taskId={taskId} showWatchers={false} />
+            
             {saving && (
               <Badge variant="secondary" className="text-metadata">Saving...</Badge>
             )}
           </div>
           
+          {/* Right: Menu and close */}
           <div className="flex items-center gap-xs">
-            <TaskWatchButton taskId={taskId} showWatchers={false} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleCopyLink}>
-                <Link2 className="h-4 w-4 mr-2" />
-                Copy Link
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive focus:text-destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Task
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleCopyLink}>
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Copy Link
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Task
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             {showCloseButton && onClose && (
               <Button variant="ghost" size="icon-sm" onClick={onClose}>
                 <X className="h-4 w-4" />

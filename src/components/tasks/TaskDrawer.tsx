@@ -12,6 +12,7 @@ export function TaskDrawer() {
       <SheetContent 
         side="right" 
         className="w-full sm:max-w-xl p-0 overflow-hidden"
+        hideCloseButton
       >
         <TaskDetail 
           taskId={taskId} 
