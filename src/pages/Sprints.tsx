@@ -5,7 +5,7 @@ import { useTaskMutations } from "@/hooks/useTaskMutations";
 import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { SprintHeader } from "@/components/sprints/SprintHeader";
 import { SprintBacklog } from "@/components/sprints/SprintBacklog";
-import { SprintKanban } from "@/components/sprints/SprintKanban";
+import { UnifiedTaskBoard } from "@/components/tasks/UnifiedTaskBoard";
 import { SprintCompleteDialog } from "@/components/sprints/SprintCompleteDialog";
 import { CreateSprintDialog } from "@/components/sprints/CreateSprintDialog";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -297,10 +297,11 @@ export default function Sprints() {
           onTaskClick={handleTaskClick}
         />
 
-        {/* Sprint Kanban */}
-        <SprintKanban
+        {/* Sprint Board */}
+        <UnifiedTaskBoard
           tasks={sprintTasks}
           onTaskClick={handleTaskClick}
+          groupBy="status"
         />
       </div>
 
