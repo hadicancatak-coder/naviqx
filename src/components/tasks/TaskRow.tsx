@@ -8,13 +8,12 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { getRecurrenceLabel } from "@/lib/recurrenceExpander";
+import { getRecurrenceLabelNew } from "@/lib/recurrenceUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { StaleBadge } from "@/components/tasks/StaleBadge";
 import { DependencyBadge } from "@/components/tasks/DependencyBadge";
-import { RecurringStreakBadge } from "@/components/tasks/RecurringStreakBadge";
 
 interface TaskRowProps {
   task: any;
@@ -263,13 +262,10 @@ export function TaskRow({
         </Badge>
       )}
       {isLegacyRecurring && !compact && (
-        <>
-          <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
-            <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
-            {getRecurrenceLabel(task)}
-          </Badge>
-          <RecurringStreakBadge task={task} compact />
-        </>
+        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
+          <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
+          {task.recurrence_rrule ? getRecurrenceLabelNew(JSON.parse(task.recurrence_rrule)) : 'Recurring'}
+        </Badge>
       )}
       {isExternalDep && !compact && (
         <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">

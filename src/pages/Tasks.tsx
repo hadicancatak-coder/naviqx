@@ -75,6 +75,7 @@ export default function Tasks() {
   const [filteredDialogType, setFilteredDialogType] = useState<'all' | 'overdue' | 'ongoing' | 'completed'>('all');
   const [hideRecurring, setHideRecurring] = useState(false);
   const [showMyTasks, setShowMyTasks] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false); // New: toggle to view recurring templates
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
   
@@ -144,7 +145,7 @@ export default function Tasks() {
     openTaskDrawer(taskId, task);
   }, [openTaskDrawer]);
 
-  const { data, isLoading, refetch } = useTasks();
+  const { data, isLoading, refetch } = useTasks({ includeTemplates: showTemplates });
 
   // Handle URL task parameter - open task directly with cached data
   useEffect(() => {
@@ -166,6 +167,12 @@ export default function Tasks() {
 
   const filteredTasks = useMemo(() => {
     return (data || []).filter((task: any) => {
+      // When showing templates, only show templates
+      if (showTemplates) {
+        return task.is_recurrence_template === true;
+      }
+      
+      // Normal filtering (templates are already filtered out by useTasks)
       if (showMyTasks && user) {
         if (!isUserAssignedToTask(task, user.id)) return false;
       }
@@ -187,7 +194,7 @@ export default function Tasks() {
       const sprintMatch = !selectedSprintId || task.sprint === selectedSprintId;
       return assigneeMatch && dateMatch && statusMatch && tagsMatch && searchMatch && recurringMatch && projectMatch && sprintMatch;
     });
-  }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, hideRecurring, showMyTasks, user, selectedProjectId, selectedSprintId]);
+  }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, hideRecurring, showMyTasks, showTemplates, user, selectedProjectId, selectedSprintId]);
 
   const finalFilteredTasks = useMemo(() => {
     if (activeQuickFilter) {
@@ -305,7 +312,7 @@ export default function Tasks() {
   }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskIds, handleTaskClick, handleShiftSelect, queryClient, toast]);
 
   const tasks = data || [];
-  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || selectedProjectId || selectedSprintId;
+  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || showTemplates || selectedProjectId || selectedSprintId;
   
   const myTasksCount = useMemo(() => {
     if (!user || !data) return 0;
@@ -329,8 +336,13 @@ export default function Tasks() {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
     setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
-    setShowMyTasks(false); setSelectedProjectId(null); setSelectedSprintId(null);
+    setShowMyTasks(false); setShowTemplates(false); setSelectedProjectId(null); setSelectedSprintId(null);
   };
+  
+  const templatesCount = useMemo(() => {
+    if (!data) return 0;
+    return data.filter((task: any) => task.is_recurrence_template === true).length;
+  }, [data]);
 
   const handleBulkComplete = async () => {
     const result = await completeTasksBulk(selectedTaskIds);
@@ -476,6 +488,28 @@ export default function Tasks() {
               </Badge>
             )}
           </Button>
+
+          {/* Recurring Templates Toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={showTemplates ? "default" : "outline"}
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Templates
+                {templatesCount > 0 && (
+                  <Badge variant={showTemplates ? "secondary" : "default"} className="ml-1 h-5 px-1.5 text-metadata">
+                    {templatesCount}
+                  </Badge>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              View and manage recurring task templates
+            </TooltipContent>
+          </Tooltip>
 
           <StatusMultiSelect value={statusFilters} onChange={setStatusFilters} />
           
