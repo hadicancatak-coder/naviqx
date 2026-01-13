@@ -15,13 +15,12 @@ import { AssigneeFilterBar } from "@/components/AssigneeFilterBar";
 import { TaskDateFilterBar } from "@/components/TaskDateFilterBar";
 import { StatusMultiSelect } from "@/components/tasks/StatusMultiSelect";
 import { FilteredTasksDialog } from "@/components/tasks/FilteredTasksDialog";
-import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { ViewSwitcher, type ViewMode, type BoardGroupBy } from "@/components/tasks/ViewSwitcher";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { UnifiedTaskBoard } from "@/components/tasks/UnifiedTaskBoard";
 import { PageContainer, PageHeader, EmptyState, FilterBar } from "@/components/layout";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
@@ -50,6 +49,7 @@ export default function Tasks() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { openTaskDrawer } = useTaskDrawer();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
@@ -68,10 +68,6 @@ export default function Tasks() {
     const saved = localStorage.getItem('tasksBoardGroupBy');
     return (saved === 'status' || saved === 'date' || saved === 'assignee') ? saved : 'status';
   });
-  
-  // Side panel state
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -145,14 +141,8 @@ export default function Tasks() {
   }, [itemsPerPage]);
 
   const handleTaskClick = useCallback((taskId: string, task?: any) => {
-    setSelectedTaskId(taskId);
-    setSelectedTask(task || null);
-  }, []);
-
-  const handleCloseSidePanel = useCallback(() => {
-    setSelectedTaskId(null);
-    setSelectedTask(null);
-  }, []);
+    openTaskDrawer(taskId, task);
+  }, [openTaskDrawer]);
 
   const { data, isLoading, refetch } = useTasks();
 
@@ -161,11 +151,10 @@ export default function Tasks() {
     const taskId = searchParams.get('task');
     if (taskId && !isLoading && data) {
       const cachedTask = data.find((t: any) => t.id === taskId);
-      setSelectedTaskId(taskId);
-      setSelectedTask(cachedTask || null);
+      openTaskDrawer(taskId, cachedTask);
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, setSearchParams, data, isLoading]);
+  }, [searchParams, setSearchParams, data, isLoading, openTaskDrawer]);
 
   const quickFilters = [
     { label: "Overdue", Icon: AlertCircle, filter: (task: any) => isTaskOverdue(task), clearOtherFilters: true },
@@ -277,19 +266,15 @@ export default function Tasks() {
           }
           break;
         case 'Escape':
-          if (selectedTaskId) {
-            handleCloseSidePanel();
-          } else if (selectedTaskIds.length > 0) {
+          if (selectedTaskIds.length > 0) {
             setSelectedTaskIds([]);
           } else {
             setFocusedIndex(-1);
           }
           break;
         case 'n':
-          if (!selectedTaskId) {
-            e.preventDefault();
-            setDialogOpen(true);
-          }
+          e.preventDefault();
+          setDialogOpen(true);
           break;
         case 'x':
           if (focusedTask) {
@@ -317,7 +302,7 @@ export default function Tasks() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskId, selectedTaskIds, handleTaskClick, handleCloseSidePanel, handleShiftSelect, queryClient, toast]);
+  }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskIds, handleTaskClick, handleShiftSelect, queryClient, toast]);
 
   const tasks = data || [];
   const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || selectedProjectId || selectedSprintId;
@@ -692,54 +677,9 @@ export default function Tasks() {
         sprints={sprints}
       />
       
-      {/* Overlay to close panel on outside click */}
-      {selectedTaskId && (
-        <div 
-          className="absolute inset-0 z-10" 
-          onClick={handleCloseSidePanel}
-          aria-hidden="true"
-        />
-      )}
-      
-      <ResizablePanelGroup direction="horizontal" className="h-full relative z-20">
-        <ResizablePanel 
-          defaultSize={selectedTaskId ? 60 : 100} 
-          minSize={40}
-          className="overflow-hidden"
-          onClick={(e) => {
-            // Close panel when clicking on the left panel area
-            if (selectedTaskId) {
-              handleCloseSidePanel();
-            }
-          }}
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            <TaskListContent />
-          </div>
-        </ResizablePanel>
-
-        {selectedTaskId && (
-          <>
-            <ResizableHandle withHandle />
-            <ResizablePanel 
-              defaultSize={40} 
-              minSize={30} 
-              maxSize={50}
-              className="overflow-hidden"
-            >
-              <TaskDetailPanel
-                taskId={selectedTaskId}
-                task={selectedTask}
-                onClose={handleCloseSidePanel}
-                onTaskDeleted={() => {
-                  handleCloseSidePanel();
-                  refetch();
-                }}
-              />
-            </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
+      <div className="h-full overflow-auto">
+        <TaskListContent />
+      </div>
 
       <CreateTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} />
       
