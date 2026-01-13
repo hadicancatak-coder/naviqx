@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTaskDetailContext } from "./TaskDetailContext";
 import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
+import { TaskWatchButton } from "@/components/tasks/TaskWatchButton";
+import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 
 interface TaskDetailHeaderProps {
   onClose?: () => void;
@@ -32,6 +34,7 @@ interface TaskDetailHeaderProps {
 export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetailHeaderProps) {
   const { 
     taskId,
+    task,
     title, 
     saving, 
     isCompleted, 
@@ -43,6 +46,8 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   const { openTaskDrawer } = useTaskDrawer();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const isRecurring = task?.task_type === 'recurring';
 
   const handleDelete = async () => {
     await deleteTask();
@@ -73,29 +78,40 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
         )}
         
         <div className="flex items-center justify-between gap-sm">
-          <div className="flex items-center gap-sm">
+          <div className="flex items-center gap-sm flex-wrap">
             {isSubtask && (
               <Badge variant="secondary" className="text-metadata">Subtask</Badge>
             )}
-            <Button
-            variant={isCompleted ? "default" : "outline"}
-            size="sm"
-            onClick={markComplete}
-            disabled={isCompleted}
-            className={cn(
-              "gap-xs",
-              isCompleted && "bg-success hover:bg-success/90"
+            {isRecurring && (
+              <Badge variant="secondary" className="text-metadata bg-info/10 text-info border-info/30">Recurring</Badge>
             )}
-          >
-            <Check className="h-4 w-4" />
-            {isCompleted ? "Completed" : "Complete"}
-          </Button>
+            
+            {/* Show recurring toggle for recurring tasks, regular complete for others */}
+            {isRecurring ? (
+              <RecurringCompletionToggle taskId={taskId} />
+            ) : (
+              <Button
+                variant={isCompleted ? "default" : "outline"}
+                size="sm"
+                onClick={markComplete}
+                disabled={isCompleted}
+                className={cn(
+                  "gap-xs",
+                  isCompleted && "bg-success hover:bg-success/90"
+                )}
+              >
+                <Check className="h-4 w-4" />
+                {isCompleted ? "Completed" : "Complete"}
+              </Button>
+            )}
+            
             {saving && (
               <Badge variant="secondary" className="text-metadata">Saving...</Badge>
             )}
           </div>
           
           <div className="flex items-center gap-xs">
+            <TaskWatchButton taskId={taskId} showWatchers={false} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-sm">

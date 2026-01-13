@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { StaleBadge } from "@/components/tasks/StaleBadge";
 import { DependencyBadge } from "@/components/tasks/DependencyBadge";
+import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 
 interface TaskRowProps {
   task: any;
