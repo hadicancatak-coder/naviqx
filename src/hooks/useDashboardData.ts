@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { subDays } from "date-fns";
+import { subDays, differenceInDays } from "date-fns";
 
 interface TaskCounts {
   today: number;
   overdue: number;
   thisWeek: number;
   inProgress: number;
+  stale: number;
 }
 
 interface UserPerformance {
@@ -104,7 +105,8 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   };
 
   // Default task counts
-  let taskCounts: TaskCounts = { today: 0, overdue: 0, thisWeek: 0, inProgress: 0 };
+  let taskCounts: TaskCounts = { today: 0, overdue: 0, thisWeek: 0, inProgress: 0, stale: 0 };
+  const sevenDaysAgo = subDays(new Date(), 7).toISOString();
 
   if (profile) {
     // Get user's assigned task IDs
@@ -114,7 +116,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
 
     if (userTaskIds.length > 0) {
       // Fetch user's tasks with counts in parallel
-      const [todayRes, overdueRes, weekRes, inProgressRes] = await Promise.all([
+      const [todayRes, overdueRes, weekRes, inProgressRes, staleRes] = await Promise.all([
         supabase
           .from("tasks")
           .select("id", { count: "exact", head: true })
@@ -140,6 +142,13 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
           .select("id", { count: "exact", head: true })
           .in("id", userTaskIds)
           .eq("status", "Ongoing"),
+        // Stale tasks: Ongoing and not updated in 7+ days
+        supabase
+          .from("tasks")
+          .select("id", { count: "exact", head: true })
+          .in("id", userTaskIds)
+          .eq("status", "Ongoing")
+          .lt("updated_at", sevenDaysAgo),
       ]);
 
       taskCounts = {
@@ -147,6 +156,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
         overdue: overdueRes.count || 0,
         thisWeek: weekRes.count || 0,
         inProgress: inProgressRes.count || 0,
+        stale: staleRes.count || 0,
       };
     }
   }
