@@ -176,7 +176,7 @@ export function RichTextEditor({
 
   return (
     <div 
-      className={cn('border border-input rounded-md bg-background overflow-hidden', className)}
+      className={cn('border border-input rounded-lg bg-background overflow-hidden', className)}
       onMouseUp={handleMouseUp}
     >
       <div
