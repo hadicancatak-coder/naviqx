@@ -14,7 +14,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { StaleBadge } from "@/components/tasks/StaleBadge";
 import { DependencyBadge } from "@/components/tasks/DependencyBadge";
-import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 import { RecurringStreakBadge } from "@/components/tasks/RecurringStreakBadge";
 
 interface TaskRowProps {
@@ -73,7 +72,10 @@ export function TaskRow({
   const isCompleted = task.status === 'Completed';
   const isOverdue = task.due_at && new Date(task.due_at) < new Date() && !isCompleted && task.status !== 'Backlog' && task.status !== 'Pending';
   const isExternalDep = task.is_external_dependency;
-  const isRecurring = task.isRecurringOccurrence || task.task_type === 'recurring' || task.recurrence_rrule;
+  const isRecurringInstance = !!task.template_task_id; // Instance created from a template
+  const isRecurringTemplate = task.is_recurrence_template === true; // The template itself (shouldn't appear normally)
+  const isLegacyRecurring = !isRecurringInstance && !isRecurringTemplate && (task.task_type === 'recurring' || task.recurrence_rrule);
+  const isRecurring = isRecurringInstance || isRecurringTemplate || isLegacyRecurring;
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -189,21 +191,17 @@ export function TaskRow({
         />
       )}
 
-      {/* Completion Checkbox - Smart for recurring tasks */}
+      {/* Completion Checkbox - Standard for all tasks */}
       {onComplete && (
-        isRecurring ? (
-          <RecurringCompletionToggle taskId={task.id} compact className="flex-shrink-0" />
-        ) : (
-          <Checkbox
-            checked={isCompleted}
-            onCheckedChange={handleCompletionChange}
-            onClick={handleCheckboxClick}
-            className={cn(
-              "border-border flex-shrink-0 h-4 w-4",
-              isCompleted && "bg-success border-success"
-            )}
-          />
-        )
+        <Checkbox
+          checked={isCompleted}
+          onCheckedChange={handleCompletionChange}
+          onClick={handleCheckboxClick}
+          className={cn(
+            "border-border flex-shrink-0 h-4 w-4",
+            isCompleted && "bg-success border-success"
+          )}
+        />
       )}
 
       {/* Priority Dot */}
@@ -258,7 +256,13 @@ export function TaskRow({
           {subtaskCompletedCount}/{subtaskCount}
         </Badge>
       )}
-      {isRecurring && !compact && (
+      {isRecurringInstance && !compact && (
+        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
+          <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
+          Recurring
+        </Badge>
+      )}
+      {isLegacyRecurring && !compact && (
         <>
           <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-primary/10 border-primary/30 text-primary flex-shrink-0 rounded-full">
             <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
