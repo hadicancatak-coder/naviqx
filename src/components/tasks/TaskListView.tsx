@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
-
+import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 type SortField = 'title' | 'entity' | 'status' | 'tags' | 'assignee' | 'created_at' | 'updated_at' | 'due_at';
 type SortOrder = 'asc' | 'desc';
 
@@ -195,6 +195,11 @@ export function TaskListView({
 
   const handleComplete = (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Skip standard completion for recurring tasks - they use daily toggle
+    const isRecurring = task.recurrence_rrule || task.task_type === 'recurring';
+    if (isRecurring) {
+      return; // Recurring tasks handled by RecurringCompletionToggle
+    }
     setProcessingId(task.id);
     const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
     updateStatus.mutate(
@@ -404,13 +409,24 @@ export function TaskListView({
               )}
             >
               {/* Selection Checkbox */}
-              <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
+              <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0 flex items-center gap-1">
                 <Checkbox
                   checked={selected}
                   onCheckedChange={(checked) => handleSelect(task.id, checked as boolean, { stopPropagation: () => {} } as any)}
                   onClick={(e) => handleSelect(task.id, !selected, e)}
                   className="h-4 w-4"
                 />
+                {/* Completion toggle - smart for recurring */}
+                {(task.recurrence_rrule || task.task_type === 'recurring') ? (
+                  <RecurringCompletionToggle taskId={task.id} compact className="flex-shrink-0" />
+                ) : (
+                  <Checkbox
+                    checked={completed}
+                    onCheckedChange={() => handleComplete(task, { stopPropagation: () => {} } as any)}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn("h-4 w-4", completed && "bg-success border-success")}
+                  />
+                )}
               </div>
 
               {/* Priority Dot */}
