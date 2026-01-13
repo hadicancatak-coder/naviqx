@@ -57,7 +57,9 @@ export const Layout = () => {
           </div>
           <div className="relative z-[2]">
             <TopHeader />
-            <Outlet />
+            <div className="pt-md px-md pb-lg">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>

@@ -8,6 +8,7 @@ import { SprintBacklog } from "@/components/sprints/SprintBacklog";
 import { SprintKanban } from "@/components/sprints/SprintKanban";
 import { SprintCompleteDialog } from "@/components/sprints/SprintCompleteDialog";
 import { CreateSprintDialog } from "@/components/sprints/CreateSprintDialog";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { Plus, Zap, Calendar, LayoutGrid, List, Settings, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 const priorityColors: Record<string, string> = {
   urgent: 'status-destructive',
   high: 'status-warning',
@@ -115,21 +115,19 @@ export default function Sprints() {
   // No active sprint state
   if (!currentSprint && !selectedSprintId) {
     return (
-      <div className="space-y-lg">
-        {/* Page Header with Glass */}
-        <div className="liquid-glass rounded-xl p-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-heading-lg font-semibold">Sprint Board</h1>
-              <p className="text-body-sm text-muted-foreground">
-                Plan and track work in time-boxed iterations
-              </p>
-            </div>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Sprint
-            </Button>
+      <PageContainer size="wide">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-lg">
+          <div>
+            <h1 className="text-heading-lg font-semibold">Sprint Board</h1>
+            <p className="text-body-sm text-muted-foreground mt-1">
+              Plan and track work in time-boxed iterations
+            </p>
           </div>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Sprint
+          </Button>
         </div>
 
         {/* Empty State Card */}
@@ -212,12 +210,12 @@ export default function Sprints() {
           onSubmit={handleCreateSprint}
           isSubmitting={isCreating}
         />
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)]">
+    <PageContainer size="wide" className="flex flex-col h-[calc(100vh-200px)]">
       {/* Header with Sprint Selector */}
       <div className="flex items-center justify-between mb-md">
         <div className="flex items-center gap-md">
@@ -325,6 +323,6 @@ export default function Sprints() {
           onComplete={handleCompleteSprint}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }
