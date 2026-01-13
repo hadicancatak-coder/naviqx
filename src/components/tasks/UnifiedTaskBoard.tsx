@@ -35,7 +35,7 @@ interface Task {
 
 interface UnifiedTaskBoardProps {
   tasks: Task[];
-  onTaskClick: (taskId: string) => void;
+  onTaskClick: (taskId: string, task?: Task) => void;
   groupBy?: 'status' | 'date' | 'assignee';
 }
 
@@ -197,7 +197,7 @@ export function UnifiedTaskBoard({ tasks, onTaskClick, groupBy = 'status' }: Uni
                       <TaskCard 
                         key={task.id} 
                         task={task} 
-                        onClick={() => onTaskClick(task.id)} 
+                        onClick={() => onTaskClick(task.id, task)} 
                       />
                     ))
                   )}

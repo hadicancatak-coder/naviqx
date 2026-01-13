@@ -29,7 +29,7 @@ interface SprintBacklogProps {
   selectedTasks: string[];
   onTaskSelect: (taskId: string) => void;
   onAddToSprint: () => void;
-  onTaskClick: (taskId: string) => void;
+  onTaskClick: (taskId: string, task?: Task) => void;
 }
 
 const priorityColors: Record<string, string> = {
@@ -103,7 +103,7 @@ export function SprintBacklog({
                 />
                 <div 
                   className="flex-1 min-w-0"
-                  onClick={() => onTaskClick(task.id)}
+                  onClick={() => onTaskClick(task.id, task)}
                 >
                   <p className="text-body-sm font-medium truncate">{task.title}</p>
                   <div className="flex items-center gap-2 mt-1">
