@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { NewsTicker } from "@/components/NewsTicker";
 import { PerformanceMetrics } from "@/components/dashboard/PerformanceMetrics";
 import { TeamPerformance } from "@/components/dashboard/TeamPerformance";
+import { TeamWorkload } from "@/components/dashboard/TeamWorkload";
 import { RecentlyCompletedTicker } from "@/components/dashboard/RecentlyCompletedTicker";
 import { MyTasks } from "@/components/dashboard/MyTasks";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
@@ -34,6 +35,8 @@ export default function Dashboard() {
       <RecentlyCompletedTicker />
 
       <TeamPerformance />
+
+      <TeamWorkload />
 
       <SprintProgress />
 

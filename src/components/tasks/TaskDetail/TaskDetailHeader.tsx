@@ -63,17 +63,20 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   return (
     <>
       <div className="flex-shrink-0 px-md py-sm border-b border-border">
-        {/* Parent task breadcrumb for subtasks */}
+        {/* Parent task navigation for subtasks - prominent back button */}
         {isSubtask && parentTask && (
-          <div className="flex items-center gap-xs text-metadata text-muted-foreground mb-xs">
-            <CornerDownRight className="h-3 w-3" />
-            <span>Subtask of</span>
-            <button 
+          <div className="flex items-center gap-sm p-sm mb-sm rounded-lg bg-muted/50 border border-border">
+            <Button 
+              variant="ghost" 
+              size="sm"
               onClick={() => openTaskDrawer(parentTask.id, { id: parentTask.id, title: parentTask.title })}
-              className="text-primary hover:underline font-medium"
+              className="gap-xs h-7 px-2"
             >
-              {parentTask.title}
-            </button>
+              <CornerDownRight className="h-3.5 w-3.5 rotate-180" />
+              Back to parent
+            </Button>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-body-sm font-medium truncate flex-1">{parentTask.title}</span>
           </div>
         )}
         
