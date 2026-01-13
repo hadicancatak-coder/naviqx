@@ -4,13 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Link2, Trash2, AlertCircle } from "lucide-react";
+import { Link2, Trash2, AlertCircle, ArrowRight, ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 interface Dependency {
   id: string;
   depends_on_task_id: string;
   dependency_type: string;
+  task: {
+    title: string;
+    status: string;
+  };
+}
+
+interface ReverseDependency {
+  id: string;
+  task_id: string;
   task: {
     title: string;
     status: string;
@@ -24,12 +35,15 @@ interface TaskDependenciesSectionProps {
 
 export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenciesSectionProps) {
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
+  const [reverseDependencies, setReverseDependencies] = useState<ReverseDependency[]>([]);
   const [availableTasks, setAvailableTasks] = useState<any[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string>("");
   const [dependencyType, setDependencyType] = useState<string>("blocks");
+  const [showBlocking, setShowBlocking] = useState(true);
 
   useEffect(() => {
     fetchDependencies();
+    fetchReverseDependencies();
     fetchAvailableTasks();
   }, [taskId]);
 
@@ -49,11 +63,27 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
     }
   };
 
+  const fetchReverseDependencies = async () => {
+    const { data, error } = await supabase
+      .from("task_dependencies")
+      .select(`
+        id,
+        task_id,
+        task:tasks!task_dependencies_task_id_fkey(title, status)
+      `)
+      .eq("depends_on_task_id", taskId);
+
+    if (!error && data) {
+      setReverseDependencies(data as any);
+    }
+  };
+
   const fetchAvailableTasks = async () => {
     const { data, error } = await supabase
       .from("tasks")
       .select("id, title, status")
       .neq("id", taskId)
+      .neq("status", "Completed")
       .order("title");
 
     if (!error && data) {
@@ -114,11 +144,25 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
     (dep) => dep.task.status !== "Completed"
   );
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "Completed": return "default";
+      case "Ongoing": return "secondary";
+      case "Blocked": return "destructive";
+      default: return "outline";
+    }
+  };
+
   return (
     <div className="space-y-md">
       <div className="flex items-center gap-2">
         <Link2 className="h-4 w-4" />
         <h3 className="font-semibold">Dependencies</h3>
+        {(dependencies.length > 0 || reverseDependencies.length > 0) && (
+          <Badge variant="secondary" className="text-metadata">
+            {dependencies.length + reverseDependencies.length}
+          </Badge>
+        )}
       </div>
 
       {currentStatus === "Completed" && hasIncompleteDependencies && (
@@ -130,19 +174,24 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
         </Alert>
       )}
 
+      {/* This task depends on (blocked by) */}
       {dependencies.length > 0 && (
         <div className="space-y-2">
+          <div className="flex items-center gap-2 text-body-sm font-medium text-muted-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Depends on ({dependencies.length})</span>
+          </div>
           {dependencies.map((dep) => (
-            <div key={dep.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-              <div className="flex-1">
-                <p className="font-medium text-sm">{dep.task.title}</p>
+            <div key={dep.id} className="flex items-center justify-between p-sm border rounded-lg bg-muted/30">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-body-sm truncate">{dep.task.title}</p>
                 <div className="flex gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-metadata">
                     {dep.dependency_type}
                   </Badge>
                   <Badge
-                    variant={dep.task.status === "Completed" ? "default" : "secondary"}
-                    className="text-xs"
+                    variant={getStatusBadgeVariant(dep.task.status)}
+                    className="text-metadata"
                   >
                     {dep.task.status}
                   </Badge>
@@ -150,16 +199,59 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
               </div>
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-sm"
                 onClick={() => removeDependency(dep.id)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           ))}
         </div>
       )}
 
+      {/* Tasks that depend on this task (blocks) */}
+      {reverseDependencies.length > 0 && (
+        <Collapsible open={showBlocking} onOpenChange={setShowBlocking}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between px-0 hover:bg-transparent">
+              <div className="flex items-center gap-2 text-body-sm font-medium text-muted-foreground">
+                <ArrowRight className="h-3.5 w-3.5" />
+                <span>Blocks ({reverseDependencies.length})</span>
+              </div>
+              {showBlocking ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2 mt-2">
+            {reverseDependencies.map((dep) => (
+              <div 
+                key={dep.id} 
+                className={cn(
+                  "flex items-center justify-between p-sm border rounded-lg",
+                  dep.task.status === "Blocked" 
+                    ? "bg-warning-soft/30 border-warning/30" 
+                    : "bg-muted/30"
+                )}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-body-sm truncate">{dep.task.title}</p>
+                  <Badge
+                    variant={getStatusBadgeVariant(dep.task.status)}
+                    className="text-metadata mt-1"
+                  >
+                    {dep.task.status}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* Add new dependency */}
       <div className="flex gap-2">
         <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
           <SelectTrigger className="flex-1">
