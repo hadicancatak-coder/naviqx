@@ -131,10 +131,14 @@ export function TaskDetailSubtasks() {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className={cn(
-              "rounded-lg overflow-hidden",
-              totalCount > 0 && "border border-border bg-card"
-            )}>
+            <div className="rounded-lg border border-border overflow-hidden bg-card">
+              {/* Header with count */}
+              {totalCount > 0 && (
+                <div className="flex items-center justify-between px-sm py-xs bg-muted/30 border-b border-border">
+                  <span className="text-metadata font-medium text-muted-foreground">Checklist</span>
+                  <span className="text-metadata text-muted-foreground">{completedCount}/{totalCount}</span>
+                </div>
+              )}
               {subtasks.map((subtask) => (
                 <SubtaskRow
                   key={subtask.id}

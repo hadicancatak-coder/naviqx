@@ -61,8 +61,8 @@ export function SubtaskRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-xxs h-row-compact pl-lg pr-sm transition-smooth group",
-        "hover:bg-card-hover border-b border-border/50 last:border-0",
+        "flex items-center gap-sm h-row-compact px-sm transition-smooth group",
+        "hover:bg-card-hover border-b border-border last:border-0",
         isCompleted && "opacity-60"
       )}
     >

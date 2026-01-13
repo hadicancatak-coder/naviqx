@@ -18,7 +18,7 @@ import { FilteredTasksDialog } from "@/components/tasks/FilteredTasksDialog";
 import { TaskDetailPanel } from "@/components/tasks/TaskDetailPanel";
 import { ViewSwitcher, type ViewMode, type BoardGroupBy } from "@/components/tasks/ViewSwitcher";
 import { TaskListView } from "@/components/tasks/TaskListView";
-import { TaskBoardView } from "@/components/tasks/TaskBoardView";
+import { UnifiedTaskBoard } from "@/components/tasks/UnifiedTaskBoard";
 import { PageContainer, PageHeader, EmptyState, FilterBar } from "@/components/layout";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -629,7 +629,7 @@ export default function Tasks() {
                 onRefresh={refetch}
               />
             ) : (
-              <TaskBoardView 
+              <UnifiedTaskBoard 
                 tasks={paginatedTasks} 
                 onTaskClick={handleTaskClick} 
                 groupBy={boardGroupBy} 
