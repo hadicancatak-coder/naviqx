@@ -189,17 +189,21 @@ export function TaskRow({
         />
       )}
 
-      {/* Completion Checkbox */}
+      {/* Completion Checkbox - Smart for recurring tasks */}
       {onComplete && (
-        <Checkbox
-          checked={isCompleted}
-          onCheckedChange={handleCompletionChange}
-          onClick={handleCheckboxClick}
-          className={cn(
-            "border-border flex-shrink-0 h-4 w-4",
-            isCompleted && "bg-success border-success"
-          )}
-        />
+        isRecurring ? (
+          <RecurringCompletionToggle taskId={task.id} compact className="flex-shrink-0" />
+        ) : (
+          <Checkbox
+            checked={isCompleted}
+            onCheckedChange={handleCompletionChange}
+            onClick={handleCheckboxClick}
+            className={cn(
+              "border-border flex-shrink-0 h-4 w-4",
+              isCompleted && "bg-success border-success"
+            )}
+          />
+        )
       )}
 
       {/* Priority Dot */}

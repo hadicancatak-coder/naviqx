@@ -57,11 +57,27 @@ export interface SetStatusOptions {
 /**
  * Complete a single task
  * Sets status to 'Completed' in the database
+ * NOTE: Recurring tasks should NOT be completed this way - use daily completions instead
  */
 export async function completeTask(taskId: string): Promise<TaskActionResult> {
   console.log('[Task Actions] completeTask called with:', taskId);
   
   try {
+    // Check if this is a recurring task - they should use daily completions, not full completion
+    const { data: task } = await supabase
+      .from('tasks')
+      .select('recurrence_rrule')
+      .eq('id', taskId)
+      .single();
+
+    if (task?.recurrence_rrule) {
+      console.warn('[Task Actions] Attempted to fully complete a recurring task. Use daily completion instead.');
+      return { 
+        success: false, 
+        error: 'Recurring tasks cannot be fully completed. Use the daily completion toggle instead.' 
+      };
+    }
+
     const { data, error } = await supabase
       .from('tasks')
       .update({ status: 'Completed' as TaskStatusDBType, updated_at: new Date().toISOString() })
