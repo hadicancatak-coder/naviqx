@@ -10,6 +10,7 @@ import { SprintCompleteDialog } from "@/components/sprints/SprintCompleteDialog"
 import { CreateSprintDialog } from "@/components/sprints/CreateSprintDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Select,
@@ -18,8 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Zap, Calendar, LayoutGrid, List, Settings } from "lucide-react";
+import { Plus, Zap, Calendar, LayoutGrid, List, Settings, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+const priorityColors: Record<string, string> = {
+  urgent: 'status-destructive',
+  high: 'status-warning',
+  medium: 'status-info',
+  low: 'status-neutral',
+};
 
 export default function Sprints() {
   const navigate = useNavigate();
@@ -108,22 +116,26 @@ export default function Sprints() {
   if (!currentSprint && !selectedSprintId) {
     return (
       <div className="space-y-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-heading-lg font-semibold">Sprint Board</h1>
-            <p className="text-body-sm text-muted-foreground">
-              Plan and track work in time-boxed iterations
-            </p>
+        {/* Page Header with Glass */}
+        <div className="liquid-glass rounded-xl p-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-heading-lg font-semibold">Sprint Board</h1>
+              <p className="text-body-sm text-muted-foreground">
+                Plan and track work in time-boxed iterations
+              </p>
+            </div>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Sprint
+            </Button>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Sprint
-          </Button>
         </div>
 
-        <Card className="p-2xl text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-lg">
-            <Zap className="h-8 w-8 text-primary" />
+        {/* Empty State Card */}
+        <Card className="liquid-glass-elevated p-2xl text-center border-0">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-lg shadow-lg shadow-primary/10">
+            <Zap className="h-10 w-10 text-primary" />
           </div>
           <h2 className="text-heading-md font-semibold mb-2">No Active Sprint</h2>
           <p className="text-body text-muted-foreground max-w-md mx-auto mb-lg">
@@ -152,16 +164,46 @@ export default function Sprints() {
           </div>
         </Card>
 
-        {/* Backlog Preview */}
+        {/* Backlog Preview with Task Cards */}
         {backlogTasks.length > 0 && (
-          <div>
-            <h2 className="text-heading-sm font-semibold mb-md">
-              Backlog ({backlogTasks.length} tasks)
-            </h2>
-            <p className="text-body-sm text-muted-foreground mb-md">
+          <Card className="p-md">
+            <div className="flex items-center justify-between mb-md">
+              <h2 className="text-heading-sm font-semibold">Backlog</h2>
+              <Badge variant="secondary">{backlogTasks.length} tasks</Badge>
+            </div>
+            <p className="text-body-sm text-muted-foreground mb-lg">
               These tasks will be available to add to your sprint once created.
             </p>
-          </div>
+            
+            {/* Preview grid of backlog tasks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+              {backlogTasks.slice(0, 6).map(task => (
+                <div 
+                  key={task.id}
+                  className="p-sm rounded-lg border border-border bg-card hover:bg-card-hover transition-smooth cursor-pointer"
+                  onClick={() => handleTaskClick(task.id)}
+                >
+                  <p className="text-body-sm font-medium truncate">{task.title}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    {task.priority && (
+                      <Badge variant="outline" className={priorityColors[task.priority] || 'status-neutral'}>
+                        {task.priority}
+                      </Badge>
+                    )}
+                    {task.status === 'Blocked' && (
+                      <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {backlogTasks.length > 6 && (
+              <p className="text-metadata text-muted-foreground mt-md text-center">
+                +{backlogTasks.length - 6} more tasks in backlog
+              </p>
+            )}
+          </Card>
         )}
 
         <CreateSprintDialog
