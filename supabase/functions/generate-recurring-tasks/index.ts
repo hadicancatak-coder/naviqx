@@ -19,6 +19,11 @@ const DAY_MAP: Record<string, number> = {
   sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
 };
 
+// Map day number to working_days format (lowercase 3-letter)
+const DAY_NUMBER_TO_NAME: Record<number, string> = {
+  0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat'
+};
+
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
@@ -155,6 +160,36 @@ function parseRecurrenceRule(rrule: string | object | null): RecurrenceRule | nu
   }
 }
 
+/**
+ * Check if a given date falls on a working day for any of the assignees
+ * Returns true if at least one assignee works on this day
+ */
+function isWorkingDayForAssignees(
+  date: Date,
+  assigneeWorkingDays: Map<string, string[]>
+): boolean {
+  // If no assignees have working_days configured, allow all days
+  if (assigneeWorkingDays.size === 0) {
+    return true;
+  }
+
+  const dayName = DAY_NUMBER_TO_NAME[date.getDay()];
+  
+  // Check if ANY assignee works on this day
+  for (const [userId, workingDays] of assigneeWorkingDays) {
+    // If user has no working_days set, assume they work all days
+    if (!workingDays || workingDays.length === 0) {
+      return true;
+    }
+    // Check if this day is in their working days (case-insensitive)
+    if (workingDays.some(wd => wd.toLowerCase() === dayName)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -187,9 +222,39 @@ serve(async (req) => {
 
     console.log(`Found ${templates?.length || 0} templates due for generation`);
 
+    // Collect all unique user IDs from templates to fetch their working_days
+    const allUserIds = new Set<string>();
+    for (const template of templates || []) {
+      for (const assignee of template.task_assignees || []) {
+        allUserIds.add(assignee.user_id);
+      }
+    }
+
+    // Fetch working_days for all assignees
+    const userWorkingDaysMap = new Map<string, string[]>();
+    if (allUserIds.size > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, working_days')
+        .in('user_id', Array.from(allUserIds));
+
+      if (profilesError) {
+        console.warn('Error fetching profiles for working_days:', profilesError);
+      } else {
+        for (const profile of profiles || []) {
+          if (profile.working_days) {
+            userWorkingDaysMap.set(profile.user_id, profile.working_days);
+          }
+        }
+      }
+    }
+
+    console.log(`Fetched working_days for ${userWorkingDaysMap.size} users`);
+
     const results = {
       processed: 0,
       created: 0,
+      skipped_non_working_day: 0,
       errors: [] as string[],
     };
 
@@ -201,8 +266,37 @@ serve(async (req) => {
           continue;
         }
 
+        // Build working days map for this template's assignees
+        const templateAssigneeWorkingDays = new Map<string, string[]>();
+        for (const assignee of template.task_assignees || []) {
+          const workingDays = userWorkingDaysMap.get(assignee.user_id);
+          if (workingDays) {
+            templateAssigneeWorkingDays.set(assignee.user_id, workingDays);
+          }
+        }
+
         const occurrenceDate = new Date(template.next_run_at);
         const occurrenceDateStr = occurrenceDate.toISOString().split('T')[0];
+
+        // Check if this is a working day for any assignee
+        const isWorkingDay = isWorkingDayForAssignees(occurrenceDate, templateAssigneeWorkingDays);
+        
+        if (!isWorkingDay) {
+          console.log(`Skipping template ${template.id} on ${occurrenceDateStr} - not a working day for assignees`);
+          results.skipped_non_working_day++;
+          
+          // Still need to advance to the next occurrence
+          const newOccurrenceCount = (template.occurrence_count || 0);
+          const nextRun = calculateNextOccurrence(rule, occurrenceDate, newOccurrenceCount);
+
+          await supabase
+            .from('tasks')
+            .update({ next_run_at: nextRun?.toISOString() || null })
+            .eq('id', template.id);
+
+          results.processed++;
+          continue;
+        }
 
         // Check if instance already exists for this date
         const { data: existing } = await supabase
