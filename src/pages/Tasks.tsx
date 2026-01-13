@@ -322,6 +322,11 @@ export default function Tasks() {
     ).length;
   }, [data, user]);
 
+  const templatesCount = useMemo(() => {
+    if (!data) return 0;
+    return data.filter((task: any) => task.is_recurrence_template === true).length;
+  }, [data]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -338,11 +343,6 @@ export default function Tasks() {
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
     setShowMyTasks(false); setShowTemplates(false); setSelectedProjectId(null); setSelectedSprintId(null);
   };
-  
-  const templatesCount = useMemo(() => {
-    if (!data) return 0;
-    return data.filter((task: any) => task.is_recurrence_template === true).length;
-  }, [data]);
 
   const handleBulkComplete = async () => {
     const result = await completeTasksBulk(selectedTaskIds);
