@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Megaphone, X } from "lucide-react";
@@ -15,7 +15,16 @@ import {
 
 export function NewsTicker() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null);
-  const [emblaRef] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000, stopOnInteraction: false })]);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+    Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true })
+  ]);
+
+  const handleAnnouncementClick = useCallback((announcement: any) => {
+    // Stop autoplay and open dialog
+    const autoplay = emblaApi?.plugins()?.autoplay;
+    if (autoplay) autoplay.stop();
+    setSelectedAnnouncement(announcement);
+  }, [emblaApi]);
   const queryClient = useQueryClient();
 
   const { data: announcements = [] } = useQuery({
@@ -64,7 +73,7 @@ export function NewsTicker() {
               <div 
                 key={announcement.id} 
                 className="flex-[0_0_100%] min-w-0 p-sm cursor-pointer hover:bg-muted/80 transition-smooth"
-                onClick={() => setSelectedAnnouncement(announcement)}
+                onClick={() => handleAnnouncementClick(announcement)}
               >
                 <div className="flex items-center justify-center gap-sm">
                   <Megaphone className="h-4 w-4 text-primary flex-shrink-0" />
