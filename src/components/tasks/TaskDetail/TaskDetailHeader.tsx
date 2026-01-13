@@ -24,7 +24,6 @@ import {
 import { useTaskDetailContext } from "./TaskDetailContext";
 import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { TaskWatchButton } from "@/components/tasks/TaskWatchButton";
-import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 
 interface TaskDetailHeaderProps {
   onClose?: () => void;
@@ -84,23 +83,19 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
         <div className="flex items-center justify-between gap-md">
           {/* Left: Action buttons */}
           <div className="flex items-center gap-sm">
-            {isRecurring ? (
-              <RecurringCompletionToggle taskId={taskId} />
-            ) : (
-              <Button
-                variant={isCompleted ? "default" : "outline"}
-                size="sm"
-                onClick={markComplete}
-                disabled={isCompleted}
-                className={cn(
-                  "gap-xs",
-                  isCompleted && "bg-success hover:bg-success/90"
-                )}
-              >
-                <Check className="h-4 w-4" />
-                {isCompleted ? "Completed" : "Complete"}
-              </Button>
-            )}
+            <Button
+              variant={isCompleted ? "default" : "outline"}
+              size="sm"
+              onClick={markComplete}
+              disabled={isCompleted}
+              className={cn(
+                "gap-xs",
+                isCompleted && "bg-success hover:bg-success/90"
+              )}
+            >
+              <Check className="h-4 w-4" />
+              {isCompleted ? "Completed" : "Complete"}
+            </Button>
             
             <TaskWatchButton taskId={taskId} showWatchers={false} />
             

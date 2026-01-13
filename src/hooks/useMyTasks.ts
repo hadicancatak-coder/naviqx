@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { format, startOfDay, isSameDay } from 'date-fns';
-import { expandRecurringTask } from '@/lib/recurrenceExpander';
+import { format, startOfDay, isSameDay, isToday } from 'date-fns';
 
 interface AgendaItem {
   id: string;
@@ -19,10 +18,10 @@ interface UseMyTasksOptions {
   userId?: string;
   date: Date;
   allTasks: any[];
-  completions: any[];
+  completions?: any[];
 }
 
-export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOptions) {
+export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTasksOptions) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const effectiveUserId = userId || user?.id;
@@ -76,38 +75,25 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
     if (!effectiveUserId) return false;
     
     return task.assignees.some((a: any) => {
-      // Primary check: assignee's user_id matches the effective user
       const assigneeUserId = a.user_id || a.profiles?.user_id;
       return assigneeUserId === effectiveUserId;
     });
   }, [effectiveUserId]);
 
-  // Check if a recurring task occurs on the selected date
-  // Pass empty assignees to skip working day filtering - let the task appear on all recurrence dates
-  const recurringTaskOccursOnDate = useCallback((task: any, targetDate: Date) => {
-    if (!task.recurrence_rrule) return false;
-    
-    const dateStart = startOfDay(targetDate);
-    const dateEnd = new Date(dateStart);
-    dateEnd.setHours(23, 59, 59, 999);
-    
-    try {
-      // Pass empty assignees array to skip working day filtering in expansion
-      // Working day filtering should happen at the UI level based on user viewing
-      const occurrences = expandRecurringTask(
-        task,
-        dateStart,
-        dateEnd,
-        completions.filter(c => c.task_id === task.id),
-        [] // Empty array = no working day filtering during expansion
-      );
-      
-      return occurrences.length > 0;
-    } catch (error) {
-      console.error('Error expanding recurring task:', task.id, error);
-      return false;
+  // Check if a recurring task instance occurs on the selected date
+  const taskOccursOnDate = useCallback((task: any, targetDate: Date) => {
+    // For new template-based instances, check occurrence_date
+    if (task.occurrence_date) {
+      return isSameDay(new Date(task.occurrence_date), targetDate);
     }
-  }, [completions]);
+    
+    // For regular tasks or legacy recurring, check due_at
+    if (task.due_at) {
+      return isSameDay(new Date(task.due_at), targetDate);
+    }
+    
+    return false;
+  }, []);
 
   // Auto-populate agenda based on rules
   const autoPopulateAgenda = useCallback(async () => {
@@ -115,7 +101,7 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
 
     const today = startOfDay(new Date());
     const selectedDateStart = startOfDay(date);
-    const isToday = isSameDay(selectedDateStart, today);
+    const isTodayDate = isSameDay(selectedDateStart, today);
     
     const tasksToAdd: { task_id: string; is_auto_added: boolean }[] = [];
     const existingTaskIds = new Set(agendaItems.map(item => item.task_id));
@@ -127,16 +113,18 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
       // Skip completed, failed, or backlog tasks
       if (task.status === 'Completed' || task.status === 'Failed' || task.status === 'Backlog') continue;
       
+      // Skip templates - they shouldn't appear in agenda
+      if (task.is_recurrence_template) continue;
+      
       // Check if user is assigned to this task
       const assigned = isUserAssigned(task);
       if (!assigned) continue;
 
-      // RULE: Recurring tasks - check if they occur on the selected date
-      // This should be checked FIRST and always auto-add if recurring on this date
-      const hasRecurrence = task.task_type === 'recurring' || task.recurrence_rrule;
-      if (hasRecurrence && task.recurrence_rrule) {
-        const occursToday = recurringTaskOccursOnDate(task, date);
-        if (occursToday) {
+      // RULE: Recurring task instances - check if they occur on the selected date
+      const isRecurringInstance = !!task.template_task_id;
+      if (isRecurringInstance) {
+        const occursOnDate = taskOccursOnDate(task, date);
+        if (occursOnDate) {
           tasksToAdd.push({ task_id: task.id, is_auto_added: true });
           continue;
         }
@@ -147,7 +135,7 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
         const taskDueDate = startOfDay(new Date(task.due_at));
         
         // If viewing today and task is overdue or due today
-        if (isToday && taskDueDate <= today) {
+        if (isTodayDate && taskDueDate <= today) {
           tasksToAdd.push({ task_id: task.id, is_auto_added: true });
           continue;
         }
@@ -160,7 +148,7 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
       }
 
       // RULE: High priority tasks - auto add to today only
-      if (isToday && task.priority === 'High') {
+      if (isTodayDate && task.priority === 'High') {
         tasksToAdd.push({ task_id: task.id, is_auto_added: true });
         continue;
       }
@@ -184,15 +172,11 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
       
       if (error) {
         console.error('Error auto-populating agenda:', error.message, error.details);
-        // RLS error - admin trying to add to another user's agenda
-        if (error.code === '42501' || error.message?.includes('row-level security')) {
-          console.warn('RLS policy blocked agenda auto-populate for user:', effectiveUserId);
-        }
       } else {
         refetch();
       }
     }
-  }, [effectiveUserId, agendaDate, allTasks, agendaItems, date, profileId, isUserAssigned, recurringTaskOccursOnDate, refetch]);
+  }, [effectiveUserId, agendaDate, allTasks, agendaItems, date, profileId, isUserAssigned, taskOccursOnDate, refetch]);
 
   // Run auto-populate when dependencies change
   useEffect(() => {
@@ -223,7 +207,6 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
       ? `${userName} added task to ${targetUserName === 'their' ? 'their' : `${targetUserName}'s`} agenda`
       : `${userName} moved task to Pool from ${targetUserName === 'their' ? 'their' : `${targetUserName}'s`} agenda`;
     
-    // Log for each task
     for (const taskId of taskIds) {
       await supabase.from('comments').insert({
         task_id: taskId,
@@ -250,20 +233,15 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
         .upsert(items, { onConflict: 'user_id,task_id,agenda_date' });
       
       if (error) {
-        console.error('Error adding to agenda:', error.message, error.details);
         throw new Error(error.message);
       }
       
-      // Log activity
       await logAgendaActivity(taskIds, 'add', effectiveUserId);
       return taskIds.length;
     },
-    onSuccess: (count) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-agenda', effectiveUserId, agendaDate] });
       queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-    onError: (error) => {
-      console.error('Failed to add to agenda:', error);
     },
   });
 
@@ -279,12 +257,8 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
         .eq('agenda_date', agendaDate)
         .in('task_id', taskIds);
       
-      if (error) {
-        console.error('Error removing from agenda:', error.message, error.details);
-        throw error;
-      }
+      if (error) throw error;
       
-      // Log activity
       await logAgendaActivity(taskIds, 'remove', effectiveUserId);
     },
     onSuccess: () => {
@@ -293,7 +267,7 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
     },
   });
 
-  // Get tasks that are in the agenda (including recurring task instances)
+  // Get tasks that are in the agenda
   const agendaTasks = useMemo(() => {
     if (!allTasks) return [];
     
@@ -301,10 +275,8 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
     const result: any[] = [];
     const addedIds = new Set<string>();
     
-    // Add tasks that are in the agenda AND assigned to user (safety check for stale data)
     for (const task of allTasks) {
       if (agendaTaskIds.has(task.id) && !addedIds.has(task.id)) {
-        // Only include if user is assigned (to filter out any stale agenda entries)
         if (isUserAssigned(task)) {
           result.push(task);
           addedIds.add(task.id);
@@ -312,40 +284,34 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
       }
     }
     
-    // Also include recurring tasks that occur today but might not be in agenda yet
-    // (for immediate display before auto-populate runs)
+    // Also include recurring instances due today that aren't in agenda yet
     for (const task of allTasks) {
       if (addedIds.has(task.id)) continue;
       if (task.status === 'Completed' || task.status === 'Failed' || task.status === 'Backlog') continue;
+      if (task.is_recurrence_template) continue;
       if (!isUserAssigned(task)) continue;
       
-      const hasRecurrence = task.task_type === 'recurring' || task.recurrence_rrule;
-      if (hasRecurrence && task.recurrence_rrule) {
-        const occursToday = recurringTaskOccursOnDate(task, date);
-        if (occursToday) {
-          result.push({ ...task, isRecurringOccurrence: true });
-          addedIds.add(task.id);
-        }
+      const isRecurringInstance = !!task.template_task_id;
+      if (isRecurringInstance && taskOccursOnDate(task, date)) {
+        result.push({ ...task, isRecurringOccurrence: true });
+        addedIds.add(task.id);
       }
     }
     
     return result;
-  }, [allTasks, agendaItems, date, isUserAssigned, recurringTaskOccursOnDate]);
+  }, [allTasks, agendaItems, date, isUserAssigned, taskOccursOnDate]);
 
-  // Get tasks available to add (assigned to user but not in agenda)
+  // Get tasks available to add
   const availableTasks = useMemo(() => {
     if (!allTasks || !effectiveUserId) return [];
     
     const agendaTaskIds = new Set(agendaTasks.map(t => t.id));
     
     return allTasks.filter(task => {
-      // Not already in agenda
       if (agendaTaskIds.has(task.id)) return false;
-      
-      // Not completed/failed/backlog
       if (task.status === 'Completed' || task.status === 'Failed' || task.status === 'Backlog') return false;
+      if (task.is_recurrence_template) return false;
       
-      // Must be assigned to user or global/unassigned
       const assigned = isUserAssigned(task);
       const isGlobalUnassigned = task.visibility === 'global' && (!task.assignees || task.assignees.length === 0);
       
@@ -354,7 +320,6 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
   }, [allTasks, agendaTasks, effectiveUserId, isUserAssigned]);
 
   return {
-    // New naming
     myTasks: agendaTasks,
     availableTasks,
     isLoading,
@@ -363,7 +328,6 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
     isAdding: addToAgenda.isPending,
     isRemoving: removeFromAgenda.isPending,
     refetch,
-    // Legacy naming for backwards compatibility
     agendaItems,
     agendaTasks,
     addToAgenda: addToAgenda.mutate,
@@ -371,5 +335,4 @@ export function useMyTasks({ userId, date, allTasks, completions }: UseMyTasksOp
   };
 }
 
-// Re-export with old name for backwards compatibility
 export { useMyTasks as useUserAgenda };

@@ -1,41 +1,74 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { RotateCcw, Flame, CheckCircle2, Calendar, ChevronRight } from "lucide-react";
+import { RotateCcw, CheckCircle2, ChevronRight } from "lucide-react";
 import { DataCard } from "@/components/layout/DataCard";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/hooks/useAuth";
-import { expandRecurringTask } from "@/lib/recurrenceExpander";
-import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 import { isToday } from "date-fns";
 import { cn } from "@/lib/utils";
+import { completeTask } from "@/domain/tasks/actions";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export function RecurringTasksToday() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: tasks, isLoading } = useTasks();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
+  // Get recurring task instances that are due today
   const recurringTasksToday = useMemo(() => {
     if (!tasks || !user) return [];
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
     return tasks
       .filter((task: any) => {
-        // Is it a recurring task?
-        if (task.task_type !== 'recurring' && !task.recurrence_rrule) return false;
+        // Is it a recurring instance (has template_task_id) OR legacy recurring task?
+        const isRecurringInstance = !!task.template_task_id;
+        const isLegacyRecurring = task.task_type === 'recurring' || task.recurrence_rrule;
+        
+        if (!isRecurringInstance && !isLegacyRecurring) return false;
+        
+        // Not completed
+        if (task.status === 'Completed') return false;
+        
         // Is user assigned?
         const isAssigned = task.assignees?.some((a: any) => a.user_id === user.id);
         if (!isAssigned) return false;
-        // Is it scheduled for today?
-        const occurrences = expandRecurringTask(task, today, tomorrow, [], task.assignees || []);
-        return occurrences.some(o => isToday(o.occurrenceDate));
+        
+        // For new instances, check if due today via occurrence_date or due_at
+        if (isRecurringInstance) {
+          if (task.occurrence_date) {
+            return isToday(new Date(task.occurrence_date));
+          }
+          if (task.due_at) {
+            return isToday(new Date(task.due_at));
+          }
+        }
+        
+        // For legacy recurring tasks, check due_at
+        if (task.due_at && isToday(new Date(task.due_at))) {
+          return true;
+        }
+        
+        return false;
       })
       .slice(0, 5); // Show max 5
   }, [tasks, user]);
+
+  const handleComplete = async (taskId: string) => {
+    const result = await completeTask(taskId);
+    if (result.success) {
+      toast({ title: "Task completed!", duration: 2000 });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } else {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -91,7 +124,11 @@ export function RecurringTasksToday() {
             className="flex items-center justify-between p-sm rounded-lg bg-card hover:bg-card-hover border border-border/50 transition-smooth group"
           >
             <div className="flex items-center gap-sm flex-1 min-w-0">
-              <RecurringCompletionToggle taskId={task.id} compact />
+              <Checkbox
+                checked={task.status === 'Completed'}
+                onCheckedChange={() => handleComplete(task.id)}
+                className="h-4 w-4"
+              />
               <span 
                 className="text-body-sm text-foreground truncate cursor-pointer hover:text-primary transition-colors"
                 onClick={() => navigate(`/tasks?task=${task.id}`)}
@@ -107,9 +144,9 @@ export function RecurringTasksToday() {
         ))}
       </div>
 
-      {tasks && tasks.filter((t: any) => t.task_type === 'recurring' || t.recurrence_rrule).length > 5 && (
+      {tasks && tasks.filter((t: any) => t.template_task_id || t.task_type === 'recurring').length > 5 && (
         <button
-          onClick={() => navigate('/tasks?filter=recurring')}
+          onClick={() => navigate('/tasks')}
           className="mt-md w-full text-center text-body-sm text-primary hover:underline"
         >
           View all recurring tasks →

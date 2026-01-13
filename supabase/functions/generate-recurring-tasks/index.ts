@@ -231,7 +231,7 @@ serve(async (req) => {
               created_by: template.created_by,
               template_task_id: template.id,
               occurrence_date: occurrenceDateStr,
-              task_type: 'recurring_instance',
+              task_type: 'recurring',
               // Copy other relevant fields
               jira_link: template.jira_link,
             })
