@@ -48,8 +48,8 @@ export const Layout = () => {
         </div>
         <AppSidebar />
         <main className="flex-1 overflow-auto w-full relative z-10">
-          {/* Semi-transparent overlay - lets gradient show through */}
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-0" />
+          {/* Semi-transparent overlay - reduced opacity for better glass translucency */}
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-0" />
           {/* Subtle depth glow that shows through glass surfaces */}
           <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[300px] bg-gradient-to-b from-primary/20 via-primary/10 to-transparent blur-[60px] dark:from-primary/30 dark:via-primary/15" />
