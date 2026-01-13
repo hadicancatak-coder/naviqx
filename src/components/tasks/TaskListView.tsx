@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
-import { RecurringCompletionToggle } from "@/components/tasks/RecurringCompletionToggle";
 type SortField = 'title' | 'entity' | 'status' | 'tags' | 'assignee' | 'created_at' | 'updated_at' | 'due_at';
 type SortOrder = 'asc' | 'desc';
 

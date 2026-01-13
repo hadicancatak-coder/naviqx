@@ -57,24 +57,24 @@ export interface SetStatusOptions {
 /**
  * Complete a single task
  * Sets status to 'Completed' in the database
- * NOTE: Recurring tasks should NOT be completed this way - use daily completions instead
+ * Templates cannot be completed - only their generated instances can
  */
 export async function completeTask(taskId: string): Promise<TaskActionResult> {
   console.log('[Task Actions] completeTask called with:', taskId);
   
   try {
-    // Check if this is a recurring task - they should use daily completions, not full completion
+    // Check if this is a template - templates cannot be completed
     const { data: task } = await supabase
       .from('tasks')
-      .select('recurrence_rrule')
+      .select('is_recurrence_template, template_task_id')
       .eq('id', taskId)
       .single();
 
-    if (task?.recurrence_rrule) {
-      console.warn('[Task Actions] Attempted to fully complete a recurring task. Use daily completion instead.');
+    if (task?.is_recurrence_template) {
+      console.warn('[Task Actions] Attempted to complete a recurrence template.');
       return { 
         success: false, 
-        error: 'Recurring tasks cannot be fully completed. Use the daily completion toggle instead.' 
+        error: 'Recurrence templates cannot be completed. Complete the generated task instances instead.' 
       };
     }
 
