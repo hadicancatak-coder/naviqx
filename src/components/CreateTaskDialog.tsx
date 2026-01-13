@@ -12,10 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
+import { CalendarIcon, AlertTriangle, ChevronDown, ChevronRight, Repeat } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addDays, addWeeks, addMonths } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ENTITIES, TASK_STATUSES } from "@/lib/constants";
 import { mapStatusToDb } from "@/lib/taskStatusMapper";
@@ -27,6 +27,12 @@ import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
 import { useProjects } from "@/hooks/useProjects";
 import { FolderKanban } from "lucide-react";
+import { 
+  RecurrenceRule, 
+  buildRecurrenceConfig, 
+  getRecurrenceLabelNew,
+  calculateFirstOccurrence 
+} from "@/lib/recurrenceUtils";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -52,9 +58,11 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
   const [dueDate, setDueDate] = useState<Date>();
   const [entities, setEntities] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [recurrence, setRecurrence] = useState<string>("none");
-  const [recurrenceDaysOfWeek, setRecurrenceDaysOfWeek] = useState<number[]>([]);
+  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
+  const [recurrenceDaysOfWeek, setRecurrenceDaysOfWeek] = useState<string[]>([]);
   const [recurrenceDayOfMonth, setRecurrenceDayOfMonth] = useState<number | null>(null);
+  const [recurrenceEndType, setRecurrenceEndType] = useState<'never' | 'after_n' | 'until_date'>('never');
+  const [recurrenceEndValue, setRecurrenceEndValue] = useState<string>('');
   const [workingDaysWarning, setWorkingDaysWarning] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
@@ -120,36 +128,51 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
     setLoading(true);
 
     try {
-      // Generate recurrence rule
-      let recurrenceRule = null;
-      if (recurrence !== "none") {
-        if (recurrence === "weekly" && recurrenceDaysOfWeek.length > 0) {
-          const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-          const byDay = recurrenceDaysOfWeek.map(d => dayMap[d]).join(',');
-          recurrenceRule = `FREQ=WEEKLY;BYDAY=${byDay}`;
-        } else if (recurrence === "monthly" && recurrenceDayOfMonth) {
-          recurrenceRule = `FREQ=MONTHLY;BYMONTHDAY=${recurrenceDayOfMonth}`;
-        } else if (recurrence === "daily") {
-          recurrenceRule = `FREQ=DAILY`;
-        }
+      // Build recurrence configuration for templates
+      const isRecurring = recurrence !== 'none';
+      let recurrenceConfig: any = {};
+      let nextRunAt: Date | null = null;
+      
+      if (isRecurring) {
+        const rule: RecurrenceRule = {
+          type: recurrence,
+          interval: 1,
+          days_of_week: recurrence === 'weekly' ? recurrenceDaysOfWeek : undefined,
+          day_of_month: recurrence === 'monthly' ? (recurrenceDayOfMonth || undefined) : undefined,
+          end_condition: recurrenceEndType,
+          end_value: recurrenceEndType === 'after_n' 
+            ? parseInt(recurrenceEndValue) || 10 
+            : recurrenceEndType === 'until_date' 
+              ? recurrenceEndValue 
+              : undefined,
+        };
+        
+        const config = buildRecurrenceConfig(rule, new Date());
+        recurrenceConfig = {
+          recurrence_rrule: JSON.stringify(rule),
+          recurrence_end_type: config.recurrence_end_type,
+          recurrence_end_value: config.recurrence_end_value,
+          next_run_at: config.next_run_at,
+          is_recurrence_template: true,
+          occurrence_count: 0,
+        };
+        nextRunAt = config.next_run_at ? new Date(config.next_run_at) : null;
       }
 
       const taskData = {
         title: title.trim(),
         description: description || null,
         priority,
-        status: mapStatusToDb(status) as "Ongoing" | "Pending" | "Blocked" | "Completed" | "Failed",
-        due_at: dueDate?.toISOString() || null,
+        status: isRecurring ? 'Pending' : mapStatusToDb(status) as "Ongoing" | "Pending" | "Blocked" | "Completed" | "Failed",
+        due_at: isRecurring ? null : (dueDate?.toISOString() || null),
         created_by: user!.id,
         entity: entities.length > 0 ? entities : [],
         labels: tags.length > 0 ? tags : [],
-        recurrence_rrule: recurrenceRule,
-        recurrence_days_of_week: recurrence === 'weekly' ? recurrenceDaysOfWeek : null,
-        recurrence_day_of_month: recurrenceDayOfMonth,
-        task_type: (recurrence !== "none" ? "recurring" : "generic") as "generic" | "recurring" | "campaign",
+        task_type: (isRecurring ? "recurring" : "generic") as "generic" | "recurring" | "campaign",
         visibility: "global" as const,
         failure_reason: status === "Failed" && failureReason.trim() ? failureReason.trim() : null,
         project_id: projectId || null,
+        ...recurrenceConfig,
       };
 
       const { data: createdTask, error } = await supabase
@@ -188,14 +211,19 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
         });
       }
 
+      const toastMsg = isRecurring && nextRunAt
+        ? `Recurring template created. First task on ${format(nextRunAt, 'PP')}`
+        : "Task created successfully";
+      
       toast({
         title: "Success",
-        description: "Task created successfully",
+        description: toastMsg,
       });
 
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["recurring-templates"] });
       
       // Reset and close
       resetForm();
@@ -223,6 +251,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
     setRecurrence("none");
     setRecurrenceDaysOfWeek([]);
     setRecurrenceDayOfMonth(null);
+    setRecurrenceEndType('never');
+    setRecurrenceEndValue('');
     setSelectedAssignees([]);
     setWorkingDaysWarning(null);
     setAdvancedOpen(false);
@@ -295,14 +325,39 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
   };
 
   const weekDays = [
-    { value: 0, label: "Sun" },
-    { value: 1, label: "Mon" },
-    { value: 2, label: "Tue" },
-    { value: 3, label: "Wed" },
-    { value: 4, label: "Thu" },
-    { value: 5, label: "Fri" },
-    { value: 6, label: "Sat" },
+    { value: 'sun', label: "Sun" },
+    { value: 'mon', label: "Mon" },
+    { value: 'tue', label: "Tue" },
+    { value: 'wed', label: "Wed" },
+    { value: 'thu', label: "Thu" },
+    { value: 'fri', label: "Fri" },
+    { value: 'sat', label: "Sat" },
   ];
+  
+  // Preview text for recurrence
+  const getRecurrencePreview = () => {
+    if (recurrence === 'none') return null;
+    
+    const rule: RecurrenceRule = {
+      type: recurrence,
+      interval: 1,
+      days_of_week: recurrence === 'weekly' ? recurrenceDaysOfWeek : undefined,
+      day_of_month: recurrence === 'monthly' ? (recurrenceDayOfMonth || undefined) : undefined,
+      end_condition: recurrenceEndType,
+      end_value: recurrenceEndType === 'after_n' 
+        ? parseInt(recurrenceEndValue) || undefined 
+        : recurrenceEndType === 'until_date' 
+          ? recurrenceEndValue 
+          : undefined,
+    };
+    
+    const label = getRecurrenceLabelNew(rule);
+    const nextRun = calculateFirstOccurrence(rule, new Date());
+    
+    return { label, nextRun };
+  };
+  
+  const recurrencePreview = getRecurrencePreview();
 
   return (
     <>
@@ -489,13 +544,19 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
 
                 {/* Recurrence */}
                 <div className="space-y-2">
-                  <Label>Recurrence</Label>
-                  <Select value={recurrence} onValueChange={setRecurrence}>
+                  <Label className="flex items-center gap-2">
+                    <Repeat className="h-4 w-4" />
+                    Recurrence
+                  </Label>
+                  <Select 
+                    value={recurrence} 
+                    onValueChange={(v) => setRecurrence(v as 'none' | 'daily' | 'weekly' | 'monthly')}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="none">None (one-time task)</SelectItem>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
@@ -545,6 +606,73 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+
+                {/* Recurrence End Condition */}
+                {recurrence !== 'none' && (
+                  <div className="space-y-2">
+                    <Label>Ends</Label>
+                    <Select 
+                      value={recurrenceEndType} 
+                      onValueChange={(v) => setRecurrenceEndType(v as 'never' | 'after_n' | 'until_date')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="never">Never</SelectItem>
+                        <SelectItem value="after_n">After X occurrences</SelectItem>
+                        <SelectItem value="until_date">Until date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {recurrenceEndType === 'after_n' && (
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="Number of occurrences"
+                        value={recurrenceEndValue}
+                        onChange={(e) => setRecurrenceEndValue(e.target.value)}
+                      />
+                    )}
+                    
+                    {recurrenceEndType === 'until_date' && (
+                      <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" className="w-full justify-start">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {recurrenceEndValue ? format(new Date(recurrenceEndValue), 'PP') : 'Pick end date'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={recurrenceEndValue ? new Date(recurrenceEndValue) : undefined}
+                            onSelect={(date) => setRecurrenceEndValue(date?.toISOString().split('T')[0] || '')}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                )}
+
+                {/* Recurrence Preview */}
+                {recurrencePreview && (
+                  <Alert>
+                    <Repeat className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>{recurrencePreview.label}</strong>
+                      {recurrencePreview.nextRun && (
+                        <span className="block text-muted-foreground text-metadata">
+                          First task: {format(recurrencePreview.nextRun, 'PPP')}
+                        </span>
+                      )}
+                      <span className="block text-muted-foreground text-metadata mt-1">
+                        This creates a template. New tasks are generated automatically.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </CollapsibleContent>
             </Collapsible>

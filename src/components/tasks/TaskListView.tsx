@@ -408,18 +408,14 @@ export function TaskListView({
                 focused && "ring-1 ring-inset ring-primary/50 bg-primary/5"
               )}
             >
-              {/* Completion Checkbox - Smart for recurring */}
+              {/* Completion Checkbox - Standard for all tasks */}
               <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
-                {(task.recurrence_rrule || task.task_type === 'recurring') ? (
-                  <RecurringCompletionToggle taskId={task.id} compact className="flex-shrink-0" />
-                ) : (
-                  <Checkbox
-                    checked={completed}
-                    onCheckedChange={() => handleComplete(task, { stopPropagation: () => {} } as any)}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn("h-4 w-4", completed && "bg-success border-success")}
-                  />
-                )}
+                <Checkbox
+                  checked={completed}
+                  onCheckedChange={() => handleComplete(task, { stopPropagation: () => {} } as any)}
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn("h-4 w-4", completed && "bg-success border-success")}
+                />
               </div>
 
               {/* Priority Dot */}

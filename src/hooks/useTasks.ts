@@ -15,6 +15,7 @@ export interface TaskFilters {
   } | null;
   status?: string;
   search?: string;
+  includeTemplates?: boolean; // New option to include templates
 }
 
 export function useTasks(filters?: TaskFilters) {
@@ -24,7 +25,7 @@ export function useTasks(filters?: TaskFilters) {
   const fetchTasks = async () => {
     if (!user) return [];
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("tasks")
       .select(`
         *,
@@ -36,6 +37,14 @@ export function useTasks(filters?: TaskFilters) {
       `)
       .is('parent_id', null) // Only fetch top-level tasks, not subtasks
       .order("created_at", { ascending: false });
+
+    // Filter out recurrence templates by default - they should not appear in main task list
+    // Templates only exist to generate instances, not to be worked on directly
+    if (!filters?.includeTemplates) {
+      query = query.or('is_recurrence_template.is.null,is_recurrence_template.eq.false');
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -49,7 +58,7 @@ export function useTasks(filters?: TaskFilters) {
   };
 
   const query = useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', filters?.includeTemplates],
     queryFn: fetchTasks,
     staleTime: 30000, // 30 seconds - reduce refetches
     refetchOnWindowFocus: false, // Don't refetch on tab focus
