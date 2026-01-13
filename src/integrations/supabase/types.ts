@@ -3571,10 +3571,14 @@ export type Database = {
           failure_reason: string | null
           id: string
           is_external_dependency: boolean | null
+          is_recurrence_template: boolean | null
           jira_key: string | null
           jira_link: string | null
           jira_links: Json | null
           labels: string[] | null
+          next_run_at: string | null
+          occurrence_count: number | null
+          occurrence_date: string | null
           order_index: number | null
           parent_id: string | null
           pending_approval: boolean | null
@@ -3585,6 +3589,8 @@ export type Database = {
           recurrence_day_of_month: number | null
           recurrence_day_of_week: number | null
           recurrence_days_of_week: number[] | null
+          recurrence_end_type: string | null
+          recurrence_end_value: string | null
           recurrence_rrule: string | null
           requested_status: Database["public"]["Enums"]["task_status"] | null
           sort_order: number | null
@@ -3593,6 +3599,7 @@ export type Database = {
           status: Database["public"]["Enums"]["task_status"]
           task_type: Database["public"]["Enums"]["task_type"] | null
           teams: Json | null
+          template_task_id: string | null
           title: string
           updated_at: string
           updated_by: string | null
@@ -3621,10 +3628,14 @@ export type Database = {
           failure_reason?: string | null
           id?: string
           is_external_dependency?: boolean | null
+          is_recurrence_template?: boolean | null
           jira_key?: string | null
           jira_link?: string | null
           jira_links?: Json | null
           labels?: string[] | null
+          next_run_at?: string | null
+          occurrence_count?: number | null
+          occurrence_date?: string | null
           order_index?: number | null
           parent_id?: string | null
           pending_approval?: boolean | null
@@ -3635,6 +3646,8 @@ export type Database = {
           recurrence_day_of_month?: number | null
           recurrence_day_of_week?: number | null
           recurrence_days_of_week?: number[] | null
+          recurrence_end_type?: string | null
+          recurrence_end_value?: string | null
           recurrence_rrule?: string | null
           requested_status?: Database["public"]["Enums"]["task_status"] | null
           sort_order?: number | null
@@ -3643,6 +3656,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           task_type?: Database["public"]["Enums"]["task_type"] | null
           teams?: Json | null
+          template_task_id?: string | null
           title: string
           updated_at?: string
           updated_by?: string | null
@@ -3671,10 +3685,14 @@ export type Database = {
           failure_reason?: string | null
           id?: string
           is_external_dependency?: boolean | null
+          is_recurrence_template?: boolean | null
           jira_key?: string | null
           jira_link?: string | null
           jira_links?: Json | null
           labels?: string[] | null
+          next_run_at?: string | null
+          occurrence_count?: number | null
+          occurrence_date?: string | null
           order_index?: number | null
           parent_id?: string | null
           pending_approval?: boolean | null
@@ -3685,6 +3703,8 @@ export type Database = {
           recurrence_day_of_month?: number | null
           recurrence_day_of_week?: number | null
           recurrence_days_of_week?: number[] | null
+          recurrence_end_type?: string | null
+          recurrence_end_value?: string | null
           recurrence_rrule?: string | null
           requested_status?: Database["public"]["Enums"]["task_status"] | null
           sort_order?: number | null
@@ -3693,6 +3713,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           task_type?: Database["public"]["Enums"]["task_type"] | null
           teams?: Json | null
+          template_task_id?: string | null
           title?: string
           updated_at?: string
           updated_by?: string | null
@@ -3732,6 +3753,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_template_task_id_fkey"
+            columns: ["template_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
