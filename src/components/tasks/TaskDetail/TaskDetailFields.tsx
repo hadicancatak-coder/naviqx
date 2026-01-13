@@ -7,12 +7,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Clock, FolderKanban } from "lucide-react";
+import { CalendarIcon, Clock, FolderKanban, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
 import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
+import { SprintSelector } from "@/components/tasks/SprintSelector";
 import { useTaskDetailContext } from "./TaskDetailContext";
 import { useProjects } from "@/hooks/useProjects";
 
@@ -216,6 +217,15 @@ export function TaskDetailFields() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Sprint */}
+      <div className="space-y-xs">
+        <Label className="text-metadata text-muted-foreground">Sprint</Label>
+        <SprintSelector
+          value={task?.sprint || null}
+          onChange={(v) => saveField('sprint', v)}
+        />
       </div>
 
       <Separator />

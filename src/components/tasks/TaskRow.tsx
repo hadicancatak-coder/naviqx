@@ -3,7 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks, Link2 } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks, Link2 as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,8 @@ import { getRecurrenceLabel } from "@/lib/recurrenceExpander";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
+import { StaleBadge } from "@/components/tasks/StaleBadge";
+import { DependencyBadge } from "@/components/tasks/DependencyBadge";
 
 interface TaskRowProps {
   task: any;
@@ -243,7 +245,7 @@ export function TaskRow({
         </Badge>
       )}
 
-      {/* Badges (subtasks, recurring, external) */}
+      {/* Badges (subtasks, recurring, external, stale, dependencies) */}
       {subtaskCount > 0 && !compact && (
         <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
           <ListChecks className="h-2.5 w-2.5 mr-0.5" />
@@ -261,6 +263,12 @@ export function TaskRow({
           <ExternalLink className="h-2.5 w-2.5" />
         </Badge>
       )}
+      
+      {/* Stale indicator */}
+      {!compact && <StaleBadge task={task} />}
+      
+      {/* Dependencies indicator */}
+      {!compact && <DependencyBadge taskId={task.id} />}
 
       {/* Assignee Avatar */}
       {task.assignees && task.assignees.length > 0 && (
@@ -313,7 +321,7 @@ export function TaskRow({
               }}
               className="text-body-sm"
             >
-              <Link2 className="mr-2 h-3.5 w-3.5" />
+              <LinkIcon className="mr-2 h-3.5 w-3.5" />
               Copy Link
             </DropdownMenuItem>
             {onComplete && (
