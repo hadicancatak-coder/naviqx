@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Megaphone, X } from "lucide-react";
@@ -6,25 +6,20 @@ import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { realtimeService } from "@/lib/realtimeService";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  priority: string;
+  created_at: string;
+}
 
 export function NewsTicker() {
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null);
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [emblaRef] = useEmblaCarousel({ loop: true }, [
     Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true })
   ]);
-
-  const handleAnnouncementClick = useCallback((announcement: any) => {
-    // Stop autoplay and open dialog
-    const autoplay = emblaApi?.plugins()?.autoplay;
-    if (autoplay) autoplay.stop();
-    setSelectedAnnouncement(announcement);
-  }, [emblaApi]);
   const queryClient = useQueryClient();
 
   const { data: announcements = [] } = useQuery({
@@ -36,12 +31,11 @@ export function NewsTicker() {
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(5);
-      return data || [];
+      return (data || []) as Announcement[];
     },
-    staleTime: 60 * 1000, // 1 minute cache
+    staleTime: 60 * 1000,
   });
 
-  // Use centralized realtime service
   useEffect(() => {
     const unsubscribe = realtimeService.subscribe("announcements", () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
@@ -70,10 +64,15 @@ export function NewsTicker() {
         <div ref={emblaRef} className="overflow-hidden">
           <div className="flex">
             {announcements.map((announcement) => (
-              <div 
+              <button 
                 key={announcement.id} 
-                className="flex-[0_0_100%] min-w-0 p-sm cursor-pointer hover:bg-muted/80 transition-smooth"
-                onClick={() => handleAnnouncementClick(announcement)}
+                type="button"
+                className="flex-[0_0_100%] min-w-0 p-sm cursor-pointer hover:bg-muted/80 transition-smooth text-left w-full"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedAnnouncement(announcement);
+                }}
               >
                 <div className="flex items-center justify-center gap-sm">
                   <Megaphone className="h-4 w-4 text-primary flex-shrink-0" />
@@ -84,35 +83,62 @@ export function NewsTicker() {
                   <span className="text-muted-foreground">-</span>
                   <span className="text-body text-muted-foreground truncate">{announcement.message}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      <Dialog open={!!selectedAnnouncement} onOpenChange={(open) => !open && setSelectedAnnouncement(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-sm">
+      {/* Custom modal without Dialog component */}
+      {selectedAnnouncement && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: 9999 }}
+        >
+          {/* Overlay */}
+          <div 
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setSelectedAnnouncement(null)}
+          />
+          
+          {/* Content */}
+          <div 
+            className="relative bg-card border border-border rounded-2xl p-lg max-w-2xl w-full mx-md shadow-2xl"
+            style={{ zIndex: 10000 }}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setSelectedAnnouncement(null)}
+              className="absolute right-md top-md rounded-sm opacity-70 hover:opacity-100 transition-smooth"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-sm mb-md pr-8">
               <Megaphone className="h-5 w-5 text-primary" />
-              {selectedAnnouncement?.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-md">
-            <div className="flex items-center gap-sm">
-              <Badge className={getPriorityColor(selectedAnnouncement?.priority)}>
-                {selectedAnnouncement?.priority}
-              </Badge>
-              <span className="text-metadata text-muted-foreground">
-                {selectedAnnouncement?.created_at && new Date(selectedAnnouncement.created_at).toLocaleDateString()}
-              </span>
+              <h2 className="text-heading-md font-semibold">{selectedAnnouncement.title}</h2>
             </div>
-            <p className="text-body text-foreground whitespace-pre-wrap">
-              {selectedAnnouncement?.message}
-            </p>
+
+            {/* Content */}
+            <div className="space-y-md">
+              <div className="flex items-center gap-sm">
+                <Badge className={getPriorityColor(selectedAnnouncement.priority)}>
+                  {selectedAnnouncement.priority}
+                </Badge>
+                <span className="text-metadata text-muted-foreground">
+                  {new Date(selectedAnnouncement.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-body text-foreground whitespace-pre-wrap">
+                {selectedAnnouncement.message}
+              </p>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </>
   );
 }
