@@ -476,6 +476,9 @@ export default function Tasks() {
                 if (!selectedAssignees.includes(user.id)) {
                   setSelectedAssignees([user.id]);
                 }
+              } else if (!newValue) {
+                // Clear the assignee filter when disabling My Tasks
+                setSelectedAssignees([]);
               }
             }}
             className="gap-2"
