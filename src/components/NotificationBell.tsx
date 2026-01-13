@@ -209,8 +209,8 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0 overflow-hidden" align="end" sideOffset={8}>
-        <div className="flex items-center justify-between p-md border-b border-border">
+      <PopoverContent className="w-96 p-0 overflow-hidden bg-popover" align="end" sideOffset={8}>
+        <div className="flex items-center justify-between p-md border-b border-border/50 bg-popover/50">
           <h3 className="text-heading-sm font-semibold">Notifications</h3>
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
@@ -235,7 +235,7 @@ export function NotificationBell() {
                 <button
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className="w-full p-sm hover:bg-card-hover transition-colors text-left flex gap-sm items-start"
+                  className="w-full p-sm hover:bg-accent/50 transition-colors text-left flex gap-sm items-start"
                 >
                   <div className="text-xl flex-shrink-0">
                     {getNotificationIcon(notification.type)}
@@ -258,7 +258,7 @@ export function NotificationBell() {
           )}
         </ScrollArea>
         
-        <div className="p-sm border-t border-border">
+        <div className="p-sm border-t border-border/50 bg-popover/50">
           <Button
             variant="ghost"
             className="w-full"
