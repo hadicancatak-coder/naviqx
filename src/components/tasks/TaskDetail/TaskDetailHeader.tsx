@@ -62,7 +62,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
 
   return (
     <>
-      <div className="flex-shrink-0 px-md py-sm border-b border-border space-y-sm">
+      <div className="flex-shrink-0 px-md py-sm border-b border-white/10 space-y-sm">
         {/* Parent task navigation for subtasks */}
         {isSubtask && parentTask && (
           <div className="flex items-center gap-sm p-sm rounded-lg bg-muted/50 border border-border">
