@@ -408,15 +408,8 @@ export function TaskListView({
                 focused && "ring-1 ring-inset ring-primary/50 bg-primary/5"
               )}
             >
-              {/* Selection Checkbox */}
-              <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0 flex items-center gap-1">
-                <Checkbox
-                  checked={selected}
-                  onCheckedChange={(checked) => handleSelect(task.id, checked as boolean, { stopPropagation: () => {} } as any)}
-                  onClick={(e) => handleSelect(task.id, !selected, e)}
-                  className="h-4 w-4"
-                />
-                {/* Completion toggle - smart for recurring */}
+              {/* Completion Checkbox - Smart for recurring */}
+              <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
                 {(task.recurrence_rrule || task.task_type === 'recurring') ? (
                   <RecurringCompletionToggle taskId={task.id} compact className="flex-shrink-0" />
                 ) : (
