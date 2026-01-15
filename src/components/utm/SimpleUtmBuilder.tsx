@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -306,9 +306,27 @@ export function SimpleUtmBuilder() {
     return code ? emojiMap[code] || "🌍" : "🌍";
   };
 
-  // Initialize rows from LPs when entity changes, applying saved order
+  // Use refs to track campaigns and platforms without triggering re-renders
+  const campaignsRef = useRef(campaigns);
+  const platformsRef = useRef(platforms);
+  
+  // Keep refs updated
   useEffect(() => {
-    if (selectedEntityId && allLpLinks.length > 0 && campaigns && platforms) {
+    campaignsRef.current = campaigns;
+  }, [campaigns]);
+  
+  useEffect(() => {
+    platformsRef.current = platforms;
+  }, [platforms]);
+
+  // Initialize rows from LPs when entity changes, applying saved order
+  // NOTE: campaigns and platforms are intentionally NOT in dependencies to prevent
+  // re-initialization when new campaigns/platforms are added
+  useEffect(() => {
+    const currentCampaigns = campaignsRef.current;
+    const currentPlatforms = platformsRef.current;
+    
+    if (selectedEntityId && allLpLinks.length > 0 && currentCampaigns && currentPlatforms) {
       // Create rows from all LPs
       let orderedLpLinks = [...allLpLinks];
       
@@ -331,8 +349,8 @@ export function SimpleUtmBuilder() {
         lpLinkId: lp.id,
         lpName: lp.name || "Unnamed",
         language: "EN",
-        campaign: campaigns[0]?.id || "",
-        platform: platforms[0]?.id || "",
+        campaign: currentCampaigns[0]?.id || "",
+        platform: currentPlatforms[0]?.id || "",
         content: "",
         archivedAt: null,
       }));
@@ -340,7 +358,8 @@ export function SimpleUtmBuilder() {
     } else if (!selectedEntityId) {
       setRows([]);
     }
-  }, [selectedEntityId, allLpLinks.length, campaigns, platforms, orderPreferences]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEntityId, allLpLinks.length, orderPreferences]);
 
   // Generate UTM URL for a row
   const generateRowUrl = useCallback(
