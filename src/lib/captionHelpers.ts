@@ -92,10 +92,19 @@ export function parseContentForEditing(content: unknown): { en: string; ar: stri
 
 /**
  * Serialize content for database storage
+ * Includes 'text' field for backward compatibility with selectors
  */
-export function serializeContent(content: { en: string; ar: string }): { en: string; ar: string } {
+export function serializeContent(content: { en: string; ar: string }): { en: string; ar: string; text: string } {
+  const enText = content.en || "";
+  const arText = content.ar || "";
+  
+  // Strip HTML from text field for compatibility with simple selectors
+  const plainEn = enText.replace(/<[^>]*>/g, '').trim();
+  const plainAr = arText.replace(/<[^>]*>/g, '').trim();
+  
   return {
-    en: content.en || "",
-    ar: content.ar || "",
+    en: enText,
+    ar: arText,
+    text: plainEn || plainAr, // Fallback to AR if EN is empty
   };
 }

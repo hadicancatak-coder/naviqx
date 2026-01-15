@@ -89,6 +89,8 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       return data;
     },
     onSuccess: () => {
+      // Invalidate ad-elements cache for Caption Library sync
+      queryClient.invalidateQueries({ queryKey: ['ad-elements'] });
       toast.success("Element saved to library!");
     },
     onError: (error: any) => {
@@ -252,11 +254,16 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       return;
     }
 
+    // Standardize content format: { text: string } for compatibility
+    const contentData = type === 'sitelink' && typeof elementContent === 'object'
+      ? elementContent
+      : { text: typeof elementContent === 'string' ? elementContent : '' };
+
     createElementMutation.mutate({
       element_type: type,
-      content: elementContent,
+      content: contentData,
       created_by: user.id,
-      entity: [entity],  // Fixed: wrap in array to match database schema
+      entity: [entity],
       language: language,
       google_status: 'approved',
       use_count: 0

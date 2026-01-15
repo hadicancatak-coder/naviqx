@@ -67,9 +67,9 @@ export default function CaptionLibrary() {
 
   const debouncedSearch = useDebouncedValue(search, 300);
 
-  // Fetch captions from ad_elements table
+  // Fetch captions from ad_elements table - unified query key for cache sync
   const { data: captions, isLoading } = useQuery({
-    queryKey: ["captions", typeFilter, entityFilter, languageFilter, statusFilter, debouncedSearch],
+    queryKey: ["ad-elements", { type: typeFilter, entity: entityFilter, language: languageFilter, status: statusFilter, search: debouncedSearch }],
     queryFn: async () => {
       let query = supabase.from("ad_elements").select("*");
 
@@ -80,6 +80,7 @@ export default function CaptionLibrary() {
         query = query.contains("entity", [entityFilter]);
       }
       if (languageFilter !== "all") {
+        // Fixed: match stored format (uppercase)
         query = query.eq("language", languageFilter.toUpperCase());
       }
       if (statusFilter !== "all") {
@@ -96,7 +97,7 @@ export default function CaptionLibrary() {
         filtered = filtered.filter((item) => {
           const contentText = typeof item.content === "string" 
             ? item.content 
-            : (item.content as any)?.text || JSON.stringify(item.content);
+            : (item.content as any)?.text || (item.content as any)?.en || JSON.stringify(item.content);
           return contentText.toLowerCase().includes(searchLower);
         });
       }
@@ -121,16 +122,30 @@ export default function CaptionLibrary() {
       return;
     }
 
-    const headers = ["Type", "Content", "Entity", "Language", "Status", "Uses", "Created"];
-    const rows = captions.map((c) => [
-      c.element_type,
-      typeof c.content === "string" ? c.content : c.content?.text || "",
-      c.entity?.join("; ") || "",
-      c.language || "EN",
-      c.google_status || "pending",
-      c.use_count || 0,
-      format(new Date(c.created_at), "yyyy-MM-dd"),
-    ]);
+    const headers = ["Type", "EN Content", "AR Content", "Entity", "Language", "Status", "Uses", "Created"];
+    const rows = captions.map((c) => {
+      // Handle all content formats consistently
+      let enContent = "";
+      let arContent = "";
+      
+      if (typeof c.content === "string") {
+        enContent = c.content;
+      } else if (c.content) {
+        enContent = c.content.text || c.content.en || "";
+        arContent = c.content.ar || "";
+      }
+      
+      return [
+        c.element_type,
+        enContent.replace(/<[^>]*>/g, ''), // Strip HTML
+        arContent.replace(/<[^>]*>/g, ''),
+        c.entity?.join("; ") || "",
+        c.language || "EN",
+        c.google_status || "pending",
+        c.use_count || 0,
+        format(new Date(c.created_at), "yyyy-MM-dd"),
+      ];
+    });
 
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -293,7 +308,7 @@ export default function CaptionLibrary() {
         onOpenChange={setDialogOpen}
         caption={editingCaption}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["captions"] });
+          queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
           setDialogOpen(false);
         }}
       />
@@ -302,7 +317,7 @@ export default function CaptionLibrary() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["captions"] });
+          queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
         }}
       />
     </PageContainer>
