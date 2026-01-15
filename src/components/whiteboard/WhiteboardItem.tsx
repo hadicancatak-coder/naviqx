@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { CheckSquare, StickyNote, Type, GripVertical } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -18,8 +18,7 @@ interface WhiteboardItemProps {
   onContentChange: (id: string, content: string) => void;
   onSave: (id: string) => void;
   onStartConnect?: (id: string, side: "top" | "right" | "bottom" | "left") => void;
-  canvasWidth: number;
-  canvasHeight: number;
+  scale?: number;
   showConnectionPoints?: boolean;
 }
 
@@ -43,7 +42,8 @@ export function getConnectionPoint(
   }
 }
 
-export function WhiteboardItem({
+// Memoized WhiteboardItem component for performance
+export const WhiteboardItem = memo(function WhiteboardItem({
   item,
   isSelected,
   onSelect,
@@ -52,8 +52,7 @@ export function WhiteboardItem({
   onContentChange,
   onSave,
   onStartConnect,
-  canvasWidth,
-  canvasHeight,
+  scale = 1,
   showConnectionPoints,
 }: WhiteboardItemProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,11 +64,14 @@ export function WhiteboardItem({
   
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, itemX: 0, itemY: 0 });
   const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, width: 0, height: 0 });
+  const rafRef = useRef<number | null>(null);
 
   // Track previous item ID to detect external changes
   const prevItemIdRef = useRef(item.id);
 
-  // TipTap editor for rich text editing (text type only)
+  // Lazy initialize TipTap editor only when editing text type
+  const shouldInitEditor = item.type === "text";
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -96,7 +98,16 @@ export function WhiteboardItem({
         ),
       },
     },
-  }, [item.id, item.type]);
+  }, [item.id, shouldInitEditor]);
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isEditing && textareaRef.current && item.type === "sticky") {
@@ -134,34 +145,53 @@ export function WhiteboardItem({
     containerRef.current?.setPointerCapture(e.pointerId);
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (isDragging) {
-      const deltaX = e.clientX - dragStartRef.current.mouseX;
-      const deltaY = e.clientY - dragStartRef.current.mouseY;
+      // Cancel any pending RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
       
-      const newX = Math.max(0, Math.min(canvasWidth - item.width, dragStartRef.current.itemX + deltaX));
-      const newY = Math.max(0, Math.min(canvasHeight - item.height, dragStartRef.current.itemY + deltaY));
-      
-      onMove(item.id, Math.round(newX), Math.round(newY));
+      // Use RAF for smooth 60fps updates
+      rafRef.current = requestAnimationFrame(() => {
+        const deltaX = (e.clientX - dragStartRef.current.mouseX) / scale;
+        const deltaY = (e.clientY - dragStartRef.current.mouseY) / scale;
+        
+        const newX = dragStartRef.current.itemX + deltaX;
+        const newY = dragStartRef.current.itemY + deltaY;
+        
+        onMove(item.id, Math.round(newX), Math.round(newY));
+      });
     } else if (isResizing) {
-      const deltaX = e.clientX - resizeStartRef.current.mouseX;
-      const deltaY = e.clientY - resizeStartRef.current.mouseY;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
       
-      const newWidth = Math.max(MIN_WIDTH, Math.min(canvasWidth - item.x, resizeStartRef.current.width + deltaX));
-      const newHeight = Math.max(MIN_HEIGHT, Math.min(canvasHeight - item.y, resizeStartRef.current.height + deltaY));
-      
-      onResize(item.id, Math.round(newWidth), Math.round(newHeight));
+      rafRef.current = requestAnimationFrame(() => {
+        const deltaX = (e.clientX - resizeStartRef.current.mouseX) / scale;
+        const deltaY = (e.clientY - resizeStartRef.current.mouseY) / scale;
+        
+        const newWidth = Math.max(MIN_WIDTH, resizeStartRef.current.width + deltaX);
+        const newHeight = Math.max(MIN_HEIGHT, resizeStartRef.current.height + deltaY);
+        
+        onResize(item.id, Math.round(newWidth), Math.round(newHeight));
+      });
     }
-  };
+  }, [isDragging, isResizing, scale, item.id, onMove, onResize]);
 
-  const handlePointerUp = (e: React.PointerEvent) => {
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (isDragging || isResizing) {
       containerRef.current?.releasePointerCapture(e.pointerId);
       setIsDragging(false);
       setIsResizing(false);
       onSave(item.id);
+      
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     }
-  };
+  }, [isDragging, isResizing, item.id, onSave]);
 
   const handleResizeStart = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -377,4 +407,18 @@ export function WhiteboardItem({
       )}
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison for memoization
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.x === nextProps.item.x &&
+    prevProps.item.y === nextProps.item.y &&
+    prevProps.item.width === nextProps.item.width &&
+    prevProps.item.height === nextProps.item.height &&
+    prevProps.item.content === nextProps.item.content &&
+    prevProps.item.color === nextProps.item.color &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.scale === nextProps.scale &&
+    prevProps.showConnectionPoints === nextProps.showConnectionPoints
+  );
+});
