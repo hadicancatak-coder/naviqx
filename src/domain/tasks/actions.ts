@@ -58,17 +58,23 @@ export interface SetStatusOptions {
  * Complete a single task
  * Sets status to 'Completed' in the database
  * Templates cannot be completed - only their generated instances can
+ * For collaborative tasks: marks current user's completion, only completes task when all assignees done
  */
-export async function completeTask(taskId: string): Promise<TaskActionResult> {
-  console.log('[Task Actions] completeTask called with:', taskId);
+export async function completeTask(taskId: string, userId?: string): Promise<TaskActionResult> {
+  console.log('[Task Actions] completeTask called with:', taskId, userId);
   
   try {
-    // Check if this is a template - templates cannot be completed
-    const { data: task } = await supabase
+    // Fetch task with assignee info
+    const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('is_recurrence_template, template_task_id')
+      .select('is_recurrence_template, template_task_id, is_collaborative')
       .eq('id', taskId)
       .single();
+
+    if (taskError) {
+      console.error('[Task Actions] Error fetching task:', taskError);
+      return { success: false, error: taskError.message };
+    }
 
     if (task?.is_recurrence_template) {
       console.warn('[Task Actions] Attempted to complete a recurrence template.');
@@ -76,6 +82,55 @@ export async function completeTask(taskId: string): Promise<TaskActionResult> {
         success: false, 
         error: 'Recurrence templates cannot be completed. Complete the generated task instances instead.' 
       };
+    }
+
+    // Handle collaborative tasks
+    if (task?.is_collaborative && userId) {
+      // Get current user's profile ID
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (!profile) {
+        return { success: false, error: 'User profile not found' };
+      }
+
+      // Mark this user's completion
+      const { error: assigneeError } = await supabase
+        .from('task_assignees')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('task_id', taskId)
+        .eq('user_id', profile.id);
+
+      if (assigneeError) {
+        console.error('[Task Actions] Error marking assignee completion:', assigneeError);
+        return { success: false, error: assigneeError.message };
+      }
+
+      // Check if all assignees have completed
+      const { data: assignees } = await supabase
+        .from('task_assignees')
+        .select('id, completed_at')
+        .eq('task_id', taskId);
+
+      const allCompleted = assignees?.every(a => a.completed_at !== null);
+
+      if (!allCompleted) {
+        const completedCount = assignees?.filter(a => a.completed_at).length || 0;
+        const totalCount = assignees?.length || 0;
+        return { 
+          success: true, 
+          data: { 
+            partialComplete: true, 
+            completedCount, 
+            totalCount,
+            message: `Marked as complete (${completedCount}/${totalCount} assignees done)` 
+          } 
+        };
+      }
+      // All assignees completed, continue to mark task as completed
     }
 
     const { data, error } = await supabase
@@ -96,6 +151,74 @@ export async function completeTask(taskId: string): Promise<TaskActionResult> {
     console.error('[Task Actions] completeTask exception:', err);
     return { success: false, error: err.message || 'Failed to complete task' };
   }
+}
+
+/**
+ * Toggle collaborative mode for a task
+ */
+export async function setTaskCollaborative(taskId: string, isCollaborative: boolean): Promise<TaskActionResult> {
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ is_collaborative: isCollaborative, updated_at: new Date().toISOString() })
+      .eq('id', taskId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // If turning off collaborative mode, clear all individual completions
+    if (!isCollaborative) {
+      await supabase
+        .from('task_assignees')
+        .update({ completed_at: null })
+        .eq('task_id', taskId);
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to update collaborative mode' };
+  }
+}
+
+/**
+ * Get completion status for collaborative task
+ */
+export async function getCollaborativeStatus(taskId: string): Promise<{
+  isCollaborative: boolean;
+  assignees: Array<{ id: string; name: string; completed: boolean; completedAt: string | null }>;
+  allCompleted: boolean;
+}> {
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('is_collaborative')
+    .eq('id', taskId)
+    .single();
+
+  const { data: assignees } = await supabase
+    .from('task_assignees')
+    .select(`
+      id,
+      user_id,
+      completed_at,
+      profiles:user_id (name)
+    `)
+    .eq('task_id', taskId);
+
+  const mappedAssignees = (assignees || []).map((a: any) => ({
+    id: a.user_id,
+    name: a.profiles?.name || 'Unknown',
+    completed: a.completed_at !== null,
+    completedAt: a.completed_at,
+  }));
+
+  return {
+    isCollaborative: task?.is_collaborative || false,
+    assignees: mappedAssignees,
+    allCompleted: mappedAssignees.every(a => a.completed),
+  };
 }
 
 /**

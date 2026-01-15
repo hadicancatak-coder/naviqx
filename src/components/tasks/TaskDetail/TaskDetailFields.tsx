@@ -7,7 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Clock, FolderKanban, Repeat } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { CalendarIcon, Clock, FolderKanban, Repeat, Users, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
@@ -39,6 +40,10 @@ export function TaskDetailFields() {
     isCompleted,
     projectId,
     setProjectId,
+    isCollaborative,
+    setIsCollaborative,
+    collaborativeStatus,
+    currentUserCompleted,
   } = useTaskDetailContext();
   
   const { projects } = useProjects();
@@ -200,6 +205,60 @@ export function TaskDetailFields() {
           users={users}
         />
       </div>
+
+      {/* Collaborative Mode (only show if multiple assignees) */}
+      {selectedAssignees.length > 1 && (
+        <>
+          <Separator />
+          <div className="space-y-sm">
+            <div className="flex items-center justify-between">
+              <div className="space-y-xs">
+                <Label className="text-metadata text-muted-foreground flex items-center gap-xs">
+                  <Users className="h-3.5 w-3.5" />
+                  Collaborative Task
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isCollaborative 
+                    ? "All assignees must complete" 
+                    : "Any assignee can complete"}
+                </p>
+              </div>
+              <Switch
+                checked={isCollaborative}
+                onCheckedChange={setIsCollaborative}
+                disabled={isCompleted}
+              />
+            </div>
+            
+            {/* Show completion status for collaborative tasks */}
+            {isCollaborative && collaborativeStatus && (
+              <div className="mt-sm space-y-xs">
+                <Label className="text-xs text-muted-foreground">
+                  Completion Status ({collaborativeStatus.assignees.filter(a => a.completed).length}/{collaborativeStatus.assignees.length})
+                </Label>
+                <div className="space-y-xs">
+                  {collaborativeStatus.assignees.map((assignee) => (
+                    <div 
+                      key={assignee.id} 
+                      className={cn(
+                        "flex items-center justify-between text-xs p-xs rounded",
+                        assignee.completed ? "bg-success-soft" : "bg-muted/50"
+                      )}
+                    >
+                      <span>{assignee.name}</span>
+                      {assignee.completed ? (
+                        <Check className="h-3.5 w-3.5 text-success-text" />
+                      ) : (
+                        <span className="text-muted-foreground">Pending</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Tags */}
       <div className="space-y-xs">

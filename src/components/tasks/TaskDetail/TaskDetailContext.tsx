@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { mapStatusToDb, mapStatusToUi } from "@/lib/taskStatusMapper";
 import { useRealtimeAssignees } from "@/hooks/useRealtimeAssignees";
 import { useTaskChangeLogs } from "@/hooks/useTaskChangeLogs";
+import { completeTask as completeTaskAction, setTaskCollaborative, getCollaborativeStatus } from "@/domain/tasks/actions";
 
 interface TaskDetailContextValue {
   // Task data
@@ -30,6 +31,15 @@ interface TaskDetailContextValue {
   setTags: (v: string[]) => void;
   projectId: string | null;
   setProjectId: (v: string | null) => void;
+  
+  // Collaborative
+  isCollaborative: boolean;
+  setIsCollaborative: (v: boolean) => void;
+  collaborativeStatus: {
+    assignees: Array<{ id: string; name: string; completed: boolean; completedAt: string | null }>;
+    allCompleted: boolean;
+  } | null;
+  currentUserCompleted: boolean;
   
   // Assignees
   selectedAssignees: string[];
@@ -113,6 +123,13 @@ export function TaskDetailProvider({
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
   
+  // Collaborative state
+  const [isCollaborative, setIsCollaborativeState] = useState(false);
+  const [collaborativeStatus, setCollaborativeStatus] = useState<{
+    assignees: Array<{ id: string; name: string; completed: boolean; completedAt: string | null }>;
+    allCompleted: boolean;
+  } | null>(null);
+  
   // Users
   const [users, setUsers] = useState<any[]>([]);
   
@@ -156,7 +173,14 @@ export function TaskDetailProvider({
     setDueDate(data.due_at ? new Date(data.due_at) : undefined);
     setTags(Array.isArray(data.labels) ? data.labels : []);
     setProjectId(data.project_id || null);
+    setIsCollaborativeState(data.is_collaborative || false);
     setLoading(false);
+    
+    // Fetch collaborative status if collaborative
+    if (data.is_collaborative) {
+      const collabStatus = await getCollaborativeStatus(taskId);
+      setCollaborativeStatus(collabStatus);
+    }
   }, [taskId, toast]);
 
   // Fetch comments
@@ -351,11 +375,74 @@ export function TaskDetailProvider({
     }
   }, [newComment, taskId, isSubmittingComment, user, users, toast, fetchComments]);
 
-  // Mark complete
+  // Mark complete (with collaborative support)
   const markComplete = useCallback(async () => {
-    setStatus("Completed");
-    await saveField('status', "Completed");
-  }, [saveField]);
+    if (isCollaborative && user) {
+      // For collaborative tasks, use the action that tracks individual completion
+      const result = await completeTaskAction(taskId, user.id);
+      if (result.success) {
+        if (result.data?.partialComplete) {
+          toast({ 
+            title: "Marked as complete", 
+            description: result.data.message 
+          });
+          // Refresh collaborative status
+          const collabStatus = await getCollaborativeStatus(taskId);
+          setCollaborativeStatus(collabStatus);
+        } else {
+          setStatus("Completed");
+          toast({ title: "Task completed", description: "All assignees have completed" });
+        }
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      } else {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+      }
+    } else {
+      setStatus("Completed");
+      await saveField('status', "Completed");
+    }
+  }, [isCollaborative, user, taskId, saveField, toast, queryClient]);
+
+  // Toggle collaborative mode
+  const setIsCollaborative = useCallback(async (value: boolean) => {
+    const result = await setTaskCollaborative(taskId, value);
+    if (result.success) {
+      setIsCollaborativeState(value);
+      if (value) {
+        const collabStatus = await getCollaborativeStatus(taskId);
+        setCollaborativeStatus(collabStatus);
+      } else {
+        setCollaborativeStatus(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({ 
+        title: value ? "Collaborative mode enabled" : "Collaborative mode disabled",
+        description: value ? "All assignees must complete this task" : "Any assignee can complete this task"
+      });
+    } else {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+    }
+  }, [taskId, queryClient, toast]);
+
+  // Get current user's profile ID to check if they've completed
+  const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setCurrentUserProfileId(data.id);
+        });
+    }
+  }, [user]);
+
+  const currentUserCompleted = collaborativeStatus?.assignees.find(
+    a => a.id === currentUserProfileId
+  )?.completed || false;
 
   // Delete task
   const deleteTask = useCallback(async () => {
@@ -416,6 +503,10 @@ export function TaskDetailProvider({
     isCompleted,
     isSubtask,
     messagesEndRef,
+    isCollaborative,
+    setIsCollaborative,
+    collaborativeStatus,
+    currentUserCompleted,
   };
 
   return (
