@@ -386,12 +386,12 @@ export function WhiteboardContainer({
   };
 
   return (
-    <div className="relative flex flex-col h-full">
+    <div className="relative w-full h-full">
       {/* Canvas Container */}
       <div
         ref={containerRef}
         className={cn(
-          "relative flex-1 overflow-hidden bg-card border border-border rounded-xl",
+          "absolute inset-0 overflow-hidden",
           getCursorClass()
         )}
         onPointerDown={handlePanStart}
