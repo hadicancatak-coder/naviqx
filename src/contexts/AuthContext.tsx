@@ -42,6 +42,9 @@ interface AuthContextType {
   roleLoading: boolean;
   userRole: "admin" | "member" | null;
   mfaVerified: boolean;
+  mfaEnabled: boolean | null;
+  mfaEnrollmentRequired: boolean | null;
+  mfaStatusLoading: boolean;
   setMfaVerifiedStatus: (verified: boolean, sessionToken?: string, expiresAt?: string) => void;
   validateMfaSession: (currentUser?: User) => Promise<boolean>;
   signOut: () => Promise<void>;
@@ -65,6 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return !!sessionToken; // Trust local token immediately for faster rendering
   });
   const [skipNextValidation, setSkipNextValidation] = useState(false);
+  
+  // MFA status caching - fetched once per session, not on every navigation
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+  const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(null);
+  const [mfaStatusLoading, setMfaStatusLoading] = useState(true);
+  
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
   
@@ -175,6 +184,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Fetch MFA status once per session - cached in context
+  const fetchMfaStatus = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('mfa_enabled, mfa_enrollment_required')
+        .eq('user_id', userId)
+        .single();
+      
+      setMfaEnabled(data?.mfa_enabled || false);
+      setMfaEnrollmentRequired(data?.mfa_enrollment_required ?? true);
+    } catch (err) {
+      console.error('Error fetching MFA status:', err);
+      setMfaEnabled(false);
+      setMfaEnrollmentRequired(true);
+    } finally {
+      setMfaStatusLoading(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -185,21 +214,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        // Fetch role and MFA status in parallel - only once per session
         setRoleLoading(true);
         fetchUserRole(session.user.id);
+        fetchMfaStatus(session.user.id);
         
         // Check if we have a valid session token in localStorage
         const sessionToken = getMfaSessionToken();
         if (sessionToken) {
           console.log('✅ Found MFA session token in localStorage, setting verified=true');
-          // Optimistically set to verified if we have a token
           setMfaVerified(true);
-          // Then validate in the background - Phase 1: Pass user to prevent closure issue
+          // Validate in background
           validateMfaSession(session.user);
         } else {
           console.log('❌ No MFA session token found');
           validateMfaSession(session.user);
         }
+      } else {
+        // No user - reset MFA status
+        setMfaStatusLoading(false);
       }
       
       setLoading(false);
@@ -311,6 +344,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         roleLoading: false,
         userRole: null,
         mfaVerified: false,
+        mfaEnabled: false,
+        mfaEnrollmentRequired: false,
+        mfaStatusLoading: false,
         validateMfaSession: async () => false,
         setMfaVerifiedStatus: () => {},
         signOut: async () => {
@@ -331,6 +367,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         roleLoading, 
         userRole, 
         mfaVerified,
+        mfaEnabled,
+        mfaEnrollmentRequired,
+        mfaStatusLoading,
         validateMfaSession,
         setMfaVerifiedStatus, 
         signOut 
