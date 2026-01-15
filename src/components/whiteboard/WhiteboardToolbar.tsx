@@ -80,7 +80,7 @@ export function WhiteboardToolbar({
   const showConnectorOptions = !!selectedConnectorId;
 
   return (
-    <div className="absolute bottom-md left-1/2 -translate-x-1/2 liquid-glass-elevated rounded-xl p-sm flex items-center gap-xs shadow-lg">
+    <div className="absolute top-md left-1/2 -translate-x-1/2 liquid-glass-elevated rounded-xl p-sm flex items-center gap-xs shadow-lg z-20">
       {/* Tool buttons */}
       {TOOLS.map(({ type, icon: Icon, label }) => (
         <Button

@@ -73,38 +73,38 @@ export default function Whiteboard() {
     );
   }
 
-  // Show whiteboard editor
+  // Show whiteboard editor - use full height layout
   return (
-    <PageContainer size="full">
-      <div className="flex items-center gap-md mb-md">
+    <PageContainer size="full" className="flex flex-col h-[calc(100vh-80px)]">
+      <div className="flex items-center gap-md mb-md flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={handleBackToGallery} className="gap-xs">
           <ArrowLeft className="h-4 w-4" />
           All Whiteboards
         </Button>
       </div>
 
-      <WhiteboardHeader
-        whiteboard={whiteboard}
-        allWhiteboards={allWhiteboards}
-        onUpdateWhiteboard={updateWhiteboard}
-        onCreateWhiteboard={createWhiteboard}
-        onSwitchWhiteboard={switchWhiteboard}
-      />
+      <div className="flex-shrink-0">
+        <WhiteboardHeader
+          whiteboard={whiteboard}
+          allWhiteboards={allWhiteboards}
+          onUpdateWhiteboard={updateWhiteboard}
+          onCreateWhiteboard={createWhiteboard}
+          onSwitchWhiteboard={switchWhiteboard}
+        />
+      </div>
 
-      <div className="flex bg-muted/30 rounded-xl overflow-hidden border border-border">
-        <div className="flex-1 overflow-auto">
-          <WhiteboardContainer
-            items={items}
-            connectors={connectors}
-            onCreateItem={createItem}
-            onUpdateItem={updateItem}
-            onSaveItem={saveItem}
-            onDeleteItem={deleteItem}
-            onCreateConnector={createConnector}
-            onUpdateConnector={updateConnector}
-            onDeleteConnector={deleteConnector}
-          />
-        </div>
+      <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-border bg-muted/30">
+        <WhiteboardContainer
+          items={items}
+          connectors={connectors}
+          onCreateItem={createItem}
+          onUpdateItem={updateItem}
+          onSaveItem={saveItem}
+          onDeleteItem={deleteItem}
+          onCreateConnector={createConnector}
+          onUpdateConnector={updateConnector}
+          onDeleteConnector={deleteConnector}
+        />
       </div>
     </PageContainer>
   );
