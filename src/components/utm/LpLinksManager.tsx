@@ -192,7 +192,7 @@ export function LpLinksManager() {
               Add LP Link
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] z-[200]">
             <DialogHeader>
               <DialogTitle>
                 {editingLink ? "Edit LP Link" : "Add New LP Link"}
