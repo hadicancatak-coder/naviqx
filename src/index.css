@@ -935,3 +935,18 @@ All colors MUST be HSL.
     transform: translateY(0);
   }
 }
+
+/* Fix for dialog centering - override any containing block issues from backdrop-filter */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* Preserve centering during animation states */
+[data-radix-dialog-content][data-state="open"],
+[data-radix-dialog-content][data-state="closed"] {
+  left: 50% !important;
+  top: 50% !important;
+}
