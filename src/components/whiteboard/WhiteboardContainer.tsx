@@ -16,7 +16,7 @@ interface WhiteboardContainerProps {
   items: WhiteboardItemData[];
   connectors: WhiteboardConnectorData[];
   onCreateItem: (params: {
-    type: "sticky" | "text" | "task";
+    type: "sticky" | "text" | "task" | "shape";
     x: number;
     y: number;
     color?: string;
@@ -165,6 +165,9 @@ export function WhiteboardContainer({
         case "k":
           setActiveTool("task");
           break;
+        case "o":
+          setActiveTool("shape");
+          break;
         case "c":
           if (!e.ctrlKey && !e.metaKey) {
             setActiveTool("connect");
@@ -222,11 +225,12 @@ export function WhiteboardContainer({
     const screenY = e.clientY - rect.top;
     const { x, y } = screenToCanvas(screenX, screenY);
 
+    const itemType = activeTool as "sticky" | "text" | "task" | "shape";
     onCreateItem({
-      type: activeTool,
+      type: itemType,
       x: Math.round(x),
       y: Math.round(y),
-      color: activeTool === "sticky" ? activeColor : undefined,
+      color: (activeTool === "sticky" || activeTool === "shape") ? activeColor : undefined,
     });
 
     // Switch back to select tool after creating

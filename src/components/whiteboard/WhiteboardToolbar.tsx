@@ -1,4 +1,4 @@
-import { MousePointer2, StickyNote, Type, ListTodo, Palette, Trash2, ArrowRight, Settings2 } from "lucide-react";
+import { MousePointer2, StickyNote, Type, ListTodo, Palette, Trash2, ArrowRight, Settings2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { ConnectorLineStyle } from "@/hooks/useWhiteboard";
 
-export type ToolType = "select" | "sticky" | "text" | "task" | "connect";
+export type ToolType = "select" | "sticky" | "text" | "task" | "shape" | "connect";
 
 interface WhiteboardToolbarProps {
   activeTool: ToolType;
@@ -59,6 +59,7 @@ const TOOLS: { type: ToolType; icon: typeof MousePointer2; label: string }[] = [
   { type: "sticky", icon: StickyNote, label: "Sticky Note (S)" },
   { type: "text", icon: Type, label: "Text (T)" },
   { type: "task", icon: ListTodo, label: "Task (K)" },
+  { type: "shape", icon: Circle, label: "Shape (O)" },
   { type: "connect", icon: ArrowRight, label: "Connect (C)" },
 ];
 

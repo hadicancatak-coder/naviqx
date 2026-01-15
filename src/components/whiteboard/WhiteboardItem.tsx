@@ -331,6 +331,18 @@ export const WhiteboardItem = memo(function WhiteboardItem({
       );
     }
 
+    // Shape (circle/ellipse)
+    if (item.type === "shape") {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <div 
+            className="w-full h-full rounded-full shadow-md"
+            style={{ backgroundColor: item.color || "#dbeafe" }}
+          />
+        </div>
+      );
+    }
+
     return null;
   };
 
@@ -367,10 +379,12 @@ export const WhiteboardItem = memo(function WhiteboardItem({
         willChange: isDragging || isResizing ? "transform" : "auto",
       }}
       className={cn(
-        "group select-none transition-shadow rounded-lg",
+        "group select-none transition-shadow",
+        item.type === "shape" ? "rounded-full" : "rounded-lg",
         item.type === "sticky" && "shadow-md",
         item.type === "text" && "border border-dashed border-border bg-card",
         item.type === "task" && "bg-card border border-border shadow-sm",
+        item.type === "shape" && "shadow-md",
         isDragging && "shadow-xl cursor-grabbing z-50",
         isSelected && !isDragging && "ring-2 ring-primary ring-offset-2 ring-offset-background",
         !isDragging && !isResizing && !isEditing && "cursor-grab hover:shadow-lg"
