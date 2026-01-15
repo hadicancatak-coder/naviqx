@@ -97,8 +97,11 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (loading || checkingMfa || mfaValidating) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-md">
+          <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-body-sm text-muted-foreground">Authenticating...</span>
+        </div>
       </div>
     );
   }
