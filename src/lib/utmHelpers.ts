@@ -1,4 +1,32 @@
 /**
+ * Normalize LP URL by removing language and country path segments
+ * Input:  https://campaigns.cfifinancial.com/ar/jo/shine-with-gold-4
+ * Output: https://campaigns.cfifinancial.com/shine-with-gold-4
+ */
+export const normalizeLpUrl = (url: string): string => {
+  const languageCodes = ['en', 'ar', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'zh', 'ja', 'ko', 'vi', 'th'];
+  const countryCodes = ['jo', 'lb', 'mu', 'ae', 'uae', 'kw', 'sa', 'bh', 'om', 'qa', 'eg', 'iq', 'uk', 'cy', 'vu', 'ps', 'za', 'vn', 'az'];
+  
+  try {
+    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const pathParts = urlObj.pathname.split('/').filter(Boolean);
+    
+    // Remove language and country segments
+    const cleanedParts = pathParts.filter(part => 
+      !languageCodes.includes(part.toLowerCase()) && 
+      !countryCodes.includes(part.toLowerCase())
+    );
+    
+    urlObj.pathname = '/' + cleanedParts.join('/');
+    // Remove any query params too for a clean base
+    urlObj.search = '';
+    return urlObj.toString();
+  } catch {
+    return url;
+  }
+};
+
+/**
  * Calculate UTM medium based on platform name using GA4 standards
  */
 export const calculateUtmMedium = (platform: string): string => {
