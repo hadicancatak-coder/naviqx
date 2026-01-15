@@ -44,7 +44,10 @@ export function GlassBackground({
       </div>
       
       {/* Content layer */}
-      <div className="relative z-10 w-full">
+      <div className={cn(
+        "relative z-10",
+        variant === 'centered' ? "flex items-center justify-center" : "w-full"
+      )}>
         {children}
       </div>
     </div>
