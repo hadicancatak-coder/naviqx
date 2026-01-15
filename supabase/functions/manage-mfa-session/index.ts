@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
           ip_address: ipAddress,
           user_agent: userAgent,
           expires_at: expiresAt,
-          skip_validation_for_ip: false  // SECURITY: Enable IP validation - require re-auth on IP change
+          skip_validation_for_ip: true  // Skip IP validation to prevent issues with dynamic IPs/proxies
         });
 
       if (insertError) {
