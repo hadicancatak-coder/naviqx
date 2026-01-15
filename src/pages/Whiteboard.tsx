@@ -93,7 +93,7 @@ export default function Whiteboard() {
         />
       </div>
 
-      <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-border bg-muted/30">
+      <div className="flex-1 min-h-[500px] rounded-xl overflow-hidden border border-border">
         <WhiteboardContainer
           items={items}
           connectors={connectors}

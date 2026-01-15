@@ -37,6 +37,10 @@ interface WhiteboardContainerProps {
   onDeleteConnector: (id: string) => void;
 }
 
+// Virtual canvas size for infinite feel
+const VIRTUAL_SIZE = 10000;
+const VIRTUAL_OFFSET = VIRTUAL_SIZE / 2;
+
 export function WhiteboardContainer({
   items,
   connectors,
@@ -49,7 +53,7 @@ export function WhiteboardContainer({
   onDeleteConnector,
 }: WhiteboardContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
 
   const [activeTool, setActiveTool] = useState<ToolType>("select");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -87,16 +91,16 @@ export function WhiteboardContainer({
     const container = containerRef.current;
     if (!container) return;
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setContainerSize({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setContainerSize({ width: rect.width, height: rect.height });
       }
-    });
+    };
 
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
@@ -190,8 +194,9 @@ export function WhiteboardContainer({
   }, [selectedItemId, selectedConnectorId, onDeleteItem, onDeleteConnector, zoomIn, zoomOut, resetZoom]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only create if clicking directly on the canvas, not on an item
-    if (e.target !== e.currentTarget) return;
+    // Only create if clicking directly on the canvas background
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains('canvas-background')) return;
 
     // Don't create while panning
     if (isPanning) return;
@@ -210,7 +215,9 @@ export function WhiteboardContainer({
     }
 
     // Create new item at click position (convert screen to canvas coords)
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
     const { x, y } = screenToCanvas(screenX, screenY);
@@ -386,143 +393,127 @@ export function WhiteboardContainer({
   };
 
   return (
-    <div className="relative w-full h-full">
-      {/* Canvas Container */}
+    <div 
+      ref={containerRef}
+      className={cn(
+        "relative w-full h-full min-h-[500px] overflow-hidden bg-card",
+        getCursorClass()
+      )}
+      onPointerDown={handlePanStart}
+      onPointerMove={handlePanMove}
+      onPointerUp={handlePanEnd}
+      onClick={handleCanvasClick}
+    >
+      {/* Grid background - fixed position, scales with zoom */}
       <div
-        ref={containerRef}
-        className={cn(
-          "absolute inset-0 overflow-hidden",
-          getCursorClass()
-        )}
-        onPointerDown={handlePanStart}
-        onPointerMove={handlePanMove}
-        onPointerUp={handlePanEnd}
-        onClick={handleCanvasClick}
+        className="canvas-background absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, hsl(var(--border) / 0.3) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px)
+          `,
+          backgroundSize: `${40 * transform.scale}px ${40 * transform.scale}px`,
+          backgroundPosition: `${transform.x}px ${transform.y}px`,
+        }}
+      />
+
+      {/* Transformed Canvas Layer for items and connectors */}
+      <div
+        className="absolute origin-top-left"
+        style={{
+          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+          willChange: "transform",
+        }}
       >
-        {/* Transformed Canvas Layer */}
-        <div
-          className="absolute origin-top-left pointer-events-none"
-          style={{
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-            willChange: "transform",
-          }}
+        {/* SVG layer for connectors */}
+        <svg
+          className="absolute overflow-visible pointer-events-none"
+          style={{ left: 0, top: 0, width: 1, height: 1 }}
         >
-          {/* Grid pattern background */}
-          <div
-            className="absolute pointer-events-none opacity-30"
-            style={{
-              left: -10000,
-              top: -10000,
-              width: 20000,
-              height: 20000,
-              backgroundImage: `
-                linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
-                linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
-              `,
-              backgroundSize: "40px 40px",
-            }}
-          />
-
-          {/* SVG layer for connectors */}
-          <svg
-            className="absolute overflow-visible"
-            style={{
-              left: -10000,
-              top: -10000,
-              width: 20000,
-              height: 20000,
-              pointerEvents: "none",
-            }}
-          >
-            <g style={{ transform: "translate(10000px, 10000px)" }}>
-              {connectors.map((connector) => {
-                const endpoints = connectorEndpoints.get(connector.id);
-                if (!endpoints) return null;
-                
-                return (
-                  <WhiteboardConnector
-                    key={connector.id}
-                    id={connector.id}
-                    from={endpoints.from}
-                    to={endpoints.to}
-                    color={connector.color}
-                    strokeWidth={connector.stroke_width}
-                    lineStyle={connector.line_style}
-                    label={connector.label}
-                    isSelected={selectedConnectorId === connector.id}
-                    onSelect={() => handleConnectorSelect(connector.id)}
-                    onDelete={() => handleConnectorDelete(connector.id)}
-                    onLabelChange={(label) => onUpdateConnector({ id: connector.id, label })}
-                  />
-                );
-              })}
-            </g>
-          </svg>
-
-          {/* Items */}
-          <div className="pointer-events-auto" style={{ position: "absolute", left: 0, top: 0 }}>
-            {items.map((item) => (
-              <WhiteboardItem
-                key={item.id}
-                item={getItemWithLocalUpdates(item)}
-                isSelected={selectedItemId === item.id}
-                onSelect={handleItemSelect}
-                onMove={handleItemMove}
-                onResize={handleItemResize}
-                onContentChange={handleItemContentChange}
-                onSave={handleItemSave}
-                onStartConnect={handleStartConnect}
-                scale={transform.scale}
-                showConnectionPoints={activeTool === "connect"}
+          {connectors.map((connector) => {
+            const endpoints = connectorEndpoints.get(connector.id);
+            if (!endpoints) return null;
+            
+            return (
+              <WhiteboardConnector
+                key={connector.id}
+                id={connector.id}
+                from={endpoints.from}
+                to={endpoints.to}
+                color={connector.color}
+                strokeWidth={connector.stroke_width}
+                lineStyle={connector.line_style}
+                label={connector.label}
+                isSelected={selectedConnectorId === connector.id}
+                onSelect={() => handleConnectorSelect(connector.id)}
+                onDelete={() => handleConnectorDelete(connector.id)}
+                onLabelChange={(label) => onUpdateConnector({ id: connector.id, label })}
               />
-            ))}
-          </div>
-        </div>
+            );
+          })}
+        </svg>
 
-        {/* Connection in progress indicator */}
-        {connectingFrom && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-md py-sm rounded-lg text-body-sm shadow-lg z-10">
-            Click another element to connect
-          </div>
-        )}
-
-        {/* Toolbar */}
-        <WhiteboardToolbar
-          activeTool={activeTool}
-          onToolChange={setActiveTool}
-          activeColor={activeColor}
-          onColorChange={handleColorChange}
-          onDelete={handleDelete}
-          hasSelection={!!selectedItemId || !!selectedConnectorId}
-          selectedConnectorId={selectedConnectorId}
-          connectorLabel={selectedConnector?.label}
-          connectorLineStyle={selectedConnector?.line_style}
-          connectorColor={selectedConnector?.color}
-          onConnectorLabelChange={handleConnectorLabelChange}
-          onConnectorLineStyleChange={handleConnectorLineStyleChange}
-          onConnectorColorChange={handleConnectorColorChange}
-        />
-
-        {/* Zoom Controls - bottom left */}
-        <ZoomControls
-          scale={transform.scale}
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          onZoomToFit={handleZoomToFit}
-          onResetZoom={resetZoom}
-          className="absolute bottom-md left-md z-10"
-        />
-
-        {/* Minimap - bottom right */}
-        <Minimap
-          items={items}
-          transform={transform}
-          containerWidth={containerSize.width}
-          containerHeight={containerSize.height}
-          onNavigate={handleMinimapNavigate}
-          className="absolute bottom-md right-md z-10"
-        />
+        {/* Items */}
+        {items.map((item) => (
+          <WhiteboardItem
+            key={item.id}
+            item={getItemWithLocalUpdates(item)}
+            isSelected={selectedItemId === item.id}
+            onSelect={handleItemSelect}
+            onMove={handleItemMove}
+            onResize={handleItemResize}
+            onContentChange={handleItemContentChange}
+            onSave={handleItemSave}
+            onStartConnect={handleStartConnect}
+            scale={transform.scale}
+            showConnectionPoints={activeTool === "connect"}
+          />
+        ))}
       </div>
+
+      {/* Connection in progress indicator */}
+      {connectingFrom && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-md py-sm rounded-lg text-body-sm shadow-lg z-20">
+          Click another element to connect
+        </div>
+      )}
+
+      {/* Toolbar - top center */}
+      <WhiteboardToolbar
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
+        activeColor={activeColor}
+        onColorChange={handleColorChange}
+        onDelete={handleDelete}
+        hasSelection={!!selectedItemId || !!selectedConnectorId}
+        selectedConnectorId={selectedConnectorId}
+        connectorLabel={selectedConnector?.label}
+        connectorLineStyle={selectedConnector?.line_style}
+        connectorColor={selectedConnector?.color}
+        onConnectorLabelChange={handleConnectorLabelChange}
+        onConnectorLineStyleChange={handleConnectorLineStyleChange}
+        onConnectorColorChange={handleConnectorColorChange}
+      />
+
+      {/* Zoom Controls - bottom left */}
+      <ZoomControls
+        scale={transform.scale}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onZoomToFit={handleZoomToFit}
+        onResetZoom={resetZoom}
+        className="absolute bottom-4 left-4 z-10"
+      />
+
+      {/* Minimap - bottom right */}
+      <Minimap
+        items={items}
+        transform={transform}
+        containerWidth={containerSize.width}
+        containerHeight={containerSize.height}
+        onNavigate={handleMinimapNavigate}
+        className="absolute bottom-4 right-4 z-10"
+      />
     </div>
   );
 }
