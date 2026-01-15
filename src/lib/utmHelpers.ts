@@ -231,7 +231,7 @@ export const buildUtmUrl = (params: {
     
     url.searchParams.set('utm_source', params.utmSource.toLowerCase());
     url.searchParams.set('utm_medium', params.utmMedium.toLowerCase());
-    url.searchParams.set('utm_campaign', params.utmCampaign.toLowerCase());
+    url.searchParams.set('utm_campaign', params.utmCampaign); // Keep original case
     
     if (params.utmContent) {
       url.searchParams.set('utm_content', params.utmContent.toLowerCase());
