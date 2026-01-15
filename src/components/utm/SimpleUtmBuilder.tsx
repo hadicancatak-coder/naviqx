@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataCard } from "@/components/layout";
-import { Copy, Check, Plus, Trash2, Wand2, ExternalLink, Building2 } from "lucide-react";
+import { Copy, Check, Trash2, Wand2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { useUtmPlatforms } from "@/hooks/useUtmPlatforms";
@@ -32,12 +32,12 @@ import {
   generateUtmContent,
 } from "@/lib/utmHelpers";
 import { CampaignSelect } from "./CampaignSelect";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface UtmRow {
   id: string;
   lpLinkId: string;
+  lpName: string;
   language: string;
   campaign: string;
   platform: string;
@@ -59,7 +59,7 @@ export function SimpleUtmBuilder() {
   const { data: lpLinks } = useLpLinks({ isActive: true });
   const createUtmLink = useCreateUtmLink();
 
-  // All active LP links (no entity filtering - entity is used for URL generation)
+  // All active LP links
   const allLpLinks = lpLinks || [];
 
   // Get entity info
@@ -82,6 +82,25 @@ export function SimpleUtmBuilder() {
     };
     return code ? emojiMap[code] || "🌍" : "🌍";
   };
+
+  // Initialize rows from LPs when entity changes
+  useEffect(() => {
+    if (selectedEntityId && allLpLinks.length > 0 && campaigns && platforms) {
+      const newRows: UtmRow[] = allLpLinks.map((lp) => ({
+        id: crypto.randomUUID(),
+        lpLinkId: lp.id,
+        lpName: lp.name || "Unnamed",
+        language: "EN",
+        campaign: campaigns[0]?.id || "",
+        platform: platforms[0]?.id || "",
+        content: "",
+        archivedAt: null,
+      }));
+      setRows(newRows);
+    } else if (!selectedEntityId) {
+      setRows([]);
+    }
+  }, [selectedEntityId, allLpLinks.length, campaigns, platforms]);
 
   // Generate UTM URL for a row
   const generateRowUrl = useCallback(
@@ -130,20 +149,6 @@ export function SimpleUtmBuilder() {
     },
     [lpLinks, platforms, campaigns, selectedEntity]
   );
-
-  // Add a new row
-  const addRow = useCallback(() => {
-    const newRow: UtmRow = {
-      id: crypto.randomUUID(),
-      lpLinkId: allLpLinks[0]?.id || "",
-      language: "EN",
-      campaign: campaigns?.[0]?.id || "",
-      platform: platforms?.[0]?.id || "",
-      content: "",
-      archivedAt: null,
-    };
-    setRows((prev) => [...prev, newRow]);
-  }, [allLpLinks, campaigns, platforms]);
 
   // Update a row field
   const updateRow = useCallback((id: string, field: keyof UtmRow, value: string) => {
@@ -226,12 +231,10 @@ export function SimpleUtmBuilder() {
   }, [rows, generateRowUrl]);
 
   const activePlatforms = platforms?.filter((p) => p.is_active) || [];
-  const activeCampaigns = campaigns || [];
 
-  // Handle entity change - clear rows when entity changes
+  // Handle entity change
   const handleEntityChange = (entityId: string) => {
     setSelectedEntityId(entityId);
-    setRows([]); // Clear rows when entity changes
   };
 
   return (
@@ -242,7 +245,7 @@ export function SimpleUtmBuilder() {
           <div className="flex-1">
             <Label className="text-heading-sm font-semibold">UTM Link Builder</Label>
             <p className="text-metadata text-muted-foreground mt-xs">
-              Select an entity to see available landing pages
+              Select an entity to generate UTM links for landing pages
             </p>
           </div>
 
@@ -262,18 +265,6 @@ export function SimpleUtmBuilder() {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Add Row button - only enabled when entity selected and LPs exist */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addRow}
-            disabled={!selectedEntityId || allLpLinks.length === 0}
-            className="gap-xs"
-          >
-            <Plus className="h-4 w-4" />
-            Add Row
-          </Button>
         </div>
 
         {/* No entity selected state */}
@@ -282,7 +273,7 @@ export function SimpleUtmBuilder() {
             <Building2 className="h-12 w-12 mx-auto mb-md opacity-50" />
             <p className="text-heading-sm font-medium mb-xs">Select an Entity</p>
             <p className="text-body-sm">
-              Choose an entity above to see available landing pages
+              Choose an entity above to start building UTM links
             </p>
           </div>
         )}
@@ -298,200 +289,142 @@ export function SimpleUtmBuilder() {
           </div>
         )}
 
-        {/* Entity selected with LPs available - show table */}
-        {selectedEntityId && allLpLinks.length > 0 && (
-          <>
-            {/* Available LPs as Table */}
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="px-md py-sm bg-muted/50 border-b border-border">
-                <Label className="text-metadata font-medium text-muted-foreground">
-                  Building URLs for {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name} • Available Landing Pages
-                </Label>
-              </div>
+        {/* Entity selected with LPs available - show unified table */}
+        {selectedEntityId && allLpLinks.length > 0 && rows.length > 0 && (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="px-md py-sm bg-muted/50 border-b border-border">
+              <Label className="text-metadata font-medium text-muted-foreground">
+                {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name} • {rows.length} Landing Pages
+              </Label>
+            </div>
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="w-[180px]">Name</TableHead>
-                    <TableHead>URL</TableHead>
-                    <TableHead className="w-[100px]">Type</TableHead>
+                    <TableHead className="w-[140px] min-w-[140px]">LP Name</TableHead>
+                    <TableHead className="w-[80px] min-w-[80px]">Language</TableHead>
+                    <TableHead className="w-[140px] min-w-[140px]">Platform</TableHead>
+                    <TableHead className="w-[180px] min-w-[180px]">Campaign</TableHead>
+                    <TableHead className="w-[120px] min-w-[120px]">Content</TableHead>
+                    <TableHead className="min-w-[300px]">Generated UTM</TableHead>
+                    <TableHead className="w-[80px] min-w-[80px] text-right">Copy</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allLpLinks.map((lp) => (
-                    <TableRow key={lp.id} className="hover:bg-card-hover transition-smooth">
-                      <TableCell className="text-metadata font-medium">
-                        {lp.name || "Unnamed"}
+                  {rowsWithUrls.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className={cn(
+                        "transition-smooth",
+                        row.archivedAt && "bg-success-soft/30"
+                      )}
+                    >
+                      {/* LP Name - Read only */}
+                      <TableCell className="font-medium text-body-sm">
+                        {row.lpName}
                       </TableCell>
+
+                      {/* Language dropdown */}
                       <TableCell>
-                        <code className="text-metadata text-muted-foreground truncate max-w-[350px] block">
-                          {lp.base_url}
+                        <Select
+                          value={row.language}
+                          onValueChange={(v) => updateRow(row.id, "language", v)}
+                        >
+                          <SelectTrigger className="h-8 text-metadata">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.map((lang) => (
+                              <SelectItem key={lang} value={lang}>
+                                {lang}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+
+                      {/* Platform dropdown */}
+                      <TableCell>
+                        <Select
+                          value={row.platform}
+                          onValueChange={(v) => updateRow(row.id, "platform", v)}
+                        >
+                          <SelectTrigger className="h-8 text-metadata">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activePlatforms.map((platform) => (
+                              <SelectItem key={platform.id} value={platform.id}>
+                                {platform.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+
+                      {/* Campaign with add/edit/delete */}
+                      <TableCell>
+                        <CampaignSelect
+                          value={row.campaign}
+                          onValueChange={(v) => updateRow(row.id, "campaign", v)}
+                          className="w-full"
+                        />
+                      </TableCell>
+
+                      {/* Content - free text */}
+                      <TableCell>
+                        <Input
+                          value={row.content}
+                          onChange={(e) => updateRow(row.id, "content", e.target.value)}
+                          placeholder="Auto"
+                          className="h-8 text-metadata"
+                        />
+                      </TableCell>
+
+                      {/* Generated UTM URL */}
+                      <TableCell>
+                        <code className="text-metadata text-muted-foreground block truncate max-w-[400px]">
+                          {row.generatedUrl || "—"}
                         </code>
                       </TableCell>
+
+                      {/* Copy button */}
                       <TableCell>
-                        <Badge variant="outline" className="text-metadata">
-                          {lp.lp_type || "static"}
-                        </Badge>
+                        <div className="flex items-center justify-end gap-xs">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleCopy(row)}
+                            disabled={!row.generatedUrl}
+                          >
+                            {copiedIds.has(row.id) ? (
+                              <Check className="h-4 w-4 text-success-text" />
+                            ) : row.archivedAt ? (
+                              <div className="relative">
+                                <Copy className="h-4 w-4" />
+                                <Check className="h-2.5 w-2.5 absolute -bottom-0.5 -right-0.5 text-success-text" />
+                              </div>
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive-text hover:text-destructive-text"
+                            onClick={() => deleteRow(row.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-
-            {/* UTM Table */}
-            {rows.length === 0 ? (
-              <div className="text-center py-xl text-muted-foreground">
-                <p className="text-body-sm mb-md">
-                  Click "Add Row" to start generating UTM links
-                </p>
-                <Button variant="outline" onClick={addRow} className="gap-xs">
-                  <Plus className="h-4 w-4" />
-                  Add Row
-                </Button>
-              </div>
-            ) : (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-[200px]">Landing Page</TableHead>
-                      <TableHead className="w-[100px]">Language</TableHead>
-                      <TableHead className="w-[160px]">Campaign</TableHead>
-                      <TableHead className="w-[140px]">Platform</TableHead>
-                      <TableHead className="w-[140px]">Content</TableHead>
-                      <TableHead>Generated URL</TableHead>
-                      <TableHead className="w-[80px] text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rowsWithUrls.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        className={cn(
-                          "transition-smooth",
-                          row.archivedAt && "bg-success-soft/30"
-                        )}
-                      >
-                        <TableCell>
-                          <Select
-                            value={row.lpLinkId}
-                            onValueChange={(v) => updateRow(row.id, "lpLinkId", v)}
-                          >
-                            <SelectTrigger className="h-8 text-metadata">
-                              <SelectValue placeholder="Select LP" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {allLpLinks.map((lp) => (
-                                <SelectItem key={lp.id} value={lp.id}>
-                                  {lp.name || lp.base_url}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={row.language}
-                            onValueChange={(v) => updateRow(row.id, "language", v)}
-                          >
-                            <SelectTrigger className="h-8 text-metadata">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {LANGUAGES.map((lang) => (
-                                <SelectItem key={lang} value={lang}>
-                                  {lang}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <CampaignSelect
-                            value={row.campaign}
-                            onValueChange={(v) => updateRow(row.id, "campaign", v)}
-                            className="w-full"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={row.platform}
-                            onValueChange={(v) => updateRow(row.id, "platform", v)}
-                          >
-                            <SelectTrigger className="h-8 text-metadata">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {activePlatforms.map((platform) => (
-                                <SelectItem key={platform.id} value={platform.id}>
-                                  {platform.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={row.content}
-                            onChange={(e) => updateRow(row.id, "content", e.target.value)}
-                            placeholder="Auto"
-                            className="h-8 text-metadata"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-xs">
-                            <code className="text-metadata text-muted-foreground truncate max-w-[280px] block">
-                              {row.generatedUrl || "—"}
-                            </code>
-                            {row.generatedUrl && (
-                              <a
-                                href={row.generatedUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-muted-foreground hover:text-foreground transition-smooth"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-xs">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleCopy(row)}
-                              disabled={!row.generatedUrl}
-                            >
-                              {copiedIds.has(row.id) ? (
-                                <Check className="h-4 w-4 text-success-text" />
-                              ) : row.archivedAt ? (
-                                <div className="relative">
-                                  <Copy className="h-4 w-4" />
-                                  <Check className="h-2.5 w-2.5 absolute -bottom-0.5 -right-0.5 text-success-text" />
-                                </div>
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive-text hover:text-destructive-text"
-                              onClick={() => deleteRow(row.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
     </DataCard>
