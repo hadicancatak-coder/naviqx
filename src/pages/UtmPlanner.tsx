@@ -1,21 +1,19 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UtmBuilder } from "@/components/utm/UtmBuilder";
+import { SimpleUtmBuilder } from "@/components/utm/SimpleUtmBuilder";
 import { UtmTableGroupedView } from "@/components/utm/UtmTableGroupedView";
 import { UtmInlineFilters } from "@/components/utm/UtmInlineFilters";
 import { UtmConfigurationTab } from "@/components/utm/UtmConfigurationTab";
 import { PageContainer, PageHeader, AlertBanner, DataCard } from "@/components/layout";
 import { useUtmLinks, UtmLinkFilters } from "@/hooks/useUtmLinks";
-import { Link2, Sparkles, FolderOpen, Archive, Settings, ExternalLink } from "lucide-react";
+import { Link2, Wand2, Archive, Settings, ExternalLink } from "lucide-react";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 
 const UtmPlanner = () => {
   const [activeTab, setActiveTab] = useState("builder");
-  const [filters, setFilters] = useState<UtmLinkFilters>({});
-  const [archiveFilters, setArchiveFilters] = useState<UtmLinkFilters>({ status: 'archived' });
+  const [archiveFilters, setArchiveFilters] = useState<UtmLinkFilters>({});
   
-  const { data: utmLinks = [], isLoading } = useUtmLinks(filters);
-  const { data: archivedLinks = [], isLoading: isLoadingArchive } = useUtmLinks(archiveFilters);
+  const { data: allLinks = [], isLoading: isLoadingArchive } = useUtmLinks(archiveFilters);
 
   return (
     <PageContainer>
@@ -40,14 +38,10 @@ const UtmPlanner = () => {
       </AlertBanner>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full lg:w-auto bg-muted/50">
+        <TabsList className="grid grid-cols-3 w-full lg:w-auto bg-muted/50">
           <TabsTrigger value="builder" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">Smart Builder</span>
-          </TabsTrigger>
-          <TabsTrigger value="links" className="gap-2">
-            <FolderOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">Link Bucket</span>
+            <Wand2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Builder</span>
           </TabsTrigger>
           <TabsTrigger value="archive" className="gap-2">
             <Archive className="h-4 w-4" />
@@ -60,44 +54,32 @@ const UtmPlanner = () => {
         </TabsList>
 
         <TabsContent value="builder" forceMount hidden={activeTab !== "builder"} className="mt-lg">
-          <UtmBuilder />
-        </TabsContent>
-
-        <TabsContent value="links" forceMount hidden={activeTab !== "links"} className="mt-lg space-y-md">
-          <UtmInlineFilters filters={filters} onFiltersChange={setFilters} />
-          <DataCard noPadding>
-            {isLoading ? (
-              <div className="p-md">
-                <TableSkeleton columns={5} rows={8} />
-              </div>
-            ) : (
-              <UtmTableGroupedView links={utmLinks} />
-            )}
-          </DataCard>
+          <SimpleUtmBuilder />
         </TabsContent>
 
         <TabsContent value="archive" forceMount hidden={activeTab !== "archive"} className="mt-lg space-y-md">
           <div className="flex items-center justify-between">
             <div>
-            <h3 className="text-heading-sm font-semibold">Archived Links</h3>
+              <h3 className="text-heading-sm font-semibold">All Generated Links</h3>
               <p className="text-body-sm text-muted-foreground">
-                Links that have been archived and are no longer active
+                View and manage all UTM links created through the Builder
               </p>
             </div>
           </div>
+          <UtmInlineFilters filters={archiveFilters} onFiltersChange={setArchiveFilters} />
           <DataCard noPadding>
             {isLoadingArchive ? (
               <div className="p-md">
                 <TableSkeleton columns={5} rows={8} />
               </div>
-            ) : archivedLinks.length === 0 ? (
+            ) : allLinks.length === 0 ? (
               <div className="p-xl text-center text-muted-foreground">
                 <Archive className="h-12 w-12 mx-auto mb-md opacity-50" />
-                <p>No archived links yet</p>
-                <p className="text-body-sm">Archived links will appear here</p>
+                <p>No UTM links yet</p>
+                <p className="text-body-sm">Generate links in the Builder tab to see them here</p>
               </div>
             ) : (
-              <UtmTableGroupedView links={archivedLinks} />
+              <UtmTableGroupedView links={allLinks} />
             )}
           </DataCard>
         </TabsContent>

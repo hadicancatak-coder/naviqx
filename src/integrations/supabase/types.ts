@@ -2188,10 +2188,14 @@ export type Database = {
           country: string | null
           created_at: string | null
           created_by: string
+          display_order: number | null
+          entity_id: string | null
           id: string
+          is_active: boolean | null
           language: string | null
           lp_type: string | null
           lp_type_id: string | null
+          name: string | null
           platform: string | null
           purpose: string | null
           updated_at: string | null
@@ -2203,10 +2207,14 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by: string
+          display_order?: number | null
+          entity_id?: string | null
           id?: string
+          is_active?: boolean | null
           language?: string | null
           lp_type?: string | null
           lp_type_id?: string | null
+          name?: string | null
           platform?: string | null
           purpose?: string | null
           updated_at?: string | null
@@ -2218,16 +2226,27 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by?: string
+          display_order?: number | null
+          entity_id?: string | null
           id?: string
+          is_active?: boolean | null
           language?: string | null
           lp_type?: string | null
           lp_type_id?: string | null
+          name?: string | null
           platform?: string | null
           purpose?: string | null
           updated_at?: string | null
           utm_content?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "landing_page_templates_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "system_entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "landing_page_templates_lp_type_id_fkey"
             columns: ["lp_type_id"]
