@@ -3317,6 +3317,7 @@ export type Database = {
         Row: {
           assigned_at: string
           assigned_by: string | null
+          completed_at: string | null
           id: string
           task_id: string
           user_id: string
@@ -3324,6 +3325,7 @@ export type Database = {
         Insert: {
           assigned_at?: string
           assigned_by?: string | null
+          completed_at?: string | null
           id?: string
           task_id: string
           user_id: string
@@ -3331,6 +3333,7 @@ export type Database = {
         Update: {
           assigned_at?: string
           assigned_by?: string | null
+          completed_at?: string | null
           id?: string
           task_id?: string
           user_id?: string
@@ -3589,6 +3592,7 @@ export type Database = {
           external_dependency_reason: string | null
           failure_reason: string | null
           id: string
+          is_collaborative: boolean
           is_external_dependency: boolean | null
           is_recurrence_template: boolean | null
           jira_key: string | null
@@ -3646,6 +3650,7 @@ export type Database = {
           external_dependency_reason?: string | null
           failure_reason?: string | null
           id?: string
+          is_collaborative?: boolean
           is_external_dependency?: boolean | null
           is_recurrence_template?: boolean | null
           jira_key?: string | null
@@ -3703,6 +3708,7 @@ export type Database = {
           external_dependency_reason?: string | null
           failure_reason?: string | null
           id?: string
+          is_collaborative?: boolean
           is_external_dependency?: boolean | null
           is_recurrence_template?: boolean | null
           jira_key?: string | null
