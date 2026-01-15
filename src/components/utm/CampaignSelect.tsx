@@ -128,7 +128,8 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0 liquid-glass-dropdown" align="start">
-          <ScrollArea className="max-h-[300px]">
+          {/* Scrollable campaign list */}
+          <ScrollArea className="max-h-[200px]">
             <div className="p-xs">
               {/* Campaign list */}
               {campaigns?.map((campaign) => (
@@ -221,54 +222,56 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
                   No campaigns yet
                 </div>
               )}
-
-              {/* Add new section */}
-              {isAdding ? (
-                <div className="flex items-center gap-xs px-sm py-xs mt-xs border-t border-border pt-sm">
-                  <Input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Campaign name"
-                    className="h-7 text-metadata flex-1"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleCreate();
-                      if (e.key === "Escape") cancelAdd();
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={handleCreate}
-                    disabled={createCampaign.isPending || !newName.trim()}
-                  >
-                    {createCampaign.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Check className="h-3 w-3 text-success-text" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={cancelAdd}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <button
-                  className="w-full flex items-center gap-xs px-sm py-xs mt-xs border-t border-border pt-sm text-metadata text-muted-foreground hover:text-foreground transition-smooth"
-                  onClick={startAdd}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add New Campaign
-                </button>
-              )}
             </div>
           </ScrollArea>
+
+          {/* Add new section - ALWAYS VISIBLE outside ScrollArea */}
+          <div className="border-t border-border p-xs">
+            {isAdding ? (
+              <div className="flex items-center gap-xs px-sm py-xs">
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Campaign name"
+                  className="h-7 text-metadata flex-1"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreate();
+                    if (e.key === "Escape") cancelAdd();
+                  }}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleCreate}
+                  disabled={createCampaign.isPending || !newName.trim()}
+                >
+                  {createCampaign.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Check className="h-3 w-3 text-success-text" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={cancelAdd}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                className="w-full flex items-center gap-xs px-sm py-xs text-metadata text-muted-foreground hover:text-foreground transition-smooth rounded-md hover:bg-card-hover"
+                onClick={startAdd}
+              >
+                <Plus className="h-3 w-3" />
+                Add New Campaign
+              </button>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
 
