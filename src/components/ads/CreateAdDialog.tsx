@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { ElementQuickInsert } from './ElementQuickInsert';
-import { useSaveSocialElement } from '@/hooks/useSocialAdElements';
+import { useCreateAdElement } from '@/hooks/useAdElements';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Copy, Save, Sparkles } from 'lucide-react';
 import { SearchAdPreview } from './SearchAdPreview';
@@ -31,7 +31,7 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
   const [adName, setAdName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { copy } = useCopyToClipboard();
-  const saveElementMutation = useSaveSocialElement();
+  const createElementMutation = useCreateAdElement();
 
   // Search ad fields
   const [headlines, setHeadlines] = useState<string[]>(Array(15).fill(''));
@@ -61,18 +61,15 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
       return;
     }
 
-    try {
-      await saveElementMutation.mutateAsync({
-        content,
-        elementType,
-        entity: entity ? [entity] : [],
-        language: 'EN',
-      });
-      
-      toast({ title: 'Success', description: `Saved as ${elementType}` });
-    } catch (error) {
-      console.error('Error saving element:', error);
-    }
+    createElementMutation.mutate({
+      element_type: elementType,
+      content: { text: content },
+      entity: entity ? [entity] : [],
+      language: 'EN',
+      google_status: 'pending',
+      tags: entity ? [entity, elementType] : [elementType],
+      is_favorite: false,
+    });
   };
 
   const handleCreate = async () => {

@@ -256,7 +256,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       element_type: type,
       content: elementContent,
       created_by: user.id,
-      entity: entity,
+      entity: [entity],  // Fixed: wrap in array to match database schema
       language: language,
       google_status: 'approved',
       use_count: 0
