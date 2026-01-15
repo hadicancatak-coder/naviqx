@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAdElements } from "@/hooks/useAdElements";
+import { useAdElements, useIncrementElementUsage } from "@/hooks/useAdElements";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,6 +24,7 @@ export function SavedElementsSelector({
 }: SavedElementsSelectorProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const incrementUsage = useIncrementElementUsage();
 
   const { data: elements = [] } = useAdElements({
     elementType,
@@ -32,7 +33,8 @@ export function SavedElementsSelector({
     search
   });
 
-  const handleSelect = (content: string) => {
+  const handleSelect = (id: string, content: string) => {
+    incrementUsage.mutate(id);
     onSelect(content);
     setIsOpen(false);
   };
@@ -82,7 +84,7 @@ export function SavedElementsSelector({
                 return (
                   <button
                     key={element.id}
-                    onClick={() => handleSelect(content)}
+                    onClick={() => handleSelect(element.id, content)}
                     className="w-full text-left p-sm rounded hover:bg-muted/50 transition-smooth group"
                   >
                     <div className="flex items-start gap-sm">

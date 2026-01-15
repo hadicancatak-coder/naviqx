@@ -47,9 +47,7 @@ export function useAdElements(filters?: {
       if (filters?.tags && filters.tags.length > 0) {
         query = query.overlaps('tags', filters.tags);
       }
-      if (filters?.search) {
-        query = query.ilike('content', `%${filters.search}%`);
-      }
+      // Note: search is done client-side after fetching since content is JSONB
       if (filters?.language && filters.language !== 'all') {
         query = query.eq('language', filters.language);
       }
@@ -62,7 +60,21 @@ export function useAdElements(filters?: {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as AdElement[];
+      
+      let results = data as AdElement[];
+      
+      // Client-side search filter for JSONB content
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase();
+        results = results.filter(element => {
+          const content = typeof element.content === 'string' 
+            ? element.content 
+            : JSON.stringify(element.content);
+          return content.toLowerCase().includes(searchLower);
+        });
+      }
+      
+      return results;
     },
   });
 }
