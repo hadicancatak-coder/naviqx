@@ -698,7 +698,7 @@ export default function Tasks() {
   );
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-background relative">
+    <div className="h-[calc(100vh-64px)] relative">
       <TaskBulkActionsBar
         selectedCount={selectedTaskIds.length}
         onClearSelection={() => setSelectedTaskIds([])}
