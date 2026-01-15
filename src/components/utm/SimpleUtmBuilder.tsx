@@ -57,11 +57,8 @@ export function SimpleUtmBuilder() {
   const { data: lpLinks } = useLpLinks({ isActive: true });
   const createUtmLink = useCreateUtmLink();
 
-  // Filter LPs by selected entity
-  const filteredLpLinks = useMemo(() => {
-    if (!selectedEntityId || !lpLinks) return [];
-    return lpLinks.filter(lp => lp.entity_id === selectedEntityId);
-  }, [lpLinks, selectedEntityId]);
+  // All active LP links (no entity filtering - entity is used for URL generation)
+  const allLpLinks = lpLinks || [];
 
   // Get entity info
   const selectedEntity = useMemo(() => {
@@ -136,7 +133,7 @@ export function SimpleUtmBuilder() {
   const addRow = useCallback(() => {
     const newRow: UtmRow = {
       id: crypto.randomUUID(),
-      lpLinkId: filteredLpLinks[0]?.id || "",
+      lpLinkId: allLpLinks[0]?.id || "",
       language: "EN",
       campaign: campaigns?.[0]?.id || "",
       platform: platforms?.[0]?.id || "",
@@ -144,7 +141,7 @@ export function SimpleUtmBuilder() {
       archivedAt: null,
     };
     setRows((prev) => [...prev, newRow]);
-  }, [filteredLpLinks, campaigns, platforms]);
+  }, [allLpLinks, campaigns, platforms]);
 
   // Update a row field
   const updateRow = useCallback((id: string, field: keyof UtmRow, value: string) => {
@@ -264,12 +261,12 @@ export function SimpleUtmBuilder() {
             </Select>
           </div>
 
-          {/* Add Row button - only enabled when entity selected */}
+          {/* Add Row button - only enabled when entity selected and LPs exist */}
           <Button
             variant="outline"
             size="sm"
             onClick={addRow}
-            disabled={!selectedEntityId || filteredLpLinks.length === 0}
+            disabled={!selectedEntityId || allLpLinks.length === 0}
             className="gap-xs"
           >
             <Plus className="h-4 w-4" />
@@ -288,27 +285,27 @@ export function SimpleUtmBuilder() {
           </div>
         )}
 
-        {/* Entity selected but no LPs */}
-        {selectedEntityId && filteredLpLinks.length === 0 && (
+        {/* No LPs in system */}
+        {selectedEntityId && allLpLinks.length === 0 && (
           <div className="text-center py-2xl text-muted-foreground border border-dashed rounded-lg">
             <Wand2 className="h-12 w-12 mx-auto mb-md opacity-50" />
             <p className="text-heading-sm font-medium mb-xs">No Landing Pages</p>
             <p className="text-body-sm mb-md">
-              No landing pages configured for {selectedEntity?.name}. Add some in the LP Config tab.
+              No landing pages configured. Add some in the Config tab.
             </p>
           </div>
         )}
 
-        {/* Entity selected with LPs - show available LPs or table */}
-        {selectedEntityId && filteredLpLinks.length > 0 && (
+        {/* Entity selected with LPs available - show table */}
+        {selectedEntityId && allLpLinks.length > 0 && (
           <>
             {/* Available LPs list */}
             <div className="p-md rounded-lg bg-muted/30 border border-border">
               <Label className="text-metadata font-medium text-muted-foreground mb-sm block">
-                Available LPs for {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name}:
+                Building URLs for {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name} • Available LPs:
               </Label>
               <div className="flex flex-wrap gap-xs">
-                {filteredLpLinks.map((lp) => (
+                {allLpLinks.map((lp) => (
                   <span
                     key={lp.id}
                     className="px-sm py-xs text-metadata bg-card rounded border border-border"
@@ -362,7 +359,7 @@ export function SimpleUtmBuilder() {
                               <SelectValue placeholder="Select LP" />
                             </SelectTrigger>
                             <SelectContent>
-                              {filteredLpLinks.map((lp) => (
+                              {allLpLinks.map((lp) => (
                                 <SelectItem key={lp.id} value={lp.id}>
                                   {lp.name || lp.base_url}
                                 </SelectItem>
