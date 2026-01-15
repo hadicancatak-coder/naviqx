@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataCard } from "@/components/layout";
-import { Copy, Check, Trash2, Wand2, Building2 } from "lucide-react";
+import { Copy, Check, Trash2, Wand2, Building2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { useUtmPlatforms } from "@/hooks/useUtmPlatforms";
@@ -33,6 +33,23 @@ import {
 } from "@/lib/utmHelpers";
 import { CampaignSelect } from "./CampaignSelect";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface UtmRow {
   id: string;
@@ -45,12 +62,213 @@ interface UtmRow {
   archivedAt: string | null;
 }
 
+interface SortableRowProps {
+  row: UtmRow & { generatedUrl: string };
+  index: number;
+  totalRows: number;
+  onMoveUp: (id: string) => void;
+  onMoveDown: (id: string) => void;
+  onUpdate: (id: string, field: keyof UtmRow, value: string) => void;
+  onDelete: (id: string) => void;
+  onCopy: (row: UtmRow) => void;
+  copiedIds: Set<string>;
+  platforms: any[];
+  campaigns: any[];
+}
+
+function SortableRow({
+  row,
+  index,
+  totalRows,
+  onMoveUp,
+  onMoveDown,
+  onUpdate,
+  onDelete,
+  onCopy,
+  copiedIds,
+  platforms,
+  campaigns,
+}: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: row.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const activePlatforms = platforms?.filter((p: any) => p.is_active) || [];
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "transition-smooth",
+        row.archivedAt && "bg-success-soft/30",
+        isDragging && "bg-muted/50"
+      )}
+    >
+      {/* Drag handle + Order controls */}
+      <TableCell className="w-[60px]">
+        <div className="flex items-center gap-0.5">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <div className="flex flex-col">
+            <button
+              onClick={() => onMoveUp(row.id)}
+              disabled={index === 0}
+              className={cn(
+                "p-0.5 hover:bg-muted rounded transition-colors",
+                index === 0 && "opacity-30 cursor-not-allowed"
+              )}
+            >
+              <ChevronUp className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => onMoveDown(row.id)}
+              disabled={index === totalRows - 1}
+              className={cn(
+                "p-0.5 hover:bg-muted rounded transition-colors",
+                index === totalRows - 1 && "opacity-30 cursor-not-allowed"
+              )}
+            >
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+      </TableCell>
+
+      {/* LP Name - Read only */}
+      <TableCell className="font-medium text-body-sm">
+        {row.lpName}
+      </TableCell>
+
+      {/* Language dropdown */}
+      <TableCell>
+        <Select
+          value={row.language}
+          onValueChange={(v) => onUpdate(row.id, "language", v)}
+        >
+          <SelectTrigger className="h-8 text-metadata">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LANGUAGES.map((lang) => (
+              <SelectItem key={lang} value={lang}>
+                {lang}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+
+      {/* Platform dropdown */}
+      <TableCell>
+        <Select
+          value={row.platform}
+          onValueChange={(v) => onUpdate(row.id, "platform", v)}
+        >
+          <SelectTrigger className="h-8 text-metadata">
+            <SelectValue placeholder="Select" />
+          </SelectTrigger>
+          <SelectContent>
+            {activePlatforms.map((platform: any) => (
+              <SelectItem key={platform.id} value={platform.id}>
+                {platform.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+
+      {/* Campaign with add/edit/delete */}
+      <TableCell>
+        <CampaignSelect
+          value={row.campaign}
+          onValueChange={(v) => onUpdate(row.id, "campaign", v)}
+          className="w-full"
+        />
+      </TableCell>
+
+      {/* Content - free text */}
+      <TableCell>
+        <Input
+          value={row.content}
+          onChange={(e) => onUpdate(row.id, "content", e.target.value)}
+          placeholder="Auto"
+          className="h-8 text-metadata"
+        />
+      </TableCell>
+
+      {/* Generated UTM URL */}
+      <TableCell>
+        <code className="text-metadata text-muted-foreground block truncate max-w-[400px]">
+          {row.generatedUrl || "—"}
+        </code>
+      </TableCell>
+
+      {/* Copy button */}
+      <TableCell>
+        <div className="flex items-center justify-end gap-xs">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onCopy(row)}
+            disabled={!row.generatedUrl}
+          >
+            {copiedIds.has(row.id) ? (
+              <Check className="h-4 w-4 text-success-text" />
+            ) : row.archivedAt ? (
+              <div className="relative">
+                <Copy className="h-4 w-4" />
+                <Check className="h-2.5 w-2.5 absolute -bottom-0.5 -right-0.5 text-success-text" />
+              </div>
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive-text hover:text-destructive-text"
+            onClick={() => onDelete(row.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 const LANGUAGES = ["EN", "AR"];
 
 export function SimpleUtmBuilder() {
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
   const [rows, setRows] = useState<UtmRow[]>([]);
   const [copiedIds, setCopiedIds] = useState<Set<string>>(new Set());
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Data hooks
   const { data: entities } = useSystemEntities();
@@ -59,7 +277,7 @@ export function SimpleUtmBuilder() {
   const { data: lpLinks } = useLpLinks({ isActive: true });
   const createUtmLink = useCreateUtmLink();
 
-  // All active LP links
+  // All active LP links (already sorted by display_order from hook)
   const allLpLinks = lpLinks || [];
 
   // Get entity info
@@ -237,6 +455,40 @@ export function SimpleUtmBuilder() {
     setSelectedEntityId(entityId);
   };
 
+  // Drag and drop handler
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setRows((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }, []);
+
+  // Move row up
+  const moveRowUp = useCallback((id: string) => {
+    setRows((items) => {
+      const index = items.findIndex((item) => item.id === id);
+      if (index > 0) {
+        return arrayMove(items, index, index - 1);
+      }
+      return items;
+    });
+  }, []);
+
+  // Move row down
+  const moveRowDown = useCallback((id: string) => {
+    setRows((items) => {
+      const index = items.findIndex((item) => item.id === id);
+      if (index < items.length - 1) {
+        return arrayMove(items, index, index + 1);
+      }
+      return items;
+    });
+  }, []);
+
   return (
     <DataCard>
       <div className="space-y-lg">
@@ -298,131 +550,49 @@ export function SimpleUtmBuilder() {
               </Label>
             </div>
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="w-[140px] min-w-[140px]">LP Name</TableHead>
-                    <TableHead className="w-[80px] min-w-[80px]">Language</TableHead>
-                    <TableHead className="w-[140px] min-w-[140px]">Platform</TableHead>
-                    <TableHead className="w-[180px] min-w-[180px]">Campaign</TableHead>
-                    <TableHead className="w-[120px] min-w-[120px]">Content</TableHead>
-                    <TableHead className="min-w-[300px]">Generated UTM</TableHead>
-                    <TableHead className="w-[80px] min-w-[80px] text-right">Copy</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rowsWithUrls.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className={cn(
-                        "transition-smooth",
-                        row.archivedAt && "bg-success-soft/30"
-                      )}
-                    >
-                      {/* LP Name - Read only */}
-                      <TableCell className="font-medium text-body-sm">
-                        {row.lpName}
-                      </TableCell>
-
-                      {/* Language dropdown */}
-                      <TableCell>
-                        <Select
-                          value={row.language}
-                          onValueChange={(v) => updateRow(row.id, "language", v)}
-                        >
-                          <SelectTrigger className="h-8 text-metadata">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LANGUAGES.map((lang) => (
-                              <SelectItem key={lang} value={lang}>
-                                {lang}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-
-                      {/* Platform dropdown */}
-                      <TableCell>
-                        <Select
-                          value={row.platform}
-                          onValueChange={(v) => updateRow(row.id, "platform", v)}
-                        >
-                          <SelectTrigger className="h-8 text-metadata">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {activePlatforms.map((platform) => (
-                              <SelectItem key={platform.id} value={platform.id}>
-                                {platform.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-
-                      {/* Campaign with add/edit/delete */}
-                      <TableCell>
-                        <CampaignSelect
-                          value={row.campaign}
-                          onValueChange={(v) => updateRow(row.id, "campaign", v)}
-                          className="w-full"
-                        />
-                      </TableCell>
-
-                      {/* Content - free text */}
-                      <TableCell>
-                        <Input
-                          value={row.content}
-                          onChange={(e) => updateRow(row.id, "content", e.target.value)}
-                          placeholder="Auto"
-                          className="h-8 text-metadata"
-                        />
-                      </TableCell>
-
-                      {/* Generated UTM URL */}
-                      <TableCell>
-                        <code className="text-metadata text-muted-foreground block truncate max-w-[400px]">
-                          {row.generatedUrl || "—"}
-                        </code>
-                      </TableCell>
-
-                      {/* Copy button */}
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-xs">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleCopy(row)}
-                            disabled={!row.generatedUrl}
-                          >
-                            {copiedIds.has(row.id) ? (
-                              <Check className="h-4 w-4 text-success-text" />
-                            ) : row.archivedAt ? (
-                              <div className="relative">
-                                <Copy className="h-4 w-4" />
-                                <Check className="h-2.5 w-2.5 absolute -bottom-0.5 -right-0.5 text-success-text" />
-                              </div>
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive-text hover:text-destructive-text"
-                            onClick={() => deleteRow(row.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30">
+                      <TableHead className="w-[60px] min-w-[60px]">Order</TableHead>
+                      <TableHead className="w-[140px] min-w-[140px]">LP Name</TableHead>
+                      <TableHead className="w-[80px] min-w-[80px]">Language</TableHead>
+                      <TableHead className="w-[140px] min-w-[140px]">Platform</TableHead>
+                      <TableHead className="w-[180px] min-w-[180px]">Campaign</TableHead>
+                      <TableHead className="w-[120px] min-w-[120px]">Content</TableHead>
+                      <TableHead className="min-w-[300px]">Generated UTM</TableHead>
+                      <TableHead className="w-[80px] min-w-[80px] text-right">Copy</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    <SortableContext
+                      items={rowsWithUrls.map((r) => r.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {rowsWithUrls.map((row, index) => (
+                        <SortableRow
+                          key={row.id}
+                          row={row}
+                          index={index}
+                          totalRows={rowsWithUrls.length}
+                          onMoveUp={moveRowUp}
+                          onMoveDown={moveRowDown}
+                          onUpdate={updateRow}
+                          onDelete={deleteRow}
+                          onCopy={handleCopy}
+                          copiedIds={copiedIds}
+                          platforms={platforms || []}
+                          campaigns={campaigns || []}
+                        />
+                      ))}
+                    </SortableContext>
+                  </TableBody>
+                </Table>
+              </DndContext>
             </div>
           </div>
         )}
