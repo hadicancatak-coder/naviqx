@@ -179,7 +179,10 @@ export function TaskDetailProvider({
     // Fetch collaborative status if collaborative
     if (data.is_collaborative) {
       const collabStatus = await getCollaborativeStatus(taskId);
-      setCollaborativeStatus(collabStatus);
+      setCollaborativeStatus({
+        assignees: collabStatus.assignees,
+        allCompleted: collabStatus.allCompleted
+      });
     }
   }, [taskId, toast]);
 
@@ -386,9 +389,12 @@ export function TaskDetailProvider({
             title: "Marked as complete", 
             description: result.data.message 
           });
-          // Refresh collaborative status
-          const collabStatus = await getCollaborativeStatus(taskId);
-          setCollaborativeStatus(collabStatus);
+        // Refresh collaborative status
+        const collabStatus = await getCollaborativeStatus(taskId);
+        setCollaborativeStatus({
+          assignees: collabStatus.assignees,
+          allCompleted: collabStatus.allCompleted
+        });
         } else {
           setStatus("Completed");
           toast({ title: "Task completed", description: "All assignees have completed" });
@@ -409,8 +415,11 @@ export function TaskDetailProvider({
     if (result.success) {
       setIsCollaborativeState(value);
       if (value) {
-        const collabStatus = await getCollaborativeStatus(taskId);
-        setCollaborativeStatus(collabStatus);
+      const collabStatus = await getCollaborativeStatus(taskId);
+      setCollaborativeStatus({
+        assignees: collabStatus.assignees,
+        allCompleted: collabStatus.allCompleted
+      });
       } else {
         setCollaborativeStatus(null);
       }
