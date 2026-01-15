@@ -163,7 +163,7 @@ function SortableRow({
           value={row.language}
           onValueChange={(v) => onUpdate(row.id, "language", v)}
         >
-          <SelectTrigger className="h-8 text-metadata">
+          <SelectTrigger className="h-8 text-metadata w-[60px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -215,8 +215,8 @@ function SortableRow({
       </TableCell>
 
       {/* Generated UTM URL */}
-      <TableCell>
-        <code className="text-metadata text-muted-foreground block truncate max-w-[400px]">
+      <TableCell className="max-w-0">
+        <code className="text-metadata text-muted-foreground block truncate">
           {row.generatedUrl || "—"}
         </code>
       </TableCell>
@@ -616,7 +616,7 @@ export function SimpleUtmBuilder() {
                 {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name} • {rows.length} Landing Pages
               </Label>
             </div>
-            <div className="overflow-x-auto">
+            <div>
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -625,14 +625,14 @@ export function SimpleUtmBuilder() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30">
-                      <TableHead className="w-[60px] min-w-[60px]">Order</TableHead>
-                      <TableHead className="w-[140px] min-w-[140px]">LP Name</TableHead>
-                      <TableHead className="w-[80px] min-w-[80px]">Language</TableHead>
-                      <TableHead className="w-[140px] min-w-[140px]">Platform</TableHead>
-                      <TableHead className="w-[180px] min-w-[180px]">Campaign</TableHead>
-                      <TableHead className="w-[120px] min-w-[120px]">Content</TableHead>
-                      <TableHead className="min-w-[300px]">Generated UTM</TableHead>
-                      <TableHead className="w-[80px] min-w-[80px] text-right">Copy</TableHead>
+                      <TableHead className="w-[50px]">Order</TableHead>
+                      <TableHead className="w-[15%]">LP Name</TableHead>
+                      <TableHead className="w-[60px]">Lang</TableHead>
+                      <TableHead className="w-[12%]">Platform</TableHead>
+                      <TableHead className="w-[15%]">Campaign</TableHead>
+                      <TableHead className="w-[10%]">Content</TableHead>
+                      <TableHead>Generated UTM</TableHead>
+                      <TableHead className="w-[70px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
