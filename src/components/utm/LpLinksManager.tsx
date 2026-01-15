@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { normalizeLpUrl } from "@/lib/utmHelpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,6 +85,16 @@ export function LpLinksManager() {
       language: "en",
     });
   };
+
+  // Normalize URL when user leaves the input field
+  const handleUrlBlur = useCallback(() => {
+    if (formData.base_url.trim()) {
+      const normalized = normalizeLpUrl(formData.base_url);
+      if (normalized !== formData.base_url) {
+        setFormData(prev => ({ ...prev, base_url: normalized }));
+      }
+    }
+  }, [formData.base_url]);
 
   const handleOpenAddDialog = () => {
     resetForm();
@@ -236,12 +247,16 @@ export function LpLinksManager() {
                 <Label htmlFor="base_url">Base URL *</Label>
                 <Input
                   id="base_url"
-                  placeholder="https://example.com/lp/jordan"
+                  placeholder="https://campaigns.cfifinancial.com/ar/jo/shine-with-gold-4"
                   value={formData.base_url}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, base_url: e.target.value }))
                   }
+                  onBlur={handleUrlBlur}
                 />
+                <p className="text-metadata text-muted-foreground">
+                  Language and country path segments will be stripped automatically
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-md">
