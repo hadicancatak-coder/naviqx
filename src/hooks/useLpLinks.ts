@@ -72,12 +72,12 @@ export const useCreateLpLink = () => {
 
   return useMutation({
     mutationFn: async (lpLink: {
-      entity_id: string;
+      entity_id: string | null;
       name: string;
       base_url: string;
       purpose: 'AO' | 'Webinar' | 'Seminar';
       lp_type: 'static' | 'dynamic';
-      language?: string;
+      language?: string | null;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
