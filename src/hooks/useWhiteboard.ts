@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
-export type WhiteboardItemType = "sticky" | "text" | "task";
+export type WhiteboardItemType = "sticky" | "text" | "task" | "shape";
 
 export interface WhiteboardItem {
   id: string;
