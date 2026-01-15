@@ -98,6 +98,8 @@ export const useUtmLinks = (filters?: UtmLinkFilters) => {
         creator: link.created_by ? profilesMap[link.created_by] || null : null,
       })) as UtmLink[];
     },
+    staleTime: 30 * 1000, // 30 seconds - prevents excessive refetches
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -121,12 +123,17 @@ export const useCreateUtmLink = () => {
       if (error) throw error;
       return data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["utm-links"] });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utm-links"] });
       toast.success("UTM link created successfully");
     },
     onError: (error) => {
       toast.error("Failed to create UTM link: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["utm-links"] });
     },
   });
 };
@@ -146,12 +153,17 @@ export const useUpdateUtmLink = () => {
       if (error) throw error;
       return data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["utm-links"] });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utm-links"] });
       toast.success("UTM link updated successfully");
     },
     onError: (error) => {
       toast.error("Failed to update UTM link: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["utm-links"] });
     },
   });
 };
@@ -167,13 +179,19 @@ export const useDeleteUtmLink = () => {
         .eq("id", id);
 
       if (error) throw error;
+      return id;
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["utm-links"] });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utm-links"] });
       toast.success("UTM link deleted successfully");
     },
     onError: (error) => {
       toast.error("Failed to delete UTM link: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["utm-links"] });
     },
   });
 };
