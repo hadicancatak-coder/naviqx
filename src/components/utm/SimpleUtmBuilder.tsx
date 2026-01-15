@@ -352,9 +352,15 @@ export function SimpleUtmBuilder() {
         // Fallback if URL parsing fails
       }
 
+      // Helper to capitalize first letter
+      const toTitleCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      
       const utmSource = platformName.toLowerCase();
       const utmMedium = platformData?.utm_medium || calculateUtmMedium(platformName);
-      const utmCampaign = `${platformName.toLowerCase()}_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${formatFullMonthYear2Digit()}`;
+      // Format: Facebook_Gold_January26 (Title Case)
+      const formattedPlatform = toTitleCase(platformName);
+      const formattedCampaign = campaignName.split(/[\s_-]+/).map(toTitleCase).join('');
+      const utmCampaign = `${formattedPlatform}_${formattedCampaign}_${formatFullMonthYear2Digit()}`;
       const utmContent = row.content || generateUtmContent(lpUrl, campaignName);
 
       return buildUtmUrl({
@@ -408,6 +414,11 @@ export function SimpleUtmBuilder() {
         const campaignName = campaignData?.name || "";
         const entityName = selectedEntity?.name || lpLink?.entity?.name || "";
 
+        // Helper to capitalize first letter
+        const toTitleCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        const formattedPlatform = toTitleCase(platformName);
+        const formattedCampaign = campaignName.split(/[\s_-]+/).map(toTitleCase).join('');
+
         try {
           await createUtmLink.mutateAsync({
             name: `${entityName}_${campaignName}_${row.language}`,
@@ -415,7 +426,7 @@ export function SimpleUtmBuilder() {
             full_url: url,
             utm_source: platformName.toLowerCase(),
             utm_medium: platformData?.utm_medium || calculateUtmMedium(platformName),
-            utm_campaign: `${platformName.toLowerCase()}_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${formatFullMonthYear2Digit()}`,
+            utm_campaign: `${formattedPlatform}_${formattedCampaign}_${formatFullMonthYear2Digit()}`,
             utm_content: row.content || null,
             utm_term: null,
             entity: entityName ? [entityName] : [],
