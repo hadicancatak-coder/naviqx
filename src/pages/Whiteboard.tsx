@@ -75,15 +75,15 @@ export default function Whiteboard() {
 
   // Show whiteboard editor - use full height layout
   return (
-    <PageContainer size="full" className="flex flex-col h-[calc(100vh-80px)]">
-      <div className="flex items-center gap-md mb-md flex-shrink-0">
+    <div className="flex flex-col h-[calc(100vh-64px)] px-lg py-md">
+      <div className="flex items-center gap-md mb-sm flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={handleBackToGallery} className="gap-xs">
           <ArrowLeft className="h-4 w-4" />
           All Whiteboards
         </Button>
       </div>
 
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 mb-sm">
         <WhiteboardHeader
           whiteboard={whiteboard}
           allWhiteboards={allWhiteboards}
@@ -93,7 +93,7 @@ export default function Whiteboard() {
         />
       </div>
 
-      <div className="flex-1 min-h-[500px] rounded-xl overflow-hidden border border-border">
+      <div className="flex-1 rounded-xl overflow-hidden border border-border">
         <WhiteboardContainer
           items={items}
           connectors={connectors}
@@ -106,6 +106,6 @@ export default function Whiteboard() {
           onDeleteConnector={deleteConnector}
         />
       </div>
-    </PageContainer>
+    </div>
   );
 }
