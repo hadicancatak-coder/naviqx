@@ -17,12 +17,37 @@ export const useUtmPlatforms = () => {
         .from("utm_platforms")
         .select("*")
         .eq("is_active", true)
+        .order("display_order", { ascending: true })
         .order("name");
 
       if (error) throw error;
       return data as UtmPlatform[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - platform data rarely changes
+  });
+};
+
+export const useUpdatePlatformOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (platforms: Array<{ id: string; display_order: number }>) => {
+      const promises = platforms.map(({ id, display_order }) =>
+        supabase
+          .from("utm_platforms")
+          .update({ display_order })
+          .eq("id", id)
+      );
+      
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["utm-platforms"] });
+      toast.success("Platform order updated");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update order: " + error.message);
+    },
   });
 };
 

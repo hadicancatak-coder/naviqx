@@ -6,22 +6,59 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useUtmMediums, useCreateMedium, useUpdateMedium, useDeleteMedium } from "@/hooks/useUtmMediums";
+import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
+import { useUtmMediums, useCreateMedium, useUpdateMedium, useDeleteMedium, useUpdateMediumOrder } from "@/hooks/useUtmMediums";
 import { checkMediumDependencies, formatDependencyMessage } from "@/lib/selectorDependencyCheck";
 import { toast } from "sonner";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortableRow({ id, children }: { id: string; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b transition-colors hover:bg-muted/50">
+      <td className="p-md">
+        <div {...attributes} {...listeners} className="cursor-move">
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </td>
+      {children}
+    </tr>
+  );
+}
 
 export function UtmMediumManager() {
   const { data: mediums = [], isLoading } = useUtmMediums();
   const createMedium = useCreateMedium();
   const updateMedium = useUpdateMedium();
   const deleteMedium = useDeleteMedium();
+  const updateMediumOrder = useUpdateMediumOrder();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMedium, setEditingMedium] = useState<any>(null);
   const [mediumForm, setMediumForm] = useState({ name: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mediumToDelete, setMediumToDelete] = useState<any>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleOpenDialog = (medium: any = null) => {
     if (medium) {
@@ -53,7 +90,7 @@ export function UtmMediumManager() {
       );
     } else {
       createMedium.mutate(
-        { name: mediumForm.name, display_order: 0 },
+        { name: mediumForm.name, display_order: mediums.length },
         {
           onSuccess: () => {
             setIsDialogOpen(false);
@@ -88,6 +125,22 @@ export function UtmMediumManager() {
     }
   };
 
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over.id && mediums) {
+      const oldIndex = mediums.findIndex((m) => m.id === active.id);
+      const newIndex = mediums.findIndex((m) => m.id === over.id);
+      const reordered = arrayMove(mediums, oldIndex, newIndex);
+      
+      const updates = reordered.map((medium, index) => ({
+        id: medium.id,
+        display_order: index,
+      }));
+      
+      updateMediumOrder.mutate(updates);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center text-muted-foreground py-8">Loading mediums...</div>;
   }
@@ -104,39 +157,44 @@ export function UtmMediumManager() {
             </Button>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Medium Name</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mediums.length === 0 ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground">
-                    No mediums configured yet
-                  </TableCell>
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead>Medium Name</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                mediums.map((medium) => (
-                  <TableRow key={medium.id}>
-                    <TableCell className="font-medium">{medium.name}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-sm">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(medium)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(medium)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {mediums.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      No mediums configured yet
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  <SortableContext items={mediums.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                    {mediums.map((medium) => (
+                      <SortableRow key={medium.id} id={medium.id}>
+                        <TableCell className="font-medium">{medium.name}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(medium)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(medium)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </SortableRow>
+                    ))}
+                  </SortableContext>
+                )}
+              </TableBody>
+            </Table>
+          </DndContext>
         </CardContent>
       </Card>
 
