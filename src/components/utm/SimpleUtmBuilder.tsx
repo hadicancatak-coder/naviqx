@@ -181,6 +181,7 @@ export function SimpleUtmBuilder() {
     try {
       for (const link of generatedLinks) {
         await createUtmLink.mutateAsync({
+          name: link.lpLink.name || `${link.utmSource}_${link.utmCampaign}`,
           base_url: link.lpLink.base_url,
           full_url: link.finalUrl,
           utm_source: link.utmSource,
@@ -190,8 +191,6 @@ export function SimpleUtmBuilder() {
           utm_term: link.utmTerm || null,
           entity: link.lpLink.entity?.code ? [link.lpLink.entity.code] : [],
           platform: link.utmSource,
-          lp_type: link.lpLink.lp_type,
-          purpose: link.lpLink.purpose,
           status: "active",
         });
       }
