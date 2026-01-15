@@ -23,6 +23,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getContentForDisplay, getContentForCopy } from "@/lib/captionHelpers";
 
 interface CaptionTableViewProps {
@@ -33,6 +43,8 @@ interface CaptionTableViewProps {
 export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
   const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
@@ -69,7 +81,8 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
       return;
     }
     toast.success("Caption deleted");
-    queryClient.invalidateQueries({ queryKey: ["captions"] });
+    queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
+    setDeleteConfirmId(null);
   };
 
   const handleBulkDelete = async () => {
@@ -87,7 +100,8 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
     
     toast.success(`Deleted ${selectedIds.size} captions`);
     setSelectedIds(new Set());
-    queryClient.invalidateQueries({ queryKey: ["captions"] });
+    queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
+    setBulkDeleteConfirm(false);
   };
 
   // Status color now centralized in constants.ts
@@ -103,7 +117,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleBulkDelete}
+              onClick={() => setBulkDeleteConfirm(true)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Selected
@@ -242,7 +256,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 hover:bg-destructive/10"
-                        onClick={() => handleDelete(caption.id)}
+                        onClick={() => setDeleteConfirmId(caption.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -254,6 +268,48 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
           </TableBody>
         </Table>
       </div>
+
+      {/* Single Delete Confirmation */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Caption</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this caption? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Captions</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size} selected captions? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 }

@@ -7,6 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -73,6 +83,7 @@ export function CaptionDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [editorReady, setEditorReady] = useState(false); // Ensures content is ready before editor renders
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const isDirtyRef = useRef(false);
   const contentRef = useRef<{ en: string; ar: string }>({ en: "", ar: "" });
@@ -233,6 +244,7 @@ export function CaptionDialog({
     }
 
     toast.success("Caption deleted");
+    setDeleteConfirmOpen(false);
     onSuccess();
   };
 
@@ -406,7 +418,7 @@ export function CaptionDialog({
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
                 </Button>
-                <Button variant="destructive" onClick={handleDelete}>
+                <Button variant="destructive" onClick={() => setDeleteConfirmOpen(true)}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
@@ -423,6 +435,27 @@ export function CaptionDialog({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Caption</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this caption? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

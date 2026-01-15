@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +13,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getStatusColor } from "@/lib/constants";
 import { getContentForDisplay, getContentForCopy } from "@/lib/captionHelpers";
 
@@ -22,6 +33,7 @@ interface CaptionGridViewProps {
 
 export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
   const queryClient = useQueryClient();
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleCopyContent = (content: unknown, lang: "en" | "ar") => {
     const text = getContentForCopy(content, lang);
@@ -40,7 +52,8 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
       return;
     }
     toast.success("Caption deleted");
-    queryClient.invalidateQueries({ queryKey: ["captions"] });
+    queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
+    setDeleteConfirmId(null);
   };
 
   const handleToggleFavorite = async (caption: Caption) => {
@@ -53,7 +66,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
       toast.error("Failed to update");
       return;
     }
-    queryClient.invalidateQueries({ queryKey: ["captions"] });
+    queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
   };
 
   // Status color now centralized in constants.ts
@@ -179,7 +192,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(caption.id)}
+                      onClick={() => setDeleteConfirmId(caption.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -190,6 +203,27 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
           );
         })}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Caption</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this caption? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 }
