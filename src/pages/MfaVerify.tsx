@@ -71,8 +71,8 @@ export default function MfaVerify() {
           token: sessionData.sessionToken.substring(0, 10) + '...'
         });
 
-        // Calculate expiry (24 hours from now)
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        // Use server's expiry time for consistency
+        const expiresAt = sessionData.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
         // Mark MFA as verified with session token and expiry
         setMfaVerifiedStatus(true, sessionData.sessionToken, expiresAt);
