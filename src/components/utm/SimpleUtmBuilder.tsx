@@ -25,6 +25,7 @@ import { useUtmPlatforms } from "@/hooks/useUtmPlatforms";
 import { useUtmCampaigns } from "@/hooks/useUtmCampaigns";
 import { useCreateUtmLink } from "@/hooks/useUtmLinks";
 import { useLpLinks } from "@/hooks/useLpLinks";
+import { useLpOrderPreferences, useSaveLpOrderPreferences } from "@/hooks/useLpOrderPreferences";
 import {
   calculateUtmMedium,
   formatFullMonthYear2Digit,
@@ -276,6 +277,10 @@ export function SimpleUtmBuilder() {
   const { data: campaigns } = useUtmCampaigns();
   const { data: lpLinks } = useLpLinks({ isActive: true });
   const createUtmLink = useCreateUtmLink();
+  
+  // LP order preferences
+  const { data: orderPreferences } = useLpOrderPreferences(selectedEntityId || null);
+  const saveLpOrder = useSaveLpOrderPreferences();
 
   // All active LP links (already sorted by display_order from hook)
   const allLpLinks = lpLinks || [];
@@ -301,10 +306,27 @@ export function SimpleUtmBuilder() {
     return code ? emojiMap[code] || "🌍" : "🌍";
   };
 
-  // Initialize rows from LPs when entity changes
+  // Initialize rows from LPs when entity changes, applying saved order
   useEffect(() => {
     if (selectedEntityId && allLpLinks.length > 0 && campaigns && platforms) {
-      const newRows: UtmRow[] = allLpLinks.map((lp) => ({
+      // Create rows from all LPs
+      let orderedLpLinks = [...allLpLinks];
+      
+      // Apply saved order if available
+      if (orderPreferences?.lp_order && orderPreferences.lp_order.length > 0) {
+        const savedOrder = orderPreferences.lp_order;
+        orderedLpLinks = orderedLpLinks.sort((a, b) => {
+          const indexA = savedOrder.indexOf(a.id);
+          const indexB = savedOrder.indexOf(b.id);
+          // If not in saved order, put at end
+          if (indexA === -1 && indexB === -1) return 0;
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+      }
+      
+      const newRows: UtmRow[] = orderedLpLinks.map((lp) => ({
         id: crypto.randomUUID(),
         lpLinkId: lp.id,
         lpName: lp.name || "Unnamed",
@@ -318,7 +340,7 @@ export function SimpleUtmBuilder() {
     } else if (!selectedEntityId) {
       setRows([]);
     }
-  }, [selectedEntityId, allLpLinks.length, campaigns, platforms]);
+  }, [selectedEntityId, allLpLinks.length, campaigns, platforms, orderPreferences]);
 
   // Generate UTM URL for a row
   const generateRowUrl = useCallback(
@@ -466,6 +488,13 @@ export function SimpleUtmBuilder() {
     setSelectedEntityId(entityId);
   };
 
+  // Save order to database
+  const saveOrderToDb = useCallback((newRows: UtmRow[]) => {
+    if (!selectedEntityId) return;
+    const lpOrder = newRows.map(r => r.lpLinkId);
+    saveLpOrder.mutate({ entityId: selectedEntityId, lpOrder });
+  }, [selectedEntityId, saveLpOrder]);
+
   // Drag and drop handler
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -473,32 +502,39 @@ export function SimpleUtmBuilder() {
       setRows((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        // Save order after reordering
+        saveOrderToDb(newItems);
+        return newItems;
       });
     }
-  }, []);
+  }, [saveOrderToDb]);
 
   // Move row up
   const moveRowUp = useCallback((id: string) => {
     setRows((items) => {
       const index = items.findIndex((item) => item.id === id);
       if (index > 0) {
-        return arrayMove(items, index, index - 1);
+        const newItems = arrayMove(items, index, index - 1);
+        saveOrderToDb(newItems);
+        return newItems;
       }
       return items;
     });
-  }, []);
+  }, [saveOrderToDb]);
 
   // Move row down
   const moveRowDown = useCallback((id: string) => {
     setRows((items) => {
       const index = items.findIndex((item) => item.id === id);
       if (index < items.length - 1) {
-        return arrayMove(items, index, index + 1);
+        const newItems = arrayMove(items, index, index + 1);
+        saveOrderToDb(newItems);
+        return newItems;
       }
       return items;
     });
-  }, []);
+  }, [saveOrderToDb]);
 
   return (
     <DataCard>
