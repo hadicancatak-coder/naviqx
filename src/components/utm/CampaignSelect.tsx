@@ -129,101 +129,99 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0 liquid-glass-dropdown" align="start">
           {/* Scrollable campaign list */}
-          <ScrollArea className="max-h-[200px]">
-            <div className="p-xs">
-              {/* Campaign list */}
-              {campaigns?.map((campaign) => (
-                <div
-                  key={campaign.id}
-                  className={cn(
-                    "flex items-center gap-xs px-sm py-xs rounded-md transition-smooth group",
-                    campaign.id === value ? "bg-primary/10 text-primary" : "hover:bg-card-hover"
-                  )}
-                >
-                  {editingId === campaign.id ? (
-                    // Edit mode
-                    <div className="flex items-center gap-xs flex-1">
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-7 text-metadata flex-1"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleUpdate(campaign.id);
-                          if (e.key === "Escape") cancelEdit();
-                        }}
-                      />
+          <div className="max-h-[200px] overflow-y-auto p-xs">
+            {/* Campaign list */}
+            {campaigns?.map((campaign) => (
+              <div
+                key={campaign.id}
+                className={cn(
+                  "flex items-center gap-xs px-sm py-xs rounded-md transition-smooth group",
+                  campaign.id === value ? "bg-primary/10 text-primary" : "hover:bg-card-hover"
+                )}
+              >
+                {editingId === campaign.id ? (
+                  // Edit mode
+                  <div className="flex items-center gap-xs flex-1">
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-7 text-metadata flex-1"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleUpdate(campaign.id);
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => handleUpdate(campaign.id)}
+                      disabled={updateCampaign.isPending}
+                    >
+                      {updateCampaign.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Check className="h-3 w-3 text-success-text" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={cancelEdit}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  // View mode
+                  <>
+                    <button
+                      className="flex-1 text-left text-metadata truncate"
+                      onClick={() => {
+                        onValueChange(campaign.id);
+                        setOpen(false);
+                      }}
+                    >
+                      {campaign.name}
+                    </button>
+                    <div className="flex items-center gap-xs opacity-0 group-hover:opacity-100 transition-smooth">
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={() => handleUpdate(campaign.id)}
-                        disabled={updateCampaign.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEdit(campaign.id, campaign.name);
+                        }}
                       >
-                        {updateCampaign.isPending ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Check className="h-3 w-3 text-success-text" />
-                        )}
+                        <Pencil className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
-                        onClick={cancelEdit}
+                        className="h-6 w-6 hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(campaign.id);
+                        }}
                       >
-                        <X className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                  ) : (
-                    // View mode
-                    <>
-                      <button
-                        className="flex-1 text-left text-metadata truncate"
-                        onClick={() => {
-                          onValueChange(campaign.id);
-                          setOpen(false);
-                        }}
-                      >
-                        {campaign.name}
-                      </button>
-                      <div className="flex items-center gap-xs opacity-0 group-hover:opacity-100 transition-smooth">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEdit(campaign.id, campaign.name);
-                          }}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteId(campaign.id);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+                  </>
+                )}
+              </div>
+            ))}
 
-              {/* Empty state */}
-              {(!campaigns || campaigns.length === 0) && !isAdding && (
-                <div className="px-sm py-md text-center text-muted-foreground text-metadata">
-                  No campaigns yet
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+            {/* Empty state */}
+            {(!campaigns || campaigns.length === 0) && !isAdding && (
+              <div className="px-sm py-md text-center text-muted-foreground text-metadata">
+                No campaigns yet
+              </div>
+            )}
+          </div>
 
           {/* Add new section - ALWAYS VISIBLE outside ScrollArea */}
           <div className="border-t border-border p-xs">
