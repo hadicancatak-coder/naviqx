@@ -3993,6 +3993,41 @@ export type Database = {
           },
         ]
       }
+      user_lp_order_preferences: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          id: string
+          lp_order: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          lp_order?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          lp_order?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_lp_order_preferences_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "system_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_mfa_secrets: {
         Row: {
           created_at: string | null
