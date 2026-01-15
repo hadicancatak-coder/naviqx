@@ -85,10 +85,9 @@ export function LpLinksManager() {
     return 'AO';
   };
 
-  // Validate URL by attempting to fetch it
+  // Validate URL - only called on submit now for faster UX
   const validateUrl = async (url: string): Promise<boolean> => {
     try {
-      // Try HEAD request with no-cors to check if URL exists
       await fetch(url, { method: 'HEAD', mode: 'no-cors' });
       return true;
     } catch {
@@ -105,15 +104,13 @@ export function LpLinksManager() {
     setUrlStatus("idle");
   };
 
-  // Handle URL blur - detect purpose, normalize if needed, validate
-  const handleUrlBlur = useCallback(async () => {
+  // Handle URL blur - INSTANT: only detect purpose and normalize URL (no validation)
+  const handleUrlBlur = useCallback(() => {
     const url = formData.base_url.trim();
     if (!url) {
       setUrlStatus("idle");
       return;
     }
-
-    setUrlStatus("checking");
 
     // Detect purpose from URL
     const purpose = detectPurpose(url);
@@ -128,9 +125,8 @@ export function LpLinksManager() {
       setFormData(prev => ({ ...prev, base_url: finalUrl }));
     }
 
-    // Validate URL
-    const isValid = await validateUrl(finalUrl);
-    setUrlStatus(isValid ? "valid" : "invalid");
+    // Show detected info without validation
+    setUrlStatus("valid"); // Assume valid until submit proves otherwise
   }, [formData.base_url]);
 
   const handleOpenAddDialog = () => {
@@ -157,12 +153,12 @@ export function LpLinksManager() {
 
     // Use auto-detected values
     const payload = {
-      entity_id: null as string | null, // No longer required - will be selected in Builder
+      entity_id: null as string | null,
       name: formData.name,
       base_url: formData.base_url,
       purpose: detectedPurpose,
-      lp_type: "static" as const, // Default to static
-      language: null as string | null, // No longer tracked here
+      lp_type: "static" as const,
+      language: null as string | null,
     };
 
     if (editingLink) {

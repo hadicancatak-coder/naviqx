@@ -62,8 +62,8 @@ export const useLpLinks = (filters?: LpLinkFilters) => {
 
       return data as LpLink[];
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 30 * 1000, // 30 seconds - prevents excessive refetches
+    refetchOnWindowFocus: false, // Don't refetch on every window focus
   });
 };
 
@@ -72,11 +72,11 @@ export const useCreateLpLink = () => {
 
   return useMutation({
     mutationFn: async (lpLink: {
-      entity_id: string | null;
+      entity_id?: string | null;
       name: string;
       base_url: string;
       purpose: 'AO' | 'Webinar' | 'Seminar';
-      lp_type: 'static' | 'dynamic';
+      lp_type?: 'static' | 'dynamic';
       language?: string | null;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
@@ -90,19 +90,35 @@ export const useCreateLpLink = () => {
           is_active: true,
           display_order: 0,
         })
-        .select()
+        .select(`
+          *,
+          entity:system_entities(id, name, code)
+        `)
         .single();
 
       if (error) throw error;
-      return data;
+      return data as LpLink;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lp-links"] });
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["lp-links"] });
+    },
+    onSuccess: (data) => {
+      // Optimistically add to all relevant caches
+      const updateCache = (old: LpLink[] | undefined) => {
+        if (!old) return [data];
+        return [data, ...old];
+      };
+      queryClient.setQueryData(["lp-links", { isActive: true }], updateCache);
       toast.success("LP Link created successfully");
     },
     onError: (error: Error) => {
       console.error("Error creating LP link:", error);
       toast.error("Failed to create LP Link: " + error.message);
+    },
+    onSettled: () => {
+      // Background refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["lp-links"] });
     },
   });
 };
@@ -119,19 +135,37 @@ export const useUpdateLpLink = () => {
         .from("landing_page_templates")
         .update(updates)
         .eq("id", id)
-        .select()
+        .select(`
+          *,
+          entity:system_entities(id, name, code)
+        `)
         .single();
 
       if (error) throw error;
       return data;
     },
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["lp-links"] });
+      const previousLinks = queryClient.getQueryData(["lp-links"]);
+      // Optimistically update
+      queryClient.setQueryData(["lp-links", { isActive: true }], (old: LpLink[] | undefined) => {
+        if (!old) return old;
+        return old.map(link => link.id === id ? { ...link, ...updates } : link);
+      });
+      return { previousLinks };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lp-links"] });
       toast.success("LP Link updated successfully");
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _, context) => {
+      if (context?.previousLinks) {
+        queryClient.setQueryData(["lp-links"], context.previousLinks);
+      }
       console.error("Error updating LP link:", error);
       toast.error("Failed to update LP Link: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["lp-links"] });
     },
   });
 };
@@ -147,14 +181,30 @@ export const useDeleteLpLink = () => {
         .eq("id", id);
 
       if (error) throw error;
+      return id;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["lp-links"] });
+      const previousLinks = queryClient.getQueryData(["lp-links"]);
+      // Optimistically remove from cache
+      queryClient.setQueryData(["lp-links", { isActive: true }], (old: LpLink[] | undefined) => {
+        if (!old) return old;
+        return old.filter(link => link.id !== id);
+      });
+      return { previousLinks };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lp-links"] });
       toast.success("LP Link deleted successfully");
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _, context) => {
+      if (context?.previousLinks) {
+        queryClient.setQueryData(["lp-links"], context.previousLinks);
+      }
       console.error("Error deleting LP link:", error);
       toast.error("Failed to delete LP Link: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["lp-links"] });
     },
   });
 };

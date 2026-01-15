@@ -56,8 +56,8 @@ export const useAllEntities = () => {
         throw error;
       }
     },
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes - entities rarely change
+    refetchOnWindowFocus: false,
     retry: 2,
   });
 };
@@ -75,20 +75,34 @@ export const useCreateEntity = () => {
           .single();
         
         if (error) throw error;
-        return data;
+        return data as SystemEntity;
       } catch (error: any) {
         console.error('Error creating entity:', error);
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-entities'] });
-      queryClient.invalidateQueries({ queryKey: ['all-system-entities'] });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['system-entities'] });
+      await queryClient.cancelQueries({ queryKey: ['all-system-entities'] });
+    },
+    onSuccess: (data) => {
+      // Optimistically add to cache
+      queryClient.setQueryData(['system-entities'], (old: SystemEntity[] | undefined) => {
+        if (!old) return [data];
+        return [...old, data].sort((a, b) => a.display_order - b.display_order);
+      });
+      queryClient.setQueryData(['all-system-entities'], (old: SystemEntity[] | undefined) => {
+        if (!old) return [data];
+        return [...old, data].sort((a, b) => a.display_order - b.display_order);
+      });
       toast({ title: 'Entity created successfully' });
     },
     onError: (error: any) => {
       console.error('Entity creation failed:', error);
-      // Error already handled by global mutation error handler
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-entities'] });
+      queryClient.invalidateQueries({ queryKey: ['all-system-entities'] });
     }
   });
 };
@@ -106,19 +120,41 @@ export const useUpdateEntity = () => {
         .single();
       
       if (error) throw error;
-      return data;
+      return data as SystemEntity;
+    },
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['system-entities'] });
+      await queryClient.cancelQueries({ queryKey: ['all-system-entities'] });
+      const previousEntities = queryClient.getQueryData(['system-entities']);
+      const previousAllEntities = queryClient.getQueryData(['all-system-entities']);
+      // Optimistic update
+      const updateFn = (old: SystemEntity[] | undefined) => {
+        if (!old) return old;
+        return old.map(e => e.id === id ? { ...e, ...updates } : e);
+      };
+      queryClient.setQueryData(['system-entities'], updateFn);
+      queryClient.setQueryData(['all-system-entities'], updateFn);
+      return { previousEntities, previousAllEntities };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-entities'] });
-      queryClient.invalidateQueries({ queryKey: ['all-system-entities'] });
       toast({ title: 'Entity updated successfully' });
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      if (context?.previousEntities) {
+        queryClient.setQueryData(['system-entities'], context.previousEntities);
+      }
+      if (context?.previousAllEntities) {
+        queryClient.setQueryData(['all-system-entities'], context.previousAllEntities);
+      }
       toast({ 
         title: 'Failed to update entity', 
         description: error.message,
         variant: 'destructive' 
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-entities'] });
+      queryClient.invalidateQueries({ queryKey: ['all-system-entities'] });
     }
   });
 };
@@ -134,18 +170,41 @@ export const useDeleteEntity = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['system-entities'] });
+      await queryClient.cancelQueries({ queryKey: ['all-system-entities'] });
+      const previousEntities = queryClient.getQueryData(['system-entities']);
+      const previousAllEntities = queryClient.getQueryData(['all-system-entities']);
+      // Optimistically remove
+      const removeFn = (old: SystemEntity[] | undefined) => {
+        if (!old) return old;
+        return old.filter(e => e.id !== id);
+      };
+      queryClient.setQueryData(['system-entities'], removeFn);
+      queryClient.setQueryData(['all-system-entities'], removeFn);
+      return { previousEntities, previousAllEntities };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-entities'] });
-      queryClient.invalidateQueries({ queryKey: ['all-system-entities'] });
       toast({ title: 'Entity deleted successfully' });
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      if (context?.previousEntities) {
+        queryClient.setQueryData(['system-entities'], context.previousEntities);
+      }
+      if (context?.previousAllEntities) {
+        queryClient.setQueryData(['all-system-entities'], context.previousAllEntities);
+      }
       toast({ 
         title: 'Failed to delete entity', 
         description: error.message,
         variant: 'destructive' 
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-entities'] });
+      queryClient.invalidateQueries({ queryKey: ['all-system-entities'] });
     }
   });
 };
