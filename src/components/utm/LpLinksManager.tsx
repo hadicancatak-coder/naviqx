@@ -192,7 +192,7 @@ export function LpLinksManager() {
               Add LP Link
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] z-[200]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
                 {editingLink ? "Edit LP Link" : "Add New LP Link"}
@@ -210,7 +210,7 @@ export function LpLinksManager() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select entity" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[250]">
                     {entities?.map((entity) => (
                       <SelectItem key={entity.id} value={entity.id}>
                         {getEntityEmoji(entity.code)} {entity.name}
@@ -259,7 +259,7 @@ export function LpLinksManager() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select purpose" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[250]">
                       <SelectItem value="AO">📊 AO</SelectItem>
                       <SelectItem value="Webinar">🎥 Webinar</SelectItem>
                       <SelectItem value="Seminar">🎓 Seminar</SelectItem>
@@ -281,7 +281,7 @@ export function LpLinksManager() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[250]">
                       <SelectItem value="static">📄 Static</SelectItem>
                       <SelectItem value="dynamic">⚡ Dynamic</SelectItem>
                     </SelectContent>
@@ -300,7 +300,7 @@ export function LpLinksManager() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[250]">
                     <SelectItem value="en">🇬🇧 English</SelectItem>
                     <SelectItem value="ar">🇦🇪 Arabic</SelectItem>
                   </SelectContent>
