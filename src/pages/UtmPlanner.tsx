@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SimpleUtmBuilder } from "@/components/utm/SimpleUtmBuilder";
-import { UtmTableGroupedView } from "@/components/utm/UtmTableGroupedView";
+import { UtmArchiveTable } from "@/components/utm/UtmArchiveTable";
 import { UtmInlineFilters } from "@/components/utm/UtmInlineFilters";
 import { UtmConfigurationTab } from "@/components/utm/UtmConfigurationTab";
 import { PageContainer, PageHeader, AlertBanner, DataCard } from "@/components/layout";
@@ -67,21 +67,23 @@ const UtmPlanner = () => {
             </div>
           </div>
           <UtmInlineFilters filters={archiveFilters} onFiltersChange={setArchiveFilters} />
-          <DataCard noPadding>
-            {isLoadingArchive ? (
+          {isLoadingArchive ? (
+            <DataCard noPadding>
               <div className="p-md">
                 <TableSkeleton columns={5} rows={8} />
               </div>
-            ) : allLinks.length === 0 ? (
+            </DataCard>
+          ) : allLinks.length === 0 ? (
+            <DataCard noPadding>
               <div className="p-xl text-center text-muted-foreground">
                 <Archive className="h-12 w-12 mx-auto mb-md opacity-50" />
                 <p>No UTM links yet</p>
                 <p className="text-body-sm">Generate links in the Builder tab to see them here</p>
               </div>
-            ) : (
-              <UtmTableGroupedView links={allLinks} />
-            )}
-          </DataCard>
+            </DataCard>
+          ) : (
+            <UtmArchiveTable links={allLinks} isLoading={isLoadingArchive} />
+          )}
         </TabsContent>
 
         <TabsContent value="config" forceMount hidden={activeTab !== "config"} className="mt-lg">

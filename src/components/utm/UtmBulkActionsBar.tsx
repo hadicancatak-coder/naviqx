@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Download, Trash2, RefreshCw } from "lucide-react";
+import { X, Download, Trash2, RefreshCw, Copy } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,7 @@ interface UtmBulkActionsBarProps {
   onExport?: () => void;
   onDelete?: () => void;
   onStatusChange?: (status: string) => void;
+  onBulkCopy?: () => void;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ export function UtmBulkActionsBar({
   onExport,
   onDelete,
   onStatusChange,
+  onBulkCopy,
   className = "",
 }: UtmBulkActionsBarProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -80,6 +82,18 @@ export function UtmBulkActionsBar({
                   <SelectItem value="Archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
+            )}
+
+            {onBulkCopy && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onBulkCopy}
+                className="h-8"
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Copy All
+              </Button>
             )}
 
             {onExport && (
