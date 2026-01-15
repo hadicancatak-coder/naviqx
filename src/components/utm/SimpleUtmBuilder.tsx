@@ -355,7 +355,8 @@ export function SimpleUtmBuilder() {
 
       // Get base URL from LP link and build with language
       let lpUrl = lpLink.base_url;
-      const entityCode = selectedEntity?.code?.toLowerCase() || lpLink.entity?.code?.toLowerCase() || "";
+      // Use website_param (e.g., "kw" for Kuwait) from config, fallback to code
+      const entityCode = selectedEntity?.website_param?.toLowerCase() || selectedEntity?.code?.toLowerCase() || lpLink.entity?.website_param?.toLowerCase() || lpLink.entity?.code?.toLowerCase() || "";
       
       try {
         const urlObj = new URL(lpUrl);

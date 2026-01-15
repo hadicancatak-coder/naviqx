@@ -19,6 +19,7 @@ export interface LpLink {
     id: string;
     name: string;
     code: string;
+    website_param: string | null;
   } | null;
 }
 
@@ -36,7 +37,7 @@ export const useLpLinks = (filters?: LpLinkFilters) => {
         .from("landing_page_templates")
         .select(`
           *,
-          entity:system_entities(id, name, code)
+          entity:system_entities(id, name, code, website_param)
         `)
         .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
@@ -92,7 +93,7 @@ export const useCreateLpLink = () => {
         })
         .select(`
           *,
-          entity:system_entities(id, name, code)
+          entity:system_entities(id, name, code, website_param)
         `)
         .single();
 
@@ -137,7 +138,7 @@ export const useUpdateLpLink = () => {
         .eq("id", id)
         .select(`
           *,
-          entity:system_entities(id, name, code)
+          entity:system_entities(id, name, code, website_param)
         `)
         .single();
 
