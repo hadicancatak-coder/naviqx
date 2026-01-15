@@ -39,10 +39,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, Link, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Link, ExternalLink, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useLpLinks, useCreateLpLink, useUpdateLpLink, useDeleteLpLink, LpLink } from "@/hooks/useLpLinks";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type UrlStatus = "idle" | "checking" | "valid" | "invalid";
 
 export function LpLinksManager() {
   const [purposeFilter, setPurposeFilter] = useState<string>("all");
@@ -51,15 +53,15 @@ export function LpLinksManager() {
   const [editingLink, setEditingLink] = useState<LpLink | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Form state
+  // Simplified form state - only Name + URL
   const [formData, setFormData] = useState({
-    entity_id: "",
     name: "",
     base_url: "",
-    purpose: "" as 'AO' | 'Webinar' | 'Seminar' | "",
-    lp_type: "static" as 'static' | 'dynamic',
-    language: "en",
   });
+
+  // Auto-detected values
+  const [detectedPurpose, setDetectedPurpose] = useState<'AO' | 'Webinar' | 'Seminar'>('AO');
+  const [urlStatus, setUrlStatus] = useState<UrlStatus>("idle");
 
   const { data: entities, isLoading: entitiesLoading } = useSystemEntities();
   const { data: lpLinks, isLoading: linksLoading } = useLpLinks({
@@ -75,25 +77,60 @@ export function LpLinksManager() {
     return true;
   });
 
-  const resetForm = () => {
-    setFormData({
-      entity_id: "",
-      name: "",
-      base_url: "",
-      purpose: "",
-      lp_type: "static",
-      language: "en",
-    });
+  // Auto-detect purpose from URL
+  const detectPurpose = (url: string): 'AO' | 'Webinar' | 'Seminar' => {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes('webinar')) return 'Webinar';
+    if (lowerUrl.includes('seminar')) return 'Seminar';
+    return 'AO';
   };
 
-  // Normalize URL when user leaves the input field
-  const handleUrlBlur = useCallback(() => {
-    if (formData.base_url.trim()) {
-      const normalized = normalizeLpUrl(formData.base_url);
-      if (normalized !== formData.base_url) {
-        setFormData(prev => ({ ...prev, base_url: normalized }));
-      }
+  // Validate URL by attempting to fetch it
+  const validateUrl = async (url: string): Promise<boolean> => {
+    try {
+      // Try HEAD request with no-cors to check if URL exists
+      await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+      return true;
+    } catch {
+      return false;
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      base_url: "",
+    });
+    setDetectedPurpose('AO');
+    setUrlStatus("idle");
+  };
+
+  // Handle URL blur - detect purpose, normalize if needed, validate
+  const handleUrlBlur = useCallback(async () => {
+    const url = formData.base_url.trim();
+    if (!url) {
+      setUrlStatus("idle");
+      return;
+    }
+
+    setUrlStatus("checking");
+
+    // Detect purpose from URL
+    const purpose = detectPurpose(url);
+    setDetectedPurpose(purpose);
+
+    // Normalize URL only for AO (strip language/country for non-webinar/seminar)
+    const finalUrl = (purpose === 'Webinar' || purpose === 'Seminar')
+      ? url  // Keep as-is for webinar/seminar
+      : normalizeLpUrl(url);  // Strip lang/country for AO
+
+    if (finalUrl !== formData.base_url) {
+      setFormData(prev => ({ ...prev, base_url: finalUrl }));
+    }
+
+    // Validate URL
+    const isValid = await validateUrl(finalUrl);
+    setUrlStatus(isValid ? "valid" : "invalid");
   }, [formData.base_url]);
 
   const handleOpenAddDialog = () => {
@@ -104,29 +141,28 @@ export function LpLinksManager() {
 
   const handleOpenEditDialog = (link: LpLink) => {
     setFormData({
-      entity_id: link.entity_id || "",
       name: link.name || "",
       base_url: link.base_url,
-      purpose: (link.purpose || "") as 'AO' | 'Webinar' | 'Seminar' | "",
-      lp_type: (link.lp_type || "static") as 'static' | 'dynamic',
-      language: link.language || "en",
     });
+    setDetectedPurpose((link.purpose || 'AO') as 'AO' | 'Webinar' | 'Seminar');
+    setUrlStatus("valid"); // Assume existing links are valid
     setEditingLink(link);
     setIsAddDialogOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (!formData.entity_id || !formData.name || !formData.base_url || !formData.purpose) {
+    if (!formData.name || !formData.base_url) {
       return;
     }
 
+    // Use auto-detected values
     const payload = {
-      entity_id: formData.entity_id,
+      entity_id: null as string | null, // No longer required - will be selected in Builder
       name: formData.name,
       base_url: formData.base_url,
-      purpose: formData.purpose as 'AO' | 'Webinar' | 'Seminar',
-      lp_type: formData.lp_type,
-      language: formData.language,
+      purpose: detectedPurpose,
+      lp_type: "static" as const, // Default to static
+      language: null as string | null, // No longer tracked here
     };
 
     if (editingLink) {
@@ -176,6 +212,19 @@ export function LpLinksManager() {
     return code ? emojiMap[code] || "🌍" : "🌍";
   };
 
+  const getUrlStatusIcon = () => {
+    switch (urlStatus) {
+      case "checking":
+        return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+      case "valid":
+        return <CheckCircle2 className="h-4 w-4 text-success-text" />;
+      case "invalid":
+        return <XCircle className="h-4 w-4 text-destructive-text" />;
+      default:
+        return null;
+    }
+  };
+
   if (entitiesLoading || linksLoading) {
     return (
       <Card>
@@ -211,31 +260,10 @@ export function LpLinksManager() {
             </DialogHeader>
             <div className="grid gap-md py-md">
               <div className="grid gap-sm">
-                <Label htmlFor="entity">Entity *</Label>
-                <Select
-                  value={formData.entity_id}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, entity_id: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select entity" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[250]">
-                    {entities?.map((entity) => (
-                      <SelectItem key={entity.id} value={entity.id}>
-                        {getEntityEmoji(entity.code)} {entity.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-sm">
                 <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
-                  placeholder="e.g., Jordan AO Main"
+                  placeholder="e.g., Gold Campaign, Trading Webinar"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -244,83 +272,51 @@ export function LpLinksManager() {
               </div>
 
               <div className="grid gap-sm">
-                <Label htmlFor="base_url">Base URL *</Label>
-                <Input
-                  id="base_url"
-                  placeholder="https://campaigns.cfifinancial.com/ar/jo/shine-with-gold-4"
-                  value={formData.base_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, base_url: e.target.value }))
-                  }
-                  onBlur={handleUrlBlur}
-                />
-                <p className="text-metadata text-muted-foreground">
-                  Language and country path segments will be stripped automatically
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-md">
-                <div className="grid gap-sm">
-                  <Label htmlFor="purpose">Purpose *</Label>
-                  <Select
-                    value={formData.purpose}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        purpose: value as 'AO' | 'Webinar' | 'Seminar',
-                      }))
+                <Label htmlFor="base_url">Link *</Label>
+                <div className="relative">
+                  <Input
+                    id="base_url"
+                    placeholder="https://campaigns.example.com/lp/gold-campaign"
+                    value={formData.base_url}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, base_url: e.target.value }))
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select purpose" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[250]">
-                      <SelectItem value="AO">📊 AO</SelectItem>
-                      <SelectItem value="Webinar">🎥 Webinar</SelectItem>
-                      <SelectItem value="Seminar">🎓 Seminar</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onBlur={handleUrlBlur}
+                    className="pr-10"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {getUrlStatusIcon()}
+                  </div>
                 </div>
-
-                <div className="grid gap-sm">
-                  <Label htmlFor="lp_type">LP Type *</Label>
-                  <Select
-                    value={formData.lp_type}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lp_type: value as 'static' | 'dynamic',
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[250]">
-                      <SelectItem value="static">📄 Static</SelectItem>
-                      <SelectItem value="dynamic">⚡ Dynamic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {urlStatus === "invalid" && (
+                  <p className="text-metadata text-destructive-text">
+                    Could not verify this URL - it may not be accessible
+                  </p>
+                )}
               </div>
 
-              <div className="grid gap-sm">
-                <Label htmlFor="language">Language</Label>
-                <Select
-                  value={formData.language}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, language: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[250]">
-                    <SelectItem value="en">🇬🇧 English</SelectItem>
-                    <SelectItem value="ar">🇦🇪 Arabic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Auto-detected purpose display */}
+              {formData.base_url && urlStatus !== "idle" && (
+                <div className="flex items-center gap-sm p-sm rounded-md bg-muted/50">
+                  <span className="text-metadata text-muted-foreground">Detected:</span>
+                  <Badge variant={getPurposeBadgeVariant(detectedPurpose)}>
+                    {detectedPurpose === "AO" && "📊 "}
+                    {detectedPurpose === "Webinar" && "🎥 "}
+                    {detectedPurpose === "Seminar" && "🎓 "}
+                    {detectedPurpose}
+                  </Badge>
+                  {detectedPurpose === 'AO' && (
+                    <span className="text-metadata text-muted-foreground">
+                      (URL normalized)
+                    </span>
+                  )}
+                  {(detectedPurpose === 'Webinar' || detectedPurpose === 'Seminar') && (
+                    <span className="text-metadata text-muted-foreground">
+                      (kept as-is)
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button
@@ -332,10 +328,8 @@ export function LpLinksManager() {
               <Button
                 onClick={handleSubmit}
                 disabled={
-                  !formData.entity_id ||
                   !formData.name ||
                   !formData.base_url ||
-                  !formData.purpose ||
                   createLpLink.isPending ||
                   updateLpLink.isPending
                 }
@@ -381,19 +375,16 @@ export function LpLinksManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Entity</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Base URL</TableHead>
                 <TableHead>Purpose</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Language</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredLinks?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-lg">
+                  <TableCell colSpan={4} className="text-center py-lg">
                     <div className="flex flex-col items-center gap-sm text-muted-foreground">
                       <Link className="h-8 w-8" />
                       <p>No LP links found</p>
@@ -411,16 +402,8 @@ export function LpLinksManager() {
               ) : (
                 filteredLinks?.map((link) => (
                   <TableRow key={link.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-sm">
-                        <span>{getEntityEmoji(link.entity?.code)}</span>
-                        <span className="font-medium">
-                          {link.entity?.name || "Unknown"}
-                        </span>
-                      </div>
-                    </TableCell>
                     <TableCell className="font-medium">{link.name}</TableCell>
-                    <TableCell className="max-w-[200px]">
+                    <TableCell className="max-w-[300px]">
                       <div className="flex items-center gap-sm">
                         <span className="truncate text-muted-foreground text-body-sm">
                           {link.base_url}
@@ -441,16 +424,6 @@ export function LpLinksManager() {
                         {link.purpose === "Webinar" && "🎥 "}
                         {link.purpose === "Seminar" && "🎓 "}
                         {link.purpose}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {link.lp_type === "static" ? "📄 Static" : "⚡ Dynamic"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {link.language === "ar" ? "🇦🇪 AR" : "🇬🇧 EN"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
