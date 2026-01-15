@@ -103,3 +103,28 @@ export const useDeleteMedium = () => {
     },
   });
 };
+
+// Update medium order (for drag-and-drop)
+export const useUpdateMediumOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (mediums: Array<{ id: string; display_order: number }>) => {
+      const promises = mediums.map(({ id, display_order }) =>
+        supabase
+          .from("utm_mediums")
+          .update({ display_order })
+          .eq("id", id)
+      );
+      
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["utm-mediums"] });
+      toast.success("Medium order updated");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to update order: " + error.message);
+    },
+  });
+};
