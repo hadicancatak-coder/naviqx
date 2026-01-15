@@ -936,6 +936,56 @@ All colors MUST be HSL.
   }
 }
 
+/* ========================================
+   LIQUID GLASS DIALOG - Safe Glass Variant
+   Uses pseudo-element for blur to avoid 
+   containing block issues with fixed positioning
+   ======================================== */
+.liquid-glass-dialog {
+  position: relative;
+  background: hsl(var(--card) / 0.7);
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 
+    0 8px 32px hsl(var(--foreground) / 0.1),
+    inset 0 1px 0 hsl(var(--background) / 0.5),
+    inset 0 -1px 0 hsl(var(--foreground) / 0.05);
+  overflow: hidden;
+}
+
+.liquid-glass-dialog::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(40px) saturate(1.5);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+/* Shine overlay effect */
+.liquid-glass-dialog::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background) / 0.15) 0%,
+    transparent 50%,
+    hsl(var(--foreground) / 0.02) 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.dark .liquid-glass-dialog {
+  background: hsl(var(--card) / 0.6);
+  border-color: hsl(var(--border) / 0.4);
+  box-shadow: 
+    0 8px 32px hsl(0 0% 0% / 0.3),
+    inset 0 1px 0 hsl(var(--background) / 0.2),
+    inset 0 -1px 0 hsl(var(--foreground) / 0.05);
+}
+
 /* Fix for dialog centering - override any containing block issues from backdrop-filter */
 [data-radix-dialog-content] {
   position: fixed !important;
