@@ -53,7 +53,6 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       
       if (hasStoredToken) {
         // Token exists - trust it immediately, validate in background
-        // Background validation in AuthContext will redirect if invalid
         console.log('✅ MFA token found in localStorage, proceeding');
         return;
       }
@@ -65,20 +64,10 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, mfaStatusLoading, navigate, location]);
 
-  // Only block on initial auth check and MFA status check from context
-  // MFA status is cached in context - no per-navigation DB queries
-  if (loading || mfaStatusLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-md">
-          <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-body-sm text-muted-foreground">Authenticating...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
+  // NO LOADING SCREEN - render children immediately for instant navigation
+  // Auth redirects happen in background via useEffect
+  // If not authenticated yet, render nothing briefly (will redirect)
+  if (!user && !loading) {
     return null;
   }
 
