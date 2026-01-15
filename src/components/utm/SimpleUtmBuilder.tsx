@@ -27,10 +27,12 @@ import { useCreateUtmLink } from "@/hooks/useUtmLinks";
 import { useLpLinks } from "@/hooks/useLpLinks";
 import {
   calculateUtmMedium,
-  formatMonthYear2Digit,
+  formatFullMonthYear2Digit,
   buildUtmUrl,
   generateUtmContent,
 } from "@/lib/utmHelpers";
+import { CampaignSelect } from "./CampaignSelect";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface UtmRow {
@@ -115,7 +117,7 @@ export function SimpleUtmBuilder() {
 
       const utmSource = platformName.toLowerCase();
       const utmMedium = platformData?.utm_medium || calculateUtmMedium(platformName);
-      const utmCampaign = `${platformName.toLowerCase()}_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${formatMonthYear2Digit()}`;
+      const utmCampaign = `${platformName.toLowerCase()}_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${formatFullMonthYear2Digit()}`;
       const utmContent = row.content || generateUtmContent(lpUrl, campaignName);
 
       return buildUtmUrl({
@@ -190,7 +192,7 @@ export function SimpleUtmBuilder() {
             full_url: url,
             utm_source: platformName.toLowerCase(),
             utm_medium: platformData?.utm_medium || calculateUtmMedium(platformName),
-            utm_campaign: `${platformName.toLowerCase()}_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${formatMonthYear2Digit()}`,
+            utm_campaign: `${platformName.toLowerCase()}_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${formatFullMonthYear2Digit()}`,
             utm_content: row.content || null,
             utm_term: null,
             entity: entityName ? [entityName] : [],
@@ -299,21 +301,41 @@ export function SimpleUtmBuilder() {
         {/* Entity selected with LPs available - show table */}
         {selectedEntityId && allLpLinks.length > 0 && (
           <>
-            {/* Available LPs list */}
-            <div className="p-md rounded-lg bg-muted/30 border border-border">
-              <Label className="text-metadata font-medium text-muted-foreground mb-sm block">
-                Building URLs for {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name} • Available LPs:
-              </Label>
-              <div className="flex flex-wrap gap-xs">
-                {allLpLinks.map((lp) => (
-                  <span
-                    key={lp.id}
-                    className="px-sm py-xs text-metadata bg-card rounded border border-border"
-                  >
-                    {lp.name || lp.base_url}
-                  </span>
-                ))}
+            {/* Available LPs as Table */}
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="px-md py-sm bg-muted/50 border-b border-border">
+                <Label className="text-metadata font-medium text-muted-foreground">
+                  Building URLs for {getEntityEmoji(selectedEntity?.code)} {selectedEntity?.name} • Available Landing Pages
+                </Label>
               </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="w-[180px]">Name</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead className="w-[100px]">Type</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allLpLinks.map((lp) => (
+                    <TableRow key={lp.id} className="hover:bg-card-hover transition-smooth">
+                      <TableCell className="text-metadata font-medium">
+                        {lp.name || "Unnamed"}
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-metadata text-muted-foreground truncate max-w-[350px] block">
+                          {lp.base_url}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-metadata">
+                          {lp.lp_type || "static"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
             {/* UTM Table */}
@@ -385,21 +407,11 @@ export function SimpleUtmBuilder() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Select
+                          <CampaignSelect
                             value={row.campaign}
                             onValueChange={(v) => updateRow(row.id, "campaign", v)}
-                          >
-                            <SelectTrigger className="h-8 text-metadata">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {activeCampaigns.map((campaign) => (
-                                <SelectItem key={campaign.id} value={campaign.id}>
-                                  {campaign.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            className="w-full"
+                          />
                         </TableCell>
                         <TableCell>
                           <Select
