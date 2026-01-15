@@ -29,6 +29,9 @@ interface UtmLink {
   full_url: string;
   created_at: string;
   created_by: string;
+  name: string | null;
+  campaign_name: string | null;
+  platform: string | null;
   creator?: {
     name: string | null;
     avatar_url: string | null;
@@ -158,10 +161,13 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
                   className={someSelected ? "data-[state=checked]:bg-primary/50" : ""}
                 />
               </TableHead>
-              <TableHead className="min-w-[300px]">Link</TableHead>
-              <TableHead className="w-[180px]">Created By</TableHead>
-              <TableHead className="w-[140px]">Created Date</TableHead>
-              <TableHead className="w-[80px] text-right">Copy</TableHead>
+              <TableHead className="w-[140px]">Campaign</TableHead>
+              <TableHead className="w-[160px]">UTM Name</TableHead>
+              <TableHead className="w-[100px]">Platform</TableHead>
+              <TableHead className="min-w-[280px]">Link</TableHead>
+              <TableHead className="w-[140px]">Created By</TableHead>
+              <TableHead className="w-[120px]">Created</TableHead>
+              <TableHead className="w-[60px] text-right">Copy</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -180,11 +186,30 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
                   />
                 </TableCell>
                 <TableCell>
+                  <span className="text-body-sm font-medium text-foreground">
+                    {link.campaign_name || "—"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="text-body-sm text-foreground">
+                    {link.name || "—"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {link.platform ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-metadata font-medium bg-muted text-muted-foreground">
+                      {link.platform}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="text-body-sm font-mono text-foreground cursor-help">
-                          {truncateUrl(link.full_url)}
+                        <span className="text-body-sm font-mono text-muted-foreground cursor-help">
+                          {truncateUrl(link.full_url, 50)}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent
@@ -204,21 +229,21 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
                         {getInitials(link.creator?.name || null)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-body-sm text-foreground">
+                    <span className="text-body-sm text-foreground truncate max-w-[100px]">
                       {link.creator?.name || "Unknown"}
                     </span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <span className="text-metadata text-muted-foreground">
-                    {format(new Date(link.created_at), "MMM dd, yyyy")}
+                    {format(new Date(link.created_at), "MMM dd, yy")}
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-7 w-7"
                     onClick={() => handleCopy(link.full_url, link.id)}
                   >
                     {copiedId === link.id ? (
