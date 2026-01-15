@@ -70,9 +70,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [skipNextValidation, setSkipNextValidation] = useState(false);
   
   // MFA status caching - fetched once per session, not on every navigation
-  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
-  const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(null);
-  const [mfaStatusLoading, setMfaStatusLoading] = useState(true);
+  // Initialize from sessionStorage for instant navigation (no waiting for DB)
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(() => {
+    const cached = sessionStorage.getItem('mfa_status_cache');
+    if (cached) {
+      try {
+        return JSON.parse(cached).mfaEnabled ?? null;
+      } catch { return null; }
+    }
+    return null;
+  });
+  const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(() => {
+    const cached = sessionStorage.getItem('mfa_status_cache');
+    if (cached) {
+      try {
+        return JSON.parse(cached).mfaEnrollmentRequired ?? null;
+      } catch { return null; }
+    }
+    return null;
+  });
+  // Only show loading if we have NO cached data at all
+  const [mfaStatusLoading, setMfaStatusLoading] = useState(() => {
+    return !sessionStorage.getItem('mfa_status_cache');
+  });
   
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
@@ -184,7 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Fetch MFA status once per session - cached in context
+  // Fetch MFA status once per session - cached in context AND sessionStorage
   const fetchMfaStatus = async (userId: string) => {
     try {
       const { data } = await supabase
@@ -193,8 +213,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', userId)
         .single();
       
-      setMfaEnabled(data?.mfa_enabled || false);
-      setMfaEnrollmentRequired(data?.mfa_enrollment_required ?? true);
+      const enabled = data?.mfa_enabled || false;
+      const enrollmentRequired = data?.mfa_enrollment_required ?? true;
+      
+      setMfaEnabled(enabled);
+      setMfaEnrollmentRequired(enrollmentRequired);
+      
+      // Cache in sessionStorage for instant page loads
+      sessionStorage.setItem('mfa_status_cache', JSON.stringify({
+        mfaEnabled: enabled,
+        mfaEnrollmentRequired: enrollmentRequired,
+        userId: userId,
+        cachedAt: Date.now()
+      }));
     } catch (err) {
       console.error('Error fetching MFA status:', err);
       setMfaEnabled(false);
@@ -330,6 +361,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     setMfaSessionToken(null);
     setMfaVerified(false);
+    // Clear MFA status cache on logout
+    sessionStorage.removeItem('mfa_status_cache');
+    setMfaEnabled(null);
+    setMfaEnrollmentRequired(null);
     navigate("/auth");
   };
 
