@@ -64,12 +64,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, mfaStatusLoading, navigate, location]);
 
-  // NO LOADING SCREEN - render children immediately for instant navigation
-  // Auth redirects happen in background via useEffect
-  // If not authenticated yet, render nothing briefly (will redirect)
-  if (!user && !loading) {
-    return null;
-  }
-
+  // ALWAYS render children immediately - no loading states, no null returns
+  // Auth redirects happen asynchronously via useEffect above
   return <>{children}</>;
 };

@@ -19,9 +19,15 @@ import Dashboard from "./pages/Dashboard";
 import MfaSetup from "./pages/MfaSetup";
 import MfaVerify from "./pages/MfaVerify";
 
+// High-traffic pages loaded eagerly for instant navigation
+import Tasks from "./pages/Tasks";
+import Sprints from "./pages/Sprints";
+import Profile from "./pages/Profile";
+import Notifications from "./pages/Notifications";
+import KPIs from "./pages/KPIs";
+import CampaignsLog from "./pages/CampaignsLog";
+
 // Lazy-loaded pages for better initial load
-const Tasks = lazy(() => import("./pages/Tasks"));
-const Sprints = lazy(() => import("./pages/Sprints"));
 const SprintsManagement = lazy(() => import("./pages/admin/SprintsManagement"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const Overview = lazy(() => import("./pages/admin/Overview"));
@@ -34,8 +40,6 @@ const ExternalLinksManagement = lazy(() => import("./pages/admin/ExternalLinksMa
 const KPIsManagement = lazy(() => import("./pages/admin/KPIsManagement"));
 const ErrorLogs = lazy(() => import("./pages/admin/ErrorLogs"));
 const SecurityScans = lazy(() => import("./pages/admin/SecurityScans"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Notifications = lazy(() => import("./pages/Notifications"));
 const SearchPlanner = lazy(() => import("./pages/SearchPlanner"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Security = lazy(() => import("./pages/Security"));
@@ -46,8 +50,6 @@ const CopyWriter = lazy(() => import("./pages/CopyWriter"));
 const CaptionLibrary = lazy(() => import("./pages/CaptionLibrary"));
 const LocationIntelligence = lazy(() => import("./pages/LocationIntelligence"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
-const KPIs = lazy(() => import("./pages/KPIs"));
-const CampaignsLog = lazy(() => import("./pages/CampaignsLog"));
 const CampaignReview = lazy(() => import("./pages/CampaignReview"));
 const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
 const Knowledge = lazy(() => import("./pages/Knowledge"));
@@ -70,7 +72,7 @@ const App = () => (
             <Sonner position="bottom-right" expand={false} richColors closeButton />
             <GlobalBubbleMenu />
             <TaskDrawer />
-            <Suspense fallback={<PageLoader />}>
+            <Suspense fallback={null}>
               <Routes>
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
