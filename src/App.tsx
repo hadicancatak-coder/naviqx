@@ -26,6 +26,23 @@ import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import KPIs from "./pages/KPIs";
 import CampaignsLog from "./pages/CampaignsLog";
+import Projects from "./pages/Projects";
+import Whiteboard from "./pages/Whiteboard";
+import Knowledge from "./pages/Knowledge";
+import TechStack from "./pages/TechStack";
+
+// Content skeleton for remaining lazy pages
+const ContentSkeleton = () => (
+  <div className="min-h-screen flex w-full bg-background">
+    <div className="flex-1 p-md">
+      <div className="space-y-4 animate-pulse">
+        <div className="h-8 w-48 bg-muted rounded-md" />
+        <div className="h-4 w-32 bg-muted/60 rounded-md" />
+        <div className="h-64 bg-muted/40 rounded-xl mt-6" />
+      </div>
+    </div>
+  </div>
+);
 
 // Lazy-loaded pages for better initial load
 const SprintsManagement = lazy(() => import("./pages/admin/SprintsManagement"));
@@ -52,14 +69,10 @@ const LocationIntelligence = lazy(() => import("./pages/LocationIntelligence"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
 const CampaignReview = lazy(() => import("./pages/CampaignReview"));
 const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
-const Knowledge = lazy(() => import("./pages/Knowledge"));
 const KnowledgePublic = lazy(() => import("./pages/KnowledgePublic"));
-const TechStack = lazy(() => import("./pages/TechStack"));
 const Performance = lazy(() => import("./pages/Performance"));
 const KeywordIntel = lazy(() => import("./pages/KeywordIntel"));
-const Projects = lazy(() => import("./pages/Projects"));
 const ProjectsPublic = lazy(() => import("./pages/ProjectsPublic"));
-const Whiteboard = lazy(() => import("./pages/Whiteboard"));
 
 
 const App = () => (
@@ -72,7 +85,7 @@ const App = () => (
             <Sonner position="bottom-right" expand={false} richColors closeButton />
             <GlobalBubbleMenu />
             <TaskDrawer />
-            <Suspense fallback={null}>
+            <Suspense fallback={<ContentSkeleton />}>
               <Routes>
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
