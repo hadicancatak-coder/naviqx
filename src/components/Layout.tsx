@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
@@ -58,7 +59,9 @@ export const Layout = () => {
           <div className="relative z-[2]">
             <TopHeader />
             <div className="pt-md px-md pb-lg">
-              <Outlet />
+              <Suspense fallback={null}>
+                <Outlet />
+              </Suspense>
             </div>
           </div>
         </main>
