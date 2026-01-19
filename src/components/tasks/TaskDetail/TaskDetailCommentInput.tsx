@@ -9,7 +9,8 @@ export function TaskDetailCommentInput() {
     setNewComment, 
     isSubmittingComment, 
     addComment, 
-    users 
+    users,
+    selectedAssignees
   } = useTaskDetailContext();
 
   return (
@@ -19,6 +20,7 @@ export function TaskDetailCommentInput() {
           value={newComment}
           onChange={setNewComment}
           users={users}
+          assigneeIds={selectedAssignees}
           placeholder="Write a comment... Use @ to mention"
           minRows={2}
           maxRows={3}
