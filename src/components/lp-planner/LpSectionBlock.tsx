@@ -1,10 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Image, Link2, FileText, ChevronDown, ChevronUp, ExternalLink, Edit2 } from "lucide-react";
+import { GripVertical, Trash2, Image, Link2, FileText, ChevronDown, ExternalLink, Edit2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LpMapSection } from "@/hooks/useLpMaps";
 import { LpSection } from "@/hooks/useLpSections";
 
@@ -63,178 +64,186 @@ export const LpSectionBlock = ({
   const typeColor = sectionTypeColors[section.section_type] || sectionTypeColors.custom;
   const badgeColor = sectionTypeBadgeColors[section.section_type] || sectionTypeBadgeColors.custom;
   const firstImage = section.sample_images[0];
+  
+  const hasContent = section.sample_images.length > 0 || section.website_links.length > 0 || section.brief_content;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group rounded-xl border-l-4 bg-card border border-border overflow-hidden transition-all duration-200",
+        "group rounded-xl border-l-4 bg-card border border-border overflow-hidden",
         typeColor,
         isDragging && "opacity-50 shadow-xl scale-[1.02]"
       )}
     >
-      {/* Main Row */}
-      <div className="flex items-center gap-3 p-3">
-        {/* Position Number */}
-        <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted text-xs font-semibold text-muted-foreground flex-shrink-0">
-          {position}
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        {/* Main Row */}
+        <div className="flex items-center gap-3 p-3">
+          {/* Position Number */}
+          <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted text-xs font-semibold text-muted-foreground flex-shrink-0">
+            {position}
+          </div>
+
+          {/* Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab opacity-40 hover:opacity-100 transition-opacity flex-shrink-0"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+
+          {/* Thumbnail Preview */}
+          {firstImage && (
+            <div className="flex-shrink-0 h-12 w-20 rounded-lg overflow-hidden border bg-muted">
+              <img
+                src={firstImage.url}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm truncate">{section.name}</span>
+              <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 border-0", badgeColor)}>
+                {section.section_type}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+              {section.sample_images.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <Image className="h-3 w-3" />
+                  {section.sample_images.length}
+                </span>
+              )}
+              {section.website_links.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <Link2 className="h-3 w-3" />
+                  {section.website_links.length}
+                </span>
+              )}
+              {section.brief_content && (
+                <span className="flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Brief
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Actions - Always visible */}
+          <div className="flex items-center gap-1">
+            {hasContent && (
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                >
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-200",
+                    isExpanded && "rotate-180"
+                  )} />
+                </Button>
+              </CollapsibleTrigger>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => onEdit?.(section)}
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={onRemove}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
 
-        {/* Drag Handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab opacity-40 hover:opacity-100 transition-opacity flex-shrink-0"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
+        {/* Expanded Details - Animated with Collapsible */}
+        <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+          <div className="px-4 pb-4 pt-0 border-t border-border space-y-3">
+            {/* Description */}
+            {section.description && (
+              <div className="pt-3">
+                <p className="text-sm text-muted-foreground">{section.description}</p>
+              </div>
+            )}
 
-        {/* Thumbnail Preview */}
-        {firstImage && (
-          <div className="flex-shrink-0 h-12 w-20 rounded-lg overflow-hidden border bg-muted">
-            <img
-              src={firstImage.url}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm truncate">{section.name}</span>
-            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 border-0", badgeColor)}>
-              {section.section_type}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+            {/* Images */}
             {section.sample_images.length > 0 && (
-              <span className="flex items-center gap-1">
-                <Image className="h-3 w-3" />
-                {section.sample_images.length}
-              </span>
+              <div className="pt-2">
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                  Sample Images ({section.sample_images.length})
+                </h4>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {section.sample_images.map((image) => (
+                    <div key={image.id} className="flex-shrink-0">
+                      <img
+                        src={image.url}
+                        alt={image.caption || "Section image"}
+                        className="h-24 w-40 object-cover rounded-lg border"
+                        loading="lazy"
+                      />
+                      {image.caption && (
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[160px] truncate">
+                          {image.caption}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            {section.website_links.length > 0 && (
-              <span className="flex items-center gap-1">
-                <Link2 className="h-3 w-3" />
-                {section.website_links.length}
-              </span>
-            )}
+
+            {/* Brief */}
             {section.brief_content && (
-              <span className="flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                Brief
-              </span>
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                  Brief / Instructions
+                </h4>
+                <p className="text-sm text-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3 line-clamp-4">
+                  {section.brief_content}
+                </p>
+              </div>
+            )}
+
+            {/* Links */}
+            {section.website_links.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                  Reference Links ({section.website_links.length})
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {section.website_links.map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded-md"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {link.label || new URL(link.url).hostname}
+                    </a>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => onEdit?.(section)}
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive hover:text-destructive"
-            onClick={onRemove}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Expanded Details */}
-      {isExpanded && (
-        <div className="px-4 pb-4 pt-0 border-t border-border space-y-4">
-          {/* Description */}
-          {section.description && (
-            <div className="pt-4">
-              <p className="text-sm text-muted-foreground">{section.description}</p>
-            </div>
-          )}
-
-          {/* Images */}
-          {section.sample_images.length > 0 && (
-            <div className="pt-2">
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">
-                Sample Images
-              </h4>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {section.sample_images.map((image) => (
-                  <div key={image.id} className="flex-shrink-0">
-                    <img
-                      src={image.url}
-                      alt={image.caption || "Section image"}
-                      className="h-24 w-40 object-cover rounded-lg border"
-                    />
-                    {image.caption && (
-                      <p className="text-xs text-muted-foreground mt-1 max-w-[160px] truncate">
-                        {image.caption}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Brief */}
-          {section.brief_content && (
-            <div>
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">
-                Brief / Instructions
-              </h4>
-              <p className="text-sm text-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">
-                {section.brief_content}
-              </p>
-            </div>
-          )}
-
-          {/* Links */}
-          {section.website_links.length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">
-                Reference Links
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {section.website_links.map((link) => (
-                  <a
-                    key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded-md"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    {link.label || new URL(link.url).hostname}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
