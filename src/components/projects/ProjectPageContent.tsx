@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { format } from "date-fns";
-import { Edit, Trash2, Share2, Globe, GlobeLock, Copy, ExternalLink, Users, FileText, ListTodo, Info } from "lucide-react";
+import { Edit, Trash2, Share2, Globe, GlobeLock, Copy, ExternalLink, Users, FileText, ListTodo, Info, Calendar, RefreshCw, CalendarClock, Clock, Settings, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -13,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
 import * as LucideIcons from "lucide-react";
 import DOMPurify from "dompurify";
-
+import { cn } from "@/lib/utils";
 interface ProjectPageContentProps {
   project: Project;
   breadcrumbs: Project[];
@@ -235,45 +236,196 @@ export function ProjectPageContent({
 
         {/* Details Tab */}
         <TabsContent value="details" className="mt-md">
-          <div className="bg-card border border-border rounded-xl p-lg space-y-lg">
-            {/* Metadata */}
-            <div className="flex flex-wrap gap-4 text-body-sm text-muted-foreground">
-              <span>Created {format(new Date(project.created_at), "MMMM d, yyyy")}</span>
-              <span>•</span>
-              <span>Updated {format(new Date(project.updated_at), "MMMM d, yyyy")}</span>
-              {project.due_date && (
-                <>
-                  <span>•</span>
-                  <span>Due {format(new Date(project.due_date), "MMMM d, yyyy")}</span>
-                </>
-              )}
-            </div>
-
-            {/* Description */}
-            {project.description ? (
-              <div className="space-y-2">
-                <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">Description</h3>
-                <div
-                  className="prose prose-sm max-w-none dark:prose-invert 
-                    prose-headings:text-foreground prose-p:text-foreground 
-                    prose-strong:text-foreground prose-a:text-primary
-                    prose-li:text-foreground"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(project.description) }}
-                />
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-body-sm">No description added yet</p>
-                {isAdmin && (
-                  <Button variant="link" size="sm" onClick={onEdit} className="mt-2">
-                    Add description
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+          <ProjectDetailsTab 
+            project={project} 
+            iconName={iconName}
+            IconComponent={IconComponent}
+            statusInfo={statusInfo}
+            isAdmin={isAdmin}
+            onEdit={onEdit}
+          />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Metadata Card Component
+function MetadataCard({ 
+  icon: Icon, 
+  label, 
+  value 
+}: { 
+  icon: React.ComponentType<{ className?: string }>; 
+  label: string; 
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3 bg-subtle rounded-lg border border-border">
+      <div className="flex items-center justify-center h-9 w-9 rounded-md bg-primary/10">
+        <Icon className="h-4 w-4 text-primary" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-metadata text-muted-foreground">{label}</p>
+        <p className="text-body-sm font-medium text-foreground truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// Settings Item Component
+function SettingsItem({ 
+  icon: Icon, 
+  label, 
+  children 
+}: { 
+  icon: React.ComponentType<{ className?: string }>; 
+  label: string; 
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3 bg-subtle rounded-lg border border-border">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        <span className="text-body-sm text-muted-foreground">{label}:</span>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Project Details Tab Component
+function ProjectDetailsTab({ 
+  project, 
+  iconName,
+  IconComponent,
+  statusInfo,
+  isAdmin,
+  onEdit
+}: { 
+  project: Project; 
+  iconName: string;
+  IconComponent: React.ComponentType<{ className?: string }>;
+  statusInfo: { label: string; variant: "default" | "secondary" | "outline" | "destructive" };
+  isAdmin?: boolean;
+  onEdit: () => void;
+}) {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  
+  const sanitizedDescription = project.description 
+    ? DOMPurify.sanitize(project.description) 
+    : null;
+  
+  // Check if description is long enough to need collapsing
+  const descriptionLength = project.description?.length || 0;
+  const needsCollapse = descriptionLength > 500;
+
+  return (
+    <div className="space-y-md">
+      {/* Project Metadata Cards */}
+      <div className="bg-card border border-border rounded-xl p-lg">
+        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          Timeline
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-md">
+          <MetadataCard 
+            icon={Calendar} 
+            label="Created" 
+            value={format(new Date(project.created_at), "MMM d, yyyy")} 
+          />
+          <MetadataCard 
+            icon={RefreshCw} 
+            label="Last Updated" 
+            value={format(new Date(project.updated_at), "MMM d, yyyy")} 
+          />
+          <MetadataCard 
+            icon={CalendarClock} 
+            label="Deadline" 
+            value={project.due_date ? format(new Date(project.due_date), "MMM d, yyyy") : "Not set"} 
+          />
+          <MetadataCard 
+            icon={Clock} 
+            label="Est. Time" 
+            value={project.required_time ? `${project.required_time}h` : "Not set"} 
+          />
+        </div>
+      </div>
+
+      {/* Project Settings */}
+      <div className="bg-card border border-border rounded-xl p-lg">
+        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-2">
+          <Settings className="h-4 w-4" />
+          Project Settings
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
+          <SettingsItem icon={LucideIcons.Circle} label="Status">
+            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+          </SettingsItem>
+          <SettingsItem icon={project.is_public ? Globe : GlobeLock} label="Visibility">
+            <span className="text-body-sm font-medium text-foreground">
+              {project.is_public ? "Public" : "Private"}
+            </span>
+          </SettingsItem>
+          <SettingsItem icon={IconComponent} label="Icon">
+            <span className="text-body-sm font-medium text-foreground">{iconName}</span>
+          </SettingsItem>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="bg-card border border-border rounded-xl p-lg">
+        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Description
+        </h3>
+        
+        {sanitizedDescription ? (
+          <div className="space-y-3">
+            <div 
+              className={cn(
+                "relative overflow-hidden transition-all duration-300",
+                !isDescriptionExpanded && needsCollapse && "max-h-[200px]"
+              )}
+            >
+              <div
+                className="prose prose-sm max-w-none dark:prose-invert 
+                  prose-headings:text-foreground prose-p:text-foreground 
+                  prose-strong:text-foreground prose-a:text-primary
+                  prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
+                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+              />
+              {!isDescriptionExpanded && needsCollapse && (
+                <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+              )}
+            </div>
+            {needsCollapse && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                className="gap-1.5"
+              >
+                {isDescriptionExpanded ? (
+                  <>Show less <ChevronUp className="h-4 w-4" /></>
+                ) : (
+                  <>Show more <ChevronDown className="h-4 w-4" /></>
+                )}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
+            <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-body-sm">No description added yet</p>
+            {isAdmin && (
+              <Button variant="link" size="sm" onClick={onEdit} className="mt-2">
+                Add description
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
