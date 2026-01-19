@@ -1,17 +1,20 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Image, Link2, FileText, ChevronDown, ExternalLink, Edit2 } from "lucide-react";
+import { GripVertical, Trash2, Image, Link2, FileText, ChevronDown, ExternalLink, Edit2, MessageSquare } from "lucide-react";
 import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LpMapSection } from "@/hooks/useLpMaps";
 import { LpSection } from "@/hooks/useLpSections";
+import { LpExternalComment } from "@/hooks/useLpComments";
 
 interface LpSectionBlockProps {
   mapSection: LpMapSection;
   position: number;
+  comments?: LpExternalComment[];
   onRemove?: () => void;
   onEdit?: (section: LpSection) => void;
 }
@@ -39,6 +42,7 @@ const sectionTypeBadgeColors: Record<string, string> = {
 export const LpSectionBlock = ({
   mapSection,
   position,
+  comments = [],
   onRemove,
   onEdit,
 }: LpSectionBlockProps) => {
@@ -65,7 +69,7 @@ export const LpSectionBlock = ({
   const badgeColor = sectionTypeBadgeColors[section.section_type] || sectionTypeBadgeColors.custom;
   const firstImage = section.sample_images[0];
   
-  const hasContent = section.sample_images.length > 0 || section.website_links.length > 0 || section.brief_content;
+  const hasContent = section.sample_images.length > 0 || section.website_links.length > 0 || section.brief_content || comments.length > 0;
 
   return (
     <div
@@ -131,6 +135,12 @@ export const LpSectionBlock = ({
                 <span className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
                   Brief
+                </span>
+              )}
+              {comments.length > 0 && (
+                <span className="flex items-center gap-1 text-primary">
+                  <MessageSquare className="h-3 w-3" />
+                  {comments.length}
                 </span>
               )}
             </div>
@@ -237,6 +247,28 @@ export const LpSectionBlock = ({
                       <ExternalLink className="h-3 w-3" />
                       {link.label || new URL(link.url).hostname}
                     </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reviews/Comments */}
+            {comments.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                  Reviews ({comments.length})
+                </h4>
+                <div className="space-y-2">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="font-medium text-sm">{comment.reviewer_name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground">{comment.comment_text}</p>
+                    </div>
                   ))}
                 </div>
               </div>

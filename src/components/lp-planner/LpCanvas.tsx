@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -30,6 +30,7 @@ import {
   useReorderMapSections,
 } from "@/hooks/useLpMaps";
 import { LpSection } from "@/hooks/useLpSections";
+import { useLpExternalComments } from "@/hooks/useLpComments";
 import { cn } from "@/lib/utils";
 
 interface LpCanvasProps {
@@ -47,6 +48,9 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
   const removeSection = useRemoveSectionFromMap();
   const reorderSections = useReorderMapSections();
 
+  // Fetch comments for this map
+  const { data: allComments = [] } = useLpExternalComments(map?.id || null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -54,6 +58,17 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
   );
 
   const sections = map?.sections || [];
+
+  // Group comments by section_id for efficient lookup
+  const commentsBySection = useMemo(() => {
+    const grouped: Record<string, typeof allComments> = {};
+    allComments.forEach((comment) => {
+      const key = comment.section_id || "__map__";
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(comment);
+    });
+    return grouped;
+  }, [allComments]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -172,6 +187,7 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
                       key={mapSection.id}
                       mapSection={mapSection}
                       position={index + 1}
+                      comments={commentsBySection[mapSection.section_id] || []}
                       onRemove={() => handleRemoveSection(mapSection.id)}
                       onEdit={handleEditSection}
                     />

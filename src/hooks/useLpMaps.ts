@@ -44,7 +44,7 @@ export const useLpMaps = (filters?: LpMapFilters) => {
     queryFn: async () => {
       let query = supabase
         .from("lp_maps")
-        .select(`*, entity:system_entities(id, name)`)
+        .select(`*, entity:system_entities(id, name), sections:lp_map_sections(id)`)
         .order("created_at", { ascending: false });
 
       if (filters?.entityId) query = query.eq("entity_id", filters.entityId);
