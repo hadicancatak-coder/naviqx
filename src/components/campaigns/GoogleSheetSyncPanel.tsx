@@ -13,6 +13,19 @@ import {
   SheetTitle, 
   SheetTrigger 
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { 
   FileSpreadsheet, 
   RefreshCw, 
@@ -22,7 +35,9 @@ import {
   XCircle, 
   Clock, 
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Circle,
+  Save
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { GoogleSheetPicker } from "@/components/reports/GoogleSheetPicker";
@@ -34,6 +49,7 @@ import {
   useSyncGoogleSheet,
   SyncConfig 
 } from "@/hooks/useGoogleSheetSync";
+import { toast } from "sonner";
 
 
 interface GoogleSheetSyncPanelProps {
@@ -43,6 +59,10 @@ interface GoogleSheetSyncPanelProps {
 
 export function GoogleSheetSyncPanel({ accessToken, onRequestAuth }: GoogleSheetSyncPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [clientId, setClientId] = useState(localStorage.getItem("GOOGLE_CLIENT_ID") || "");
+  const [apiKey, setApiKey] = useState(localStorage.getItem("GOOGLE_API_KEY") || "");
+  const [saving, setSaving] = useState(false);
   const [editingMapping, setEditingMapping] = useState<SyncConfig | null>(null);
   const [columnMapping, setColumnMapping] = useState<{
     name: string;
@@ -63,6 +83,7 @@ export function GoogleSheetSyncPanel({ accessToken, onRequestAuth }: GoogleSheet
   const syncSheet = useSyncGoogleSheet();
 
   const activeSyncConfig = syncConfigs[0];
+  const isConfigured = Boolean(localStorage.getItem("GOOGLE_CLIENT_ID") && localStorage.getItem("GOOGLE_API_KEY"));
 
   // Auto-sync on open if enabled
   useEffect(() => {
@@ -107,6 +128,25 @@ export function GoogleSheetSyncPanel({ accessToken, onRequestAuth }: GoogleSheet
     });
   };
 
+  const handleSaveConfig = async () => {
+    if (!clientId.trim() || !apiKey.trim()) {
+      toast.error("Please enter both Client ID and API Key");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      localStorage.setItem("GOOGLE_CLIENT_ID", clientId.trim());
+      localStorage.setItem("GOOGLE_API_KEY", apiKey.trim());
+      toast.success("Configuration saved! Reloading...");
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      toast.error("Failed to save configuration");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getStatusBadge = (config: SyncConfig) => {
     switch (config.sync_status) {
       case 'syncing':
@@ -120,8 +160,158 @@ export function GoogleSheetSyncPanel({ accessToken, onRequestAuth }: GoogleSheet
     }
   };
 
-  // If not authenticated, show connect button
+  // If not authenticated, check if configured first
   if (!accessToken) {
+    // Not configured - show button that opens setup dialog
+    if (!isConfigured) {
+      return (
+        <>
+          <Button onClick={() => setShowSetupDialog(true)} variant="outline" size="sm">
+            <FileSpreadsheet className="h-4 w-4" />
+            Connect Sheet
+          </Button>
+
+          <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-sm">
+                  <FileSpreadsheet className="h-5 w-5 text-primary" />
+                  Google Sheets Setup
+                </DialogTitle>
+                <DialogDescription>
+                  Complete the setup below to enable Google Sheets sync
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-lg mt-md">
+                {/* Setup Guide */}
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="step-1">
+                    <AccordionTrigger>
+                      <div className="flex items-center gap-sm">
+                        <Circle className="h-4 w-4 text-muted-foreground" />
+                        <span>Step 1: Create Google Cloud Project</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-sm">
+                      <ol className="list-decimal list-inside space-y-sm text-body-sm">
+                        <li>
+                          Go to{" "}
+                          <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            Google Cloud Console <ExternalLink className="h-3 w-3 inline ml-1" />
+                          </a>
+                        </li>
+                        <li>Click "Select a project" → "New Project"</li>
+                        <li>Enter a project name and click "Create"</li>
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step-2">
+                    <AccordionTrigger>
+                      <div className="flex items-center gap-sm">
+                        <Circle className="h-4 w-4 text-muted-foreground" />
+                        <span>Step 2: Enable APIs</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-sm">
+                      <ol className="list-decimal list-inside space-y-sm text-body-sm">
+                        <li>
+                          Go to{" "}
+                          <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            API Library <ExternalLink className="h-3 w-3 inline ml-1" />
+                          </a>
+                        </li>
+                        <li>Enable "Google Sheets API" and "Google Picker API"</li>
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step-3">
+                    <AccordionTrigger>
+                      <div className="flex items-center gap-sm">
+                        <Circle className="h-4 w-4 text-muted-foreground" />
+                        <span>Step 3: Create OAuth Client ID</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-sm">
+                      <ol className="list-decimal list-inside space-y-sm text-body-sm">
+                        <li>
+                          Go to{" "}
+                          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            Credentials <ExternalLink className="h-3 w-3 inline ml-1" />
+                          </a>
+                        </li>
+                        <li>Create OAuth 2.0 Client ID (Web application)</li>
+                        <li>Add authorized origin: <code className="text-metadata bg-muted px-xs py-0.5 rounded">{window.location.origin}</code></li>
+                        <li>Copy the Client ID</li>
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="step-4">
+                    <AccordionTrigger>
+                      <div className="flex items-center gap-sm">
+                        <Circle className="h-4 w-4 text-muted-foreground" />
+                        <span>Step 4: Create API Key</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-sm">
+                      <ol className="list-decimal list-inside space-y-sm text-body-sm">
+                        <li>On Credentials page, create an API key</li>
+                        <li>Optionally restrict it to Google Sheets & Picker APIs</li>
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
+                <Separator />
+
+                {/* Config Form */}
+                <div className="space-y-md">
+                  <h4 className="font-medium text-body">Enter Your Credentials</h4>
+                  
+                  <div className="space-y-sm">
+                    <Label htmlFor="client-id">OAuth 2.0 Client ID</Label>
+                    <Input
+                      id="client-id"
+                      type="text"
+                      placeholder="123456789-abc.apps.googleusercontent.com"
+                      value={clientId}
+                      onChange={(e) => setClientId(e.target.value)}
+                      className="font-mono text-body-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-sm">
+                    <Label htmlFor="api-key">API Key</Label>
+                    <Input
+                      id="api-key"
+                      type="password"
+                      placeholder="AIzaSy..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="font-mono text-body-sm"
+                    />
+                  </div>
+
+                  <Button onClick={handleSaveConfig} disabled={saving || !clientId || !apiKey} className="w-full">
+                    <Save className="h-4 w-4" />
+                    {saving ? "Saving..." : "Save & Connect"}
+                  </Button>
+
+                  <p className="text-metadata text-muted-foreground text-center">
+                    Credentials are stored locally in your browser only
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    }
+
+    // Configured but not authenticated - proceed with auth
     return (
       <Button onClick={onRequestAuth} variant="outline" size="sm">
         <FileSpreadsheet className="h-4 w-4" />
