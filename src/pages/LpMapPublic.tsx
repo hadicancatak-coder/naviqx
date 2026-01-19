@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useLpMapByToken, LpMapSection } from "@/hooks/useLpMaps";
 import { useLpExternalComments, useAddLpComment, LpExternalComment } from "@/hooks/useLpComments";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,8 @@ const SectionCard = ({
 }: SectionCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const section = mapSection.section;
   if (!section) return null;
@@ -105,11 +108,18 @@ const SectionCard = ({
             {section.sample_images.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                  Sample Images
+                  Sample Images (click to enlarge)
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {section.sample_images.map((image) => (
-                    <div key={image.id} className="rounded-lg overflow-hidden border">
+                  {section.sample_images.map((image, index) => (
+                    <div 
+                      key={image.id} 
+                      className="rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 hover:ring-2 hover:ring-primary/50 transition-all"
+                      onClick={() => {
+                        setLightboxIndex(index);
+                        setLightboxOpen(true);
+                      }}
+                    >
                       <img
                         src={image.url}
                         alt={image.caption || "Section image"}
@@ -123,6 +133,15 @@ const SectionCard = ({
                     </div>
                   ))}
                 </div>
+                <ImageLightbox
+                  images={section.sample_images.map((img) => ({
+                    url: img.url,
+                    caption: img.caption || undefined,
+                  }))}
+                  initialIndex={lightboxIndex}
+                  open={lightboxOpen}
+                  onClose={() => setLightboxOpen(false)}
+                />
               </div>
             )}
 
