@@ -146,7 +146,7 @@ const taskFieldsSchema = z.object({
   tags: z.array(z.string()).optional(),
   blocked_reason: z.string().optional().nullable(),
   failure_reason: z.string().optional().nullable(),
-  recurrence_rule: z.string().optional().nullable(),
+  recurrence_rrule: z.string().optional().nullable(),
 });
 
 // Refinement function for status-reason validation

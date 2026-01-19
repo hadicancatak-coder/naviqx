@@ -35,7 +35,7 @@ export async function prefetchTasksData(): Promise<void> {
           .select(`
             id, title, description, status, priority, due_at, created_at, updated_at,
             labels, sprint, project_id, task_type, is_recurrence_template, parent_id,
-            pending_approval, blocker_reason, external_dependency_reason, recurrence_rule,
+            pending_approval, blocker_reason, external_dependency_reason, recurrence_rrule,
             failure_reason, created_by, updated_by, countries,
             task_assignees(
               user_id,
