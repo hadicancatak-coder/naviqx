@@ -12,15 +12,7 @@ interface LpSectionCardProps {
   isDraggable?: boolean;
 }
 
-const sectionTypeColors: Record<string, string> = {
-  hero: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  features: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  testimonials: "bg-green-500/20 text-green-400 border-green-500/30",
-  pricing: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  cta: "bg-red-500/20 text-red-400 border-red-500/30",
-  footer: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-  custom: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-};
+import { sectionTypeCardColors } from "@/domain/lp-sections";
 
 export const LpSectionCard = ({
   section,
@@ -45,7 +37,7 @@ export const LpSectionCard = ({
     transition,
   };
 
-  const typeColor = sectionTypeColors[section.section_type] || sectionTypeColors.custom;
+  const typeColor = sectionTypeCardColors[section.section_type] || sectionTypeCardColors.other;
 
   return (
     <div

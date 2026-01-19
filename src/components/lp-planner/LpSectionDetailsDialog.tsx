@@ -25,15 +25,7 @@ interface LpSectionDetailsDialogProps {
   onRemove?: () => void;
 }
 
-const sectionTypeBadgeColors: Record<string, string> = {
-  hero: "bg-purple-500/15 text-purple-400",
-  features: "bg-blue-500/15 text-blue-400",
-  testimonials: "bg-green-500/15 text-green-400",
-  pricing: "bg-amber-500/15 text-amber-400",
-  cta: "bg-red-500/15 text-red-400",
-  footer: "bg-gray-500/15 text-gray-400",
-  custom: "bg-cyan-500/15 text-cyan-400",
-};
+import { sectionTypeBadgeColors } from "@/domain/lp-sections";
 
 export const LpSectionDetailsDialog = ({
   open,
