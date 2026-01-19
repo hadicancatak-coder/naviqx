@@ -55,10 +55,11 @@ export function DependencyLines({
     return positions;
   }, [phases, minDate, totalDays, phaseRowHeight, expandedPhaseId]);
 
-  // Don't render lines if a phase is expanded (too complex visually)
-  if (expandedPhaseId || dependencies.length === 0) return null;
-
+  // Move useMemo BEFORE the early return to fix hooks order
   const lines = useMemo(() => {
+    // Return empty if phase is expanded or no dependencies
+    if (expandedPhaseId || dependencies.length === 0) return [];
+    
     return dependencies
       .map((dep) => {
         const from = phasePositions.find((p) => p.id === dep.depends_on_phase_id);
@@ -84,8 +85,9 @@ export function DependencyLines({
         };
       })
       .filter(Boolean);
-  }, [dependencies, phasePositions]);
+  }, [dependencies, phasePositions, expandedPhaseId]);
 
+  // Early return AFTER all hooks are called
   if (lines.length === 0) return null;
 
   return (
