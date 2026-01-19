@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, differenceInDays, addDays, startOfDay, isWithinInterval, parseISO } from "date-fns";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Diamond } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -11,10 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { ProjectTimeline, useProjectTimelines } from "@/hooks/useProjects";
+import { useAllProjectMilestones, usePhaseDependencies, usePhaseTaskStats } from "@/hooks/useRoadmap";
+import { RoadmapSummary, PhaseExpandedCard, DependencyLines } from "./roadmap";
 
 interface ProjectRoadmapProps {
   projectId: string;
   isAdmin?: boolean;
+  projectDueDate?: string | null;
 }
 
 const phaseColors: Record<string, { bg: string; border: string; text: string }> = {
@@ -27,10 +30,20 @@ const phaseColors: Record<string, { bg: string; border: string; text: string }> 
   cyan: { bg: "bg-cyan-500/20", border: "border-cyan-500/40", text: "text-cyan-600 dark:text-cyan-400" },
 };
 
-export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
+const phaseTypes = [
+  { value: "planning", label: "Planning" },
+  { value: "research", label: "Research" },
+  { value: "development", label: "Development" },
+  { value: "testing", label: "Testing" },
+  { value: "launch", label: "Launch" },
+  { value: "review", label: "Review" },
+];
+
+export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRoadmapProps) {
   const { timelines, createTimeline, updateTimeline, deleteTimeline } = useProjectTimelines(projectId);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [editingPhase, setEditingPhase] = useState<ProjectTimeline | null>(null);
+  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null);
   const [newPhase, setNewPhase] = useState({
     phase_name: "",
     start_date: "",
@@ -38,6 +51,8 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
     description: "",
     color: "primary",
     progress: 0,
+    phase_type: "development",
+    depends_on: [] as string[],
   });
 
   const { minDate, maxDate, totalDays, today, phases } = useMemo(() => {
@@ -71,6 +86,13 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
     };
   }, [timelines]);
 
+  const phaseIds = useMemo(() => phases.map((p) => p.id), [phases]);
+  
+  // Fetch related data
+  const { milestones } = useAllProjectMilestones(projectId, phaseIds);
+  const { dependencies, createDependency, deleteDependency } = usePhaseDependencies(projectId, phaseIds);
+  const { taskStats } = usePhaseTaskStats(projectId);
+
   const getPosition = (date: Date) => {
     const days = differenceInDays(date, minDate);
     return (days / totalDays) * 100;
@@ -87,7 +109,7 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
   const handleAddPhase = async () => {
     if (!newPhase.phase_name || !newPhase.start_date || !newPhase.end_date) return;
 
-    await createTimeline.mutateAsync({
+    const createdPhase = await createTimeline.mutateAsync({
       project_id: projectId,
       phase_name: newPhase.phase_name,
       start_date: newPhase.start_date,
@@ -97,7 +119,24 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
       progress: newPhase.progress,
     });
 
-    setNewPhase({ phase_name: "", start_date: "", end_date: "", description: "", color: "primary", progress: 0 });
+    // Create dependencies
+    for (const depId of newPhase.depends_on) {
+      await createDependency.mutateAsync({
+        phase_id: createdPhase.id,
+        depends_on_phase_id: depId,
+      });
+    }
+
+    setNewPhase({ 
+      phase_name: "", 
+      start_date: "", 
+      end_date: "", 
+      description: "", 
+      color: "primary", 
+      progress: 0,
+      phase_type: "development",
+      depends_on: [],
+    });
     setIsAddingPhase(false);
   };
 
@@ -117,6 +156,9 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
 
   const handleDeletePhase = async (id: string) => {
     await deleteTimeline.mutateAsync(id);
+    if (expandedPhaseId === id) {
+      setExpandedPhaseId(null);
+    }
   };
 
   // Generate month markers
@@ -134,6 +176,11 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
     return markers;
   }, [minDate, maxDate, totalDays]);
 
+  // Get milestones for a specific phase (for diamond markers)
+  const getMilestonesForPhase = (phaseId: string) => {
+    return (milestones || []).filter((m) => m.phase_id === phaseId);
+  };
+
   return (
     <div className="space-y-md">
       <div className="flex items-center justify-between">
@@ -145,6 +192,15 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
           </Button>
         )}
       </div>
+
+      {/* Summary Metrics */}
+      {phases.length > 0 && (
+        <RoadmapSummary
+          phases={phases}
+          milestones={milestones || []}
+          projectDueDate={projectDueDate}
+        />
+      )}
 
       {phases.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
@@ -171,7 +227,17 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
           </div>
 
           {/* Timeline container */}
-          <div className="relative min-h-[200px]" style={{ minWidth: "600px" }}>
+          <div className="relative" style={{ minWidth: "600px" }}>
+            {/* Dependency Lines */}
+            <DependencyLines
+              phases={phases}
+              dependencies={dependencies || []}
+              minDate={minDate}
+              totalDays={totalDays}
+              phaseRowHeight={56}
+              expandedPhaseId={expandedPhaseId}
+            />
+
             {/* Today marker */}
             {isTodayVisible && (
               <div
@@ -191,6 +257,25 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
                 const left = getPosition(phase.startDate);
                 const width = getWidth(phase.startDate, phase.endDate);
                 const isActive = isWithinInterval(today, { start: phase.startDate, end: phase.endDate });
+                const isExpanded = expandedPhaseId === phase.id;
+                const phaseMilestones = getMilestonesForPhase(phase.id);
+                const phaseTaskStat = taskStats?.find((s) => s.phase_id === phase.id);
+
+                if (isExpanded) {
+                  return (
+                    <PhaseExpandedCard
+                      key={phase.id}
+                      phase={phase}
+                      phases={phases}
+                      dependencies={dependencies || []}
+                      taskStats={phaseTaskStat}
+                      isAdmin={isAdmin}
+                      onEdit={() => setEditingPhase(phase)}
+                      onCollapse={() => setExpandedPhaseId(null)}
+                      colorClasses={colors}
+                    />
+                  );
+                }
 
                 return (
                   <div key={phase.id} className="relative h-14 group">
@@ -198,28 +283,59 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
                       <TooltipTrigger asChild>
                         <div
                           className={cn(
-                            "absolute h-full rounded-lg border-2 cursor-pointer transition-all",
+                            "absolute h-full rounded-lg border-2 cursor-pointer transition-all hover:shadow-soft",
                             colors.bg,
                             colors.border,
                             isActive && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                           )}
-                          style={{ left: `${left}%`, width: `${width}%`, minWidth: "80px" }}
-                          onClick={() => isAdmin && setEditingPhase(phase)}
+                          style={{ left: `${left}%`, width: `${width}%`, minWidth: "100px" }}
+                          onClick={() => setExpandedPhaseId(phase.id)}
                         >
                           <div className="h-full px-3 py-2 flex flex-col justify-between overflow-hidden">
                             <div className="flex items-center gap-2">
-                              {isAdmin && (
-                                <GripVertical className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                              )}
                               <span className={cn("text-body-sm font-medium truncate", colors.text)}>
                                 {phase.phase_name}
                               </span>
+                              {phaseMilestones.length > 0 && (
+                                <span className="flex items-center gap-0.5 text-metadata text-muted-foreground">
+                                  <Diamond className="h-3 w-3" />
+                                  {phaseMilestones.length}
+                                </span>
+                              )}
+                              <ChevronDown className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
                             </div>
                             <div className="flex items-center gap-2">
                               <Progress value={phase.progress} className="h-1.5 flex-1" />
                               <span className="text-metadata text-muted-foreground">{phase.progress}%</span>
                             </div>
                           </div>
+
+                          {/* Milestone diamond markers on the bar */}
+                          {phaseMilestones.slice(0, 3).map((milestone, mIdx) => {
+                            if (!milestone.due_date) return null;
+                            const milestoneDate = parseISO(milestone.due_date);
+                            const phaseStart = phase.startDate;
+                            const phaseEnd = phase.endDate;
+                            const phaseDuration = differenceInDays(phaseEnd, phaseStart);
+                            const milestoneOffset = differenceInDays(milestoneDate, phaseStart);
+                            const milestonePosition = phaseDuration > 0 
+                              ? Math.min(Math.max((milestoneOffset / phaseDuration) * 100, 5), 95)
+                              : 50;
+
+                            return (
+                              <Diamond
+                                key={milestone.id}
+                                className={cn(
+                                  "absolute top-1 h-2.5 w-2.5",
+                                  milestone.is_completed 
+                                    ? "text-success-text fill-success/30" 
+                                    : "text-warning-text fill-warning/30"
+                                )}
+                                style={{ left: `${milestonePosition}%`, transform: "translateX(-50%)" }}
+                              />
+                            );
+                          })}
+
                           {isAdmin && (
                             <Button
                               variant="ghost"
@@ -245,6 +361,12 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
                             <p className="text-metadata text-muted-foreground">{phase.description}</p>
                           )}
                           <p className="text-metadata">Progress: {phase.progress}%</p>
+                          {phaseMilestones.length > 0 && (
+                            <p className="text-metadata">
+                              Milestones: {phaseMilestones.filter((m) => m.is_completed).length}/{phaseMilestones.length}
+                            </p>
+                          )}
+                          <p className="text-metadata text-primary">Click to expand</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -258,11 +380,11 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
 
       {/* Add Phase Dialog */}
       <Dialog open={isAddingPhase} onOpenChange={setIsAddingPhase}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Phase</DialogTitle>
           </DialogHeader>
-          <div className="space-y-md">
+          <div className="space-y-md max-h-[60vh] overflow-y-auto pr-2">
             <div className="space-y-2">
               <Label>Phase Name</Label>
               <Input
@@ -289,24 +411,62 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <Select value={newPhase.color} onValueChange={(v) => setNewPhase({ ...newPhase, color: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(phaseColors).map((color) => (
-                    <SelectItem key={color} value={color}>
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-full", phaseColors[color].bg, phaseColors[color].border)} />
-                        <span className="capitalize">{color}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-md">
+              <div className="space-y-2">
+                <Label>Phase Type</Label>
+                <Select value={newPhase.phase_type} onValueChange={(v) => setNewPhase({ ...newPhase, phase_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {phaseTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <Select value={newPhase.color} onValueChange={(v) => setNewPhase({ ...newPhase, color: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(phaseColors).map((color) => (
+                      <SelectItem key={color} value={color}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-3 h-3 rounded-full", phaseColors[color].bg, phaseColors[color].border)} />
+                          <span className="capitalize">{color}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            {phases.length > 0 && (
+              <div className="space-y-2">
+                <Label>Depends On (optional)</Label>
+                <Select
+                  value={newPhase.depends_on[0] || ""}
+                  onValueChange={(v) => setNewPhase({ ...newPhase, depends_on: v ? [v] : [] })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a phase..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {phases.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.phase_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Description (optional)</Label>
               <Textarea
@@ -330,12 +490,12 @@ export function ProjectRoadmap({ projectId, isAdmin }: ProjectRoadmapProps) {
 
       {/* Edit Phase Dialog */}
       <Dialog open={!!editingPhase} onOpenChange={() => setEditingPhase(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Phase</DialogTitle>
           </DialogHeader>
           {editingPhase && (
-            <div className="space-y-md">
+            <div className="space-y-md max-h-[60vh] overflow-y-auto pr-2">
               <div className="space-y-2">
                 <Label>Phase Name</Label>
                 <Input
