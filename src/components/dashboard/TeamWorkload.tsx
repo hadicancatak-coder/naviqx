@@ -5,9 +5,9 @@ import { Briefcase, TrendingUp, AlertCircle, Flame } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { cn } from "@/lib/utils";
 
-// Workload thresholds based on tasks due in next 2 days
-const BUSY_THRESHOLD = 3; // 3+ tasks in next 2 days = Busy
-const FULL_THRESHOLD = 5; // 5+ tasks in next 2 days = Full
+// Workload thresholds based on tasks due in next 5 days
+const BUSY_THRESHOLD = 3; // 3+ tasks in next 5 days = Busy
+const FULL_THRESHOLD = 5; // 5+ tasks in next 5 days = Full
 
 export function TeamWorkload() {
   const { data, isLoading } = useDashboardData();
@@ -48,7 +48,7 @@ export function TeamWorkload() {
     );
   }
 
-  // Sort by tasks in next 2 days (descending) - busiest first
+  // Sort by tasks in next 5 days (descending) - busiest first
   const sortedUsers = [...users].sort((a, b) => {
     return b.tasksNext2Days - a.tasksNext2Days;
   });
@@ -58,7 +58,7 @@ export function TeamWorkload() {
       <h2 className="text-heading-sm font-semibold text-foreground mb-md flex items-center gap-sm">
         <Briefcase className="h-5 w-5 text-muted-foreground" />
         Team Workload
-        <span className="text-xs text-muted-foreground font-normal">(next 2 days)</span>
+        <span className="text-xs text-muted-foreground font-normal">(next 5 days)</span>
       </h2>
       
       <div className="space-y-sm max-h-[400px] overflow-y-auto hide-scrollbar">
