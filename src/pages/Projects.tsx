@@ -179,17 +179,17 @@ export default function Projects() {
         }
       />
 
-      <div className="grid grid-cols-12 gap-lg mt-lg">
-        {/* Sidebar */}
-        <div className="col-span-12 lg:col-span-3">
-          <div className="bg-card border border-border rounded-xl p-md space-y-md sticky top-20">
+      <div className="grid grid-cols-12 gap-md mt-md">
+        {/* Sidebar - Narrower */}
+        <div className="col-span-12 lg:col-span-2">
+          <div className="bg-card border border-border rounded-xl p-sm space-y-sm sticky top-20">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search projects..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-8 h-8 text-body-sm"
               />
             </div>
             <ProjectTree
@@ -202,9 +202,9 @@ export default function Projects() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="col-span-12 lg:col-span-9">
-          <div className="bg-card border border-border rounded-xl p-lg min-h-[600px]">
+        {/* Main Content - Wider */}
+        <div className="col-span-12 lg:col-span-10">
+          <div className="min-h-[700px]">
             {selectedProject ? (
               <ProjectPageContent
                 project={selectedProject}
