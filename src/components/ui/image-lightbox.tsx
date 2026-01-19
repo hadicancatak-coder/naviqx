@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ImageLightboxProps {
@@ -57,113 +56,101 @@ export const ImageLightbox = ({
 
   const currentImage = images[currentIndex];
 
-  const goToPrevious = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const goToPrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
     setZoom(1);
   };
 
-  const goToNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const goToNext = () => {
     setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
     setZoom(1);
   };
 
-  const handleZoomIn = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setZoom((prev) => Math.min(prev + 0.5, 3));
-  };
-  
-  const handleZoomOut = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setZoom((prev) => Math.max(prev - 0.5, 0.5));
-  };
-
   const content = (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer"
       style={{ zIndex: 99999 }}
       onClick={onClose}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/95" />
 
-      {/* Top bar: Close & Zoom controls */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white/80 hover:text-white hover:bg-white/10"
-            onClick={handleZoomOut}
-          >
-            <ZoomOut className="h-4 w-4 mr-1" />
-            <span className="text-xs">{Math.round(zoom * 100)}%</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white/80 hover:text-white hover:bg-white/10"
-            onClick={handleZoomIn}
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/10 h-10 w-10"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Main image area */}
-      <div
-        className="relative flex items-center justify-center w-full h-full px-16 py-20"
+      {/* Top bar */}
+      <div 
+        className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Navigation arrows */}
-        {images.length > 1 && (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-12 w-12 z-10"
-              onClick={goToPrevious}
-            >
-              <ChevronLeft className="h-8 w-8" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-12 w-12 z-10"
-              onClick={goToNext}
-            >
-              <ChevronRight className="h-8 w-8" />
-            </Button>
-          </>
-        )}
-
-        {/* Image container */}
-        <div className="relative max-w-full max-h-full overflow-auto flex items-center justify-center">
-          <img
-            src={currentImage.url}
-            alt={currentImage.caption || "Image"}
-            className="max-w-[85vw] max-h-[75vh] object-contain transition-transform duration-200 rounded-lg shadow-2xl"
-            style={{ transform: `scale(${zoom})` }}
-            draggable={false}
-          />
+        <div className="flex items-center gap-2">
+          <button
+            className="flex items-center gap-1 text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+            onClick={() => setZoom((prev) => Math.max(prev - 0.5, 0.5))}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <span className="text-white/80 text-sm min-w-[50px] text-center">
+            {Math.round(zoom * 100)}%
+          </span>
+          <button
+            className="flex items-center gap-1 text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+            onClick={() => setZoom((prev) => Math.min(prev + 0.5, 3))}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </button>
         </div>
+        
+        <button
+          className="text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+          onClick={onClose}
+        >
+          <X className="h-6 w-6" />
+        </button>
       </div>
 
-      {/* Bottom bar: Caption, counter, thumbnails */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+      {/* Navigation arrows - Left */}
+      {images.length > 1 && (
+        <button
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            goToPrevious();
+          }}
+        >
+          <ChevronLeft className="h-8 w-8" />
+        </button>
+      )}
+
+      {/* Navigation arrows - Right */}
+      {images.length > 1 && (
+        <button
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            goToNext();
+          }}
+        >
+          <ChevronRight className="h-8 w-8" />
+        </button>
+      )}
+
+      {/* Image container - clicking on image doesn't close */}
+      <div 
+        className="relative z-10 max-w-[85vw] max-h-[70vh] cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={currentImage.url}
+          alt={currentImage.caption || "Image"}
+          className="max-w-full max-h-[70vh] object-contain transition-transform duration-200 rounded-lg shadow-2xl"
+          style={{ transform: `scale(${zoom})` }}
+          draggable={false}
+        />
+      </div>
+
+      {/* Bottom bar */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 p-4 z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Caption and counter */}
         <div className="text-center mb-3">
           {currentImage.caption && (
@@ -190,8 +177,7 @@ export const ImageLightbox = ({
                     ? "border-white opacity-100 ring-2 ring-white/30"
                     : "border-transparent opacity-40 hover:opacity-70"
                 )}
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   setCurrentIndex(index);
                   setZoom(1);
                 }}
@@ -210,6 +196,5 @@ export const ImageLightbox = ({
     </div>
   );
 
-  // Use portal to render at document body level
   return createPortal(content, document.body);
 };
