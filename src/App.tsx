@@ -78,11 +78,11 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
                   <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
-              <Route path="/campaigns-log/review/:token" element={<CampaignReview />} />
-              <Route path="/campaigns-log/external/:token" element={<CampaignsLogExternal />} />
-              <Route path="/knowledge/public/:token" element={<KnowledgePublic />} />
-              <Route path="/projects/public/:token" element={<ProjectsPublic />} />
-              <Route path="/lp-planner/public/:token" element={<LpMapPublic />} />
+              <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
+              <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><CampaignsLogExternal /></Suspense>} />
+              <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />
+              <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><ProjectsPublic /></Suspense>} />
+              <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><LpMapPublic /></Suspense>} />
                   <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/dashboard" element={<Navigate to="/" replace />} />
