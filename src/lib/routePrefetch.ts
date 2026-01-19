@@ -5,7 +5,10 @@
 
 // Maps routes to their dynamic import functions
 const routeModules: Record<string, () => Promise<any>> = {
+  '/tasks': () => import('@/pages/Tasks'),
+  '/sprints': () => import('@/pages/Sprints'),
   '/ads/search': () => import('@/pages/SearchPlanner'),
+  '/ads/lp': () => import('@/pages/LpPlanner'),
   '/ads/captions': () => import('@/pages/CaptionLibrary'),
   '/utm-planner': () => import('@/pages/UtmPlanner'),
   '/location-intelligence': () => import('@/pages/LocationIntelligence'),

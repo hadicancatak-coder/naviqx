@@ -32,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { prefetchTasksData } from "@/lib/taskPrefetch";
 
   const coreItems = [
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
@@ -129,8 +130,19 @@ export function AppSidebar() {
                       to={item.url} 
                       end 
                       className={getNavLinkClass}
-                      onMouseEnter={() => prefetchRoute(item.url)}
-                      onFocus={() => prefetchRoute(item.url)}
+                      onMouseEnter={() => {
+                        prefetchRoute(item.url);
+                        // Prefetch task data on Tasks hover for instant loading
+                        if (item.url === '/tasks') {
+                          prefetchTasksData();
+                        }
+                      }}
+                      onFocus={() => {
+                        prefetchRoute(item.url);
+                        if (item.url === '/tasks') {
+                          prefetchTasksData();
+                        }
+                      }}
                     >
                       <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                       {open && <span className="text-body">{item.title}</span>}

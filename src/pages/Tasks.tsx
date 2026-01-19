@@ -321,11 +321,28 @@ export default function Tasks() {
   }, [data, user]);
 
 
-  if (isLoading) {
+  // Show skeleton only when truly loading with no data at all
+  if (isLoading && !data) {
     return (
       <PageContainer>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Skeleton header */}
+          <div className="flex items-center justify-between">
+            <div className="h-8 w-32 bg-muted rounded animate-shimmer" />
+            <div className="h-10 w-28 bg-muted rounded animate-shimmer" />
+          </div>
+          {/* Skeleton filter bar */}
+          <div className="h-12 bg-muted rounded-lg animate-shimmer" />
+          {/* Skeleton task rows */}
+          <div className="space-y-2">
+            {[...Array(8)].map((_, i) => (
+              <div 
+                key={i} 
+                className="h-16 bg-muted rounded-lg animate-shimmer" 
+                style={{ animationDelay: `${i * 50}ms` }}
+              />
+            ))}
+          </div>
         </div>
       </PageContainer>
     );

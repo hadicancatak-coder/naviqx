@@ -62,6 +62,7 @@ export function useTasks(filters?: TaskFilters) {
     queryFn: fetchTasks,
     staleTime: 30000, // 30 seconds - reduce refetches
     refetchOnWindowFocus: false, // Don't refetch on tab focus
+    placeholderData: (previousData) => previousData, // Show stale data instantly while refetching
   });
 
   // Setup realtime subscription using centralized service
