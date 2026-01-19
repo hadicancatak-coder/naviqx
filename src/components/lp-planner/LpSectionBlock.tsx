@@ -126,7 +126,15 @@ export const LpSectionBlock = ({
                   {section.section_type}
                 </Badge>
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+              
+              {/* Description Preview - Show truncated description in collapsed view */}
+              {section.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                  {section.description}
+                </p>
+              )}
+              
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                 {section.sample_images.length > 0 && (
                   <span className="flex items-center gap-1">
                     <Image className="h-3 w-3" />
