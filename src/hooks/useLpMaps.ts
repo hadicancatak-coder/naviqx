@@ -112,7 +112,8 @@ export const useLpMapByToken = (token: string | null) => {
 
       if (mapError) throw mapError;
 
-      await supabase.from("lp_maps").update({
+      // Fire-and-forget click tracking update (don't await, don't block page load)
+      void supabase.from("lp_maps").update({
         click_count: (map.click_count || 0) + 1,
         last_accessed_at: new Date().toISOString(),
       }).eq("id", map.id);
