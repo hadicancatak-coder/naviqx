@@ -7,3 +7,7 @@ export { LpMapBuilder } from "./LpMapBuilder";
 export { LpMapSectionItem } from "./LpMapSectionItem";
 export { LpMapHeader } from "./LpMapHeader";
 export { LpShareDialog } from "./LpShareDialog";
+export { LpSectionBlock } from "./LpSectionBlock";
+export { LpSectionDrawer } from "./LpSectionDrawer";
+export { LpCanvas } from "./LpCanvas";
+export { LpMapListCompact } from "./LpMapListCompact";
