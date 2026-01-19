@@ -51,9 +51,9 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
 
   // Fetch all data in parallel - ONE batch of queries
-  // Calculate 2 days from now for workload benchmark
-  const twoDaysFromNow = new Date(today);
-  twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+  // Calculate 5 days from now for workload benchmark
+  const fiveDaysFromNow = new Date(today);
+  fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
 
   const [
     profileRes,
@@ -77,13 +77,13 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
       .from("task_assignees")
       .select("user_id, task_id, tasks!inner(id, status)")
       .eq("tasks.status", "Completed"),
-    // Tasks due in next 2 days (not completed) - for workload calculation
+    // Tasks due in next 5 days (not completed) - for workload calculation
     supabase
       .from("task_assignees")
       .select("user_id, task_id, tasks!inner(id, status, due_at)")
       .neq("tasks.status", "Completed")
       .gte("tasks.due_at", today.toISOString())
-      .lte("tasks.due_at", twoDaysFromNow.toISOString()),
+      .lte("tasks.due_at", fiveDaysFromNow.toISOString()),
     // User visits for engagement
     supabase
       .from("user_visits")
