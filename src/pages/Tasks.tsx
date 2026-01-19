@@ -55,7 +55,7 @@ export default function Tasks() {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<any>(null);
-  const [statusFilters, setStatusFilters] = useState<string[]>(['Pending', 'Backlog', 'Ongoing', 'Blocked', 'Failed']);
+  const [statusFilters, setStatusFilters] = useState<string[]>(['Ongoing']);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   
@@ -306,7 +306,11 @@ export default function Tasks() {
   }, [focusedIndex, finalFilteredTasks, currentPage, itemsPerPage, selectedTaskIds, handleTaskClick, handleShiftSelect, queryClient, toast]);
 
   const tasks = data || [];
-  const hasActiveFilters = selectedAssignees.length > 0 || selectedTags.length > 0 || dateFilter || statusFilters.length !== 4 || activeQuickFilter || searchQuery || showMyTasks || selectedProjectId || selectedSprintId;
+  // Default filter state: only 'Ongoing' status, nothing else
+  const isDefaultFilters = statusFilters.length === 1 && statusFilters[0] === 'Ongoing' && 
+    selectedAssignees.length === 0 && selectedTags.length === 0 && !dateFilter && 
+    !activeQuickFilter && !searchQuery && !showMyTasks && !selectedProjectId && !selectedSprintId;
+  const hasActiveFilters = !isDefaultFilters;
   
   const myTasksCount = useMemo(() => {
     if (!user || !data) return 0;
@@ -329,7 +333,7 @@ export default function Tasks() {
 
   const clearAllFilters = () => {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
-    setStatusFilters(['Pending', 'Backlog', 'Ongoing', 'Blocked', 'Failed']);
+    setStatusFilters(['Ongoing']); // Reset to default: only Ongoing
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
     setShowMyTasks(false); setSelectedProjectId(null); setSelectedSprintId(null);
   };
