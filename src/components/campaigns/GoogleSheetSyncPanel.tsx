@@ -34,7 +34,7 @@ import {
   useSyncGoogleSheet,
   SyncConfig 
 } from "@/hooks/useGoogleSheetSync";
-import { cn } from "@/lib/utils";
+
 
 interface GoogleSheetSyncPanelProps {
   accessToken: string | null;
@@ -260,11 +260,12 @@ export function GoogleSheetSyncPanel({ accessToken, onRequestAuth }: GoogleSheet
                   variant="outline" 
                   onClick={() => {
                     setEditingMapping(activeSyncConfig);
+                    const mapping = activeSyncConfig.column_mapping;
                     setColumnMapping({
-                      name: activeSyncConfig.column_mapping.name || 'Campaign Name',
-                      landing_page: activeSyncConfig.column_mapping.landing_page || 'URL',
-                      campaign_type: activeSyncConfig.column_mapping.campaign_type || 'Type',
-                      description: activeSyncConfig.column_mapping.description || 'Notes',
+                      name: mapping.name ?? 'Campaign Name',
+                      landing_page: mapping.landing_page ?? 'URL',
+                      campaign_type: mapping.campaign_type ?? 'Type',
+                      description: mapping.description ?? 'Notes',
                     });
                   }}
                 >
