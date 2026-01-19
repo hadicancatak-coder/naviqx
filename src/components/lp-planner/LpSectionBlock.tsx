@@ -17,6 +17,7 @@ interface LpSectionBlockProps {
   comments?: LpExternalComment[];
   onRemove?: () => void;
   onEdit?: (section: LpSection) => void;
+  onClick?: () => void;
 }
 
 const sectionTypeColors: Record<string, string> = {
@@ -45,6 +46,7 @@ export const LpSectionBlock = ({
   comments = [],
   onRemove,
   onEdit,
+  onClick,
 }: LpSectionBlockProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -89,60 +91,67 @@ export const LpSectionBlock = ({
             {position}
           </div>
 
-          {/* Drag Handle */}
+          {/* Drag Handle - Not clickable for popup */}
           <div
             {...attributes}
             {...listeners}
             className="cursor-grab opacity-40 hover:opacity-100 transition-opacity flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
           >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>
 
-          {/* Thumbnail Preview */}
-          {firstImage && (
-            <div className="flex-shrink-0 h-12 w-20 rounded-lg overflow-hidden border bg-muted">
-              <img
-                src={firstImage.url}
-                alt=""
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          )}
+          {/* Clickable Content Area */}
+          <div 
+            className="flex-1 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={onClick}
+          >
+            {/* Thumbnail Preview */}
+            {firstImage && (
+              <div className="flex-shrink-0 h-12 w-20 rounded-lg overflow-hidden border bg-muted">
+                <img
+                  src={firstImage.url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-sm truncate">{section.name}</span>
-              <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 border-0", badgeColor)}>
-                {section.section_type}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-              {section.sample_images.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <Image className="h-3 w-3" />
-                  {section.sample_images.length}
-                </span>
-              )}
-              {section.website_links.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <Link2 className="h-3 w-3" />
-                  {section.website_links.length}
-                </span>
-              )}
-              {section.brief_content && (
-                <span className="flex items-center gap-1">
-                  <FileText className="h-3 w-3" />
-                  Brief
-                </span>
-              )}
-              {comments.length > 0 && (
-                <span className="flex items-center gap-1 text-primary">
-                  <MessageSquare className="h-3 w-3" />
-                  {comments.length}
-                </span>
-              )}
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm truncate">{section.name}</span>
+                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 border-0", badgeColor)}>
+                  {section.section_type}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                {section.sample_images.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Image className="h-3 w-3" />
+                    {section.sample_images.length}
+                  </span>
+                )}
+                {section.website_links.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    {section.website_links.length}
+                  </span>
+                )}
+                {section.brief_content && (
+                  <span className="flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    Brief
+                  </span>
+                )}
+                {comments.length > 0 && (
+                  <span className="flex items-center gap-1 text-primary">
+                    <MessageSquare className="h-3 w-3" />
+                    {comments.length}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
