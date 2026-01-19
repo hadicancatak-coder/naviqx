@@ -16,12 +16,39 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    // Retry auth check once on transient failure
+    let user = null;
+    let userError = null;
+    
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await supabase.auth.getUser(token);
+      user = result.data?.user;
+      userError = result.error;
+      
+      if (user) break;
+      
+      // Wait 100ms before retry
+      if (attempt === 0 && userError) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
 
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Auth failed after retries:', userError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', reason: userError?.message || 'No user found' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { otpCode, isBackupCode } = await req.json();
