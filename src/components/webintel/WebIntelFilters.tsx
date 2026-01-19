@@ -77,7 +77,7 @@ export function WebIntelFilters({
       <div className="flex items-center gap-sm flex-wrap">
         {/* Country Filter */}
         <Select
-          value=""
+          value={undefined}
           onValueChange={(value) => {
             if (!filters.countries.includes(value)) {
               onFiltersChange({ ...filters, countries: [...filters.countries, value] });
@@ -98,7 +98,7 @@ export function WebIntelFilters({
 
         {/* Type Filter */}
         <Select
-          value=""
+          value={undefined}
           onValueChange={(value) => {
             if (!filters.types.includes(value)) {
               onFiltersChange({ ...filters, types: [...filters.types, value] });
@@ -119,7 +119,7 @@ export function WebIntelFilters({
 
         {/* Category Filter */}
         <Select
-          value=""
+          value={undefined}
           onValueChange={(value) => {
             if (!filters.categories.includes(value)) {
               onFiltersChange({ ...filters, categories: [...filters.categories, value] });
@@ -140,7 +140,7 @@ export function WebIntelFilters({
 
         {/* Tags Filter */}
         <Select
-          value=""
+          value={undefined}
           onValueChange={(value) => {
             if (!filters.tags.includes(value)) {
               onFiltersChange({ ...filters, tags: [...filters.tags, value] });
@@ -161,7 +161,7 @@ export function WebIntelFilters({
 
         {/* Entity Filter */}
         <Select
-          value=""
+          value={undefined}
           onValueChange={(value) => {
             if (!filters.entities.includes(value)) {
               onFiltersChange({ ...filters, entities: [...filters.entities, value] });
