@@ -46,6 +46,8 @@ const KPIsManagement = lazy(() => import("./pages/admin/KPIsManagement"));
 const ErrorLogs = lazy(() => import("./pages/admin/ErrorLogs"));
 const SecurityScans = lazy(() => import("./pages/admin/SecurityScans"));
 const SearchPlanner = lazy(() => import("./pages/SearchPlanner"));
+const LpPlanner = lazy(() => import("./pages/LpPlanner"));
+const LpMapPublic = lazy(() => import("./pages/LpMapPublic"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Security = lazy(() => import("./pages/Security"));
 const About = lazy(() => import("./pages/About"));
@@ -80,6 +82,7 @@ const App = () => (
               <Route path="/campaigns-log/external/:token" element={<CampaignsLogExternal />} />
               <Route path="/knowledge/public/:token" element={<KnowledgePublic />} />
               <Route path="/projects/public/:token" element={<ProjectsPublic />} />
+              <Route path="/lp-planner/public/:token" element={<LpMapPublic />} />
                   <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/dashboard" element={<Navigate to="/" replace />} />
@@ -104,6 +107,7 @@ const App = () => (
                     <Route path="/ads/search" element={<SearchPlanner adType="search" key="search" />} />
                     <Route path="/ads/library" element={<Navigate to="/ads/captions" replace />} />
                     <Route path="/ads/captions" element={<CaptionLibrary />} />
+                    <Route path="/ads/lp" element={<LpPlanner />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/profile/:userId?" element={<Profile />} />
                     <Route path="/utm-planner" element={<UtmPlanner />} />
