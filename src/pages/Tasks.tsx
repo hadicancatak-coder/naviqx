@@ -73,7 +73,7 @@ export default function Tasks() {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [filteredDialogOpen, setFilteredDialogOpen] = useState(false);
   const [filteredDialogType, setFilteredDialogType] = useState<'all' | 'overdue' | 'ongoing' | 'completed'>('all');
-  const [hideRecurring, setHideRecurring] = useState(false);
+  const [showOnlyRecurring, setShowOnlyRecurring] = useState(false);
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
@@ -183,12 +183,12 @@ export default function Tasks() {
       });
       const tagsMatch = selectedTags.length === 0 || selectedTags.some(tag => task.labels?.includes(tag));
       const searchMatch = debouncedSearch === "" || task.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) || (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
-      const recurringMatch = !hideRecurring || task.task_type !== 'recurring';
+      const recurringMatch = !showOnlyRecurring || task.task_type === 'recurring' || !!task.template_task_id;
       const projectMatch = !selectedProjectId || task.project_id === selectedProjectId;
       const sprintMatch = !selectedSprintId || task.sprint === selectedSprintId;
       return assigneeMatch && dateMatch && statusMatch && tagsMatch && searchMatch && recurringMatch && projectMatch && sprintMatch;
     });
-  }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, hideRecurring, showMyTasks, user, selectedProjectId, selectedSprintId]);
+  }, [data, selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, showOnlyRecurring, showMyTasks, user, selectedProjectId, selectedSprintId]);
 
   const finalFilteredTasks = useMemo(() => {
     if (activeQuickFilter) {
@@ -563,14 +563,14 @@ export default function Tasks() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={!hideRecurring ? "default" : "outline"} 
+                variant={showOnlyRecurring ? "default" : "outline"} 
                 size="icon"
-                onClick={() => setHideRecurring(!hideRecurring)} 
+                onClick={() => setShowOnlyRecurring(!showOnlyRecurring)} 
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{hideRecurring ? "Show Recurring Tasks" : "Hide Recurring Tasks"}</TooltipContent>
+            <TooltipContent>{showOnlyRecurring ? "Show All Tasks" : "Show Recurring Only"}</TooltipContent>
           </Tooltip>
 
           <div className="ml-auto">
