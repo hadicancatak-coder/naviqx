@@ -209,7 +209,7 @@ export function ProjectPageContent({
       <Separator />
 
       {/* Roadmap */}
-      <ProjectRoadmap projectId={project.id} isAdmin={isAdmin} />
+      <ProjectRoadmap projectId={project.id} isAdmin={isAdmin} projectDueDate={project.due_date} />
 
       <Separator />
 

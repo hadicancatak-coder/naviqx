@@ -2592,6 +2592,83 @@ export type Database = {
         }
         Relationships: []
       }
+      phase_dependencies: {
+        Row: {
+          created_at: string | null
+          depends_on_phase_id: string
+          id: string
+          phase_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          depends_on_phase_id: string
+          id?: string
+          phase_id: string
+        }
+        Update: {
+          created_at?: string | null
+          depends_on_phase_id?: string
+          id?: string
+          phase_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phase_dependencies_depends_on_phase_id_fkey"
+            columns: ["depends_on_phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_timelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phase_dependencies_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_timelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phase_milestones: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          due_date: string | null
+          id: string
+          is_completed: boolean | null
+          name: string
+          order_index: number | null
+          phase_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          name: string
+          order_index?: number | null
+          phase_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          name?: string
+          order_index?: number | null
+          phase_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phase_milestones_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_timelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planned_campaigns: {
         Row: {
           agency: string | null
@@ -2784,6 +2861,7 @@ export type Database = {
           id: string
           order_index: number | null
           phase_name: string
+          phase_type: string | null
           progress: number | null
           project_id: string | null
           start_date: string
@@ -2796,6 +2874,7 @@ export type Database = {
           id?: string
           order_index?: number | null
           phase_name: string
+          phase_type?: string | null
           progress?: number | null
           project_id?: string | null
           start_date: string
@@ -2808,6 +2887,7 @@ export type Database = {
           id?: string
           order_index?: number | null
           phase_name?: string
+          phase_type?: string | null
           progress?: number | null
           project_id?: string | null
           start_date?: string
@@ -3657,6 +3737,7 @@ export type Database = {
           parent_id: string | null
           pending_approval: boolean | null
           pending_changes: Json | null
+          phase_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
           project_key: string | null
@@ -3715,6 +3796,7 @@ export type Database = {
           parent_id?: string | null
           pending_approval?: boolean | null
           pending_changes?: Json | null
+          phase_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           project_key?: string | null
@@ -3773,6 +3855,7 @@ export type Database = {
           parent_id?: string | null
           pending_approval?: boolean | null
           pending_changes?: Json | null
+          phase_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           project_key?: string | null
@@ -3822,6 +3905,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_timelines"
             referencedColumns: ["id"]
           },
           {
