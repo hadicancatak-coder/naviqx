@@ -1732,6 +1732,57 @@ export type Database = {
         }
         Relationships: []
       }
+      google_sheets_campaign_sync: {
+        Row: {
+          auto_sync_on_open: boolean | null
+          column_mapping: Json | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          sheet_id: string
+          sheet_name: string
+          sheet_url: string
+          sync_count: number | null
+          sync_error: string | null
+          sync_status: string | null
+          tab_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_sync_on_open?: boolean | null
+          column_mapping?: Json | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          sheet_id: string
+          sheet_name: string
+          sheet_url: string
+          sync_count?: number | null
+          sync_error?: string | null
+          sync_status?: string | null
+          tab_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_sync_on_open?: boolean | null
+          column_mapping?: Json | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          sheet_id?: string
+          sheet_name?: string
+          sheet_url?: string
+          sync_count?: number | null
+          sync_error?: string | null
+          sync_status?: string | null
+          tab_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_sheets_reports: {
         Row: {
           created_at: string
