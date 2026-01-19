@@ -20,6 +20,7 @@ interface MentionAutocompleteProps {
   minRows?: number;
   maxRows?: number;
   noPortal?: boolean; // When true, renders dropdown inline (for use inside dialogs)
+  assigneeIds?: string[]; // User IDs of task assignees for @all functionality
 }
 
 export function MentionAutocomplete({
@@ -33,6 +34,7 @@ export function MentionAutocomplete({
   minRows = 2,
   maxRows = 6,
   noPortal = false,
+  assigneeIds = [],
 }: MentionAutocompleteProps) {
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [filteredUsers, setFilteredUsers] = React.useState<User[]>([]);
@@ -75,6 +77,11 @@ export function MentionAutocomplete({
     }
   }, [noPortal]);
 
+  // Check if @all option should be shown (only when there are assignees)
+  const showAllOption = React.useMemo(() => {
+    return assigneeIds.length > 0;
+  }, [assigneeIds]);
+
   // Detect @ and filter users
   React.useEffect(() => {
     const textBeforeCursor = value.substring(0, cursorPosition);
@@ -87,13 +94,15 @@ export function MentionAutocomplete({
         u.username?.toLowerCase().includes(query)
       );
       setFilteredUsers(filtered);
-      setShowDropdown(filtered.length > 0);
+      // Show dropdown if we have filtered users OR if "all" matches the query and we have assignees
+      const allMatches = showAllOption && 'all'.includes(query);
+      setShowDropdown(filtered.length > 0 || allMatches);
       setSelectedIndex(0);
       updateDropdownPosition();
     } else {
       setShowDropdown(false);
     }
-  }, [value, cursorPosition, users, updateDropdownPosition]);
+  }, [value, cursorPosition, users, updateDropdownPosition, showAllOption]);
 
   // Track cursor position
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -128,26 +137,72 @@ export function MentionAutocomplete({
     }, 0);
   };
 
+  // Insert @all - mentions all assignees
+  const insertAllMention = () => {
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const textAfterCursor = value.substring(cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    // Get all assignee usernames
+    const assigneeUsers = users.filter(u => assigneeIds.includes(u.user_id));
+    const mentions = assigneeUsers.map(u => {
+      const username = u.username || u.name.toLowerCase().replace(/\s+/g, '');
+      return `@${username}`;
+    }).join(' ');
+    
+    const newValue = 
+      textBeforeCursor.substring(0, lastAtIndex) + 
+      mentions + ' ' + 
+      textAfterCursor;
+    
+    onChange(newValue);
+    setShowDropdown(false);
+    
+    // Set focus back to textarea
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      const newCursorPos = lastAtIndex + mentions.length + 1;
+      textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // Calculate total options for keyboard navigation (includes @all if applicable)
+  const textBeforeCursor = value.substring(0, cursorPosition);
+  const currentQuery = textBeforeCursor.match(/@(\w*)$/)?.[1]?.toLowerCase() || '';
+  const showAllInDropdown = showAllOption && 'all'.includes(currentQuery);
+  const totalOptions = filteredUsers.length + (showAllInDropdown ? 1 : 0);
+
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (showDropdown) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, filteredUsers.length - 1));
+        setSelectedIndex(prev => Math.min(prev + 1, totalOptions - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex(prev => Math.max(prev - 1, 0));
-      } else if (e.key === 'Enter' && filteredUsers.length > 0) {
+      } else if (e.key === 'Enter' && totalOptions > 0) {
         e.preventDefault();
-        insertMention(filteredUsers[selectedIndex]);
+        // Check if @all is selected (it's the first option when shown)
+        if (showAllInDropdown && selectedIndex === 0) {
+          insertAllMention();
+        } else {
+          const userIndex = showAllInDropdown ? selectedIndex - 1 : selectedIndex;
+          insertMention(filteredUsers[userIndex]);
+        }
         return;
       } else if (e.key === 'Escape') {
         e.preventDefault();
         setShowDropdown(false);
         return;
-      } else if (e.key === 'Tab' && filteredUsers.length > 0) {
+      } else if (e.key === 'Tab' && totalOptions > 0) {
         e.preventDefault();
-        insertMention(filteredUsers[selectedIndex]);
+        if (showAllInDropdown && selectedIndex === 0) {
+          insertAllMention();
+        } else {
+          const userIndex = showAllInDropdown ? selectedIndex - 1 : selectedIndex;
+          insertMention(filteredUsers[userIndex]);
+        }
         return;
       }
     }
@@ -172,7 +227,7 @@ export function MentionAutocomplete({
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const dropdownContent = showDropdown && filteredUsers.length > 0 && (
+  const dropdownContent = showDropdown && totalOptions > 0 && (
     <div 
       ref={dropdownRef}
         style={noPortal ? {
@@ -194,29 +249,53 @@ export function MentionAutocomplete({
         <div className="px-2 py-1.5 text-metadata text-muted-foreground">
           Mention someone
         </div>
-        {filteredUsers.map((user, index) => (
+        {/* @all option - ping all assignees */}
+        {showAllInDropdown && (
           <div
-            key={user.user_id}
             className={cn(
               "flex items-center gap-3 px-2 py-2 cursor-pointer rounded-md transition-smooth",
-              index === selectedIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+              selectedIndex === 0 ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
             )}
-            onClick={() => insertMention(user)}
-            onMouseEnter={() => setSelectedIndex(index)}
+            onClick={() => insertAllMention()}
+            onMouseEnter={() => setSelectedIndex(0)}
           >
-            <Avatar className="h-7 w-7">
-              <AvatarFallback className="text-metadata bg-primary/10 text-primary">
-                {getInitials(user.name)}
-              </AvatarFallback>
-            </Avatar>
+            <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center">
+              <span className="text-metadata font-semibold text-primary">@</span>
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-body-sm truncate">{user.name}</div>
-              {user.username && (
-                <div className="text-metadata text-muted-foreground truncate">@{user.username}</div>
-              )}
+              <div className="font-medium text-body-sm truncate">Mention All</div>
+              <div className="text-metadata text-muted-foreground truncate">
+                Ping all {assigneeIds.length} assignee{assigneeIds.length !== 1 ? 's' : ''}
+              </div>
             </div>
           </div>
-        ))}
+        )}
+        {filteredUsers.map((user, index) => {
+          const optionIndex = showAllInDropdown ? index + 1 : index;
+          return (
+            <div
+              key={user.user_id}
+              className={cn(
+                "flex items-center gap-3 px-2 py-2 cursor-pointer rounded-md transition-smooth",
+                optionIndex === selectedIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+              )}
+              onClick={() => insertMention(user)}
+              onMouseEnter={() => setSelectedIndex(optionIndex)}
+            >
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="text-metadata bg-primary/10 text-primary">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-body-sm truncate">{user.name}</div>
+                {user.username && (
+                  <div className="text-metadata text-muted-foreground truncate">@{user.username}</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
