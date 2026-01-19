@@ -55,7 +55,7 @@ export default function Tasks() {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<any>(null);
-  const [statusFilters, setStatusFilters] = useState<string[]>(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
+  const [statusFilters, setStatusFilters] = useState<string[]>(['Pending', 'Backlog', 'Ongoing', 'Blocked', 'Failed']);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   
@@ -339,7 +339,7 @@ export default function Tasks() {
 
   const clearAllFilters = () => {
     setSelectedAssignees([]); setSelectedTags([]); setDateFilter(null);
-    setStatusFilters(['Backlog', 'Ongoing', 'Blocked', 'Failed']);
+    setStatusFilters(['Pending', 'Backlog', 'Ongoing', 'Blocked', 'Failed']);
     setActiveQuickFilter(null); setSearchQuery(""); setSelectedTaskIds([]);
     setShowMyTasks(false); setShowTemplates(false); setSelectedProjectId(null); setSelectedSprintId(null);
   };

@@ -58,8 +58,8 @@ export const Layout = () => {
           </div>
           <div className="relative z-[2]">
             <TopHeader />
-            <div className="pt-md px-md pb-lg">
-              <Suspense fallback={null}>
+            <div className="pt-md px-md pb-lg page-transition">
+              <Suspense fallback={<div className="min-h-[200px]" />}>
                 <Outlet />
               </Suspense>
             </div>
