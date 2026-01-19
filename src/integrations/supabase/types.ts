@@ -2307,6 +2307,208 @@ export type Database = {
           },
         ]
       }
+      lp_external_comments: {
+        Row: {
+          access_token: string
+          comment_text: string
+          created_at: string
+          id: string
+          lp_map_id: string
+          reviewer_email: string
+          reviewer_name: string
+          section_id: string | null
+        }
+        Insert: {
+          access_token: string
+          comment_text: string
+          created_at?: string
+          id?: string
+          lp_map_id: string
+          reviewer_email: string
+          reviewer_name: string
+          section_id?: string | null
+        }
+        Update: {
+          access_token?: string
+          comment_text?: string
+          created_at?: string
+          id?: string
+          lp_map_id?: string
+          reviewer_email?: string
+          reviewer_name?: string
+          section_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lp_external_comments_lp_map_id_fkey"
+            columns: ["lp_map_id"]
+            isOneToOne: false
+            referencedRelation: "lp_maps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lp_external_comments_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "lp_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lp_map_sections: {
+        Row: {
+          created_at: string
+          id: string
+          lp_map_id: string
+          overrides: Json | null
+          position: number
+          section_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lp_map_id: string
+          overrides?: Json | null
+          position?: number
+          section_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lp_map_id?: string
+          overrides?: Json | null
+          position?: number
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lp_map_sections_lp_map_id_fkey"
+            columns: ["lp_map_id"]
+            isOneToOne: false
+            referencedRelation: "lp_maps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lp_map_sections_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "lp_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lp_maps: {
+        Row: {
+          click_count: number | null
+          created_at: string
+          created_by: string
+          description: string | null
+          entity_id: string | null
+          id: string
+          is_active: boolean | null
+          is_public: boolean | null
+          last_accessed_at: string | null
+          name: string
+          public_token: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          click_count?: number | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          entity_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          last_accessed_at?: string | null
+          name: string
+          public_token?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          click_count?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          entity_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          last_accessed_at?: string | null
+          name?: string
+          public_token?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lp_maps_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "system_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lp_sections: {
+        Row: {
+          brief_content: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          display_order: number | null
+          entity_id: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sample_images: Json | null
+          section_type: string
+          updated_at: string
+          website_links: Json | null
+        }
+        Insert: {
+          brief_content?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          display_order?: number | null
+          entity_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sample_images?: Json | null
+          section_type?: string
+          updated_at?: string
+          website_links?: Json | null
+        }
+        Update: {
+          brief_content?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          display_order?: number | null
+          entity_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sample_images?: Json | null
+          section_type?: string
+          updated_at?: string
+          website_links?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lp_sections_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "system_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_locations: {
         Row: {
           agency: string | null
