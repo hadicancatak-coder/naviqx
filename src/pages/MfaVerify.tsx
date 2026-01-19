@@ -26,8 +26,10 @@ export default function MfaVerify() {
   }, []);
 
   const checkSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Use getUser() instead of getSession() - getSession() can return stale cached tokens
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      console.log('No valid user session, redirecting to auth');
       navigate("/auth");
     }
   };
@@ -47,6 +49,20 @@ export default function MfaVerify() {
     setVerifying(true);
 
     try {
+      // Refresh session to ensure we have a valid token before calling edge function
+      const { data: { session }, error: sessionRefreshError } = await supabase.auth.refreshSession();
+      
+      if (sessionRefreshError || !session) {
+        console.error('Session refresh failed:', sessionRefreshError?.message);
+        toast({
+          title: "Session expired",
+          description: "Please sign in again",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
       // Verify OTP with edge function
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-mfa-otp', {
         body: { 
