@@ -106,6 +106,12 @@ export const LpShareDialog = ({
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </div>
+
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <p className="text-sm font-semibold text-destructive-text">
+                    ⚠️ NO CFD WORDS ALLOWED
+                  </p>
+                </div>
               </div>
 
               {map.click_count > 0 && (
