@@ -20,25 +20,7 @@ interface LpSectionBlockProps {
   onClick?: () => void;
 }
 
-const sectionTypeColors: Record<string, string> = {
-  hero: "border-l-purple-500",
-  features: "border-l-blue-500",
-  testimonials: "border-l-green-500",
-  pricing: "border-l-amber-500",
-  cta: "border-l-red-500",
-  footer: "border-l-gray-500",
-  custom: "border-l-cyan-500",
-};
-
-const sectionTypeBadgeColors: Record<string, string> = {
-  hero: "bg-purple-500/15 text-purple-400",
-  features: "bg-blue-500/15 text-blue-400",
-  testimonials: "bg-green-500/15 text-green-400",
-  pricing: "bg-amber-500/15 text-amber-400",
-  cta: "bg-red-500/15 text-red-400",
-  footer: "bg-gray-500/15 text-gray-400",
-  custom: "bg-cyan-500/15 text-cyan-400",
-};
+import { sectionTypeBorderColors, sectionTypeBadgeColors } from "@/domain/lp-sections";
 
 export const LpSectionBlock = ({
   mapSection,
@@ -67,8 +49,8 @@ export const LpSectionBlock = ({
   const section = mapSection.section;
   if (!section) return null;
 
-  const typeColor = sectionTypeColors[section.section_type] || sectionTypeColors.custom;
-  const badgeColor = sectionTypeBadgeColors[section.section_type] || sectionTypeBadgeColors.custom;
+  const typeColor = sectionTypeBorderColors[section.section_type] || sectionTypeBorderColors.other;
+  const badgeColor = sectionTypeBadgeColors[section.section_type] || sectionTypeBadgeColors.other;
   const firstImage = section.sample_images[0];
   
   const hasContent = section.sample_images.length > 0 || section.website_links.length > 0 || section.brief_content || comments.length > 0;

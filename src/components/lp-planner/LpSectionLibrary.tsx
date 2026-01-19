@@ -16,16 +16,7 @@ import { useEntities } from "@/hooks/useEntities";
 import { DndContext, DragOverlay, useDraggable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
-const SECTION_TYPES = [
-  { value: "all", label: "All Types" },
-  { value: "hero", label: "Hero" },
-  { value: "features", label: "Features" },
-  { value: "testimonials", label: "Testimonials" },
-  { value: "pricing", label: "Pricing" },
-  { value: "cta", label: "CTA" },
-  { value: "footer", label: "Footer" },
-  { value: "custom", label: "Custom" },
-];
+import { LP_SECTION_TYPE_FILTER_OPTIONS } from "@/domain/lp-sections";
 
 interface LpSectionLibraryProps {
   selectedSection: LpSection | null;
@@ -123,7 +114,7 @@ export const LpSectionLibrary = ({
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
-              {SECTION_TYPES.map((type) => (
+              {LP_SECTION_TYPE_FILTER_OPTIONS.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>

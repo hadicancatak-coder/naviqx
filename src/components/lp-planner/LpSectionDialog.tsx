@@ -30,15 +30,7 @@ import {
 } from "@/hooks/useLpSections";
 import { useEntities } from "@/hooks/useEntities";
 
-const SECTION_TYPES = [
-  { value: "hero", label: "Hero" },
-  { value: "features", label: "Features" },
-  { value: "testimonials", label: "Testimonials" },
-  { value: "pricing", label: "Pricing" },
-  { value: "cta", label: "CTA" },
-  { value: "footer", label: "Footer" },
-  { value: "custom", label: "Custom" },
-];
+import { LP_SECTION_TYPES } from "@/domain/lp-sections";
 
 interface LpSectionDialogProps {
   open: boolean;
@@ -202,7 +194,7 @@ export const LpSectionDialog = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SECTION_TYPES.map((type) => (
+                    {LP_SECTION_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}
                       </SelectItem>
