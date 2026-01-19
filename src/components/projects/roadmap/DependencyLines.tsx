@@ -87,6 +87,9 @@ export function DependencyLines({
       .filter(Boolean);
   }, [dependencies, phasePositions, expandedPhaseId]);
 
+  // Don't render dependency lines when any phase is expanded
+  if (expandedPhaseId) return null;
+
   // Early return AFTER all hooks are called
   if (lines.length === 0) return null;
 
