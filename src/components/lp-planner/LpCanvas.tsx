@@ -21,6 +21,7 @@ import { LpSectionBlock } from "./LpSectionBlock";
 import { LpSectionDrawer } from "./LpSectionDrawer";
 import { LpMapHeader } from "./LpMapHeader";
 import { LpSectionDialog } from "./LpSectionDialog";
+import { LpSectionDetailsDialog } from "./LpSectionDetailsDialog";
 import { EmptyState } from "@/components/layout/EmptyState";
 import {
   LpMap,
@@ -43,6 +44,10 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
   const [showSectionDrawer, setShowSectionDrawer] = useState(false);
   const [showSectionDialog, setShowSectionDialog] = useState(false);
   const [editingSection, setEditingSection] = useState<LpSection | null>(null);
+  
+  // Details dialog state
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedMapSection, setSelectedMapSection] = useState<LpMapSection | null>(null);
 
   const addSection = useAddSectionToMap();
   const removeSection = useRemoveSectionFromMap();
@@ -138,6 +143,11 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
     setShowSectionDrawer(false);
   };
 
+  const handleSectionClick = (mapSection: LpMapSection) => {
+    setSelectedMapSection(mapSection);
+    setShowDetailsDialog(true);
+  };
+
   if (!map) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
@@ -190,6 +200,7 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
                       comments={commentsBySection[mapSection.section_id] || []}
                       onRemove={() => handleRemoveSection(mapSection.id)}
                       onEdit={handleEditSection}
+                      onClick={() => handleSectionClick(mapSection)}
                     />
                   ))}
 
@@ -227,6 +238,19 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
         open={showSectionDialog}
         onOpenChange={setShowSectionDialog}
         section={editingSection}
+      />
+
+      <LpSectionDetailsDialog
+        open={showDetailsDialog}
+        onOpenChange={setShowDetailsDialog}
+        mapSection={selectedMapSection}
+        comments={selectedMapSection ? (commentsBySection[selectedMapSection.section_id] || []) : []}
+        onEdit={handleEditSection}
+        onRemove={() => {
+          if (selectedMapSection) {
+            handleRemoveSection(selectedMapSection.id);
+          }
+        }}
       />
     </div>
   );
