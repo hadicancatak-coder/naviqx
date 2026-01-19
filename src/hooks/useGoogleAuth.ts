@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const getClientId = () => localStorage.getItem("GOOGLE_CLIENT_ID") || import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -53,7 +54,9 @@ export function useGoogleAuth() {
   const signIn = () => {
     const clientId = getClientId();
     if (!clientId) {
-      console.error("Google Client ID not configured");
+      toast.error("Google API not configured", {
+        description: "Please configure your Google Client ID in the Google API Config section first.",
+      });
       return;
     }
     
