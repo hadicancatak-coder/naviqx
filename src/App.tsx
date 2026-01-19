@@ -30,6 +30,7 @@ import Projects from "./pages/Projects";
 import Whiteboard from "./pages/Whiteboard";
 import Knowledge from "./pages/Knowledge";
 import TechStack from "./pages/TechStack";
+import KeywordIntel from "./pages/KeywordIntel";
 
 // Lazy-loaded pages for better initial load
 const SprintsManagement = lazy(() => import("./pages/admin/SprintsManagement"));
@@ -58,7 +59,6 @@ const CampaignReview = lazy(() => import("./pages/CampaignReview"));
 const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
 const KnowledgePublic = lazy(() => import("./pages/KnowledgePublic"));
 const Performance = lazy(() => import("./pages/Performance"));
-const KeywordIntel = lazy(() => import("./pages/KeywordIntel"));
 const ProjectsPublic = lazy(() => import("./pages/ProjectsPublic"));
 
 
