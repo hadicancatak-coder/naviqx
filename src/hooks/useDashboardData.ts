@@ -18,6 +18,7 @@ interface UserPerformance {
   avatar?: string;
   totalTasks: number;
   completedTasks: number;
+  tasksNext2Days: number;
   visitsLast30Days: number;
   taskScore: number;
   engagementScore: number;
@@ -50,11 +51,16 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
 
   // Fetch all data in parallel - ONE batch of queries
+  // Calculate 2 days from now for workload benchmark
+  const twoDaysFromNow = new Date(today);
+  twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+
   const [
     profileRes,
     allProfilesRes,
     allAssigneesRes,
     completedAssigneesRes,
+    next2DaysAssigneesRes,
     userVisitsRes,
     totalTasksRes,
     completedTasksRes,
@@ -71,6 +77,13 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
       .from("task_assignees")
       .select("user_id, task_id, tasks!inner(id, status)")
       .eq("tasks.status", "Completed"),
+    // Tasks due in next 2 days (not completed) - for workload calculation
+    supabase
+      .from("task_assignees")
+      .select("user_id, task_id, tasks!inner(id, status, due_at)")
+      .neq("tasks.status", "Completed")
+      .gte("tasks.due_at", today.toISOString())
+      .lte("tasks.due_at", twoDaysFromNow.toISOString()),
     // User visits for engagement
     supabase
       .from("user_visits")
@@ -90,6 +103,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   const profiles = allProfilesRes.data || [];
   const allAssignees = allAssigneesRes.data || [];
   const completedAssignees = completedAssigneesRes.data || [];
+  const next2DaysAssignees = next2DaysAssigneesRes.data || [];
   const userVisits = userVisitsRes.data || [];
 
   // Calculate task stats
@@ -171,10 +185,10 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
     return 0;
   };
 
-  const userStats: Record<string, { total: number; completed: number; visits: number }> = {};
+  const userStats: Record<string, { total: number; completed: number; next2Days: number; visits: number }> = {};
 
   profiles.forEach((p) => {
-    userStats[p.id] = { total: 0, completed: 0, visits: 0 };
+    userStats[p.id] = { total: 0, completed: 0, next2Days: 0, visits: 0 };
   });
 
   allAssignees.forEach((a) => {
@@ -189,6 +203,13 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
     }
   });
 
+  // Count tasks due in next 2 days per user
+  next2DaysAssignees.forEach((a) => {
+    if (userStats[a.user_id]) {
+      userStats[a.user_id].next2Days++;
+    }
+  });
+
   const profileUserIdMap = new Map(profiles.map((p) => [p.user_id, p.id]));
   userVisits.forEach((v) => {
     const profileId = profileUserIdMap.get(v.user_id);
@@ -199,7 +220,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
 
   const teamPerformance: UserPerformance[] = profiles
     .map((p) => {
-      const stats = userStats[p.id] || { total: 0, completed: 0, visits: 0 };
+      const stats = userStats[p.id] || { total: 0, completed: 0, next2Days: 0, visits: 0 };
       const taskScore =
         stats.total > 0 ? Math.min(10, Math.round((stats.completed / stats.total) * 10 * 10) / 10) : 0;
       const engagementScore = getEngagementScore(stats.visits);
@@ -212,6 +233,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
         avatar: p.avatar_url || undefined,
         totalTasks: stats.total,
         completedTasks: stats.completed,
+        tasksNext2Days: stats.next2Days,
         visitsLast30Days: stats.visits,
         taskScore,
         engagementScore,

@@ -1,23 +1,26 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Briefcase, TrendingUp, AlertCircle } from "lucide-react";
+import { Briefcase, TrendingUp, AlertCircle, Flame } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { cn } from "@/lib/utils";
 
-const CAPACITY_PER_USER = 10; // Ideal max tasks per person
+// Workload thresholds based on tasks due in next 2 days
+const BUSY_THRESHOLD = 3; // 3+ tasks in next 2 days = Busy
+const FULL_THRESHOLD = 5; // 5+ tasks in next 2 days = Full
 
 export function TeamWorkload() {
   const { data, isLoading } = useDashboardData();
   const users = data?.teamPerformance ?? [];
 
-  const getWorkloadStatus = (total: number, completed: number) => {
-    const active = total - completed;
-    const utilization = (active / CAPACITY_PER_USER) * 100;
-    
-    if (utilization <= 60) return { status: 'balanced', color: 'bg-success', label: 'Balanced' };
-    if (utilization <= 90) return { status: 'busy', color: 'bg-warning', label: 'Busy' };
-    return { status: 'overloaded', color: 'bg-destructive', label: 'Overloaded' };
+  const getWorkloadStatus = (tasksNext2Days: number) => {
+    if (tasksNext2Days >= FULL_THRESHOLD) {
+      return { status: 'full', color: 'bg-destructive', label: 'Full' };
+    }
+    if (tasksNext2Days >= BUSY_THRESHOLD) {
+      return { status: 'busy', color: 'bg-warning', label: 'Busy' };
+    }
+    return { status: 'balanced', color: 'bg-success', label: 'Available' };
   };
 
   const getInitials = (name: string) => {
@@ -45,11 +48,9 @@ export function TeamWorkload() {
     );
   }
 
-  // Sort by active tasks (descending)
+  // Sort by tasks in next 2 days (descending) - busiest first
   const sortedUsers = [...users].sort((a, b) => {
-    const activeA = a.totalTasks - a.completedTasks;
-    const activeB = b.totalTasks - b.completedTasks;
-    return activeB - activeA;
+    return b.tasksNext2Days - a.tasksNext2Days;
   });
 
   return (
@@ -57,13 +58,13 @@ export function TeamWorkload() {
       <h2 className="text-heading-sm font-semibold text-foreground mb-md flex items-center gap-sm">
         <Briefcase className="h-5 w-5 text-muted-foreground" />
         Team Workload
+        <span className="text-xs text-muted-foreground font-normal">(next 2 days)</span>
       </h2>
       
       <div className="space-y-sm max-h-[400px] overflow-y-auto hide-scrollbar">
         {sortedUsers.map((user) => {
-          const activeTasks = user.totalTasks - user.completedTasks;
-          const workload = getWorkloadStatus(user.totalTasks, user.completedTasks);
-          const utilizationPercent = Math.min((activeTasks / CAPACITY_PER_USER) * 100, 100);
+          const workload = getWorkloadStatus(user.tasksNext2Days);
+          const utilizationPercent = Math.min((user.tasksNext2Days / FULL_THRESHOLD) * 100, 100);
           
           return (
             <div
@@ -78,16 +79,17 @@ export function TeamWorkload() {
                 <div className="flex-1 min-w-0">
                   <p className="text-body-sm font-medium text-foreground truncate">{user.name}</p>
                   <p className="text-metadata text-muted-foreground">
-                    {activeTasks} active • {user.completedTasks} done
+                    {user.tasksNext2Days} due soon • {user.totalTasks - user.completedTasks} active
                   </p>
                 </div>
                 <div className={cn(
                   "flex items-center gap-1 px-2 py-0.5 rounded-full text-metadata font-medium",
                   workload.status === 'balanced' && "bg-success/15 text-success",
                   workload.status === 'busy' && "bg-warning/15 text-warning-text",
-                  workload.status === 'overloaded' && "bg-destructive/15 text-destructive"
+                  workload.status === 'full' && "bg-destructive/15 text-destructive"
                 )}>
-                  {workload.status === 'overloaded' && <AlertCircle className="h-3 w-3" />}
+                  {workload.status === 'full' && <Flame className="h-3 w-3" />}
+                  {workload.status === 'busy' && <AlertCircle className="h-3 w-3" />}
                   {workload.status === 'balanced' && <TrendingUp className="h-3 w-3" />}
                   {workload.label}
                 </div>
@@ -98,12 +100,12 @@ export function TeamWorkload() {
                   value={utilizationPercent} 
                   className={cn(
                     "h-1.5 flex-1",
-                    workload.status === 'overloaded' && "[&>div]:bg-destructive",
+                    workload.status === 'full' && "[&>div]:bg-destructive",
                     workload.status === 'busy' && "[&>div]:bg-warning"
                   )}
                 />
                 <span className="text-metadata text-muted-foreground w-12 text-right">
-                  {activeTasks}/{CAPACITY_PER_USER}
+                  {user.tasksNext2Days}/{FULL_THRESHOLD}
                 </span>
               </div>
             </div>
