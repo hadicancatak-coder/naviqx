@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, differenceInDays, addDays, startOfDay, isWithinInterval, parseISO } from "date-fns";
-import { Plus, Trash2, ChevronDown, Diamond } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Diamond, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -183,8 +183,9 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
 
   return (
     <div className="space-y-md">
+      {/* Header with title and add button */}
       <div className="flex items-center justify-between">
-        <h3 className="text-heading-sm font-semibold text-foreground">Roadmap</h3>
+        <h3 className="text-heading-sm font-semibold text-foreground">Project Roadmap</h3>
         {isAdmin && (
           <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)}>
             <Plus className="h-4 w-4 mr-1" />
@@ -193,7 +194,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
         )}
       </div>
 
-      {/* Summary Metrics */}
+      {/* Summary Metrics - Full Width */}
       {phases.length > 0 && (
         <RoadmapSummary
           phases={phases}
@@ -203,16 +204,19 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       )}
 
       {phases.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
-          <p className="text-body-sm">No phases defined yet</p>
+        <div className="text-center py-16 text-muted-foreground border border-dashed border-border rounded-xl bg-muted/30">
+          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+          <p className="text-body font-medium mb-1">No roadmap phases yet</p>
+          <p className="text-body-sm text-muted-foreground mb-4">Add phases to visualize your project timeline</p>
           {isAdmin && (
-            <Button variant="link" className="mt-2" onClick={() => setIsAddingPhase(true)}>
-              Add your first phase
+            <Button onClick={() => setIsAddingPhase(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add First Phase
             </Button>
           )}
         </div>
       ) : (
-        <div className="relative bg-card border border-border rounded-xl p-md overflow-x-auto">
+        <div className="relative rounded-xl p-md overflow-x-auto min-h-[350px]">
           {/* Month markers */}
           <div className="relative h-6 mb-2 border-b border-border">
             {monthMarkers.map((marker, idx) => (
