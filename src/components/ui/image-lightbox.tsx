@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -56,145 +57,159 @@ export const ImageLightbox = ({
 
   const currentImage = images[currentIndex];
 
-  const goToPrevious = () => {
+  const goToPrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
     setZoom(1);
   };
 
-  const goToNext = () => {
+  const goToNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
     setZoom(1);
   };
 
-  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.5, 3));
-  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.5, 0.5));
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoom((prev) => Math.min(prev + 0.5, 3));
+  };
+  
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoom((prev) => Math.max(prev - 0.5, 0.5));
+  };
 
-  return (
+  const content = (
     <div
-      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center"
+      style={{ zIndex: 99999 }}
       onClick={onClose}
     >
-      {/* Close button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
-        onClick={onClose}
-      >
-        <X className="h-6 w-6" />
-      </Button>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/95" />
 
-      {/* Zoom controls */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+      {/* Top bar: Close & Zoom controls */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white/80 hover:text-white hover:bg-white/10"
+            onClick={handleZoomOut}
+          >
+            <ZoomOut className="h-4 w-4 mr-1" />
+            <span className="text-xs">{Math.round(zoom * 100)}%</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white/80 hover:text-white hover:bg-white/10"
+            onClick={handleZoomIn}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+        </div>
+        
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-white/20"
+          className="text-white hover:bg-white/10 h-10 w-10"
           onClick={(e) => {
             e.stopPropagation();
-            handleZoomOut();
+            onClose();
           }}
         >
-          <ZoomOut className="h-5 w-5" />
-        </Button>
-        <span className="text-white text-sm min-w-[60px] text-center">
-          {Math.round(zoom * 100)}%
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleZoomIn();
-          }}
-        >
-          <ZoomIn className="h-5 w-5" />
+          <X className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* Navigation arrows */}
-      {images.length > 1 && (
-        <>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
-            onClick={(e) => {
-              e.stopPropagation();
-              goToPrevious();
-            }}
-          >
-            <ChevronLeft className="h-8 w-8" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
-            onClick={(e) => {
-              e.stopPropagation();
-              goToNext();
-            }}
-          >
-            <ChevronRight className="h-8 w-8" />
-          </Button>
-        </>
-      )}
-
-      {/* Image */}
+      {/* Main image area */}
       <div
-        className="flex items-center justify-center max-w-[90vw] max-h-[80vh] overflow-auto"
+        className="relative flex items-center justify-center w-full h-full px-16 py-20"
         onClick={(e) => e.stopPropagation()}
       >
-        <img
-          src={currentImage.url}
-          alt={currentImage.caption || "Image"}
-          className="transition-transform duration-200"
-          style={{ transform: `scale(${zoom})` }}
-        />
-      </div>
-
-      {/* Caption and counter */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
-        {currentImage.caption && (
-          <p className="text-white text-sm mb-2 max-w-md">
-            {currentImage.caption}
-          </p>
-        )}
+        {/* Navigation arrows */}
         {images.length > 1 && (
-          <p className="text-white/70 text-xs">
-            {currentIndex + 1} / {images.length}
-          </p>
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-12 w-12 z-10"
+              onClick={goToPrevious}
+            >
+              <ChevronLeft className="h-8 w-8" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-12 w-12 z-10"
+              onClick={goToNext}
+            >
+              <ChevronRight className="h-8 w-8" />
+            </Button>
+          </>
         )}
+
+        {/* Image container */}
+        <div className="relative max-w-full max-h-full overflow-auto flex items-center justify-center">
+          <img
+            src={currentImage.url}
+            alt={currentImage.caption || "Image"}
+            className="max-w-[85vw] max-h-[75vh] object-contain transition-transform duration-200 rounded-lg shadow-2xl"
+            style={{ transform: `scale(${zoom})` }}
+            draggable={false}
+          />
+        </div>
       </div>
 
-      {/* Thumbnail strip */}
-      {images.length > 1 && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2 px-4 max-w-[80vw] overflow-x-auto">
-          {images.map((img, index) => (
-            <button
-              key={index}
-              className={cn(
-                "flex-shrink-0 w-16 h-12 rounded overflow-hidden border-2 transition-all",
-                index === currentIndex
-                  ? "border-white opacity-100"
-                  : "border-transparent opacity-50 hover:opacity-80"
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentIndex(index);
-                setZoom(1);
-              }}
-            >
-              <img
-                src={img.url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </button>
-          ))}
+      {/* Bottom bar: Caption, counter, thumbnails */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+        {/* Caption and counter */}
+        <div className="text-center mb-3">
+          {currentImage.caption && (
+            <p className="text-white text-sm mb-1 max-w-lg mx-auto">
+              {currentImage.caption}
+            </p>
+          )}
+          {images.length > 1 && (
+            <p className="text-white/60 text-xs">
+              {currentIndex + 1} of {images.length}
+            </p>
+          )}
         </div>
-      )}
+
+        {/* Thumbnail strip */}
+        {images.length > 1 && (
+          <div className="flex justify-center gap-2 max-w-[80vw] mx-auto overflow-x-auto py-2">
+            {images.map((img, index) => (
+              <button
+                key={index}
+                className={cn(
+                  "flex-shrink-0 w-14 h-10 rounded overflow-hidden border-2 transition-all",
+                  index === currentIndex
+                    ? "border-white opacity-100 ring-2 ring-white/30"
+                    : "border-transparent opacity-40 hover:opacity-70"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentIndex(index);
+                  setZoom(1);
+                }}
+              >
+                <img
+                  src={img.url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
+
+  // Use portal to render at document body level
+  return createPortal(content, document.body);
 };
