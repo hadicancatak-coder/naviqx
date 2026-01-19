@@ -3,3 +3,6 @@ project_id = "mwogxqonlzjrkktwbkma"
 [edge_runtime.cron_jobs]
 daily_notifications = { schedule = "0 8 * * *", function = "daily-notification-scheduler" }
 daily_security_scan = { schedule = "0 2 * * *", function = "security-scanner" }
+
+[functions.sync-google-sheet]
+verify_jwt = false

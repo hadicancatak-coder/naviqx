@@ -14,10 +14,12 @@ import { UtmCampaignDetailDialog } from "@/components/campaigns/UtmCampaignDetai
 import { CreateUtmCampaignDialog } from "@/components/campaigns/CreateUtmCampaignDialog";
 import { CampaignBulkActionsBar } from "@/components/campaigns/CampaignBulkActionsBar";
 import { CampaignBulkImportDialog } from "@/components/campaigns/CampaignBulkImportDialog";
+import { GoogleSheetSyncPanel } from "@/components/campaigns/GoogleSheetSyncPanel";
 import { useUtmCampaigns, useDeleteUtmCampaign } from "@/hooks/useUtmCampaigns";
 import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { useExternalAccess } from "@/hooks/useExternalAccess";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { PageContainer, PageHeader, DataCard } from "@/components/layout";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -64,6 +66,7 @@ export default function CampaignsLog() {
   const { createTracking, getEntitiesForCampaign, deleteTracking } = useCampaignEntityTracking();
   const { generateLink } = useExternalAccess();
   const deleteCampaignMutation = useDeleteUtmCampaign();
+  const { accessToken, signIn: googleSignIn } = useGoogleAuth();
   
   useEffect(() => {
     if (entities.length > 0 && !selectedEntity) setSelectedEntity(entities[0].name);
@@ -276,6 +279,7 @@ export default function CampaignsLog() {
                 )} />
               </CollapsibleTrigger>
               <div className="flex items-center gap-sm">
+                <GoogleSheetSyncPanel accessToken={accessToken} onRequestAuth={googleSignIn} />
                 <Button onClick={() => setBulkImportDialogOpen(true)} variant="outline" size="sm">
                   <Upload />
                   Import
