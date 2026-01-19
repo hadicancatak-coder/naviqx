@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { 
   CheckSquare,
-  LayoutDashboard as DashboardIcon, 
   LogOut, 
   Megaphone, 
   Target, 
@@ -32,6 +31,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
   const coreItems = [
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
@@ -124,16 +124,16 @@ export function AppSidebar() {
               {coreItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    {!open ? (
-                      <NavLink to={item.url} end className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                      </NavLink>
-                    ) : (
-                      <NavLink to={item.url} end className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                        <span className="text-body">{item.title}</span>
-                      </NavLink>
-                    )}
+                    <NavLink 
+                      to={item.url} 
+                      end 
+                      className={getNavLinkClass}
+                      onMouseEnter={() => prefetchRoute(item.url)}
+                      onFocus={() => prefetchRoute(item.url)}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                      {open && <span className="text-body">{item.title}</span>}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -147,16 +147,15 @@ export function AppSidebar() {
               {adsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    {!open ? (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                      </NavLink>
-                    ) : (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                        <span className="text-body">{item.title}</span>
-                      </NavLink>
-                    )}
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavLinkClass}
+                      onMouseEnter={() => prefetchRoute(item.url)}
+                      onFocus={() => prefetchRoute(item.url)}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                      {open && <span className="text-body">{item.title}</span>}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -170,16 +169,15 @@ export function AppSidebar() {
               {mediaItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    {!open ? (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                      </NavLink>
-                    ) : (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                        <span className="text-body">{item.title}</span>
-                      </NavLink>
-                    )}
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavLinkClass}
+                      onMouseEnter={() => prefetchRoute(item.url)}
+                      onFocus={() => prefetchRoute(item.url)}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                      {open && <span className="text-body">{item.title}</span>}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -193,16 +191,15 @@ export function AppSidebar() {
               {operationsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    {!open ? (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                      </NavLink>
-                    ) : (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                        <span className="text-body">{item.title}</span>
-                      </NavLink>
-                    )}
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavLinkClass}
+                      onMouseEnter={() => prefetchRoute(item.url)}
+                      onFocus={() => prefetchRoute(item.url)}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                      {open && <span className="text-body">{item.title}</span>}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -216,16 +213,15 @@ export function AppSidebar() {
               {resourcesItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    {!open ? (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                      </NavLink>
-                    ) : (
-                      <NavLink to={item.url} className={getNavLinkClass}>
-                        <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                        <span className="text-body">{item.title}</span>
-                      </NavLink>
-                    )}
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavLinkClass}
+                      onMouseEnter={() => prefetchRoute(item.url)}
+                      onFocus={() => prefetchRoute(item.url)}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                      {open && <span className="text-body">{item.title}</span>}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
