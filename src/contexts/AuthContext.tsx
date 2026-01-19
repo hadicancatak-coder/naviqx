@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, ReactNode } fro
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
+import { prefetchTasksData } from "@/lib/taskPrefetch";
 
 // MFA session token storage with expiry
 const MFA_SESSION_KEY = 'mfa_session_data';
@@ -352,6 +353,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (verified && sessionToken && expiresAt) {
       setMfaSessionToken(sessionToken, expiresAt);
       setSkipNextValidation(true); // Skip immediate re-validation
+      
+      // Prefetch task data immediately after MFA verification for instant navigation
+      console.log('🚀 Prefetching task data after MFA verification...');
+      prefetchTasksData();
     } else {
       setMfaSessionToken(null);
     }
