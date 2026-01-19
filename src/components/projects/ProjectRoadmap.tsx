@@ -454,14 +454,14 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
               <div className="space-y-2">
                 <Label>Depends On (optional)</Label>
                 <Select
-                  value={newPhase.depends_on[0] || ""}
-                  onValueChange={(v) => setNewPhase({ ...newPhase, depends_on: v ? [v] : [] })}
+                  value={newPhase.depends_on[0] || "none"}
+                  onValueChange={(v) => setNewPhase({ ...newPhase, depends_on: v === "none" ? [] : [v] })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a phase..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {phases.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.phase_name}
