@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,8 @@ import { useKPIs } from "@/hooks/useKPIs";
 import { Progress } from "@/components/ui/progress";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useProfile, useTeamMembers, useUserTasks } from "@/hooks/useProfileData";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TEAMS = ["SocialUA", "PPC", "PerMar"];
 
@@ -29,24 +31,22 @@ export default function Profile() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
+  const queryClient = useQueryClient();
+  const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
   
-  const [profile, setProfile] = useState<any>(null);
+  // Use React Query hooks for data fetching
+  const { data: profile, isLoading: profileLoading } = useProfile(targetUserId);
+  const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
+  const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
+  
+  // Local form state for editing
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [tagline, setTagline] = useState("");
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any>({ 
-    all: [], 
-    ongoing: [], 
-    completed: [], 
-    pending: [], 
-    blocked: [], 
-    failed: [] 
-  });
   const [uploading, setUploading] = useState(false);
   const { openTaskDrawer } = useTaskDrawer();
 
@@ -54,105 +54,19 @@ export default function Profile() {
   
   // Filter KPIs for the profile being viewed
   const profileKPIs = kpis?.filter(kpi => 
-    kpi.assignments?.some(a => a.user_id === (userId || user?.id))
+    kpi.assignments?.some(a => a.user_id === targetUserId)
   ) || [];
 
+  // Sync form state when profile data loads
   useEffect(() => {
-    if (!user) return;
-    fetchProfile();
-    fetchTasks();
-    fetchTeamMembers();
-  }, [userId, user?.id]);
-
-  const fetchProfile = async () => {
-    const targetUserId = userId || user?.id;
-    const { data } = await supabase.from("profiles").select("*").eq("user_id", targetUserId).single();
-    
-    if (data) {
-      setProfile(data);
-      setName(data.name || "");
-      setTitle(data.title || "");
-      setPhoneNumber(data.phone_number || "");
-      setTagline(data.tagline || "");
-      setSelectedTeams((data.teams as string[]) || []);
+    if (profile) {
+      setName(profile.name || "");
+      setTitle(profile.title || "");
+      setPhoneNumber(profile.phone_number || "");
+      setTagline(profile.tagline || "");
+      setSelectedTeams((profile.teams as string[]) || []);
     }
-  };
-
-  const fetchTeamMembers = async () => {
-    const targetUserId = userId || user?.id;
-    const { data: currentProfile } = await supabase
-      .from("profiles")
-      .select("teams")
-      .eq("user_id", targetUserId)
-      .single();
-
-    if (currentProfile?.teams && currentProfile.teams.length > 0) {
-      const { data } = await supabase
-        .from("public_profiles")
-        .select("user_id, name, username, avatar_url, title")
-        .contains("teams", currentProfile.teams);
-
-      setTeamMembers(data || []);
-    }
-  };
-
-  const fetchTasks = async () => {
-    const targetUserId = userId || user?.id;
-    
-    // Get the profile for the target user (with teams)
-    const { data: targetProfile } = await supabase
-      .from("profiles")
-      .select("id, user_id, teams")
-      .eq("user_id", targetUserId)
-      .single();
-    
-    if (!targetProfile) return;
-
-    // Fetch all tasks with assignees
-    const { data: allTasksData, error } = await supabase
-      .from("tasks")
-      .select(`
-        *,
-        task_assignees(
-          user_id,
-          profiles!task_assignees_user_id_fkey(id, user_id, name, avatar_url, teams)
-        ),
-        task_comment_counts(comment_count)
-      `)
-      .order("created_at", { ascending: false });
-
-    if (!allTasksData) return;
-
-    // Map tasks and apply visibility filtering
-    const mappedTasks = allTasksData.map((task: any) => ({
-      ...task,
-      assignees: task.task_assignees?.map((ta: any) => ta.profiles).filter(Boolean) || []
-    }));
-
-    // Profile page shows ONLY assigned tasks
-    const visibleTasks = mappedTasks.filter((task: any) => {
-      const isDirectAssignee = task.assignees?.some((a: any) => a.user_id === targetUserId);
-      const userTeams = targetProfile.teams || [];
-      const taskTeams = Array.isArray(task.teams) 
-        ? task.teams 
-        : (typeof task.teams === 'string' ? JSON.parse(task.teams) : []);
-      const isTeamMember = userTeams.some((team: string) => taskTeams.includes(team));
-
-      if (!isDirectAssignee && !isTeamMember) return false;
-      if (task.visibility === 'private' && !isDirectAssignee && !isTeamMember) return false;
-
-      return true;
-    });
-
-    setTasks({
-      all: visibleTasks,
-      ongoing: visibleTasks.filter(t => t.status === "Ongoing"),
-      completed: visibleTasks.filter(t => t.status === "Completed"),
-      pending: visibleTasks.filter(t => t.status === "Pending"),
-      blocked: visibleTasks.filter(t => t.status === "Blocked"),
-      failed: visibleTasks.filter(t => t.status === "Failed"),
-    });
-  };
+  }, [profile]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,7 +112,7 @@ export default function Profile() {
         toast({ title: "Error", description: updateError.message, variant: "destructive" });
       } else {
         toast({ title: "Success", description: "Avatar updated" });
-        fetchProfile();
+        queryClient.invalidateQueries({ queryKey: ["profile", targetUserId] });
       }
     }
     setUploading(false);
@@ -221,8 +135,8 @@ export default function Profile() {
     } else {
       toast({ title: "Success", description: "Profile updated" });
       setEditing(false);
-      fetchProfile();
-      fetchTeamMembers();
+      queryClient.invalidateQueries({ queryKey: ["profile", targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
     }
   };
 
@@ -232,7 +146,8 @@ export default function Profile() {
     );
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -241,7 +156,7 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  if (!profile) {
+  if (profileLoading || !profile) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -271,7 +186,7 @@ export default function Profile() {
         <div className="flex flex-col md:flex-row gap-lg">
           <div className="flex flex-col items-center gap-md">
             <Avatar className="h-28 w-28 border-2 border-border">
-              <AvatarImage src={profile.avatar_url} />
+              <AvatarImage src={profile.avatar_url || undefined} />
               <AvatarFallback className="text-2xl bg-muted">{profile.name?.[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
             {isOwnProfile && (
@@ -384,7 +299,7 @@ export default function Profile() {
           </h2>
           <div className="space-y-md">
             {profileKPIs.map((kpi) => {
-              const assignment = kpi.assignments?.find(a => a.user_id === (userId || user?.id));
+              const assignment = kpi.assignments?.find(a => a.user_id === targetUserId);
               return (
                 <div key={kpi.id} className="bg-muted/30 rounded-xl p-5 border border-border">
                   <div className="flex items-start justify-between">
@@ -452,7 +367,7 @@ export default function Profile() {
               >
                 <div className="flex items-center gap-sm">
                   <Avatar className="h-12 w-12 border border-border">
-                    <AvatarImage src={member.avatar_url} />
+                    <AvatarImage src={member.avatar_url || undefined} />
                     <AvatarFallback className="bg-muted text-body-sm">{getInitials(member.name)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
@@ -487,7 +402,7 @@ export default function Profile() {
             <TabsTrigger value="failed" className="rounded-md text-body-sm">Failed ({tasks.failed.length})</TabsTrigger>
           </TabsList>
 
-          {["all", "ongoing", "completed", "pending", "blocked", "failed"].map((status) => (
+          {(["all", "ongoing", "completed", "pending", "blocked", "failed"] as const).map((status) => (
             <TabsContent key={status} value={status} className="mt-5 space-y-sm">
               {tasks[status].length > 0 ? (
                 tasks[status].map((task: any) => (
