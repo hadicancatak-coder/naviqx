@@ -36,7 +36,7 @@ export async function prefetchTasksData(): Promise<void> {
             id, title, description, status, priority, due_at, created_at, updated_at,
             labels, sprint, project_id, task_type, is_recurrence_template, parent_id,
             pending_approval, blocker_reason, external_dependency_reason, recurrence_rrule,
-            failure_reason, created_by, updated_by, countries,
+            failure_reason, created_by, updated_by, entity,
             task_assignees(
               user_id,
               profiles!task_assignees_user_id_fkey(id, user_id, name, avatar_url, teams, working_days)
