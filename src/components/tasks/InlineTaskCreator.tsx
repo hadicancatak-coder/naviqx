@@ -30,30 +30,61 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
   const handleSubmit = async () => {
     if (!title.trim() || !user) return;
     
-    setIsSubmitting(true);
+    const taskTitle = title.trim();
+    const tempId = `temp-${Date.now()}`;
+    
+    // Optimistic update - add task to cache immediately
+    const optimisticTask = {
+      id: tempId,
+      title: taskTitle,
+      status: 'Backlog',
+      priority: 'Medium',
+      created_by: user.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      assignees: [],
+      comments_count: 0,
+    };
+    
+    // Clear input immediately for snappy UX
+    setTitle("");
+    setIsEditing(false);
+    
+    // Add to cache instantly
+    queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
+      if (!old) return [optimisticTask];
+      return [optimisticTask, ...old];
+    });
+    
+    toast({ title: "Task created", duration: 2000 });
+    onTaskCreated?.();
+    
     try {
-      const { error } = await supabase.from("tasks").insert({
-        title: title.trim(),
+      const { data, error } = await supabase.from("tasks").insert({
+        title: taskTitle,
         status: "Backlog" as const,
         priority: "Medium" as const,
         created_by: user.id,
-      } as any);
+      } as any).select().single();
       
       if (error) throw error;
       
-      setTitle("");
-      setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      onTaskCreated?.();
-      toast({ title: "Task created", duration: 2000 });
+      // Replace temp task with real one
+      queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(t => t.id === tempId ? { ...optimisticTask, ...data } : t);
+      });
     } catch (error: any) {
+      // Rollback on error
+      queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.filter(t => t.id !== tempId);
+      });
       toast({ 
         title: "Failed to create task", 
         description: error.message, 
         variant: "destructive" 
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

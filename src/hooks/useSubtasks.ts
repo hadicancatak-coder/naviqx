@@ -81,16 +81,55 @@ export function useSubtasks(parentId: string | null) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subtasks', parentId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    onMutate: async ({ title, parentId: pId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['subtasks', pId] });
+      
+      // Snapshot previous value
+      const previousSubtasks = queryClient.getQueryData(['subtasks', pId]);
+      
+      // Optimistic subtask
+      const tempId = `temp-${Date.now()}`;
+      const optimisticSubtask = {
+        id: tempId,
+        title,
+        status: 'Pending',
+        priority: 'Medium',
+        due_at: null,
+        parent_id: pId,
+        created_at: new Date().toISOString(),
+        created_by: user?.id,
+        assignees: [],
+      };
+      
+      // Add to cache instantly
+      queryClient.setQueryData(['subtasks', pId], (old: any[] | undefined) => {
+        if (!old) return [optimisticSubtask];
+        return [...old, optimisticSubtask];
+      });
+      
+      return { previousSubtasks, tempId };
     },
-    onError: (error: any) => {
+    onSuccess: (data, variables, context) => {
+      // Replace temp subtask with real one
+      queryClient.setQueryData(['subtasks', variables.parentId], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(s => s.id === context?.tempId ? { ...s, ...data } : s);
+      });
+    },
+    onError: (error: any, variables, context) => {
+      // Rollback on error
+      if (context?.previousSubtasks) {
+        queryClient.setQueryData(['subtasks', variables.parentId], context.previousSubtasks);
+      }
       toast({ 
         title: "Failed to create subtask", 
         description: error.message, 
         variant: "destructive" 
       });
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['subtasks', variables.parentId] });
     },
   });
 
@@ -125,16 +164,31 @@ export function useSubtasks(parentId: string | null) {
       
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subtasks', parentId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    onMutate: async ({ id, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['subtasks', parentId] });
+      
+      const previousSubtasks = queryClient.getQueryData(['subtasks', parentId]);
+      
+      // Optimistic update
+      queryClient.setQueryData(['subtasks', parentId], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(s => s.id === id ? { ...s, status: completed ? 'Completed' : 'Pending' } : s);
+      });
+      
+      return { previousSubtasks };
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      if (context?.previousSubtasks) {
+        queryClient.setQueryData(['subtasks', parentId], context.previousSubtasks);
+      }
       toast({ 
         title: "Failed to update subtask", 
         description: error.message, 
         variant: "destructive" 
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['subtasks', parentId] });
     },
   });
 
