@@ -74,56 +74,66 @@ export default function Notifications() {
   const enrichNotificationData = async (notifs: any[]) => {
     const enriched = new Map();
 
+    // Collect all unique IDs for batch fetching
+    const commentIds = new Set<string>();
+    const profileIds = new Set<string>();
+
     for (const notif of notifs) {
-      const payload = notif.payload_json;
+      const payload = notif.payload_json || {};
+      if (notif.type === "comment_mention" && payload.comment_id) {
+        commentIds.add(payload.comment_id);
+      }
+      if (payload.mentioned_by) {
+        profileIds.add(payload.mentioned_by);
+      }
+      if (payload.assigned_by) {
+        profileIds.add(payload.assigned_by);
+      }
+    }
+
+    // Batch fetch all comments and profiles in parallel (2 queries instead of N)
+    const [commentsResult, profilesResult] = await Promise.all([
+      commentIds.size > 0
+        ? supabase.from("comments").select("id, body").in("id", Array.from(commentIds))
+        : Promise.resolve({ data: [] }),
+      profileIds.size > 0
+        ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", Array.from(profileIds))
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    // Create lookup maps
+    const commentsMap = new Map((commentsResult.data || []).map((c: any) => [c.id, c]));
+    const profilesMap = new Map((profilesResult.data || []).map((p: any) => [p.user_id, p]));
+
+    // Enrich notifications using lookup maps (O(1) per notification)
+    for (const notif of notifs) {
+      const payload = notif.payload_json || {};
       const data: any = {};
 
-      try {
-        // Fetch comment data for comment_mention type
-        if (notif.type === "comment_mention" && payload.comment_id) {
-          const { data: comment } = await supabase
-            .from("comments")
-            .select("body")
-            .eq("id", payload.comment_id)
-            .single();
-          
-          if (comment) {
-            data.commentBody = comment.body;
-          }
+      if (notif.type === "comment_mention" && payload.comment_id) {
+        const comment = commentsMap.get(payload.comment_id);
+        if (comment) {
+          data.commentBody = comment.body;
         }
-
-        // Fetch profile data for mentioned_by
-        if (payload.mentioned_by) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", payload.mentioned_by)
-            .single();
-          
-          if (profile) {
-            data.mentionedByName = profile.name;
-            data.mentionedByAvatar = profile.avatar_url;
-          }
-        }
-
-        // Fetch profile data for assigned_by
-        if (payload.assigned_by) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", payload.assigned_by)
-            .single();
-          
-          if (profile) {
-            data.assignedByName = profile.name;
-            data.assignedByAvatar = profile.avatar_url;
-          }
-        }
-
-        enriched.set(notif.id, data);
-      } catch (error) {
-        console.error("Error enriching notification:", error);
       }
+
+      if (payload.mentioned_by) {
+        const profile = profilesMap.get(payload.mentioned_by);
+        if (profile) {
+          data.mentionedByName = profile.name;
+          data.mentionedByAvatar = profile.avatar_url;
+        }
+      }
+
+      if (payload.assigned_by) {
+        const profile = profilesMap.get(payload.assigned_by);
+        if (profile) {
+          data.assignedByName = profile.name;
+          data.assignedByAvatar = profile.avatar_url;
+        }
+      }
+
+      enriched.set(notif.id, data);
     }
 
     setEnrichedData(enriched);
