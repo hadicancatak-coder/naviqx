@@ -20,10 +20,16 @@ const routeModules: Record<string, () => Promise<any>> = {
   '/projects': () => import('@/pages/Projects'),
   '/tech-stack': () => import('@/pages/TechStack'),
   '/admin': () => import('@/pages/admin/AdminLayout'),
+  '/admin/users': () => import('@/pages/admin/UsersManagement'),
+  '/admin/kpis': () => import('@/pages/admin/KPIsManagement'),
+  '/admin/logs': () => import('@/pages/admin/ErrorLogs'),
+  '/admin/config': () => import('@/pages/admin/Config'),
   '/notifications': () => import('@/pages/Notifications'),
   '/about': () => import('@/pages/About'),
   '/how-to': () => import('@/pages/HowTo'),
   '/security': () => import('@/pages/Security'),
+  '/profile': () => import('@/pages/Profile'),
+  '/kpis': () => import('@/pages/KPIs'),
 };
 
 // Track already-prefetched routes to avoid duplicate fetches

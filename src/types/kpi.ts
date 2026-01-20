@@ -1,11 +1,9 @@
-export type KPIType = 'annual' | 'quarterly';
-export type KPIStatus = 'draft' | 'pending_approval' | 'active' | 'completed' | 'archived';
 export type KPITargetType = 'channel' | 'custom' | 'team' | 'individual';
 
 export interface KPITarget {
   id: string;
   kpi_id: string;
-  target_type: KPITargetType;
+  target_type: string;
   target_name: string;
   target_value: number;
   current_value: number;
@@ -14,20 +12,17 @@ export interface KPITarget {
   updated_at: string;
 }
 
+// Matches the actual kpis table in Supabase
 export interface TeamKPI {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  weight: number;
-  type: KPIType;
-  period: string;
-  status: KPIStatus;
+  metric_type: string;
+  target: number;
+  deadline: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
-  targets?: KPITarget[];
-  assignments?: KPIAssignment[];
-  linkedTasks?: string[];
 }
 
 export interface KPIAssignment {
@@ -37,14 +32,12 @@ export interface KPIAssignment {
   team_name: string | null;
   assigned_by: string;
   assigned_at: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string | null;
   notes: string | null;
 }
 
-export interface KPITaskLink {
-  id: string;
-  kpi_id: string;
-  task_id: string;
-  linked_at: string;
-  linked_by: string;
+// Extended type for KPIs with their related data
+export interface KPIWithRelations extends TeamKPI {
+  targets: KPITarget[];
+  assignments: KPIAssignment[];
 }

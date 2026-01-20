@@ -109,19 +109,16 @@ class AdminService {
         { count: userCount },
         { count: taskCount },
         { count: errorCount },
-        { count: pendingApprovalCount },
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('tasks').select('*', { count: 'exact', head: true }),
         supabase.from('error_logs').select('*', { count: 'exact', head: true }).eq('resolved', false),
-        supabase.from('task_change_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       ]);
 
       return {
         users: userCount || 0,
         tasks: taskCount || 0,
         unresolvedErrors: errorCount || 0,
-        pendingApprovals: pendingApprovalCount || 0,
       };
     } catch (err) {
       logger.error('Error fetching system health', err);
