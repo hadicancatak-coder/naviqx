@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { ExternalLink, Image, FileText, MessageSquare, ChevronDown, ChevronUp, Send } from "lucide-react";
+import { ExternalLink, Image, FileText, MessageSquare, ChevronDown, ChevronUp, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +15,7 @@ import { useLpMapByToken, LpMapSection } from "@/hooks/useLpMaps";
 import { useLpExternalComments, useAddLpComment, LpExternalComment } from "@/hooks/useLpComments";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-
+import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 import { sectionTypeCardColors } from "@/domain/lp-sections";
 
 interface SectionCardProps {
@@ -286,6 +286,18 @@ const LpMapPublic = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* CFD Warning Banner */}
+      <div className="bg-destructive/10 border-b border-destructive/30">
+        <div className="max-w-5xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive-text" />
+            <p className="text-body-sm font-semibold text-destructive-text">
+              IMPORTANT: NO CFD WORDS ALLOWED - This is for external review
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="max-w-5xl mx-auto px-4 py-6">
@@ -409,13 +421,7 @@ const LpMapPublic = () => {
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card mt-12">
-        <div className="max-w-5xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
-          Proudly presented by the Performance Marketing Team at CFI Group.
-          This page was built internally with AI. Do not share with third parties; internal use only.
-        </div>
-      </footer>
+      <ExternalPageFooter />
     </div>
   );
 };

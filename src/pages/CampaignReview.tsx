@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { formatDistanceToNow } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GlassBackground } from "@/components/layout/GlassBackground";
+import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 
 export default function CampaignReview() {
   const { token } = useParams<{ token: string }>();
@@ -337,7 +338,7 @@ export default function CampaignReview() {
   }
 
   return (
-    <GlassBackground variant="full" className="pb-20">
+    <GlassBackground variant="full">
       <div className="border-b glass-elevated sticky top-0 z-40">
         <div className="container mx-auto py-md px-md">
           <div className="flex items-center gap-sm">
@@ -483,17 +484,7 @@ export default function CampaignReview() {
         </Card>
       </div>
 
-      {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-muted/50 border-t border-border py-md backdrop-blur-sm">
-        <div className="container mx-auto px-md text-center space-y-1">
-          <p className="text-body-sm text-foreground font-medium">
-            Proudly presented by the Performance Marketing Team at CFI Group
-          </p>
-          <p className="text-metadata text-muted-foreground">
-            This tool was made with AI for internal purposes. Do not share this link with third parties. Internal use only.
-          </p>
-        </div>
-      </div>
+      <ExternalPageFooter />
     </GlassBackground>
   );
 }
