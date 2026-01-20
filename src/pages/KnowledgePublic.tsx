@@ -8,6 +8,7 @@ import * as LucideIcons from "lucide-react";
 import { useEffect } from "react";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { Card } from "@/components/ui/card";
+import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 
 export default function KnowledgePublic() {
   const { token } = useParams<{ token: string }>();
@@ -114,14 +115,7 @@ export default function KnowledgePublic() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border mt-12 glass-elevated">
-        <div className="max-w-4xl mx-auto px-6 py-6 text-center">
-          <p className="text-body-sm text-muted-foreground">
-            Proudly presented by the Performance Marketing Team at CFI Group. This page was built internally with AI. Do not share with third parties; internal use only.
-          </p>
-        </div>
-      </footer>
+      <ExternalPageFooter />
     </GlassBackground>
   );
 }

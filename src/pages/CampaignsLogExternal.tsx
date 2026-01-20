@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { GlassBackground } from "@/components/layout/GlassBackground";
+import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 
 export default function CampaignsLogExternal() {
   const { token } = useParams<{ token: string }>();
@@ -242,14 +243,7 @@ export default function CampaignsLogExternal() {
         />
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border glass-elevated mt-8">
-        <div className="container mx-auto px-6 py-6 text-center">
-          <p className="text-body-sm text-muted-foreground">
-            Proudly presented by the Performance Marketing Team at CFI Group. This page was built internally with AI. Do not share with third parties; internal use only.
-          </p>
-        </div>
-      </footer>
+      <ExternalPageFooter />
     </GlassBackground>
   );
 }
