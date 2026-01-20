@@ -399,12 +399,16 @@ export default function Profile() {
                   <div key={kpi.id} className="bg-muted/30 rounded-xl p-5 border border-border">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-medium text-body text-foreground">{kpi.name}</h3>
+                        <h3 className="font-medium text-body text-foreground">{kpi.title}</h3>
                         {kpi.description && <p className="text-body-sm text-muted-foreground mt-1">{kpi.description}</p>}
                         <div className="flex items-center gap-sm mt-sm flex-wrap">
-                          <Badge variant="outline" className="rounded-full text-metadata">Weight: {kpi.weight}%</Badge>
-                          <Badge variant="outline" className="rounded-full text-metadata">{kpi.type}</Badge>
-                          <Badge variant="outline" className="rounded-full text-metadata">{kpi.period}</Badge>
+                          <Badge variant="outline" className="rounded-full text-metadata">Target: {kpi.target}</Badge>
+                          <Badge variant="outline" className="rounded-full text-metadata">{kpi.metric_type}</Badge>
+                          {kpi.deadline && (
+                            <Badge variant="outline" className="rounded-full text-metadata">
+                              Due: {new Date(kpi.deadline).toLocaleDateString()}
+                            </Badge>
+                          )}
                           <Badge variant={assignment?.status === 'approved' ? 'default' : assignment?.status === 'pending' ? 'secondary' : 'destructive'} className="rounded-full text-metadata">
                             {assignment?.status || 'pending'}
                           </Badge>

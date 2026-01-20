@@ -70,6 +70,11 @@ export default function UsersManagement() {
 
       if (rolesError) throw rolesError;
 
+      // Fetch KPI assignments to count per user
+      const { data: kpiAssignments } = await supabase
+        .from('kpi_assignments')
+        .select('user_id');
+
       // Fetch recent activity for each user from admin_audit_log
       const { data: activities } = await supabase
         .from('admin_audit_log')
@@ -77,6 +82,14 @@ export default function UsersManagement() {
         .order('created_at', { ascending: false });
 
       const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+
+      // Count KPI assignments per user (user_id in kpi_assignments is profile.id, not auth user_id)
+      const kpiCountMap = new Map<string, number>();
+      kpiAssignments?.forEach(a => {
+        if (a.user_id) {
+          kpiCountMap.set(a.user_id, (kpiCountMap.get(a.user_id) || 0) + 1);
+        }
+      });
 
       // Get most recent activity per user
       const activityMap = new Map<string, { action: string; time: string }>();
@@ -92,7 +105,7 @@ export default function UsersManagement() {
       const usersWithData = profiles?.map(profile => ({
         ...profile,
         role: roleMap.get(profile.user_id) || 'member',
-        kpisAssigned: 0, // KPIs feature simplified
+        kpisAssigned: kpiCountMap.get(profile.id) || 0,
         mfa_enabled: profile.mfa_enabled || false,
         lastActivity: activityMap.get(profile.user_id) || null,
       })) || [];

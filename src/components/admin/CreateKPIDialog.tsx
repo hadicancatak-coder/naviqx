@@ -5,39 +5,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2 } from "lucide-react";
 import { useKPIs } from "@/hooks/useKPIs";
 import { useAuth } from "@/hooks/useAuth";
-import type { TeamKPI, KPITarget } from "@/types/kpi";
+import type { TeamKPI, KPITarget, KPIWithRelations } from "@/types/kpi";
 
 interface CreateKPIDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingKPI?: TeamKPI | null;
+  editingKPI?: KPIWithRelations | null;
 }
 
 export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDialogProps) {
   const { createKPI, updateKPI } = useKPIs();
   const { user } = useAuth();
-  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [weight, setWeight] = useState(100);
-  const [type, setType] = useState<"annual" | "quarterly">("annual");
-  const [period, setPeriod] = useState("");
-  const [status, setStatus] = useState<"draft" | "active">("draft");
+  const [metricType, setMetricType] = useState("percentage");
+  const [target, setTarget] = useState(100);
+  const [deadline, setDeadline] = useState("");
   const [targets, setTargets] = useState<Partial<KPITarget>[]>([
     { target_type: "channel", target_name: "", target_value: 0, current_value: 0, unit: "" }
   ]);
 
   useEffect(() => {
     if (editingKPI) {
-      setName(editingKPI.name);
+      setTitle(editingKPI.title);
       setDescription(editingKPI.description || "");
-      setWeight(editingKPI.weight);
-      setType(editingKPI.type);
-      setPeriod(editingKPI.period);
-      setStatus(editingKPI.status as "draft" | "active");
+      setMetricType(editingKPI.metric_type);
+      setTarget(editingKPI.target);
+      setDeadline(editingKPI.deadline ? editingKPI.deadline.split('T')[0] : "");
       if (editingKPI.targets && editingKPI.targets.length > 0) {
         setTargets(editingKPI.targets);
       }
@@ -47,17 +44,13 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
   }, [editingKPI, open]);
 
   const resetForm = () => {
-    setName("");
+    setTitle("");
     setDescription("");
-    setWeight(100);
-    setType("annual");
-    setPeriod("");
-    setStatus("draft");
+    setMetricType("percentage");
+    setTarget(100);
+    setDeadline("");
     setTargets([{ target_type: "channel", target_name: "", target_value: 0, current_value: 0, unit: "" }]);
   };
-
-  const totalTargetsWeight = targets.reduce((sum, t) => sum + (t.target_value || 0), 0);
-  const remainingWeight = 100 - weight;
 
   const handleAddTarget = () => {
     setTargets([...targets, { target_type: "channel", target_name: "", target_value: 0, current_value: 0, unit: "" }]);
@@ -79,21 +72,19 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
     if (editingKPI) {
       updateKPI.mutate({ 
         id: editingKPI.id,
-        name,
+        title,
         description: description || null,
-        weight,
-        type,
-        period,
-        status,
+        metric_type: metricType,
+        target,
+        deadline: deadline || null,
       });
     } else {
       createKPI.mutate({
-        name,
+        title,
         description: description || null,
-        weight,
-        type,
-        period,
-        status,
+        metric_type: metricType,
+        target,
+        deadline: deadline || null,
         created_by: user.id,
         targets,
       } as any);
@@ -112,11 +103,11 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
 
         <div className="space-y-md">
           <div className="space-y-sm">
-            <Label htmlFor="name">KPI Name *</Label>
+            <Label htmlFor="title">KPI Title *</Label>
             <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Increase conversion rate"
             />
           </div>
@@ -134,63 +125,40 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
 
           <div className="grid grid-cols-2 gap-md">
             <div className="space-y-sm">
-              <Label htmlFor="type">Type *</Label>
-              <Select value={type} onValueChange={(v) => setType(v as "annual" | "quarterly")}>
+              <Label htmlFor="metricType">Metric Type *</Label>
+              <Select value={metricType} onValueChange={setMetricType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="annual">Annual</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="currency">Currency</SelectItem>
+                  <SelectItem value="ratio">Ratio</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-sm">
-              <Label htmlFor="period">Period *</Label>
+              <Label htmlFor="target">Target Value *</Label>
               <Input
-                id="period"
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                placeholder="e.g., 2024 or Q1 2024"
+                id="target"
+                type="number"
+                value={target}
+                onChange={(e) => setTarget(Number(e.target.value))}
+                min={0}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-md">
-            <div className="space-y-sm">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="weight">Weight (%) *</Label>
-                <Badge variant={weight > 100 ? "destructive" : remainingWeight < 0 ? "destructive" : "secondary"} className="text-metadata">
-                  {weight > 100 ? "Exceeds 100%" : `${remainingWeight}% remaining`}
-                </Badge>
-              </div>
-              <Input
-                id="weight"
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(Number(e.target.value))}
-                min={0}
-                max={100}
-                className={weight > 100 ? "border-destructive" : ""}
-              />
-              {weight > 100 && (
-                <p className="text-metadata text-destructive">Weight cannot exceed 100%</p>
-              )}
-            </div>
-
-            <div className="space-y-sm">
-              <Label htmlFor="status">Status *</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as "draft" | "active")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-sm">
+            <Label htmlFor="deadline">Deadline</Label>
+            <Input
+              id="deadline"
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+            />
           </div>
 
           <div className="space-y-sm pt-md border-t">
@@ -285,7 +253,7 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!name || !period}>
+          <Button onClick={handleSubmit} disabled={!title}>
             {editingKPI ? "Update KPI" : "Create KPI"}
           </Button>
         </DialogFooter>

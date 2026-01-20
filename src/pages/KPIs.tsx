@@ -5,18 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PageContainer, PageHeader, FilterBar, EmptyState } from "@/components/layout";
+import { PageContainer, PageHeader, EmptyState } from "@/components/layout";
 import { CardSkeleton } from "@/components/skeletons/CardSkeleton";
-import { Target, TrendingUp } from "lucide-react";
-
-const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+import { Target, TrendingUp, Calendar } from "lucide-react";
+import { format } from "date-fns";
 
 export default function KPIs() {
   const { user } = useAuth();
   const { kpis, isLoading } = useKPIs();
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
-  const [quarterFilter, setQuarterFilter] = useState<string>("all");
 
   // Get current user's profile ID
   useEffect(() => {
@@ -41,11 +38,6 @@ export default function KPIs() {
   const myKPIs = kpis?.filter(kpi => 
     kpi.assignments?.some(assignment => assignment.user_id === userProfileId)
   ) || [];
-
-  // Apply quarter filter
-  const filteredKPIs = quarterFilter === "all" 
-    ? myKPIs 
-    : myKPIs.filter(kpi => kpi.period === quarterFilter);
 
   if (isLoading) {
     return (
@@ -72,21 +64,7 @@ export default function KPIs() {
         description="Track your key performance indicators and goals"
       />
 
-      <FilterBar>
-        <Select value={quarterFilter} onValueChange={setQuarterFilter}>
-          <SelectTrigger className="w-[140px] h-9 bg-card rounded-lg">
-            <SelectValue placeholder="Quarter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Quarters</SelectItem>
-            {QUARTERS.map((q) => (
-              <SelectItem key={q} value={q}>{q}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterBar>
-
-      {filteredKPIs.length === 0 ? (
+      {myKPIs.length === 0 ? (
         <EmptyState
           icon={Target}
           title="No KPIs Assigned"
@@ -94,7 +72,7 @@ export default function KPIs() {
         />
       ) : (
         <div className="grid gap-md md:grid-cols-2 lg:grid-cols-3">
-          {filteredKPIs.map((kpi) => {
+          {myKPIs.map((kpi) => {
             const myAssignment = kpi.assignments?.find(a => a.user_id === userProfileId);
             const totalTarget = kpi.targets?.reduce((sum, t) => sum + t.target_value, 0) || 0;
             const totalCurrent = kpi.targets?.reduce((sum, t) => sum + t.current_value, 0) || 0;
@@ -105,7 +83,7 @@ export default function KPIs() {
                 <CardHeader className="pb-sm">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-heading-sm">{kpi.name}</CardTitle>
+                      <CardTitle className="text-heading-sm">{kpi.title}</CardTitle>
                       {kpi.description && (
                         <CardDescription className="mt-xs text-body-sm">{kpi.description}</CardDescription>
                       )}
@@ -118,9 +96,14 @@ export default function KPIs() {
                     </Badge>
                   </div>
                   <div className="flex gap-xs mt-sm flex-wrap">
-                    <Badge variant="outline" className="text-metadata">{kpi.type}</Badge>
-                    <Badge variant="outline" className="text-metadata">{kpi.period}</Badge>
-                    <Badge variant="outline" className="text-metadata">Weight: {kpi.weight}%</Badge>
+                    <Badge variant="outline" className="text-metadata">{kpi.metric_type}</Badge>
+                    <Badge variant="outline" className="text-metadata">Target: {kpi.target}</Badge>
+                    {kpi.deadline && (
+                      <Badge variant="outline" className="text-metadata flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(kpi.deadline), 'MMM d, yyyy')}
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-md">

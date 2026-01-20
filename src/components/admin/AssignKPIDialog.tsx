@@ -4,17 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { useKPIs } from "@/hooks/useKPIs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import type { TeamKPI } from "@/types/kpi";
+import type { KPIWithRelations } from "@/types/kpi";
 import { TEAMS } from "@/lib/constants";
 
 interface AssignKPIDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  kpi: TeamKPI | null;
+  kpi: KPIWithRelations | null;
 }
 
 interface UserProfile {
@@ -31,26 +30,12 @@ export function AssignKPIDialog({ open, onOpenChange, kpi }: AssignKPIDialogProp
   const [selectedTeam, setSelectedTeam] = useState("");
   const [notes, setNotes] = useState("");
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [userCurrentWeight, setUserCurrentWeight] = useState(0);
-  const { kpis } = useKPIs();
 
   useEffect(() => {
     if (open) {
       fetchUsers();
     }
   }, [open]);
-
-  useEffect(() => {
-    if (selectedUserId && kpis) {
-      const userKPIs = kpis.filter(k => 
-        k.assignments?.some(a => a.user_id === selectedUserId && a.status !== 'rejected')
-      );
-      const totalWeight = userKPIs.reduce((sum, k) => sum + k.weight, 0);
-      setUserCurrentWeight(totalWeight);
-    } else {
-      setUserCurrentWeight(0);
-    }
-  }, [selectedUserId, kpis]);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
@@ -100,17 +85,8 @@ export function AssignKPIDialog({ open, onOpenChange, kpi }: AssignKPIDialogProp
           {kpi && (
             <div className="space-y-2 mt-2">
               <p className="text-sm text-muted-foreground">
-                Assigning: <span className="font-medium">{kpi.name}</span> (Weight: {kpi.weight}%)
+                Assigning: <span className="font-medium">{kpi.title}</span> (Target: {kpi.target})
               </p>
-              {assignmentType === "user" && selectedUserId && (
-                <div className="flex items-center gap-2 text-xs">
-                  <Badge variant="outline">Current Weight: {userCurrentWeight}%</Badge>
-                  <Badge variant="outline">New Weight: {userCurrentWeight + kpi.weight}%</Badge>
-                  <Badge variant={userCurrentWeight + kpi.weight > 100 ? "destructive" : "secondary"}>
-                    Available: {100 - userCurrentWeight}%
-                  </Badge>
-                </div>
-              )}
             </div>
           )}
         </DialogHeader>

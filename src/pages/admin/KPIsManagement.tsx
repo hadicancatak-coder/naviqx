@@ -3,29 +3,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Users, Edit, Trash2, Target } from "lucide-react";
+import { Plus, Users, Edit, Trash2, Target, Calendar } from "lucide-react";
 import { useKPIs } from "@/hooks/useKPIs";
 import { CreateKPIDialog } from "@/components/admin/CreateKPIDialog";
 import { AssignKPIDialog } from "@/components/admin/AssignKPIDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { TeamKPI } from "@/types/kpi";
+import type { KPIWithRelations } from "@/types/kpi";
+import { format } from "date-fns";
 
 export default function KPIsManagement() {
   const { kpis, isLoading, deleteKPI } = useKPIs();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [editingKPI, setEditingKPI] = useState<TeamKPI | null>(null);
-  const [assigningKPI, setAssigningKPI] = useState<TeamKPI | null>(null);
+  const [editingKPI, setEditingKPI] = useState<KPIWithRelations | null>(null);
+  const [assigningKPI, setAssigningKPI] = useState<KPIWithRelations | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingKPIId, setDeletingKPIId] = useState<string | null>(null);
 
-  const handleEdit = (kpi: TeamKPI) => {
+  const handleEdit = (kpi: KPIWithRelations) => {
     setEditingKPI(kpi);
     setCreateDialogOpen(true);
   };
 
-  const handleAssign = (kpi: TeamKPI) => {
+  const handleAssign = (kpi: KPIWithRelations) => {
     setAssigningKPI(kpi);
     setAssignDialogOpen(true);
   };
@@ -41,17 +42,6 @@ export default function KPIsManagement() {
       setDeleteDialogOpen(false);
       setDeletingKPIId(null);
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      draft: "status-neutral",
-      pending_approval: "status-warning",
-      active: "status-success",
-      completed: "status-info",
-      archived: "status-neutral",
-    };
-    return <Badge className={colors[status] || "status-neutral"}>{status.replace('_', ' ')}</Badge>;
   };
 
   if (isLoading) {
@@ -83,11 +73,10 @@ export default function KPIsManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Weight</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Metric Type</TableHead>
+                <TableHead>Target</TableHead>
+                <TableHead>Deadline</TableHead>
                 <TableHead>Targets</TableHead>
                 <TableHead>Assignments</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -96,20 +85,28 @@ export default function KPIsManagement() {
             <TableBody>
               {kpis.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No KPIs created yet. Click "Create KPI" to get started.
                   </TableCell>
                 </TableRow>
               ) : (
                 kpis.map((kpi) => (
                   <TableRow key={kpi.id}>
-                    <TableCell className="font-medium">{kpi.name}</TableCell>
+                    <TableCell className="font-medium">{kpi.title}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{kpi.type}</Badge>
+                      <Badge variant="outline">{kpi.metric_type}</Badge>
                     </TableCell>
-                    <TableCell>{kpi.period}</TableCell>
-                    <TableCell>{kpi.weight}%</TableCell>
-                    <TableCell>{getStatusBadge(kpi.status)}</TableCell>
+                    <TableCell>{kpi.target}</TableCell>
+                    <TableCell>
+                      {kpi.deadline ? (
+                        <div className="flex items-center gap-1 text-body-sm">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          {format(new Date(kpi.deadline), 'MMM d, yyyy')}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Target className="h-4 w-4 text-muted-foreground" />

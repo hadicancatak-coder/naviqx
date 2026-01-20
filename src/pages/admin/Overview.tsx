@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckSquare, AlertTriangle, Clock, ArrowRight, Target, FileText } from "lucide-react";
+import { Users, CheckSquare, AlertTriangle, ArrowRight, Target, FileText } from "lucide-react";
 import { adminService } from "@/lib/adminService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,6 @@ interface SystemHealth {
   users: number;
   tasks: number;
   unresolvedErrors: number;
-  pendingApprovals: number;
 }
 
 export default function Overview() {
@@ -59,15 +58,6 @@ export default function Overview() {
       color: "text-destructive",
       bgColor: "bg-destructive/10",
       onClick: () => navigate('/admin/logs'),
-    },
-    {
-      title: "Pending Approvals",
-      subtitle: "Awaiting review",
-      value: health?.pendingApprovals || 0,
-      icon: Clock,
-      color: "text-warning",
-      bgColor: "bg-warning/10",
-      onClick: () => navigate('/admin/approvals'),
     },
   ];
 
