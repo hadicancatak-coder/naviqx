@@ -58,7 +58,7 @@ export function useTasks(filters?: TaskFilters) {
   };
 
   const query = useQuery({
-    queryKey: ['tasks', filters?.includeTemplates],
+    queryKey: ['tasks', filters?.includeTemplates ?? false],
     queryFn: fetchTasks,
     staleTime: 30000, // 30 seconds - reduce refetches
     refetchOnWindowFocus: false, // Don't refetch on tab focus
