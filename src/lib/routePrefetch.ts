@@ -5,6 +5,7 @@
 
 // Maps routes to their dynamic import functions
 const routeModules: Record<string, () => Promise<any>> = {
+  '/': () => import('@/pages/Dashboard'),
   '/tasks': () => import('@/pages/Tasks'),
   '/sprints': () => import('@/pages/Sprints'),
   '/ads/search': () => import('@/pages/SearchPlanner'),
@@ -21,6 +22,10 @@ const routeModules: Record<string, () => Promise<any>> = {
   '/tech-stack': () => import('@/pages/TechStack'),
   '/whiteboard': () => import('@/pages/Whiteboard'),
   '/admin': () => import('@/pages/admin/AdminLayout'),
+  '/notifications': () => import('@/pages/Notifications'),
+  '/about': () => import('@/pages/About'),
+  '/how-to': () => import('@/pages/HowTo'),
+  '/security': () => import('@/pages/Security'),
 };
 
 // Track already-prefetched routes to avoid duplicate fetches

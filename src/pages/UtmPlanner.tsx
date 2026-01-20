@@ -53,11 +53,11 @@ const UtmPlanner = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="builder" forceMount hidden={activeTab !== "builder"} className="mt-lg">
+        <TabsContent value="builder" className="mt-lg">
           <SimpleUtmBuilder />
         </TabsContent>
 
-        <TabsContent value="archive" forceMount hidden={activeTab !== "archive"} className="mt-lg space-y-md">
+        <TabsContent value="archive" className="mt-lg space-y-md">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-heading-sm font-semibold">All Generated Links</h3>
@@ -86,7 +86,7 @@ const UtmPlanner = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="config" forceMount hidden={activeTab !== "config"} className="mt-lg">
+        <TabsContent value="config" className="mt-lg">
           <UtmConfigurationTab />
         </TabsContent>
       </Tabs>
