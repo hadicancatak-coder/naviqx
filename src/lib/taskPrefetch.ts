@@ -6,6 +6,7 @@
 import { queryClient } from './queryClient';
 import { supabase } from '@/integrations/supabase/client';
 import { mapStatusToUi } from '@/lib/taskStatusMapper';
+import { TASK_QUERY_KEY } from '@/lib/queryKeys';
 
 // Track if prefetch is in progress to avoid duplicate requests
 let prefetchInProgress = false;
@@ -16,8 +17,8 @@ let prefetchInProgress = false;
  */
 export async function prefetchTasksData(): Promise<void> {
   // Skip if already prefetching or already has fresh data
-  const existingData = queryClient.getQueryData(['tasks', false]);
-  const queryState = queryClient.getQueryState(['tasks', false]);
+  const existingData = queryClient.getQueryData(TASK_QUERY_KEY);
+  const queryState = queryClient.getQueryState(TASK_QUERY_KEY);
   
   if (prefetchInProgress) return;
   if (existingData && queryState?.dataUpdatedAt && Date.now() - queryState.dataUpdatedAt < 30000) {
@@ -28,7 +29,7 @@ export async function prefetchTasksData(): Promise<void> {
   
   try {
     await queryClient.prefetchQuery({
-      queryKey: ['tasks', false],
+      queryKey: TASK_QUERY_KEY,
       queryFn: async () => {
         const { data, error } = await supabase
           .from("tasks")
@@ -69,6 +70,6 @@ export async function prefetchTasksData(): Promise<void> {
  * Check if tasks data is already cached and fresh
  */
 export function hasTasksDataCached(): boolean {
-  const existingData = queryClient.getQueryData(['tasks', false]);
+  const existingData = queryClient.getQueryData(TASK_QUERY_KEY);
   return !!existingData;
 }
