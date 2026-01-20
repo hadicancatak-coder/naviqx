@@ -27,7 +27,6 @@ import Notifications from "./pages/Notifications";
 import KPIs from "./pages/KPIs";
 import CampaignsLog from "./pages/CampaignsLog";
 import Projects from "./pages/Projects";
-import Whiteboard from "./pages/Whiteboard";
 import Knowledge from "./pages/Knowledge";
 import TechStack from "./pages/TechStack";
 import KeywordIntel from "./pages/KeywordIntel";
@@ -55,7 +54,6 @@ const HowTo = lazy(() => import("./pages/HowTo"));
 const UtmPlanner = lazy(() => import("./pages/UtmPlanner"));
 const CopyWriter = lazy(() => import("./pages/CopyWriter"));
 const CaptionLibrary = lazy(() => import("./pages/CaptionLibrary"));
-const LocationIntelligence = lazy(() => import("./pages/LocationIntelligence"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
 const CampaignReview = lazy(() => import("./pages/CampaignReview"));
 const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
@@ -115,7 +113,6 @@ const App = () => (
                     <Route path="/security" element={<Security />} />
                     <Route path="/kpis" element={<KPIs />} />
                     <Route path="/campaigns-log" element={<CampaignsLog />} />
-                    <Route path="/location-intelligence" element={<LocationIntelligence />} />
                     <Route path="/web-intel" element={<WebIntel />} />
                     <Route path="/keyword-intel" element={<KeywordIntel />} />
                     <Route path="/about" element={<About />} />
@@ -124,7 +121,6 @@ const App = () => (
                     <Route path="/projects" element={<Projects />} />
                     <Route path="/tech-stack" element={<TechStack />} />
                     <Route path="/performance" element={<Performance />} />
-                    <Route path="/whiteboard" element={<Whiteboard />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
               </Routes>

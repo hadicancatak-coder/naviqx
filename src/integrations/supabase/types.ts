@@ -985,42 +985,6 @@ export type Database = {
           },
         ]
       }
-      campaign_locations: {
-        Row: {
-          campaign_id: string | null
-          created_at: string | null
-          id: string
-          location_id: string | null
-        }
-        Insert: {
-          campaign_id?: string | null
-          created_at?: string | null
-          id?: string
-          location_id?: string | null
-        }
-        Update: {
-          campaign_id?: string | null
-          created_at?: string | null
-          id?: string
-          location_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_locations_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "planned_campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_locations_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "media_locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       campaign_metadata: {
         Row: {
           asset_link: string | null
@@ -1061,45 +1025,6 @@ export type Database = {
             columns: ["utm_campaign_id"]
             isOneToOne: true
             referencedRelation: "utm_campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      campaign_placements: {
-        Row: {
-          campaign_id: string | null
-          created_at: string | null
-          id: string
-          location_id: string | null
-          notes: string | null
-        }
-        Insert: {
-          campaign_id?: string | null
-          created_at?: string | null
-          id?: string
-          location_id?: string | null
-          notes?: string | null
-        }
-        Update: {
-          campaign_id?: string | null
-          created_at?: string | null
-          id?: string
-          location_id?: string | null
-          notes?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_placements_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "planned_campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_placements_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "media_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -2509,51 +2434,6 @@ export type Database = {
           },
         ]
       }
-      media_locations: {
-        Row: {
-          agency: string | null
-          city: string
-          created_at: string
-          created_by: string | null
-          id: string
-          image_url: string | null
-          latitude: number
-          longitude: number
-          name: string
-          notes: string | null
-          type: Database["public"]["Enums"]["location_type"]
-          updated_at: string
-        }
-        Insert: {
-          agency?: string | null
-          city: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          image_url?: string | null
-          latitude: number
-          longitude: number
-          name: string
-          notes?: string | null
-          type: Database["public"]["Enums"]["location_type"]
-          updated_at?: string
-        }
-        Update: {
-          agency?: string | null
-          city?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          image_url?: string | null
-          latitude?: number
-          longitude?: number
-          name?: string
-          notes?: string | null
-          type?: Database["public"]["Enums"]["location_type"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       mfa_backup_code_usage: {
         Row: {
           code_hash: string
@@ -2870,48 +2750,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      planned_campaigns: {
-        Row: {
-          agency: string | null
-          cities: string[]
-          created_at: string | null
-          created_by: string | null
-          end_date: string
-          id: string
-          name: string
-          notes: string | null
-          start_date: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          agency?: string | null
-          cities: string[]
-          created_at?: string | null
-          created_by?: string | null
-          end_date: string
-          id?: string
-          name: string
-          notes?: string | null
-          start_date: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          agency?: string | null
-          cities?: string[]
-          created_at?: string | null
-          created_by?: string | null
-          end_date?: string
-          id?: string
-          name?: string
-          notes?: string | null
-          start_date?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       platform_team_mapping: {
         Row: {
@@ -5200,169 +5038,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "website_campaigns_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "planned_campaigns"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "website_campaigns_website_id_fkey"
             columns: ["website_id"]
             isOneToOne: false
             referencedRelation: "web_intel_sites"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whiteboard_connectors: {
-        Row: {
-          color: string | null
-          created_at: string | null
-          from_item_id: string
-          id: string
-          label: string | null
-          line_style: string | null
-          stroke_width: number | null
-          to_item_id: string
-          whiteboard_id: string
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string | null
-          from_item_id: string
-          id?: string
-          label?: string | null
-          line_style?: string | null
-          stroke_width?: number | null
-          to_item_id: string
-          whiteboard_id: string
-        }
-        Update: {
-          color?: string | null
-          created_at?: string | null
-          from_item_id?: string
-          id?: string
-          label?: string | null
-          line_style?: string | null
-          stroke_width?: number | null
-          to_item_id?: string
-          whiteboard_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whiteboard_connectors_from_item_id_fkey"
-            columns: ["from_item_id"]
-            isOneToOne: false
-            referencedRelation: "whiteboard_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whiteboard_connectors_to_item_id_fkey"
-            columns: ["to_item_id"]
-            isOneToOne: false
-            referencedRelation: "whiteboard_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whiteboard_connectors_whiteboard_id_fkey"
-            columns: ["whiteboard_id"]
-            isOneToOne: false
-            referencedRelation: "whiteboards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whiteboard_items: {
-        Row: {
-          color: string | null
-          content: string | null
-          created_at: string
-          height: number
-          id: string
-          metadata: Json | null
-          order_index: number | null
-          type: string
-          updated_at: string
-          whiteboard_id: string
-          width: number
-          x: number
-          y: number
-        }
-        Insert: {
-          color?: string | null
-          content?: string | null
-          created_at?: string
-          height?: number
-          id?: string
-          metadata?: Json | null
-          order_index?: number | null
-          type: string
-          updated_at?: string
-          whiteboard_id: string
-          width?: number
-          x?: number
-          y?: number
-        }
-        Update: {
-          color?: string | null
-          content?: string | null
-          created_at?: string
-          height?: number
-          id?: string
-          metadata?: Json | null
-          order_index?: number | null
-          type?: string
-          updated_at?: string
-          whiteboard_id?: string
-          width?: number
-          x?: number
-          y?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whiteboard_items_whiteboard_id_fkey"
-            columns: ["whiteboard_id"]
-            isOneToOne: false
-            referencedRelation: "whiteboards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whiteboards: {
-        Row: {
-          created_at: string
-          created_by: string
-          description: string | null
-          id: string
-          name: string
-          project_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          description?: string | null
-          id?: string
-          name?: string
-          project_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          id?: string
-          name?: string
-          project_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whiteboards_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
