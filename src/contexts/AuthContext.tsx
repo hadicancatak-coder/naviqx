@@ -260,8 +260,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (sessionToken) {
           console.log('✅ Found MFA session token in localStorage, setting verified=true');
           setMfaVerified(true);
-          // Validate in background
-          validateMfaSession(session.user);
+          // Fire-and-forget background validation - don't block render
+          setTimeout(() => validateMfaSession(session.user), 50);
         } else {
           console.log('❌ No MFA session token found');
           validateMfaSession(session.user);
