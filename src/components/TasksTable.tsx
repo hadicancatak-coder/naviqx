@@ -13,6 +13,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isPast, isToday, isTomorrow, isThisWeek } from "date-fns";
 import { TASK_TAG_OPTIONS } from "@/domain";
+import { TASK_QUERY_KEY } from "@/lib/queryKeys";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,16 +68,16 @@ export const TasksTable = ({
       if (error) throw error;
     },
     onMutate: async (taskId) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      const previousTasks = queryClient.getQueryData(['tasks']);
-      queryClient.setQueryData(['tasks'], (old: any) => 
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => 
         old?.filter((task: any) => task.id !== taskId)
       );
       return { previousTasks };
     },
     onError: (error: any, _taskId, context) => {
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({ title: "Error deleting task", description: error.message, variant: "destructive" });
     },
@@ -197,10 +198,10 @@ export const TasksTable = ({
         onSettled: () => setProcessingAction(null)
       });
     } else {
-      // Reopen task - use Pending as DB value
-      supabase.from('tasks').update({ status: 'Pending' as const }).eq('id', taskId)
+      // Reopen task - use Ongoing as DB value
+      supabase.from('tasks').update({ status: 'Ongoing' as const }).eq('id', taskId)
         .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+          queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
           setProcessingAction(null);
         });
     }
@@ -215,8 +216,8 @@ export const TasksTable = ({
         .insert({
           title: `${task.title} (Copy)`,
           description: task.description,
-          priority: task.priority,
-          status: 'Pending' as const,
+        priority: task.priority,
+        status: 'Ongoing' as const,
           due_at: task.due_at,
           labels: task.labels,
           entity: task.entity,
@@ -246,7 +247,7 @@ export const TasksTable = ({
         }
       }
       
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
       toast({ title: "Task duplicated successfully" });
     } catch (error: any) {
       toast({ title: "Error duplicating task", description: error.message, variant: "destructive" });

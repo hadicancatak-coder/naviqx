@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { StaleBadge } from "@/components/tasks/StaleBadge";
 import { DependencyBadge } from "@/components/tasks/DependencyBadge";
+import { TASK_QUERY_KEY } from "@/lib/queryKeys";
 
 interface TaskRowProps {
   task: any;
@@ -106,7 +107,7 @@ export function TaskRow({
     }
     
     // Optimistic update
-    queryClient.setQueryData(['tasks'], (old: any[]) => 
+    queryClient.setQueryData(TASK_QUERY_KEY, (old: any[]) => 
       old?.map(t => t.id === task.id ? { ...t, title: trimmed } : t)
     );
     
@@ -119,7 +120,7 @@ export function TaskRow({
       
     if (error) {
       // Revert on error
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   }, [editValue, task.id, task.title, queryClient, cancelEditing]);
 

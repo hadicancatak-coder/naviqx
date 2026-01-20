@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { mapStatusToDb } from '@/lib/taskStatusMapper';
 import { completeTask as completeTaskAction, setTaskStatus } from '@/domain';
+import { TASK_QUERY_KEY } from '@/lib/queryKeys';
 // Task mutation hooks with optimistic updates for instant UI feedback
 
 interface UpdateTaskParams {
@@ -35,13 +36,13 @@ export const useTaskMutations = () => {
     },
     onMutate: async ({ id, updates }) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
       
       // Snapshot previous value
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
       // Optimistically update cache
-      queryClient.setQueryData(['tasks'], (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
         if (!old) return old;
         return old.map((task: any) =>
           task.id === id ? { ...task, ...updates, updated_at: new Date().toISOString() } : task
@@ -53,7 +54,7 @@ export const useTaskMutations = () => {
     onError: (err: any, variables, context) => {
       // Rollback on error
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({
         title: "Update failed",
@@ -74,7 +75,7 @@ export const useTaskMutations = () => {
     },
     onSettled: () => {
       // Refetch to ensure sync with server
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   });
 
@@ -88,10 +89,10 @@ export const useTaskMutations = () => {
       return result.data;
     },
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
-      queryClient.setQueryData(['tasks'], (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
         if (!old) return old;
         return old.map((task: any) =>
           task.id === id ? { ...task, status: 'Completed', updated_at: new Date().toISOString() } : task
@@ -102,7 +103,7 @@ export const useTaskMutations = () => {
     },
     onError: (err: any, variables, context) => {
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({
         title: "Failed to complete task",
@@ -114,7 +115,7 @@ export const useTaskMutations = () => {
       toast({ title: "Task completed", duration: 2000 });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   });
 
@@ -132,10 +133,10 @@ export const useTaskMutations = () => {
       return data;
     },
     onMutate: async ({ id, due_at }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
-      queryClient.setQueryData(['tasks'], (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
         if (!old) return old;
         return old.map((task: any) =>
           task.id === id ? { ...task, due_at, updated_at: new Date().toISOString() } : task
@@ -146,7 +147,7 @@ export const useTaskMutations = () => {
     },
     onError: (err: any, variables, context) => {
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({
         title: "Failed to update deadline",
@@ -158,7 +159,7 @@ export const useTaskMutations = () => {
       toast({ title: "Deadline updated", duration: 2000 });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   });
 
@@ -177,10 +178,10 @@ export const useTaskMutations = () => {
       return data;
     },
     onMutate: async ({ id, status }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
-      queryClient.setQueryData(['tasks'], (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
         if (!old) return old;
         return old.map((task: any) =>
           task.id === id ? { ...task, status, updated_at: new Date().toISOString() } : task
@@ -199,7 +200,7 @@ export const useTaskMutations = () => {
       });
       
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({
         title: "Failed to update status",
@@ -211,7 +212,7 @@ export const useTaskMutations = () => {
       toast({ title: "Status updated", duration: 2000 });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   });
 
@@ -229,10 +230,10 @@ export const useTaskMutations = () => {
       return data;
     },
     onMutate: async ({ id, priority }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
-      queryClient.setQueryData(['tasks'], (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
         if (!old) return old;
         return old.map((task: any) =>
           task.id === id ? { ...task, priority, updated_at: new Date().toISOString() } : task
@@ -243,7 +244,7 @@ export const useTaskMutations = () => {
     },
     onError: (err: any, variables, context) => {
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({
         title: "Failed to update priority",
@@ -255,7 +256,7 @@ export const useTaskMutations = () => {
       toast({ title: "Priority updated", duration: 2000 });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   });
 
@@ -272,10 +273,10 @@ export const useTaskMutations = () => {
       return data;
     },
     onMutate: async ({ taskIds, sprintId }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
-      queryClient.setQueryData(['tasks'], (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
         if (!old) return old;
         return old.map((task: any) =>
           taskIds.includes(task.id) 
@@ -288,7 +289,7 @@ export const useTaskMutations = () => {
     },
     onError: (err: any, variables, context) => {
       if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
       toast({
         title: "Failed to update sprint",
@@ -304,7 +305,7 @@ export const useTaskMutations = () => {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     }
   });
 

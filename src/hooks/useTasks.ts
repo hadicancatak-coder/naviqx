@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { realtimeService } from "@/lib/realtimeService";
 import { mapStatusToUi } from "@/lib/taskStatusMapper";
+import { TASK_QUERY_KEY, TASK_WITH_TEMPLATES_KEY } from "@/lib/queryKeys";
 
 export interface TaskFilters {
   assignees?: string[];
@@ -23,7 +24,8 @@ export function useTasks(filters?: TaskFilters) {
   const queryClient = useQueryClient();
 
   const fetchTasks = async () => {
-    if (!user) return [];
+    // Query is enabled only when user exists, but guard anyway
+    if (!user) throw new Error('User not authenticated');
 
     let query = supabase
       .from("tasks")
@@ -58,8 +60,9 @@ export function useTasks(filters?: TaskFilters) {
   };
 
   const query = useQuery({
-    queryKey: ['tasks', filters?.includeTemplates ?? false],
+    queryKey: filters?.includeTemplates ? TASK_WITH_TEMPLATES_KEY : TASK_QUERY_KEY,
     queryFn: fetchTasks,
+    enabled: !!user, // Only run when user is authenticated
     staleTime: 30000, // 30 seconds - reduce refetches
     refetchOnWindowFocus: false, // Don't refetch on tab focus
     placeholderData: (previousData) => previousData, // Show stale data instantly while refetching
@@ -70,7 +73,7 @@ export function useTasks(filters?: TaskFilters) {
     if (!user) return;
 
     const unsubscribe = realtimeService.subscribe('tasks', () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
     });
 
     return () => {

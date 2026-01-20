@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { TASK_QUERY_KEY } from "@/lib/queryKeys";
 
 interface InlineTaskCreatorProps {
   onTaskCreated?: () => void;
@@ -47,7 +48,7 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
       if (error) throw error;
       
       // Simple: just invalidate to trigger refetch
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
       toast({ title: "Task created", duration: 2000 });
       onTaskCreated?.();
     } catch (error: any) {
