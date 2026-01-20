@@ -126,14 +126,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    // Phase 3: Check idle time - only validate if user was idle > 30 minutes
+    // Phase 3: Skip validation if user was active recently (within 5 minutes)
     const idleTime = Date.now() - lastActivityTime.current;
-    const IDLE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+    const SKIP_VALIDATION_THRESHOLD = 5 * 60 * 1000; // 5 minutes - trust local token if active
     
-    if (idleTime > IDLE_THRESHOLD) {
-      console.log('⏰ User was idle, performing validation');
-      lastActivityTime.current = Date.now();
+    // If user was active recently and we already verified, trust the local token
+    if (idleTime < SKIP_VALIDATION_THRESHOLD && mfaVerified) {
+      console.log('⚡ User active recently, skipping validation (using cached result)');
+      return true;
     }
+    
+    // Update activity timestamp
+    lastActivityTime.current = Date.now();
 
     try {
       const startTime = performance.now();
