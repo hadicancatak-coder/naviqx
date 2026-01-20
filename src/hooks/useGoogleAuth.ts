@@ -61,11 +61,20 @@ export function useGoogleAuth() {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: SCOPES,
+        // Use 'popup' UX mode which works better with iframe restrictions
+        ux_mode: 'popup',
         callback: (response: any) => {
           if (response.access_token) {
             setAccessToken(response.access_token);
             setIsAuthenticated(true);
             storeToken(response.access_token);
+          }
+        },
+        error_callback: (error: any) => {
+          console.error('Google OAuth error:', error);
+          // If popup is blocked, inform user to try from published URL
+          if (error?.type === 'popup_closed' || error?.type === 'popup_failed_to_open') {
+            alert('Popup was blocked. Please try accessing this feature from the published URL directly in your browser, not the preview iframe.');
           }
         },
       });
