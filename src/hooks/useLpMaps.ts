@@ -73,9 +73,17 @@ export const useLpMapWithSections = (mapId: string | null) => {
 
       if (mapError) throw mapError;
 
+      // Fetch section data with essential columns
       const { data: mapSections, error: sectionsError } = await supabase
         .from("lp_map_sections")
-        .select(`*, section:lp_sections(*, entity:system_entities(id, name))`)
+        .select(`
+          id, lp_map_id, section_id, position, overrides, created_at,
+          section:lp_sections(
+            id, name, description, brief_content, section_type, entity_id, 
+            sample_images, website_links, created_by, created_at, updated_at,
+            entity:system_entities(id, name)
+          )
+        `)
         .eq("lp_map_id", mapId)
         .order("position", { ascending: true });
 

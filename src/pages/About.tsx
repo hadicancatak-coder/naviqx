@@ -1,25 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Mail, Edit, Save, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-
-interface CMSPage {
-  id: string;
-  slug: string;
-  title: string;
-  content: string;
-  version: string | null;
-  updated_at: string;
-}
+import { useCmsPage, useUpdateCmsPage } from "@/hooks/useCmsPage";
 
 // Simple markdown renderer
 function renderMarkdown(content: string) {
@@ -90,31 +80,12 @@ function renderMarkdown(content: string) {
 
 export default function About() {
   const { userRole } = useAuth();
-  const [pageData, setPageData] = useState<CMSPage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: pageData, isLoading } = useCmsPage("about");
+  const updatePage = useUpdateCmsPage();
+  
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [editVersion, setEditVersion] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchPageData();
-  }, []);
-
-  const fetchPageData = async () => {
-    const { data, error } = await supabase
-      .from('cms_pages')
-      .select('*')
-      .eq('slug', 'about')
-      .single();
-
-    if (error) {
-      console.error('Error fetching about page:', error);
-    } else {
-      setPageData(data);
-    }
-    setLoading(false);
-  };
 
   const handleEdit = () => {
     if (pageData) {
@@ -126,25 +97,14 @@ export default function About() {
 
   const handleSave = async () => {
     if (!pageData) return;
-    setSaving(true);
-
-    const { error } = await supabase
-      .from('cms_pages')
-      .update({
-        content: editContent,
-        version: editVersion,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', pageData.id);
-
-    if (error) {
-      toast.error('Failed to save changes');
-    } else {
-      toast.success('Page updated');
-      setEditDialogOpen(false);
-      fetchPageData();
-    }
-    setSaving(false);
+    
+    await updatePage.mutateAsync({
+      id: pageData.id,
+      content: editContent,
+      version: editVersion,
+    });
+    
+    setEditDialogOpen(false);
   };
 
   const currentVersion = pageData?.version || "2.0";
@@ -187,7 +147,7 @@ export default function About() {
           <h2 className="text-heading-md font-semibold">What's New</h2>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="animate-pulse space-y-md">
             <div className="h-4 bg-muted rounded w-3/4"></div>
             <div className="h-4 bg-muted rounded w-1/2"></div>
@@ -259,9 +219,9 @@ export default function About() {
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={updatePage.isPending}>
               <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {updatePage.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
