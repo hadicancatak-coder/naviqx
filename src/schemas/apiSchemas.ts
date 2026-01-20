@@ -211,23 +211,6 @@ export const webIntelSiteSchema = z.object({
   updated_at: z.string().datetime(),
 });
 
-// ============= LOCATION INTEL SCHEMAS =============
-export const mediaLocationSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1).max(200),
-  location_type: z.string().max(50),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  address: z.string().nullable(),
-  city: z.string().max(100).nullable(),
-  country: z.string().max(100).nullable(),
-  status: z.enum(['active', 'inactive', 'planning']).nullable(),
-  notes: z.string().nullable(),
-  created_by: z.string().uuid(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
-});
-
 // ============= MFA SCHEMAS =============
 export const mfaSessionSchema = z.object({
   id: z.string().uuid(),

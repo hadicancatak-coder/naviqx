@@ -8,14 +8,12 @@ import {
   Target, 
   Link2, 
   PenTool, 
-  MapPin,
   Tv,
   BookOpen,
   Server,
   BarChart3,
   Search,
   FolderKanban,
-  Presentation,
   Zap
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,7 +46,6 @@ const adsItems = [
 
 
 const mediaItems = [
-  { title: "Location Intel", url: "/location-intelligence", icon: MapPin },
   { title: "Web Intel", url: "/web-intel", icon: Tv },
   { title: "Keyword Intel", url: "/keyword-intel", icon: Search },
 ];
@@ -62,7 +59,6 @@ const resourcesItems = [
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
   { title: "Projects", url: "/projects", icon: FolderKanban },
   { title: "Tech Stack", url: "/tech-stack", icon: Server },
-  { title: "Whiteboard", url: "/whiteboard", icon: Presentation },
 ];
 
 export function AppSidebar() {
