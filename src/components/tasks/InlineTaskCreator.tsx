@@ -50,11 +50,11 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
     setTitle("");
     setIsEditing(false);
     
-    // Add to cache instantly
-    queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
-      if (!old) return [optimisticTask];
-      return [optimisticTask, ...old];
-    });
+    // Only add to cache if it already exists (don't create cache prematurely)
+    const existingCache = queryClient.getQueryData(['tasks', false]);
+    if (existingCache && Array.isArray(existingCache)) {
+      queryClient.setQueryData(['tasks', false], [optimisticTask, ...existingCache]);
+    }
     
     toast({ title: "Task created", duration: 2000 });
     onTaskCreated?.();
@@ -69,17 +69,24 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
       
       if (error) throw error;
       
-      // Replace temp task with real one
-      queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.map(t => t.id === tempId ? { ...optimisticTask, ...data } : t);
-      });
+      // Replace temp task with real one OR just invalidate if cache wasn't updated
+      if (existingCache && Array.isArray(existingCache)) {
+        queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map(t => t.id === tempId ? { ...optimisticTask, ...data } : t);
+        });
+      }
+      
+      // Always invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     } catch (error: any) {
       // Rollback on error
-      queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.filter(t => t.id !== tempId);
-      });
+      if (existingCache && Array.isArray(existingCache)) {
+        queryClient.setQueryData(['tasks', false], (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.filter(t => t.id !== tempId);
+        });
+      }
       toast({ 
         title: "Failed to create task", 
         description: error.message, 
