@@ -39,7 +39,7 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
     try {
       const { error } = await supabase.from("tasks").insert({
         title: taskTitle,
-        status: "Pending" as const,
+        status: "Ongoing" as const,
         priority: "Medium" as const,
         created_by: user.id,
       } as any);
