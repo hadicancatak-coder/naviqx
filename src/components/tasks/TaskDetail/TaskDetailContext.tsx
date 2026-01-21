@@ -281,6 +281,9 @@ export function TaskDetailProvider({
 
   // Initial load
   useEffect(() => {
+    // CRITICAL: Reset the edit tracking ref when switching to a new task
+    descriptionEditedRef.current = false;
+    
     setLoading(true);
     setParentTask(null);
     
