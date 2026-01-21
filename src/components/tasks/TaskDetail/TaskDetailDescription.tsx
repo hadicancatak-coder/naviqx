@@ -35,20 +35,15 @@ export function TaskDetailDescription() {
     // Debounced auto-save after 1 second of no changes
     saveTimeoutRef.current = setTimeout(async () => {
       const currentValue = descriptionRef.current;
-      console.log('[TaskDetailDescription] Auto-save timeout fired:', {
+      console.log('[TaskDetailDescription] FORCING SAVE (no comparison):', {
         currentValueLength: currentValue.length,
-        lastSavedLength: lastSavedRef.current.length,
-        areDifferent: currentValue !== lastSavedRef.current,
-        currentPreview: currentValue.substring(0, 80),
-        lastSavedPreview: lastSavedRef.current.substring(0, 80)
+        currentPreview: currentValue.substring(0, 80)
       });
       
-      if (currentValue !== lastSavedRef.current) {
-        console.log('[TaskDetailDescription] Calling saveField now...');
-        await saveField('description', currentValue);
-        console.log('[TaskDetailDescription] saveField completed');
-        lastSavedRef.current = currentValue;
-      }
+      // Force save without comparison to debug the issue
+      await saveField('description', currentValue);
+      console.log('[TaskDetailDescription] saveField returned');
+      lastSavedRef.current = currentValue;
     }, 1000);
   }, [setDescription, saveField]);
 
