@@ -335,7 +335,18 @@ export function TaskDetailProvider({
 
   // Save field
   const saveField = useCallback(async (field: string, value: any) => {
-    if (!taskId) return;
+    console.log('[saveField] Called with:', { 
+      field, 
+      valuePreview: String(value).substring(0, 80), 
+      valueLength: String(value).length,
+      taskId 
+    });
+    
+    if (!taskId) {
+      console.log('[saveField] ABORT - no taskId');
+      return;
+    }
+    
     setSaving(true);
     
     let updateData: any = {};
@@ -349,12 +360,23 @@ export function TaskDetailProvider({
     if (field === 'project_id') updateData.project_id = value;
     if (field === 'phase_id') updateData.phase_id = value;
     
-    const { error } = await supabase.from("tasks").update(updateData).eq("id", taskId);
+    console.log('[saveField] Sending PATCH to Supabase:', { field, updateData, taskId });
+    
+    const { error, data } = await supabase
+      .from("tasks")
+      .update(updateData)
+      .eq("id", taskId)
+      .select();
+    
+    console.log('[saveField] Supabase response:', { error, data, success: !error });
     
     if (error) {
       toast({ title: "Error", description: "Failed to save", variant: "destructive" });
     } else {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      // Don't invalidate queries for description saves - prevents race condition
+      if (field !== 'description') {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      }
     }
     
     setSaving(false);
