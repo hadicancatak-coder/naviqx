@@ -90,9 +90,11 @@ export function RichTextEditor({
             'prose-p:text-foreground prose-p:my-2 prose-p:break-words',
             'prose-strong:text-foreground prose-strong:font-bold',
             'prose-em:text-foreground prose-em:italic',
-            'prose-ul:list-disc prose-ul:pl-4 prose-ul:text-foreground',
-            'prose-ol:list-decimal prose-ol:pl-4 prose-ol:text-foreground',
-            'prose-li:text-foreground prose-li:break-words',
+            // List styles - must use [&_ul] syntax for TipTap's nested structure
+            '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ul]:text-foreground',
+            '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_ol]:text-foreground',
+            '[&_li]:text-foreground [&_li]:break-words [&_li]:my-1',
+            '[&_li>p]:my-0 [&_li>p]:inline', // Fix nested paragraphs in list items
             'prose-a:text-primary prose-a:underline prose-a:cursor-pointer hover:prose-a:text-primary/80',
             '[&_a]:break-all [&_a]:[word-break:break-all] [&_a]:[overflow-wrap:anywhere]',
             '[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px]',
