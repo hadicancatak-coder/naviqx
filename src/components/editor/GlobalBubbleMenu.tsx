@@ -359,16 +359,25 @@ export function GlobalBubbleMenu() {
 
     // Log before command
     const selection = currentEditor.state.selection;
-    console.log('[BubbleMenu] Applying formatting', {
+    const contentBefore = currentEditor.getHTML();
+    console.log('[BubbleMenu] Before command', {
       hasSelection: !selection.empty,
       from: selection.from,
       to: selection.to,
       editorFocused: currentEditor.isFocused,
+      contentPreview: contentBefore.substring(0, 100),
     });
 
-    // Run the command - TipTap preserves selection internally
+    // Run the command
     const result = command();
-    console.log('[BubbleMenu] Command result:', result);
+    
+    // Check content after
+    const contentAfter = currentEditor.getHTML();
+    console.log('[BubbleMenu] After command', {
+      result,
+      contentChanged: contentBefore !== contentAfter,
+      contentPreview: contentAfter.substring(0, 100),
+    });
   }, [activeEditor]);
 
   const handleLinkClick = () => {
