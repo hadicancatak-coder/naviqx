@@ -2899,13 +2899,18 @@ export type Database = {
           created_at: string
           description: string | null
           end_date: string
+          expected_outcomes: string[] | null
           id: string
           order_index: number | null
+          owner: string | null
           phase_name: string
           phase_type: string | null
           progress: number | null
           project_id: string | null
           start_date: string
+          status: string | null
+          step_lane: string | null
+          system_name: string | null
         }
         Insert: {
           auto_progress?: boolean | null
@@ -2913,13 +2918,18 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date: string
+          expected_outcomes?: string[] | null
           id?: string
           order_index?: number | null
+          owner?: string | null
           phase_name: string
           phase_type?: string | null
           progress?: number | null
           project_id?: string | null
           start_date: string
+          status?: string | null
+          step_lane?: string | null
+          system_name?: string | null
         }
         Update: {
           auto_progress?: boolean | null
@@ -2927,13 +2937,18 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string
+          expected_outcomes?: string[] | null
           id?: string
           order_index?: number | null
+          owner?: string | null
           phase_name?: string
           phase_type?: string | null
           progress?: number | null
           project_id?: string | null
           start_date?: string
+          status?: string | null
+          step_lane?: string | null
+          system_name?: string | null
         }
         Relationships: [
           {

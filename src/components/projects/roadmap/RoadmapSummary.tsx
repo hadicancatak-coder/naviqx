@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { format, differenceInDays, parseISO, isFuture } from "date-fns";
-import { BarChart3, Target, Calendar, CheckCircle2, Activity } from "lucide-react";
+import { Layers, Target, Calendar, CheckCircle2, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectTimeline } from "@/hooks/useProjects";
 import { PhaseMilestone } from "@/hooks/useRoadmap";
@@ -13,12 +13,12 @@ interface RoadmapSummaryProps {
 
 export function RoadmapSummary({ phases, milestones, projectDueDate }: RoadmapSummaryProps) {
   const stats = useMemo(() => {
-    // Total phases
-    const totalPhases = phases.length;
+    // Total steps
+    const totalSteps = phases.length;
 
-    // Overall progress (weighted average by phase duration)
+    // Overall progress (weighted average by step duration)
     const totalProgress = phases.reduce((sum, p) => sum + (p.progress || 0), 0);
-    const overallProgress = totalPhases > 0 ? Math.round(totalProgress / totalPhases) : 0;
+    const overallProgress = totalSteps > 0 ? Math.round(totalProgress / totalSteps) : 0;
 
     // Next milestone
     const upcomingMilestones = milestones
@@ -33,9 +33,9 @@ export function RoadmapSummary({ phases, milestones, projectDueDate }: RoadmapSu
       ? differenceInDays(parseISO(projectDueDate), new Date())
       : null;
 
-    // Active phase (currently in progress based on dates)
+    // Active step (currently in progress based on dates)
     const today = new Date();
-    const activePhase = phases.find((p) => {
+    const activeStep = phases.find((p) => {
       const start = parseISO(p.start_date);
       const end = parseISO(p.end_date);
       return today >= start && today <= end;
@@ -46,11 +46,11 @@ export function RoadmapSummary({ phases, milestones, projectDueDate }: RoadmapSu
     const totalMilestones = milestones.length;
 
     return {
-      totalPhases,
+      totalSteps,
       overallProgress,
       nextMilestone,
       daysToDeadline,
-      activePhase,
+      activeStep,
       completedMilestones,
       totalMilestones,
     };
@@ -60,15 +60,15 @@ export function RoadmapSummary({ phases, milestones, projectDueDate }: RoadmapSu
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-md mb-lg">
-      {/* Total Phases */}
+      {/* Total Steps */}
       <div className="liquid-glass-elevated rounded-xl p-md hover-lift transition-smooth">
         <div className="flex items-center gap-md">
           <div className="p-2.5 rounded-lg bg-primary/15">
-            <BarChart3 className="h-5 w-5 text-primary" />
+            <Layers className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-metadata text-muted-foreground">Phases</p>
-            <p className="text-heading-sm font-bold text-foreground">{stats.totalPhases}</p>
+            <p className="text-metadata text-muted-foreground">Steps</p>
+            <p className="text-heading-sm font-bold text-foreground">{stats.totalSteps}</p>
           </div>
         </div>
       </div>
@@ -139,17 +139,17 @@ export function RoadmapSummary({ phases, milestones, projectDueDate }: RoadmapSu
         </div>
       )}
 
-      {/* Active Phase */}
-      {stats.activePhase && (
+      {/* Active Step */}
+      {stats.activeStep && (
         <div className="liquid-glass-elevated rounded-xl p-md hover-lift transition-smooth col-span-2 sm:col-span-1">
           <div className="flex items-center gap-md">
             <div className="p-2.5 rounded-lg bg-cyan-500/15">
               <Activity className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-metadata text-muted-foreground">Active Phase</p>
-              <p className="text-body font-semibold text-foreground truncate" title={stats.activePhase.phase_name}>
-                {stats.activePhase.phase_name}
+              <p className="text-metadata text-muted-foreground">Active Step</p>
+              <p className="text-body font-semibold text-foreground truncate" title={stats.activeStep.phase_name}>
+                {stats.activeStep.phase_name}
               </p>
             </div>
           </div>
