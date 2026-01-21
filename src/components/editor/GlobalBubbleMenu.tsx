@@ -354,18 +354,11 @@ export function GlobalBubbleMenu() {
     const currentEditor = activeEditor || globalActiveEditor;
     if (!currentEditor) return;
 
-    // Restore selection before applying formatting
-    restoreSelection();
-    
-    // Focus editor
-    currentEditor.view.focus();
-    
-    // Apply the command
+    // Simply run the command - TipTap preserves selection internally
+    // The .focus() in the command chain handles editor focus
+    // onPointerDown preventDefault on buttons prevents selection loss
     command();
-    
-    // Save the new selection state
-    saveSelection();
-  }, [activeEditor, restoreSelection, saveSelection]);
+  }, [activeEditor]);
 
   const handleLinkClick = () => {
     const currentEditor = activeEditor || globalActiveEditor;
@@ -428,6 +421,7 @@ export function GlobalBubbleMenu() {
       type="button"
       variant="ghost"
       size="sm"
+      onPointerDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={cn(
         'h-8 w-8 p-0',
@@ -535,6 +529,7 @@ export function GlobalBubbleMenu() {
               <button
                 key={color.name}
                 type="button"
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => handleColorChange(color.value)}
                 className={cn(
                   'h-8 w-8 rounded border border-border hover:scale-110 transition-transform',
@@ -573,6 +568,7 @@ export function GlobalBubbleMenu() {
           <div className="flex flex-col gap-0.5">
             <button
               type="button"
+              onPointerDown={(e) => e.preventDefault()}
               onClick={() => {
                 applyFormatting(() => currentActiveEditor.chain().focus().setParagraph().run());
                 setHeadingPopoverOpen(false);
@@ -587,6 +583,7 @@ export function GlobalBubbleMenu() {
             </button>
             <button
               type="button"
+              onPointerDown={(e) => e.preventDefault()}
               onClick={() => {
                 applyFormatting(() => currentActiveEditor.chain().focus().toggleHeading({ level: 1 }).run());
                 setHeadingPopoverOpen(false);
@@ -600,6 +597,7 @@ export function GlobalBubbleMenu() {
             </button>
             <button
               type="button"
+              onPointerDown={(e) => e.preventDefault()}
               onClick={() => {
                 applyFormatting(() => currentActiveEditor.chain().focus().toggleHeading({ level: 2 }).run());
                 setHeadingPopoverOpen(false);
@@ -613,6 +611,7 @@ export function GlobalBubbleMenu() {
             </button>
             <button
               type="button"
+              onPointerDown={(e) => e.preventDefault()}
               onClick={() => {
                 applyFormatting(() => currentActiveEditor.chain().focus().toggleHeading({ level: 3 }).run());
                 setHeadingPopoverOpen(false);
