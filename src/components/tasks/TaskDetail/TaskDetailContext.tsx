@@ -131,6 +131,11 @@ export function TaskDetailProvider({
   
   // Wrapper to track description edits
   const setDescriptionWithTracking = useCallback((v: string) => {
+    console.log('[TaskDetailContext] setDescriptionWithTracking called', {
+      newValueLength: v.length,
+      preview: v.substring(0, 100),
+      wasEdited: descriptionEditedRef.current
+    });
     descriptionEditedRef.current = true;
     setDescription(v);
   }, []);
@@ -180,8 +185,15 @@ export function TaskDetailProvider({
     setTask(data);
     setTitle(data.title || "");
     // Only update description from database if not locally edited
+    console.log('[TaskDetailContext] fetchTask - checking if should update description', {
+      descriptionEditedRef: descriptionEditedRef.current,
+      dbDescription: (data.description || '').substring(0, 100)
+    });
     if (!descriptionEditedRef.current) {
+      console.log('[TaskDetailContext] fetchTask - UPDATING description from DB');
       setDescription(data.description || "");
+    } else {
+      console.log('[TaskDetailContext] fetchTask - SKIPPING description update (user edited)');
     }
     setPriority(data.priority || "Medium");
     setStatus(mapStatusToUi(data.status));
