@@ -276,7 +276,10 @@ export function TaskDetailProvider({
     if (cachedTask) {
       setTask(cachedTask);
       setTitle(cachedTask.title || "");
-      setDescription(cachedTask.description || "");
+      // Only update description from cache if user hasn't started editing
+      if (!descriptionEditedRef.current) {
+        setDescription(cachedTask.description || "");
+      }
       setPriority(cachedTask.priority || "Medium");
       setStatus(mapStatusToUi(cachedTask.status));
       setDueDate(cachedTask.due_at ? new Date(cachedTask.due_at) : undefined);
