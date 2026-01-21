@@ -1,7 +1,8 @@
-import { differenceInDays, parseISO, isWithinInterval, format } from "date-fns";
-import { ChevronDown, User2, Layers } from "lucide-react";
+import { differenceInDays } from "date-fns";
+import { ChevronDown, User2, Layers, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { ProjectTimeline } from "@/hooks/useProjects";
 
 interface StepCardProps {
@@ -12,6 +13,8 @@ interface StepCardProps {
   progress: number;
   isActive: boolean;
   onClick: () => void;
+  isAdmin?: boolean;
+  onDelete?: () => void;
 }
 
 // Status colors - reflects status, not priority
@@ -30,6 +33,8 @@ export function StepCard({
   progress,
   isActive,
   onClick,
+  isAdmin,
+  onDelete,
 }: StepCardProps) {
   const status = (step as any).status || "not_started";
   const owner = (step as any).owner;
@@ -41,6 +46,11 @@ export function StepCard({
   const durationText = durationDays > 7 
     ? `${Math.round(durationDays / 7)}w` 
     : `${durationDays}d`;
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
+  };
 
   return (
     <div
@@ -61,7 +71,7 @@ export function StepCard({
       onClick={onClick}
     >
       <div className="h-full p-4 flex flex-col justify-between overflow-hidden">
-        {/* Header row: Title + Duration + Expand icon */}
+        {/* Header row: Title + Duration + Delete + Expand icon */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {/* Step Title - Large and prominent */}
@@ -98,11 +108,21 @@ export function StepCard({
             </div>
           </div>
 
-          {/* Duration badge + expand icon */}
+          {/* Duration badge + delete + expand icon */}
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-metadata font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
               {durationText}
             </span>
+            {isAdmin && onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 rounded-full bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
             <ChevronDown className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </div>

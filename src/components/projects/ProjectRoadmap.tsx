@@ -326,7 +326,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 }
 
                 return (
-                  <div key={step.id} className="relative h-28 group">
+                  <div key={step.id} className="relative h-28">
                     <StepCard
                       step={step}
                       left={left}
@@ -335,23 +335,9 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                       progress={displayProgress}
                       isActive={isActive}
                       onClick={() => setExpandedStepId(step.id)}
+                      isAdmin={isAdmin}
+                      onDelete={() => handleDeleteStep(step.id)}
                     />
-                    
-                    {/* Delete button on hover */}
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 z-20"
-                        style={{ left: `calc(${left}% + ${width}% - 24px)` }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteStep(step.id);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
                   </div>
                 );
               })}
