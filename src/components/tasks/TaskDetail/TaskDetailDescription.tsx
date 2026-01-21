@@ -35,15 +35,10 @@ export function TaskDetailDescription() {
     // Debounced auto-save after 1 second of no changes
     saveTimeoutRef.current = setTimeout(async () => {
       const currentValue = descriptionRef.current;
-      console.log('[TaskDetailDescription] FORCING SAVE (no comparison):', {
-        currentValueLength: currentValue.length,
-        currentPreview: currentValue.substring(0, 80)
-      });
-      
-      // Force save without comparison to debug the issue
-      await saveField('description', currentValue);
-      console.log('[TaskDetailDescription] saveField returned');
-      lastSavedRef.current = currentValue;
+      if (currentValue !== lastSavedRef.current) {
+        await saveField('description', currentValue);
+        lastSavedRef.current = currentValue;
+      }
     }, 1000);
   }, [setDescription, saveField]);
 
@@ -79,6 +74,7 @@ export function TaskDetailDescription() {
     <div className="space-y-xs">
       <Label className="text-metadata text-muted-foreground">Description</Label>
       <RichTextEditor
+        key={task?.id}
         value={description}
         onChange={handleChange}
         onBlur={handleBlur}
