@@ -407,13 +407,19 @@ export function TaskListView({
                 focused && "ring-1 ring-inset ring-primary/50 bg-primary/5"
               )}
             >
-              {/* Completion Checkbox - Standard for all tasks */}
+              {/* Selection Checkbox - For bulk actions */}
               <div style={{ width: columnWidths.checkbox }} className="flex-shrink-0">
                 <Checkbox
-                  checked={completed}
-                  onCheckedChange={() => handleComplete(task, { stopPropagation: () => {} } as any)}
+                  checked={selected}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      onSelectionChange([...selectedIds, task.id]);
+                    } else {
+                      onSelectionChange(selectedIds.filter(id => id !== task.id));
+                    }
+                  }}
                   onClick={(e) => e.stopPropagation()}
-                  className={cn("h-4 w-4", completed && "bg-success border-success")}
+                  className="h-4 w-4"
                 />
               </div>
 
