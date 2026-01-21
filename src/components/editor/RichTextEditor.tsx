@@ -154,6 +154,28 @@ export function RichTextEditor({
     };
   }, [editor]);
 
+  // Backup sync mechanism: listen for transaction events with docChanged
+  // This ensures programmatic changes (from bubble menu) trigger onChange
+  useEffect(() => {
+    if (!editor) return;
+    
+    const handleTransaction = ({ transaction }: { transaction: any }) => {
+      if (transaction.docChanged) {
+        // Debounce to avoid duplicate calls if onUpdate already fired
+        if (Date.now() - lastEditTimeRef.current > 50) {
+          isInternalChange.current = true;
+          lastEditTimeRef.current = Date.now();
+          onChange(editor.getHTML());
+        }
+      }
+    };
+    
+    editor.on('transaction', handleTransaction);
+    return () => {
+      editor.off('transaction', handleTransaction);
+    };
+  }, [editor, onChange]);
+
   // Handle mouseup to explicitly set active editor (backup for focus issues in dialogs)
   const handleMouseUp = useCallback(() => {
     if (editor && !disabled) {
