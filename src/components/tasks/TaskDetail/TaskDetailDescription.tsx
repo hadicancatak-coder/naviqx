@@ -6,9 +6,16 @@ import { useTaskDetailContext } from "./TaskDetailContext";
 export function TaskDetailDescription() {
   const { task, description, setDescription, saveField } = useTaskDetailContext();
   
-  // Track last saved value to compare against (not stale task?.description)
+  // Track last saved value to compare against
   const lastSavedRef = useRef<string>("");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track current description in a ref for closure access
+  const descriptionRef = useRef<string>(description);
+  
+  // Keep descriptionRef in sync
+  useEffect(() => {
+    descriptionRef.current = description;
+  }, [description]);
   
   // Only reset the ref when switching to a different task
   useEffect(() => {
@@ -18,6 +25,7 @@ export function TaskDetailDescription() {
   // Auto-save with debounce when content changes
   const handleChange = useCallback((newValue: string) => {
     setDescription(newValue);
+    descriptionRef.current = newValue;
     
     // Clear any pending save
     if (saveTimeoutRef.current) {
@@ -25,37 +33,43 @@ export function TaskDetailDescription() {
     }
     
     // Debounced auto-save after 1 second of no changes
-    saveTimeoutRef.current = setTimeout(() => {
-      if (newValue !== lastSavedRef.current) {
-        console.log('[TaskDetailDescription] Auto-saving description:', {
-          newLength: newValue.length,
-          lastSavedLength: lastSavedRef.current.length,
-          preview: newValue.substring(0, 100)
-        });
-        saveField('description', newValue);
-        lastSavedRef.current = newValue;
+    saveTimeoutRef.current = setTimeout(async () => {
+      const currentValue = descriptionRef.current;
+      console.log('[TaskDetailDescription] Auto-save timeout fired:', {
+        currentValueLength: currentValue.length,
+        lastSavedLength: lastSavedRef.current.length,
+        areDifferent: currentValue !== lastSavedRef.current,
+        currentPreview: currentValue.substring(0, 80),
+        lastSavedPreview: lastSavedRef.current.substring(0, 80)
+      });
+      
+      if (currentValue !== lastSavedRef.current) {
+        console.log('[TaskDetailDescription] Calling saveField now...');
+        await saveField('description', currentValue);
+        console.log('[TaskDetailDescription] saveField completed');
+        lastSavedRef.current = currentValue;
       }
     }, 1000);
   }, [setDescription, saveField]);
 
   // Save immediately on blur
-  const handleBlur = useCallback(() => {
+  const handleBlur = useCallback(async () => {
     // Clear any pending debounced save
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
     
-    if (description !== lastSavedRef.current) {
+    const currentValue = descriptionRef.current;
+    if (currentValue !== lastSavedRef.current) {
       console.log('[TaskDetailDescription] Saving on blur:', {
-        descriptionLength: description.length,
-        lastSavedLength: lastSavedRef.current.length,
-        preview: description.substring(0, 100)
+        length: currentValue.length,
+        preview: currentValue.substring(0, 80)
       });
-      saveField('description', description);
-      lastSavedRef.current = description;
+      await saveField('description', currentValue);
+      lastSavedRef.current = currentValue;
     }
-  }, [description, saveField]);
+  }, [saveField]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
