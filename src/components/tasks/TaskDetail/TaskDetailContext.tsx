@@ -126,6 +126,15 @@ export function TaskDetailProvider({
   const [projectId, setProjectId] = useState<string | null>(null);
   const [phaseId, setPhaseId] = useState<string | null>(null);
   
+  // Track if description was locally edited (prevents fetch from overwriting)
+  const descriptionEditedRef = useRef(false);
+  
+  // Wrapper to track description edits
+  const setDescriptionWithTracking = useCallback((v: string) => {
+    descriptionEditedRef.current = true;
+    setDescription(v);
+  }, []);
+  
   // Collaborative state
   const [isCollaborative, setIsCollaborativeState] = useState(false);
   const [collaborativeStatus, setCollaborativeStatus] = useState<{
@@ -170,7 +179,10 @@ export function TaskDetailProvider({
 
     setTask(data);
     setTitle(data.title || "");
-    setDescription(data.description || "");
+    // Only update description from database if not locally edited
+    if (!descriptionEditedRef.current) {
+      setDescription(data.description || "");
+    }
     setPriority(data.priority || "Medium");
     setStatus(mapStatusToUi(data.status));
     setDueDate(data.due_at ? new Date(data.due_at) : undefined);
@@ -485,7 +497,7 @@ export function TaskDetailProvider({
     title,
     setTitle,
     description,
-    setDescription,
+    setDescription: setDescriptionWithTracking,
     status,
     setStatus,
     priority,

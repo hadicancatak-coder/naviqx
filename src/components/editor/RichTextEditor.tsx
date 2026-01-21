@@ -6,7 +6,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Color from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { setGlobalActiveEditor, clearGlobalActiveEditor, registerEditor, unregisterEditor } from './GlobalBubbleMenu';
 
@@ -31,6 +31,9 @@ export function RichTextEditor({
   autoFocus = false,
   onBlur,
 }: RichTextEditorProps) {
+  // Track internal changes to prevent sync loop
+  const isInternalChange = useRef(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -58,12 +61,14 @@ export function RichTextEditor({
     content: value || '',
     editable: !disabled,
     onUpdate: ({ editor }) => {
+      // Mark as internal change so sync effect skips this update
+      isInternalChange.current = true;
       onChange(editor.getHTML());
     },
     onBlur: () => {
       onBlur?.();
     },
-      editorProps: {
+    editorProps: {
         attributes: {
           class: cn(
             'prose prose-sm max-w-none focus:outline-none min-h-[80px]',
@@ -87,9 +92,15 @@ export function RichTextEditor({
       },
   });
 
-  // Sync editor content when value prop changes
+  // Sync editor content when value prop changes (from external sources only)
   useEffect(() => {
     if (!editor) return;
+
+    // Skip if this update was triggered by our own onChange (internal change)
+    if (isInternalChange.current) {
+      isInternalChange.current = false;
+      return;
+    }
 
     // Helper to strip HTML normalization differences for comparison
     const stripNormalization = (html: string) => 
@@ -143,21 +154,23 @@ export function RichTextEditor({
 
     const handleFocus = () => setGlobalActiveEditor(editor);
     const handleBlur = () => {
-      // Increased delay to allow bubble menu interaction
+      // Longer delay to ensure formatting operations complete
       setTimeout(() => {
         const activeElement = document.activeElement;
-        // Check for bubble menu, popovers, dialogs, portal containers
+        // Check for bubble menu, popovers, dialogs, portal containers, buttons
         const isBubbleMenu = activeElement?.closest('.bubble-menu-container') || 
                             activeElement?.closest('#bubble-menu-portal') ||
+                            activeElement?.closest('[data-radix-popper-content-wrapper]') ||
                             activeElement?.closest('[class*="bubble"]');
         const isPopover = activeElement?.closest('[data-radix-popper-content-wrapper]');
         const isDialog = activeElement?.closest('[role="dialog"]');
         const isEditorElement = activeElement?.closest('.ProseMirror');
+        const isButton = activeElement?.tagName === 'BUTTON';
         
-        if (!isBubbleMenu && !isPopover && !isDialog && !isEditorElement) {
+        if (!isBubbleMenu && !isPopover && !isDialog && !isEditorElement && !isButton) {
           clearGlobalActiveEditor(editor);
         }
-      }, 300);
+      }, 500); // Increased from 300ms
     };
 
     editor.on('focus', handleFocus);
