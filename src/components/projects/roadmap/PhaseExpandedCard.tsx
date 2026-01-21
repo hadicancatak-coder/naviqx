@@ -43,14 +43,17 @@ export function PhaseExpandedCard({
   return (
     <div
       className={cn(
-        "border-2 rounded-xl overflow-hidden animate-fade-in",
-        colorClasses.bg,
+        "liquid-glass-elevated rounded-xl overflow-hidden animate-fade-in",
+        "border-l-4",
         colorClasses.border
       )}
     >
       {/* Header */}
-      <div className="px-md py-sm flex items-center justify-between border-b border-border/50">
+      <div className="px-md py-sm flex items-center justify-between border-b border-border/30">
         <div className="flex items-center gap-md flex-1 min-w-0">
+          {/* Color dot */}
+          <div className={cn("w-3 h-3 rounded-full shrink-0", colorClasses.bg.replace('/20', ''))} />
+          
           <div className="flex-1 min-w-0">
             <h4 className={cn("text-body font-semibold truncate", colorClasses.text)}>
               {phase.phase_name}
@@ -61,17 +64,19 @@ export function PhaseExpandedCard({
           </div>
           <div className="flex items-center gap-sm">
             <Progress value={phase.progress} className="w-24 h-2" />
-            <span className="text-body-sm font-medium text-foreground">{phase.progress}%</span>
+            <span className={cn("text-body-sm font-semibold min-w-[3ch]", colorClasses.text)}>
+              {phase.progress}%
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-xs ml-md">
           {isAdmin && (
-            <Button variant="ghost" size="sm" onClick={onEdit}>
+            <Button variant="ghost" size="sm" onClick={onEdit} className="hover:bg-card-hover">
               <Edit2 className="h-4 w-4 mr-1" />
               Edit
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={onCollapse}>
+          <Button variant="ghost" size="icon" onClick={onCollapse} className="hover:bg-card-hover">
             <ChevronUp className="h-4 w-4" />
           </Button>
         </div>

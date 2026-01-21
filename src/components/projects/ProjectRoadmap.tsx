@@ -204,7 +204,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       )}
 
       {phases.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground border border-dashed border-border rounded-xl bg-muted/30">
+        <div className="liquid-glass-elevated text-center py-16 text-muted-foreground rounded-xl">
           <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
           <p className="text-body font-medium mb-1">No roadmap phases yet</p>
           <p className="text-body-sm text-muted-foreground mb-4">Add phases to visualize your project timeline</p>
@@ -216,13 +216,13 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
           )}
         </div>
       ) : (
-        <div className="relative rounded-xl p-md overflow-x-auto min-h-[350px]">
+        <div className="liquid-glass rounded-xl p-md overflow-x-auto min-h-[350px]">
           {/* Month markers */}
-          <div className="relative h-6 mb-2 border-b border-border">
+          <div className="relative h-8 mb-3 border-b border-border/50">
             {monthMarkers.map((marker, idx) => (
               <div
                 key={idx}
-                className="absolute top-0 text-metadata text-muted-foreground"
+                className="absolute top-0 text-metadata font-medium text-muted-foreground"
                 style={{ left: `${marker.position}%` }}
               >
                 {format(marker.date, "MMM yyyy")}
@@ -245,10 +245,10 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
             {/* Today marker */}
             {isTodayVisible && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10"
+                className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-destructive via-destructive to-transparent z-10"
                 style={{ left: `${todayPosition}%` }}
               >
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-destructive text-destructive-foreground rounded text-metadata whitespace-nowrap">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
                   Today
                 </div>
               </div>
@@ -287,17 +287,19 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                       <TooltipTrigger asChild>
                         <div
                           className={cn(
-                            "absolute h-full rounded-lg border-2 cursor-pointer transition-all hover:shadow-soft",
+                            "absolute h-full rounded-lg cursor-pointer",
+                            "backdrop-blur-sm border transition-all duration-200",
+                            "hover:scale-[1.02] hover:shadow-md hover:z-10",
                             colors.bg,
                             colors.border,
-                            isActive && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            isActive && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background shadow-lg"
                           )}
                           style={{ left: `${left}%`, width: `${width}%`, minWidth: "100px" }}
                           onClick={() => setExpandedPhaseId(phase.id)}
                         >
                           <div className="h-full px-3 py-2 flex flex-col justify-between overflow-hidden">
                             <div className="flex items-center gap-2">
-                              <span className={cn("text-body-sm font-medium truncate", colors.text)}>
+                              <span className={cn("text-body-sm font-semibold truncate", colors.text)}>
                                 {phase.phase_name}
                               </span>
                               {phaseMilestones.length > 0 && (
@@ -306,11 +308,11 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                                   {phaseMilestones.length}
                                 </span>
                               )}
-                              <ChevronDown className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 ml-auto" />
+                              <ChevronDown className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
                             </div>
                             <div className="flex items-center gap-2">
                               <Progress value={phase.progress} className="h-1.5 flex-1" />
-                              <span className="text-metadata text-muted-foreground">{phase.progress}%</span>
+                              <span className="text-metadata font-medium text-muted-foreground">{phase.progress}%</span>
                             </div>
                           </div>
 
@@ -355,14 +357,14 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                           )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <div className="space-y-1">
-                          <p className="font-medium">{phase.phase_name}</p>
-                          <p className="text-metadata">
+                      <TooltipContent side="top" className="liquid-glass-dropdown max-w-xs">
+                        <div className="space-y-1.5 p-1">
+                          <p className="font-semibold text-foreground">{phase.phase_name}</p>
+                          <p className="text-metadata text-muted-foreground">
                             {format(phase.startDate, "MMM d")} – {format(phase.endDate, "MMM d, yyyy")}
                           </p>
                           {phase.description && (
-                            <p className="text-metadata text-muted-foreground">{phase.description}</p>
+                            <p className="text-body-sm text-muted-foreground line-clamp-2">{phase.description}</p>
                           )}
                           <p className="text-metadata">Progress: {phase.progress}%</p>
                           {phaseMilestones.length > 0 && (
@@ -370,7 +372,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                               Milestones: {phaseMilestones.filter((m) => m.is_completed).length}/{phaseMilestones.length}
                             </p>
                           )}
-                          <p className="text-metadata text-primary">Click to expand</p>
+                          <p className="text-metadata text-primary font-medium">Click to expand →</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
