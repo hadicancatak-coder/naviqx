@@ -1,18 +1,14 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Underline from '@tiptap/extension-underline';
-import TextAlign from '@tiptap/extension-text-align';
-import Color from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
-import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect, useCallback, useRef } from 'react';
+import { EditorContent, Editor } from '@tiptap/react';
 import { cn } from '@/lib/utils';
-import { setGlobalActiveEditor, clearGlobalActiveEditor, registerEditor, unregisterEditor } from './GlobalBubbleMenu';
+import { useRichTextEditor, useSyncEditorContent } from './useRichTextEditor';
 
 interface RichTextEditorProps {
-  value: string;
-  onChange: (value: string) => void;
+  /** Pre-created editor instance. If provided, this component only renders. */
+  editor?: Editor | null;
+  /** HTML content value (only used if no editor prop is provided) */
+  value?: string;
+  /** Called when content changes (only used if no editor prop is provided) */
+  onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -21,8 +17,27 @@ interface RichTextEditorProps {
   onBlur?: () => void;
 }
 
+/**
+ * RichTextEditor - Flexible rich text component
+ * 
+ * Can be used in two modes:
+ * 
+ * 1. MANAGED MODE (recommended for simple cases):
+ *    <RichTextEditor value={html} onChange={setHtml} />
+ *    - Creates its own editor instance internally
+ *    - Good for standalone use without toolbar/bubble menu
+ * 
+ * 2. CONTROLLED MODE (required for toolbar/bubble menu integration):
+ *    const editor = useRichTextEditor({ onChange: setHtml });
+ *    <EditorToolbar editor={editor} />
+ *    <RichTextEditor editor={editor} />
+ *    <GlobalBubbleMenu /> // Will find this editor via registry
+ *    - Uses externally created editor instance
+ *    - Single source of truth for all UI controls
+ */
 export function RichTextEditor({
-  value,
+  editor: externalEditor,
+  value = '',
   onChange,
   placeholder = 'Start typing...',
   className,
@@ -31,50 +46,46 @@ export function RichTextEditor({
   autoFocus = false,
   onBlur,
 }: RichTextEditorProps) {
-  // Track internal changes to prevent sync loop
-  const isInternalChange = useRef(false);
-  // Track last edit time to prevent sync during active editing
-  const lastEditTimeRef = useRef(0);
+  // Create internal editor only if no external editor is provided
+  const internalEditor = useRichTextEditor(
+    externalEditor ? undefined : {
+      initialContent: value,
+      placeholder,
+      disabled,
+      onChange,
+      onBlur,
+    }
+  );
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        // We configure these here and provide our own instances below
-        // to avoid duplicate extension warnings and flaky behavior.
-        link: false,
-        underline: false,
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-primary underline cursor-pointer hover:text-primary/80',
-        },
-      }),
-      Underline,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Color,
-      TextStyle,
-      Placeholder.configure({
-        placeholder,
-      }),
-    ],
-    content: value || '',
-    editable: !disabled,
-    onUpdate: ({ editor }) => {
-      // Mark as internal change so sync effect skips this update
-      isInternalChange.current = true;
-      lastEditTimeRef.current = Date.now();
-      onChange(editor.getHTML());
-    },
-    onBlur: () => {
-      onBlur?.();
-    },
-    editorProps: {
-        attributes: {
-          class: cn(
-            'prose prose-sm max-w-none focus:outline-none min-h-[80px]',
+  // Use external editor if provided, otherwise use internal
+  const editor = externalEditor ?? internalEditor;
+
+  // Sync external value changes (only for managed mode)
+  useSyncEditorContent(
+    externalEditor ? null : editor, // Only sync if using internal editor
+    value
+  );
+
+  // Auto-focus if requested
+  if (editor && autoFocus && !editor.isFocused) {
+    editor.commands.focus();
+  }
+
+  if (!editor) {
+    return null;
+  }
+
+  return (
+    <div className={cn('border border-input rounded-lg bg-background overflow-hidden', className)}>
+      <div
+        className="px-3 py-2 overflow-hidden"
+        style={{ minHeight }}
+      >
+        <EditorContent 
+          editor={editor} 
+          className={cn(
+            'overflow-hidden',
+            'prose prose-sm max-w-none focus:outline-none',
             'prose-headings:font-semibold prose-headings:text-foreground',
             'prose-p:text-foreground prose-p:my-2 prose-p:break-words',
             'prose-strong:text-foreground prose-strong:font-bold',
@@ -84,178 +95,19 @@ export function RichTextEditor({
             'prose-li:text-foreground prose-li:break-words',
             'prose-a:text-primary prose-a:underline prose-a:cursor-pointer hover:prose-a:text-primary/80',
             '[&_a]:break-all [&_a]:[word-break:break-all] [&_a]:[overflow-wrap:anywhere]',
+            '[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px]',
             '[&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]',
             '[&_p.is-editor-empty:first-child]:before:text-muted-foreground',
             '[&_p.is-editor-empty:first-child]:before:float-left',
             '[&_p.is-editor-empty:first-child]:before:pointer-events-none',
             '[&_p.is-editor-empty:first-child]:before:h-0',
             'break-words [word-break:break-word] [overflow-wrap:break-word]',
-          ),
-        },
-      },
-  });
-
-  // Sync editor content when value prop changes (from external sources only)
-  useEffect(() => {
-    if (!editor) return;
-
-    // Skip if this update was triggered by our own onChange (internal change)
-    if (isInternalChange.current) {
-      isInternalChange.current = false;
-      return;
-    }
-
-    // Skip sync if editor was recently edited (within 1 second) - prevents race conditions
-    if (Date.now() - lastEditTimeRef.current < 1000) {
-      return;
-    }
-
-    // Skip if editor is focused - don't overwrite while user is actively editing
-    if (editor.isFocused) {
-      return;
-    }
-
-    // Helper to strip HTML normalization differences for comparison
-    const stripNormalization = (html: string) => 
-      (html || '').replace(/<p><\/p>/g, '').replace(/<br\s*\/?>/g, '').trim();
-
-    const currentStripped = stripNormalization(editor.getHTML());
-    const valueStripped = stripNormalization(value || '');
-
-    // Only update if actual content differs (ignoring empty tags)
-    if (currentStripped !== valueStripped) {
-      const desiredHtml = (value || '').trim() ? value : '<p></p>';
-      editor.commands.setContent(desiredHtml, { emitUpdate: false });
-    }
-  }, [value, editor]);
-
-  useEffect(() => {
-    if (editor && autoFocus) {
-      editor.commands.focus();
-    }
-  }, [editor, autoFocus]);
-
-  // Update editable state when disabled prop changes
-  useEffect(() => {
-    if (editor) {
-      editor.setEditable(!disabled);
-    }
-  }, [editor, disabled]);
-
-  // Register editor in registry on mount (always, not just when focused)
-  useEffect(() => {
-    if (!editor) return;
-    
-    // Always register editor so it can be found by DOM lookup
-    registerEditor(editor);
-    
-    return () => {
-      unregisterEditor(editor);
-    };
-  }, [editor]);
-
-
-  // Listen for forced update events from GlobalBubbleMenu
-  // This is needed because TipTap's onUpdate doesn't fire when editor is unfocused
-  useEffect(() => {
-    if (!editor) return;
-    
-    const handleForceUpdate = (event: CustomEvent) => {
-      const html = editor.getHTML();
-      console.log('[RichTextEditor] Received forceEditorUpdate, calling onChange', {
-        htmlLength: html.length,
-        preview: html.substring(0, 100)
-      });
-      isInternalChange.current = true;
-      lastEditTimeRef.current = Date.now();
-      onChange(html);
-    };
-    
-    window.addEventListener('forceEditorUpdate', handleForceUpdate as EventListener);
-    return () => {
-      window.removeEventListener('forceEditorUpdate', handleForceUpdate as EventListener);
-    };
-  }, [editor, onChange]);
-
-  // Backup sync mechanism: listen for transaction events with docChanged
-  // This ensures programmatic changes (from bubble menu) trigger onChange
-  useEffect(() => {
-    if (!editor) return;
-    
-    const handleTransaction = ({ transaction }: { transaction: any }) => {
-      if (transaction.docChanged) {
-        // Debounce to avoid duplicate calls if onUpdate already fired
-        if (Date.now() - lastEditTimeRef.current > 50) {
-          isInternalChange.current = true;
-          lastEditTimeRef.current = Date.now();
-          onChange(editor.getHTML());
-        }
-      }
-    };
-    
-    editor.on('transaction', handleTransaction);
-    return () => {
-      editor.off('transaction', handleTransaction);
-    };
-  }, [editor, onChange]);
-
-  // Handle mouseup to explicitly set active editor (backup for focus issues in dialogs)
-  const handleMouseUp = useCallback(() => {
-    if (editor && !disabled) {
-      setGlobalActiveEditor(editor);
-    }
-  }, [editor, disabled]);
-
-  // Register with global bubble menu for focus tracking
-  useEffect(() => {
-    if (!editor || disabled) return;
-
-    const handleFocus = () => setGlobalActiveEditor(editor);
-    const handleBlur = () => {
-      // Longer delay to ensure formatting operations complete
-      setTimeout(() => {
-        const activeElement = document.activeElement;
-        // Check for bubble menu, popovers, dialogs, portal containers, buttons
-        const isBubbleMenu = activeElement?.closest('.bubble-menu-container') || 
-                            activeElement?.closest('#bubble-menu-portal') ||
-                            activeElement?.closest('[data-radix-popper-content-wrapper]') ||
-                            activeElement?.closest('[class*="bubble"]');
-        const isPopover = activeElement?.closest('[data-radix-popper-content-wrapper]');
-        const isDialog = activeElement?.closest('[role="dialog"]');
-        const isEditorElement = activeElement?.closest('.ProseMirror');
-        const isButton = activeElement?.tagName === 'BUTTON';
-        
-        if (!isBubbleMenu && !isPopover && !isDialog && !isEditorElement && !isButton) {
-          clearGlobalActiveEditor(editor);
-        }
-      }, 500); // Increased from 300ms
-    };
-
-    editor.on('focus', handleFocus);
-    editor.on('blur', handleBlur);
-
-    return () => {
-      editor.off('focus', handleFocus);
-      editor.off('blur', handleBlur);
-      clearGlobalActiveEditor(editor);
-    };
-  }, [editor, disabled]);
-
-  if (!editor) {
-    return null;
-  }
-
-  return (
-    <div 
-      className={cn('border border-input rounded-lg bg-background overflow-hidden', className)}
-      onMouseUp={handleMouseUp}
-    >
-      <div
-        className="px-3 py-2 overflow-hidden"
-        style={{ minHeight }}
-      >
-        <EditorContent editor={editor} className="overflow-hidden" />
+          )}
+        />
       </div>
     </div>
   );
 }
+
+// Re-export hook for controlled usage
+export { useRichTextEditor, useSyncEditorContent } from './useRichTextEditor';
