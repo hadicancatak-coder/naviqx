@@ -31,6 +31,8 @@ interface TaskDetailContextValue {
   setTags: (v: string[]) => void;
   projectId: string | null;
   setProjectId: (v: string | null) => void;
+  phaseId: string | null;
+  setPhaseId: (v: string | null) => void;
   
   // Collaborative
   isCollaborative: boolean;
@@ -122,6 +124,7 @@ export function TaskDetailProvider({
   const [tags, setTags] = useState<string[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [phaseId, setPhaseId] = useState<string | null>(null);
   
   // Collaborative state
   const [isCollaborative, setIsCollaborativeState] = useState(false);
@@ -173,6 +176,7 @@ export function TaskDetailProvider({
     setDueDate(data.due_at ? new Date(data.due_at) : undefined);
     setTags(Array.isArray(data.labels) ? data.labels : []);
     setProjectId(data.project_id || null);
+    setPhaseId(data.phase_id || null);
     setIsCollaborativeState(data.is_collaborative || false);
     setLoading(false);
     
@@ -266,6 +270,7 @@ export function TaskDetailProvider({
       setDueDate(cachedTask.due_at ? new Date(cachedTask.due_at) : undefined);
       setTags(Array.isArray(cachedTask.labels) ? cachedTask.labels : []);
       setProjectId(cachedTask.project_id || null);
+      setPhaseId(cachedTask.phase_id || null);
       
       // Use cached assignees immediately if available
       if (cachedTask.assignees && cachedTask.assignees.length > 0) {
@@ -315,6 +320,7 @@ export function TaskDetailProvider({
     if (field === 'due_at') updateData.due_at = value?.toISOString() || null;
     if (field === 'labels') updateData.labels = value;
     if (field === 'project_id') updateData.project_id = value;
+    if (field === 'phase_id') updateData.phase_id = value;
     
     const { error } = await supabase.from("tasks").update(updateData).eq("id", taskId);
     
@@ -490,6 +496,8 @@ export function TaskDetailProvider({
     setTags,
     projectId,
     setProjectId,
+    phaseId,
+    setPhaseId,
     selectedAssignees,
     setSelectedAssignees,
     realtimeAssignees,

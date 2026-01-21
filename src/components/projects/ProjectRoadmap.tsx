@@ -12,7 +12,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Progress } from "@/components/ui/progress";
 import { ProjectTimeline, useProjectTimelines } from "@/hooks/useProjects";
 import { useAllProjectMilestones, usePhaseDependencies, usePhaseTaskStats } from "@/hooks/useRoadmap";
-import { RoadmapSummary, PhaseExpandedCard, DependencyLines } from "./roadmap";
+import { calculatePhaseProgress } from "@/hooks/usePhaseProgress";
+import { RoadmapSummary, PhaseExpandedCard, DependencyLines, QuickMilestoneDialog } from "./roadmap";
 
 interface ProjectRoadmapProps {
   projectId: string;
@@ -44,6 +45,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [editingPhase, setEditingPhase] = useState<ProjectTimeline | null>(null);
   const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null);
+  const [quickMilestonePhase, setQuickMilestonePhase] = useState<{ id: string; name: string } | null>(null);
   const [newPhase, setNewPhase] = useState({
     phase_name: "",
     start_date: "",
@@ -264,6 +266,10 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 const isExpanded = expandedPhaseId === phase.id;
                 const phaseMilestones = getMilestonesForPhase(phase.id);
                 const phaseTaskStat = taskStats?.find((s) => s.phase_id === phase.id);
+                
+                // Calculate auto-progress based on milestones and tasks
+                const progressResult = calculatePhaseProgress(phaseMilestones, phaseTaskStat);
+                const displayProgress = progressResult.calculatedProgress;
 
                 if (isExpanded) {
                   return (
@@ -311,8 +317,8 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                               <ChevronDown className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
                             </div>
                             <div className="flex items-center gap-2">
-                              <Progress value={phase.progress} className="h-1.5 flex-1" />
-                              <span className="text-metadata font-medium text-muted-foreground">{phase.progress}%</span>
+                              <Progress value={displayProgress} className="h-1.5 flex-1" />
+                              <span className="text-metadata font-medium text-muted-foreground">{displayProgress}%</span>
                             </div>
                           </div>
 
@@ -343,6 +349,23 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                           })}
 
                           {isAdmin && (
+                            <div className="absolute -top-2 right-6 opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setQuickMilestonePhase({ id: phase.id, name: phase.phase_name });
+                                }}
+                                title="Add Milestone"
+                              >
+                                <Diamond className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+
+                          {isAdmin && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -366,7 +389,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                           {phase.description && (
                             <p className="text-body-sm text-muted-foreground line-clamp-2">{phase.description}</p>
                           )}
-                          <p className="text-metadata">Progress: {phase.progress}%</p>
+                          <p className="text-metadata">Progress: {displayProgress}%</p>
                           {phaseMilestones.length > 0 && (
                             <p className="text-metadata">
                               Milestones: {phaseMilestones.filter((m) => m.is_completed).length}/{phaseMilestones.length}
@@ -579,6 +602,18 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Milestone Dialog */}
+      {quickMilestonePhase && (
+        <QuickMilestoneDialog
+          phaseId={quickMilestonePhase.id}
+          phaseName={quickMilestonePhase.name}
+          open={!!quickMilestonePhase}
+          onOpenChange={(open) => {
+            if (!open) setQuickMilestonePhase(null);
+          }}
+        />
+      )}
     </div>
   );
 }
