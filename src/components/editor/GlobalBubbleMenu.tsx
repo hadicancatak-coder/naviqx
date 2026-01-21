@@ -379,12 +379,8 @@ export function GlobalBubbleMenu() {
       contentPreview: contentAfter.substring(0, 100),
     });
 
-    // Ensure editor is focused and force UI sync after formatting
-    // This is more reliable than emit('update') which can crash on missing transaction
-    if (contentBefore !== contentAfter) {
-      currentEditor.commands.focus();
-      currentEditor.view.updateState(currentEditor.state);
-    }
+    // Content change is handled by the transaction listener in RichTextEditor
+    // No manual emit needed - the editor's onChange will fire naturally
   }, [activeEditor]);
 
   const handleLinkClick = () => {
