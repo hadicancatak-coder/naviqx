@@ -378,6 +378,13 @@ export function GlobalBubbleMenu() {
       contentChanged: contentBefore !== contentAfter,
       contentPreview: contentAfter.substring(0, 100),
     });
+
+    // CRITICAL: Manually trigger the update event if content changed
+    // This ensures the parent component's onChange is called even when editor isn't focused
+    if (contentBefore !== contentAfter) {
+      // Dispatch a custom event that the editor can listen to, or directly trigger view update
+      currentEditor.view.dispatch(currentEditor.state.tr);
+    }
   }, [activeEditor]);
 
   const handleLinkClick = () => {
