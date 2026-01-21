@@ -15,6 +15,7 @@ import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
 import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
 import { SprintSelector } from "@/components/tasks/SprintSelector";
+import { PhaseSelector } from "./PhaseSelector";
 import { useTaskDetailContext } from "./TaskDetailContext";
 import { useProjects } from "@/hooks/useProjects";
 
@@ -44,6 +45,8 @@ export function TaskDetailFields() {
     setIsCollaborative,
     collaborativeStatus,
     currentUserCompleted,
+    phaseId,
+    setPhaseId,
   } = useTaskDetailContext();
   
   const { projects } = useProjects();
@@ -281,6 +284,11 @@ export function TaskDetailFields() {
             const newValue = v === "none" ? null : v;
             setProjectId(newValue);
             saveField('project_id', newValue);
+            // Reset phase when project changes
+            if (newValue !== projectId) {
+              setPhaseId(null);
+              saveField('phase_id', null);
+            }
           }}
         >
           <SelectTrigger className="w-full">
@@ -295,6 +303,16 @@ export function TaskDetailFields() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Phase Selector - only show when project is selected */}
+      <PhaseSelector
+        projectId={projectId}
+        value={phaseId}
+        onChange={(newPhaseId) => {
+          setPhaseId(newPhaseId);
+          saveField('phase_id', newPhaseId);
+        }}
+      />
 
       {/* Sprint */}
       <div className="space-y-xs">

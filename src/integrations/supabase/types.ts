@@ -2894,6 +2894,7 @@ export type Database = {
       }
       project_timelines: {
         Row: {
+          auto_progress: boolean | null
           color: string | null
           created_at: string
           description: string | null
@@ -2907,6 +2908,7 @@ export type Database = {
           start_date: string
         }
         Insert: {
+          auto_progress?: boolean | null
           color?: string | null
           created_at?: string
           description?: string | null
@@ -2920,6 +2922,7 @@ export type Database = {
           start_date: string
         }
         Update: {
+          auto_progress?: boolean | null
           color?: string | null
           created_at?: string
           description?: string | null

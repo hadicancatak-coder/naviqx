@@ -8,6 +8,11 @@ import {
   Strikethrough,
   Link as LinkIcon,
   Palette,
+  Heading,
+  List,
+  ListOrdered,
+  ChevronDown,
+  Type,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EditorLinkDialog } from './EditorLinkDialog';
@@ -109,6 +114,7 @@ export function GlobalBubbleMenu() {
   const [position, setPosition] = useState<Position>({ top: 0, left: 0, isBelow: false });
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [colorPopoverOpen, setColorPopoverOpen] = useState(false);
+  const [headingPopoverOpen, setHeadingPopoverOpen] = useState(false);
   const [activeEditor, setActiveEditor] = useState<any>(null);
   const [savedRange, setSavedRange] = useState<Range | null>(null);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
@@ -541,6 +547,103 @@ export function GlobalBubbleMenu() {
           </div>
         </PopoverContent>
       </Popover>
+
+      <div className="w-px h-6 bg-border mx-1" />
+
+      {/* Heading Selector */}
+      <Popover open={headingPopoverOpen} onOpenChange={setHeadingPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 px-2 gap-1",
+              (currentActiveEditor.isActive('heading', { level: 1 }) ||
+               currentActiveEditor.isActive('heading', { level: 2 }) ||
+               currentActiveEditor.isActive('heading', { level: 3 })) && 'bg-accent text-accent-foreground'
+            )}
+            title="Heading"
+          >
+            <Heading className="h-4 w-4" />
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-32 p-1" align="center" style={{ zIndex: 100000 }}>
+          <div className="flex flex-col gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                applyFormatting(() => currentActiveEditor.chain().focus().setParagraph().run());
+                setHeadingPopoverOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-accent transition-colors text-body-sm",
+                !currentActiveEditor.isActive('heading') && 'bg-accent/50'
+              )}
+            >
+              <Type className="h-4 w-4" />
+              Paragraph
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                applyFormatting(() => currentActiveEditor.chain().focus().toggleHeading({ level: 1 }).run());
+                setHeadingPopoverOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-accent transition-colors font-bold text-heading-sm",
+                currentActiveEditor.isActive('heading', { level: 1 }) && 'bg-accent/50'
+              )}
+            >
+              H1
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                applyFormatting(() => currentActiveEditor.chain().focus().toggleHeading({ level: 2 }).run());
+                setHeadingPopoverOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-accent transition-colors font-semibold text-body",
+                currentActiveEditor.isActive('heading', { level: 2 }) && 'bg-accent/50'
+              )}
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                applyFormatting(() => currentActiveEditor.chain().focus().toggleHeading({ level: 3 }).run());
+                setHeadingPopoverOpen(false);
+              }}
+              className={cn(
+                "flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-accent transition-colors font-medium text-body-sm",
+                currentActiveEditor.isActive('heading', { level: 3 }) && 'bg-accent/50'
+              )}
+            >
+              H3
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* List Buttons */}
+      <BubbleButton
+        onClick={() => applyFormatting(() => currentActiveEditor.chain().focus().toggleBulletList().run())}
+        isActive={currentActiveEditor.isActive('bulletList')}
+        title="Bullet List"
+      >
+        <List className="h-4 w-4" />
+      </BubbleButton>
+
+      <BubbleButton
+        onClick={() => applyFormatting(() => currentActiveEditor.chain().focus().toggleOrderedList().run())}
+        isActive={currentActiveEditor.isActive('orderedList')}
+        title="Numbered List"
+      >
+        <ListOrdered className="h-4 w-4" />
+      </BubbleButton>
     </div>
   );
 
