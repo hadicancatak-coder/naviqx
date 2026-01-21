@@ -379,11 +379,11 @@ export function GlobalBubbleMenu() {
       contentPreview: contentAfter.substring(0, 100),
     });
 
-    // CRITICAL: Manually emit the update event if content changed
-    // This ensures the parent component's onChange is called even when editor isn't focused
+    // Ensure editor is focused and force UI sync after formatting
+    // This is more reliable than emit('update') which can crash on missing transaction
     if (contentBefore !== contentAfter) {
-      // Emit the update event directly - this triggers the onUpdate callback in RichTextEditor
-      currentEditor.emit('update', { editor: currentEditor });
+      currentEditor.commands.focus();
+      currentEditor.view.updateState(currentEditor.state);
     }
   }, [activeEditor]);
 
