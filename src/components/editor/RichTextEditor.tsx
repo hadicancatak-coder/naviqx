@@ -86,7 +86,10 @@ export function RichTextEditor({
           className={cn(
             'overflow-hidden',
             'prose prose-sm max-w-none focus:outline-none',
-            'prose-headings:font-semibold prose-headings:text-foreground',
+            // Heading styles - must use direct selectors for TipTap
+            '[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:my-4',
+            '[&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:my-3',
+            '[&_h3]:text-lg [&_h3]:font-medium [&_h3]:text-foreground [&_h3]:my-2',
             'prose-p:text-foreground prose-p:my-2 prose-p:break-words',
             'prose-strong:text-foreground prose-strong:font-bold',
             'prose-em:text-foreground prose-em:italic',
