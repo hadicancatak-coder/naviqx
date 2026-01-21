@@ -275,9 +275,12 @@ export function GlobalBubbleMenu() {
    * Apply a formatting command to the active editor
    */
   const applyFormatting = useCallback((command: () => boolean) => {
-    if (!activeEditor) return;
-    command();
-    // TipTap's onUpdate will fire naturally - no forced events needed
+    if (!activeEditor) {
+      console.warn('[GlobalBubbleMenu] No active editor');
+      return;
+    }
+    const result = command();
+    console.log('[GlobalBubbleMenu] Command executed, result:', result);
   }, [activeEditor]);
 
   const handleLinkClick = () => {
@@ -526,7 +529,34 @@ export function GlobalBubbleMenu() {
 
       {/* List Buttons */}
       <BubbleButton
-        onClick={() => applyFormatting(() => activeEditor.chain().focus().toggleBulletList().run())}
+        onClick={() => {
+          // Diagnostic logging
+          const canToggle = activeEditor.can().toggleBulletList();
+          const schema = activeEditor.schema;
+          console.log('[GlobalBubbleMenu] Bullet List Debug:', {
+            canToggle,
+            hasListItem: !!schema.nodes.listItem,
+            hasBulletList: !!schema.nodes.bulletList,
+            hasParagraph: !!schema.nodes.paragraph,
+            selection: activeEditor.state.selection.toJSON(),
+            isCollapsed: activeEditor.state.selection.empty,
+            currentNodeType: activeEditor.state.selection.$head.parent.type.name,
+          });
+          
+          // If cannot toggle, try normalizing first
+          if (!canToggle) {
+            console.log('[GlobalBubbleMenu] Cannot toggle bullet list, attempting setParagraph first');
+            activeEditor.chain().focus().setParagraph().run();
+          }
+          
+          applyFormatting(() => activeEditor.chain().focus().toggleBulletList().run());
+          
+          // Check DOM after
+          setTimeout(() => {
+            const html = activeEditor.getHTML();
+            console.log('[GlobalBubbleMenu] HTML after bullet list:', html.substring(0, 200));
+          }, 50);
+        }}
         isActive={activeEditor.isActive('bulletList')}
         title="Bullet List"
       >
@@ -534,7 +564,22 @@ export function GlobalBubbleMenu() {
       </BubbleButton>
 
       <BubbleButton
-        onClick={() => applyFormatting(() => activeEditor.chain().focus().toggleOrderedList().run())}
+        onClick={() => {
+          // Diagnostic logging
+          const canToggle = activeEditor.can().toggleOrderedList();
+          console.log('[GlobalBubbleMenu] Ordered List Debug:', {
+            canToggle,
+            isCollapsed: activeEditor.state.selection.empty,
+            currentNodeType: activeEditor.state.selection.$head.parent.type.name,
+          });
+          
+          if (!canToggle) {
+            console.log('[GlobalBubbleMenu] Cannot toggle ordered list, attempting setParagraph first');
+            activeEditor.chain().focus().setParagraph().run();
+          }
+          
+          applyFormatting(() => activeEditor.chain().focus().toggleOrderedList().run());
+        }}
         isActive={activeEditor.isActive('orderedList')}
         title="Numbered List"
       >
