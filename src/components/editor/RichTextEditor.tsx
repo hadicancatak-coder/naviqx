@@ -154,6 +154,29 @@ export function RichTextEditor({
     };
   }, [editor]);
 
+
+  // Listen for forced update events from GlobalBubbleMenu
+  // This is needed because TipTap's onUpdate doesn't fire when editor is unfocused
+  useEffect(() => {
+    if (!editor) return;
+    
+    const handleForceUpdate = (event: CustomEvent) => {
+      const html = editor.getHTML();
+      console.log('[RichTextEditor] Received forceEditorUpdate, calling onChange', {
+        htmlLength: html.length,
+        preview: html.substring(0, 100)
+      });
+      isInternalChange.current = true;
+      lastEditTimeRef.current = Date.now();
+      onChange(html);
+    };
+    
+    window.addEventListener('forceEditorUpdate', handleForceUpdate as EventListener);
+    return () => {
+      window.removeEventListener('forceEditorUpdate', handleForceUpdate as EventListener);
+    };
+  }, [editor, onChange]);
+
   // Backup sync mechanism: listen for transaction events with docChanged
   // This ensures programmatic changes (from bubble menu) trigger onChange
   useEffect(() => {
