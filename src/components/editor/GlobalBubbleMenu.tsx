@@ -373,14 +373,25 @@ export function GlobalBubbleMenu() {
     
     // Check content after
     const contentAfter = currentEditor.getHTML();
+    const contentChanged = contentBefore !== contentAfter;
     console.log('[BubbleMenu] After command', {
       result,
-      contentChanged: contentBefore !== contentAfter,
+      contentChanged,
       contentPreview: contentAfter.substring(0, 100),
     });
 
-    // Content change is handled by the transaction listener in RichTextEditor
-    // No manual emit needed - the editor's onChange will fire naturally
+    // CRITICAL: Force TipTap to emit update since onUpdate doesn't fire when unfocused
+    // Dispatch a custom event that RichTextEditor can listen to
+    if (contentChanged) {
+      console.log('[BubbleMenu] Dispatching forceEditorUpdate event');
+      const event = new CustomEvent('forceEditorUpdate', { 
+        detail: { 
+          editorId: currentEditor.options.element?.id,
+          html: contentAfter 
+        } 
+      });
+      window.dispatchEvent(event);
+    }
   }, [activeEditor]);
 
   const handleLinkClick = () => {
