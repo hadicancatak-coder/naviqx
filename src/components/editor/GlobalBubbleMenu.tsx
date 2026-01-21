@@ -352,12 +352,23 @@ export function GlobalBubbleMenu() {
 
   const applyFormatting = useCallback((command: () => any) => {
     const currentEditor = activeEditor || globalActiveEditor;
-    if (!currentEditor) return;
+    if (!currentEditor) {
+      console.log('[BubbleMenu] No editor available');
+      return;
+    }
 
-    // Simply run the command - TipTap preserves selection internally
-    // The .focus() in the command chain handles editor focus
-    // onPointerDown preventDefault on buttons prevents selection loss
-    command();
+    // Log before command
+    const selection = currentEditor.state.selection;
+    console.log('[BubbleMenu] Applying formatting', {
+      hasSelection: !selection.empty,
+      from: selection.from,
+      to: selection.to,
+      editorFocused: currentEditor.isFocused,
+    });
+
+    // Run the command - TipTap preserves selection internally
+    const result = command();
+    console.log('[BubbleMenu] Command result:', result);
   }, [activeEditor]);
 
   const handleLinkClick = () => {
