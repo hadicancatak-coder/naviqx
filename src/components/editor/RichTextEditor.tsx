@@ -33,6 +33,8 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   // Track internal changes to prevent sync loop
   const isInternalChange = useRef(false);
+  // Track last edit time to prevent sync during active editing
+  const lastEditTimeRef = useRef(0);
 
   const editor = useEditor({
     extensions: [
@@ -63,6 +65,7 @@ export function RichTextEditor({
     onUpdate: ({ editor }) => {
       // Mark as internal change so sync effect skips this update
       isInternalChange.current = true;
+      lastEditTimeRef.current = Date.now();
       onChange(editor.getHTML());
     },
     onBlur: () => {
@@ -99,6 +102,16 @@ export function RichTextEditor({
     // Skip if this update was triggered by our own onChange (internal change)
     if (isInternalChange.current) {
       isInternalChange.current = false;
+      return;
+    }
+
+    // Skip sync if editor was recently edited (within 1 second) - prevents race conditions
+    if (Date.now() - lastEditTimeRef.current < 1000) {
+      return;
+    }
+
+    // Skip if editor is focused - don't overwrite while user is actively editing
+    if (editor.isFocused) {
       return;
     }
 
