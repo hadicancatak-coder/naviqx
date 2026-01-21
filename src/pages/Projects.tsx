@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, FolderKanban } from "lucide-react";
+import { Plus, Search, FolderKanban, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,13 +14,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { Project, useProjects } from "@/hooks/useProjects";
-import { ProjectTree, ProjectPageContent, ProjectPageEditor } from "@/components/projects";
+import { ProjectPageContent, ProjectPageEditor, ProjectCard } from "@/components/projects";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { APP_BASE_URL } from "@/lib/constants";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 export default function Projects() {
   const { user } = useAuth();
@@ -37,31 +38,18 @@ export default function Projects() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
-  // Check if user is admin
-  const isAdmin = true; // You can replace with actual admin check
+  const isAdmin = true;
 
-  // Filter tree based on search
-  const filteredTree = useMemo(() => {
-    if (!searchQuery.trim()) return tree;
-
-    const filterNodes = (nodes: Project[]): Project[] => {
-      return nodes.reduce<Project[]>((acc, node) => {
-        const matchesSearch = node.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const filteredChildren = node.children ? filterNodes(node.children) : [];
-
-        if (matchesSearch || filteredChildren.length > 0) {
-          acc.push({
-            ...node,
-            children: filteredChildren.length > 0 ? filteredChildren : node.children,
-          });
-        }
-
-        return acc;
-      }, []);
-    };
-
-    return filterNodes(tree);
-  }, [tree, searchQuery]);
+  // Filter projects based on search
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    if (!searchQuery.trim()) return projects;
+    
+    return projects.filter(project => 
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.purpose?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [projects, searchQuery]);
 
   // Build breadcrumbs for selected project
   const breadcrumbs = useMemo(() => {
@@ -111,7 +99,6 @@ export default function Projects() {
   const handleSave = async (data: Partial<Project>) => {
     if (data.id) {
       await updateProject.mutateAsync(data as Project & { id: string });
-      // Refresh selected project
       const updated = projects?.find((p) => p.id === data.id);
       if (updated) setSelectedProject({ ...updated, ...data });
     } else {
@@ -122,10 +109,13 @@ export default function Projects() {
 
   const handleNavigate = async (project: Project) => {
     setSelectedProject(project);
-    // Ensure public token exists when navigating
     if (project.is_public && !project.public_token) {
       await ensurePublicToken.mutateAsync(project.id);
     }
+  };
+
+  const handleBackToList = () => {
+    setSelectedProject(null);
   };
 
   const handleShare = async () => {
@@ -138,7 +128,6 @@ export default function Projects() {
 
     if (isPublic) {
       const token = await ensurePublicToken.mutateAsync(selectedProject.id);
-      // Immediately update selectedProject with the returned token
       setSelectedProject({ ...selectedProject, is_public: true, public_token: token });
     } else {
       await togglePublic.mutateAsync({ id: selectedProject.id, isPublic: false });
@@ -164,6 +153,107 @@ export default function Projects() {
     );
   }
 
+  // PROJECT DETAIL VIEW
+  if (selectedProject) {
+    return (
+      <PageContainer size="wide">
+        {/* Back button header */}
+        <div className="flex items-center gap-md mb-lg">
+          <Button 
+            variant="ghost" 
+            onClick={handleBackToList}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Projects
+          </Button>
+        </div>
+
+        <ProjectPageContent
+          project={selectedProject}
+          breadcrumbs={breadcrumbs}
+          onEdit={handleEditProject}
+          onDelete={handleDeleteProject}
+          onShare={handleShare}
+          isAdmin={isAdmin}
+        />
+
+        {/* Editor Dialog */}
+        <ProjectPageEditor
+          open={isEditorOpen}
+          onOpenChange={setIsEditorOpen}
+          project={editingProject}
+          parentId={parentIdForNew}
+          onSave={handleSave}
+        />
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
+                Any child projects will become top-level projects.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Share Dialog */}
+        <AlertDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Share Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                Control external access to this project page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-md space-y-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-body font-medium">Public Access</Label>
+                  <p className="text-metadata text-muted-foreground">
+                    Anyone with the link can view this project
+                  </p>
+                </div>
+                <Switch
+                  checked={selectedProject?.is_public || false}
+                  onCheckedChange={handleTogglePublic}
+                />
+              </div>
+              {selectedProject?.is_public && selectedProject.public_token && (
+                <div className="space-y-2">
+                  <Label className="text-body-sm">Public Link</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={`${APP_BASE_URL}/projects/public/${selectedProject.public_token}`}
+                      className="text-body-sm"
+                    />
+                    <Button variant="outline" onClick={copyPublicLink}>
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Close</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </PageContainer>
+    );
+  }
+
+  // PROJECT LIST VIEW
   return (
     <PageContainer size="wide">
       <PageHeader
@@ -179,76 +269,76 @@ export default function Projects() {
         }
       />
 
-      <div className="grid grid-cols-12 gap-md mt-md">
-        {/* Sidebar - Narrower */}
-        <div className="col-span-12 lg:col-span-2">
-          <div className="bg-card border border-border rounded-xl p-sm space-y-sm sticky top-20">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-8 text-body-sm"
-              />
-            </div>
-            <ProjectTree
-              pages={filteredTree}
-              selectedPageId={selectedProject?.id || null}
-              onSelectPage={handleNavigate}
-              onCreatePage={handleCreateProject}
-              isAdmin={isAdmin}
-            />
-          </div>
+      {/* Search Bar */}
+      {projects && projects.length > 0 && (
+        <div className="relative max-w-md mb-lg">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
+      )}
 
-        {/* Main Content - Wider */}
-        <div className="col-span-12 lg:col-span-10">
-          <div className="min-h-[700px]">
-            {selectedProject ? (
-              <ProjectPageContent
-                project={selectedProject}
-                breadcrumbs={breadcrumbs}
-                onEdit={handleEditProject}
-                onDelete={handleDeleteProject}
-                onShare={handleShare}
-                isAdmin={isAdmin}
-              />
-            ) : projects && projects.length > 0 ? (
-              <div className="text-center py-12">
-                <FolderKanban className="h-16 w-16 text-muted-foreground mx-auto mb-md" />
-                <h2 className="text-heading-md font-semibold text-foreground mb-2">
-                  Select a project
-                </h2>
-                <p className="text-muted-foreground mb-lg">
-                  Choose a project from the sidebar to view its details and roadmap
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {projects.slice(0, 5).map((p) => (
-                    <Button key={p.id} variant="outline" size="sm" onClick={() => handleNavigate(p)}>
-                      {p.name}
-                    </Button>
-                  ))}
-                </div>
+      {/* Project Grid */}
+      {filteredProjects.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
+          {filteredProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              onClick={() => handleNavigate(project)}
+            />
+          ))}
+          
+          {/* Create New Project Card */}
+          {isAdmin && (
+            <Card
+              interactive
+              onClick={() => handleCreateProject()}
+              className="flex flex-col items-center justify-center p-lg min-h-[200px] border-dashed cursor-pointer group hover-lift"
+            >
+              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-muted group-hover:bg-primary/10 transition-smooth mb-md">
+                <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-smooth" />
               </div>
-            ) : (
-              <EmptyState
-                icon={FolderKanban}
-                title="No projects yet"
-                description="Create your first project to start tracking work with roadmaps and linked tasks"
-                action={
-                  isAdmin
-                    ? {
-                        label: "Create First Project",
-                        onClick: () => handleCreateProject(),
-                      }
-                    : undefined
-                }
-              />
-            )}
-          </div>
+              <span className="text-body-sm font-medium text-muted-foreground group-hover:text-foreground transition-smooth">
+                Create New Project
+              </span>
+            </Card>
+          )}
         </div>
-      </div>
+      ) : projects && projects.length > 0 ? (
+        // Search returned no results
+        <div className="text-center py-12">
+          <Search className="h-12 w-12 text-muted-foreground mx-auto mb-md" />
+          <h2 className="text-heading-sm font-semibold text-foreground mb-2">
+            No projects found
+          </h2>
+          <p className="text-muted-foreground mb-md">
+            Try adjusting your search query
+          </p>
+          <Button variant="outline" onClick={() => setSearchQuery("")}>
+            Clear search
+          </Button>
+        </div>
+      ) : (
+        // Empty state - no projects at all
+        <EmptyState
+          icon={FolderKanban}
+          title="No projects yet"
+          description="Create your first project to start tracking work with roadmaps and linked tasks"
+          action={
+            isAdmin
+              ? {
+                  label: "Create First Project",
+                  onClick: () => handleCreateProject(),
+                }
+              : undefined
+          }
+        />
+      )}
 
       {/* Editor Dialog */}
       <ProjectPageEditor
@@ -258,69 +348,6 @@ export default function Projects() {
         parentId={parentIdForNew}
         onSave={handleSave}
       />
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
-              Any child projects will become top-level projects.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Share Dialog */}
-      <AlertDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Share Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Control external access to this project page.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-md space-y-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-body font-medium">Public Access</Label>
-                <p className="text-metadata text-muted-foreground">
-                  Anyone with the link can view this project
-                </p>
-              </div>
-              <Switch
-                checked={selectedProject?.is_public || false}
-                onCheckedChange={handleTogglePublic}
-              />
-            </div>
-            {selectedProject?.is_public && selectedProject.public_token && (
-              <div className="space-y-2">
-                <Label className="text-body-sm">Public Link</Label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={`${APP_BASE_URL}/projects/public/${selectedProject.public_token}`}
-                    className="text-body-sm"
-                  />
-                  <Button variant="outline" onClick={copyPublicLink}>
-                    Copy
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Close</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </PageContainer>
   );
 }
