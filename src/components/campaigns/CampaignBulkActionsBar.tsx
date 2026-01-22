@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Trash2, Building2, Download, Play, Pause, FileEdit } from "lucide-react";
+import { X, Trash2, Building2, Download, Play, Pause, FileEdit, Check } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,17 +11,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -31,7 +27,7 @@ import { ENTITY_TRACKING_STATUSES, EntityTrackingStatus } from "@/domain/campaig
 interface CampaignBulkActionsBarProps {
   selectedCount: number;
   onClearSelection: () => void;
-  onAssignToEntity?: (entity: string) => void;
+  onAssignToEntities?: (entities: string[], status: EntityTrackingStatus) => void;
   onDelete?: () => void;
   onExport?: () => void;
   onBulkStatusChange?: (status: EntityTrackingStatus) => void;
@@ -41,13 +37,15 @@ interface CampaignBulkActionsBarProps {
 export function CampaignBulkActionsBar({
   selectedCount,
   onClearSelection,
-  onAssignToEntity,
+  onAssignToEntities,
   onDelete,
   onExport,
   onBulkStatusChange,
   className = "",
 }: CampaignBulkActionsBarProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+  const [assignStatus, setAssignStatus] = useState<EntityTrackingStatus>("Live");
   const { data: entities = [] } = useSystemEntities();
 
   if (selectedCount === 0) return null;
@@ -57,15 +55,36 @@ export function CampaignBulkActionsBar({
     setShowDeleteDialog(false);
   };
 
+  const handleEntityToggle = (entityName: string) => {
+    setSelectedEntities(prev => 
+      prev.includes(entityName) 
+        ? prev.filter(e => e !== entityName) 
+        : [...prev, entityName]
+    );
+  };
+
+  const handleAssign = () => {
+    if (selectedEntities.length > 0 && onAssignToEntities) {
+      onAssignToEntities(selectedEntities, assignStatus);
+      setSelectedEntities([]);
+    }
+  };
+
   const statusOptions: { value: EntityTrackingStatus; label: string; icon: React.ReactNode }[] = [
     { value: "Live", label: "Set Live", icon: <Play className="size-4" /> },
     { value: "Paused", label: "Set Paused", icon: <Pause className="size-4" /> },
     { value: "Draft", label: "Set Draft", icon: <FileEdit className="size-4" /> },
   ];
 
+  const assignStatusOptions: { value: EntityTrackingStatus; label: string }[] = [
+    { value: "Live", label: "As Live" },
+    { value: "Paused", label: "As Paused" },
+    { value: "Draft", label: "As Draft" },
+  ];
+
   return (
     <>
-      <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-overlay shadow-xl border-2 ${className}`}>
+      <Card className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-sticky shadow-xl border-2 ${className}`}>
         <div className="flex items-center gap-md p-md flex-wrap">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{selectedCount}</span>
@@ -107,20 +126,58 @@ export function CampaignBulkActionsBar({
               </DropdownMenu>
             )}
 
-            {onAssignToEntity && (
-              <Select onValueChange={onAssignToEntity}>
-                <SelectTrigger className="w-[160px]">
-                  <Building2 className="size-4 mr-2" />
-                  <SelectValue placeholder="Assign to Entity" />
-                </SelectTrigger>
-                <SelectContent>
+            {onAssignToEntities && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Building2 className="size-4" />
+                    Assign to Entities
+                    {selectedEntities.length > 0 && (
+                      <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-metadata">
+                        {selectedEntities.length}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuLabel>Select Entities</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   {entities.map((entity) => (
-                    <SelectItem key={entity.name} value={entity.name}>
+                    <DropdownMenuCheckboxItem
+                      key={entity.name}
+                      checked={selectedEntities.includes(entity.name)}
+                      onCheckedChange={() => handleEntityToggle(entity.name)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
                       {entity.emoji} {entity.name}
-                    </SelectItem>
+                    </DropdownMenuCheckboxItem>
                   ))}
-                </SelectContent>
-              </Select>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Assign Status</DropdownMenuLabel>
+                  {assignStatusOptions.map((option) => (
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={assignStatus === option.value}
+                      onCheckedChange={() => setAssignStatus(option.value)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {option.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <div className="p-2">
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={handleAssign}
+                      disabled={selectedEntities.length === 0}
+                    >
+                      <Check className="size-4" />
+                      Assign to {selectedEntities.length} {selectedEntities.length === 1 ? 'Entity' : 'Entities'}
+                    </Button>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             {onExport && (
@@ -150,7 +207,7 @@ export function CampaignBulkActionsBar({
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="liquid-glass-elevated">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedCount} campaigns?</AlertDialogTitle>
             <AlertDialogDescription>

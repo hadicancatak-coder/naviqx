@@ -955,3 +955,29 @@ All colors MUST be HSL.
     0 25px 50px -12px rgba(0, 0, 0, 0.5),
     0 0 0 1px hsl(var(--border) / 0.3);
 }
+
+/* ========================================
+   DIALOG/ALERT Z-INDEX FIXES
+   Ensure dialogs appear above all overlays
+   ======================================== */
+[data-radix-dialog-overlay],
+[data-radix-alert-dialog-overlay] {
+  z-index: 10001 !important;
+}
+
+[data-radix-dialog-content],
+[data-radix-alert-dialog-content] {
+  z-index: 10002 !important;
+  /* Ensure fixed positioning and centering is NEVER overridden */
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* Prevent liquid-glass-elevated from breaking dialog positioning */
+[data-radix-dialog-content].liquid-glass-elevated,
+[data-radix-alert-dialog-content].liquid-glass-elevated {
+  position: fixed !important;
+  isolation: auto !important;
+}
