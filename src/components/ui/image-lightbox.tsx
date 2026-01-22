@@ -71,18 +71,21 @@ export const ImageLightbox = ({
       className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 99999 }}
     >
-      {/* Backdrop - click to close */}
+      {/* Backdrop - visible background */}
+      <div className="absolute inset-0 bg-black/95" />
+      
+      {/* Click catcher - z-10, content will be z-20+ */}
       <div 
-        className="absolute inset-0 bg-black/95 cursor-pointer" 
+        className="absolute inset-0 z-10 cursor-pointer" 
         onClick={(e) => {
           e.stopPropagation();
           onClose();
         }}
       />
 
-      {/* Top bar */}
+      {/* Top bar - z-20 to be above click catcher */}
       <div 
-        className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10"
+        className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-20"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2">
@@ -111,7 +114,7 @@ export const ImageLightbox = ({
         </button>
       </div>
 
-      {/* Navigation arrows - Left */}
+      {/* Navigation arrows - Left - z-20 */}
       {images.length > 1 && (
         <button
           className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
@@ -124,7 +127,7 @@ export const ImageLightbox = ({
         </button>
       )}
 
-      {/* Navigation arrows - Right */}
+      {/* Navigation arrows - Right - z-20 */}
       {images.length > 1 && (
         <button
           className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
@@ -137,9 +140,9 @@ export const ImageLightbox = ({
         </button>
       )}
 
-      {/* Image container - clicking on image doesn't close */}
+      {/* Image container - z-20 to be above click catcher */}
       <div 
-        className="relative z-10 max-w-[85vw] max-h-[70vh] cursor-default"
+        className="relative z-20 max-w-[85vw] max-h-[70vh] cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <img
@@ -151,9 +154,9 @@ export const ImageLightbox = ({
         />
       </div>
 
-      {/* Bottom bar */}
+      {/* Bottom bar - z-20 to be above click catcher */}
       <div 
-        className="absolute bottom-0 left-0 right-0 p-4 z-10"
+        className="absolute bottom-0 left-0 right-0 p-4 z-20"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Caption and counter */}
