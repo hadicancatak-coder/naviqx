@@ -70,22 +70,17 @@ export const ImageLightbox = ({
     <div
       className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 99999 }}
-    >
-      {/* Backdrop - visible background */}
-      <div className="absolute inset-0 bg-black/95" />
-      
-      {/* Click catcher - z-10, content will be z-20+ */}
-      <div 
-        className="absolute inset-0 z-10" 
-        style={{ cursor: 'pointer' }}
-        onMouseDown={(e) => {
-          console.log('Lightbox backdrop mousedown', e.target);
-          e.stopPropagation();
+      onClick={(e) => {
+        // Only close if clicking the container itself, not its children
+        if (e.target === e.currentTarget) {
           onClose();
-        }}
-      />
+        }
+      }}
+    >
+      {/* Backdrop - visible background, pointer-events-none so clicks pass through to container */}
+      <div className="absolute inset-0 bg-black/95 pointer-events-none" />
 
-      {/* Top bar - z-20 to be above click catcher */}
+      {/* Top bar */}
       <div 
         className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-20"
         onClick={(e) => e.stopPropagation()}
@@ -120,32 +115,24 @@ export const ImageLightbox = ({
       {images.length > 1 && (
         <button
           className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
-          onClick={(e) => {
-            e.stopPropagation();
-            goToPrevious();
-          }}
+          onClick={goToPrevious}
         >
           <ChevronLeft className="h-8 w-8" />
         </button>
       )}
 
-      {/* Navigation arrows - Right - z-20 */}
+      {/* Navigation arrows - Right */}
       {images.length > 1 && (
         <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
-          onClick={(e) => {
-            e.stopPropagation();
-            goToNext();
-          }}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors"
+          onClick={goToNext}
         >
           <ChevronRight className="h-8 w-8" />
         </button>
       )}
 
-      {/* Image container - z-20 to be above click catcher */}
-      <div 
-        className="relative z-20 max-w-[85vw] max-h-[70vh] cursor-default"
-        onClick={(e) => e.stopPropagation()}
+      {/* Image container */}
+      <div className="relative max-w-[85vw] max-h-[70vh] cursor-default"
       >
         <img
           src={currentImage.url}
@@ -156,11 +143,8 @@ export const ImageLightbox = ({
         />
       </div>
 
-      {/* Bottom bar - z-20 to be above click catcher */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 p-4 z-20"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {/* Bottom bar */}
+      <div className="absolute bottom-0 left-0 right-0 p-4">
         {/* Caption and counter */}
         <div className="text-center mb-3">
           {currentImage.caption && (
