@@ -77,12 +77,13 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
       .from("task_assignees")
       .select("user_id, task_id, tasks!inner(id, status)")
       .eq("tasks.status", "Completed"),
-    // Tasks due in next 5 days (not completed) - for workload calculation
+    // Tasks due in next 5 days OR overdue (not completed) - for workload calculation
+    // Include overdue tasks because they still represent active workload
     supabase
       .from("task_assignees")
       .select("user_id, task_id, tasks!inner(id, status, due_at)")
       .neq("tasks.status", "Completed")
-      .gte("tasks.due_at", today.toISOString())
+      .not("tasks.due_at", "is", null)
       .lte("tasks.due_at", fiveDaysFromNow.toISOString()),
     // User visits for engagement
     supabase
