@@ -3,6 +3,7 @@ import { NewsTicker } from "@/components/NewsTicker";
 import { PerformanceMetrics } from "@/components/dashboard/PerformanceMetrics";
 import { TeamPerformance } from "@/components/dashboard/TeamPerformance";
 import { TeamWorkload } from "@/components/dashboard/TeamWorkload";
+import { TeamTasksOverview } from "@/components/dashboard/TeamTasksOverview";
 import { RecentlyCompletedTicker } from "@/components/dashboard/RecentlyCompletedTicker";
 import { MyTasks } from "@/components/dashboard/MyTasks";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
@@ -37,7 +38,11 @@ export default function Dashboard() {
 
       <TeamPerformance />
 
-      <TeamWorkload />
+      {/* Team workload and detailed task overview side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+        <TeamWorkload />
+        <TeamTasksOverview />
+      </div>
 
       <SprintProgress />
 
