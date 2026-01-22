@@ -43,11 +43,23 @@ export const ImageLightbox = ({
       }
     };
 
+    // Use document-level capture phase listener to intercept BEFORE Radix Dialog
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-lightbox-backdrop]')) {
+        e.stopImmediatePropagation(); // Prevent Radix from seeing this event
+        e.preventDefault();
+        onClose();
+      }
+    };
+
     document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("pointerdown", handlePointerDown, true); // capture phase
     document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("pointerdown", handlePointerDown, true);
       document.body.style.overflow = "";
     };
   }, [open, images.length, onClose]);
@@ -72,13 +84,10 @@ export const ImageLightbox = ({
       style={{ zIndex: 99999 }}
       data-lightbox="true"
     >
-      {/* Backdrop - captures clicks in capture phase to beat Dialog's handlers */}
+      {/* Backdrop - marked for document-level pointer capture */}
       <div 
         className="absolute inset-0 bg-black/95 cursor-pointer" 
-        onClickCapture={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
+        data-lightbox-backdrop="true"
       />
 
       {/* Top bar */}
