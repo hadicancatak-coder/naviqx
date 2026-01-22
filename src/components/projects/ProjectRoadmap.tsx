@@ -9,10 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProjectTimeline, useProjectTimelines } from "@/hooks/useProjects";
 import { useAllProjectMilestones, usePhaseDependencies, usePhaseTaskStats } from "@/hooks/useRoadmap";
 import { calculatePhaseProgress } from "@/hooks/usePhaseProgress";
 import { RoadmapSummary, StepExpandedCard, StepCard, DependencyLines, QuickMilestoneDialog, STEP_LANES } from "./roadmap";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectRoadmapProps {
   projectId: string;
@@ -60,6 +63,23 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
     depends_on: [] as string[],
   });
 
+  // Fetch all users for the owner dropdown
+  const { data: users = [] } = useQuery({
+    queryKey: ["all-profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, avatar_url")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const getInitials = (name: string) => {
+    return name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+  };
   const { minDate, maxDate, totalDays, today, steps } = useMemo(() => {
     if (!timelines || timelines.length === 0) {
       const now = new Date();
@@ -581,11 +601,32 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
               <div className="grid grid-cols-2 gap-md">
                 <div className="space-y-2">
                   <Label>Owner</Label>
-                  <Input
-                    value={(editingStep as any).owner || ""}
-                    onChange={(e) => setEditingStep({ ...editingStep, owner: e.target.value } as any)}
-                    placeholder="Team or person"
-                  />
+                  <Select 
+                    value={(editingStep as any).owner || "none"} 
+                    onValueChange={(v) => setEditingStep({ ...editingStep, owner: v === "none" ? "" : v } as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select owner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">No owner</span>
+                      </SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.name || user.id}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px]">
+                                {getInitials(user.name || "")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{user.name || "Unknown"}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>System</Label>
