@@ -68,12 +68,15 @@ export const ImageLightbox = ({
 
   const content = (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer"
+      className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 99999 }}
-      onClick={onClose}
+      onClick={(e) => e.stopPropagation()}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/95" />
+      {/* Backdrop - clicking backdrop closes lightbox */}
+      <div 
+        className="absolute inset-0 bg-black/95 cursor-pointer" 
+        onClick={onClose}
+      />
 
       {/* Top bar */}
       <div 

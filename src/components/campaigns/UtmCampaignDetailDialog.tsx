@@ -156,8 +156,10 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className={cn(
-          "max-h-[90vh] p-0 gap-0 liquid-glass-elevated border-border/50",
+        <DialogContent 
+          onInteractOutside={(e) => e.preventDefault()}
+          className={cn(
+          "max-h-[90vh] p-0 gap-0 liquid-glass-dialog border-border/50",
           showComments ? "max-w-[1100px]" : "max-w-3xl"
         )}>
           <div className="flex h-full max-h-[90vh]">
