@@ -76,8 +76,10 @@ export const ImageLightbox = ({
       
       {/* Click catcher - z-10, content will be z-20+ */}
       <div 
-        className="absolute inset-0 z-10 cursor-pointer" 
-        onClick={(e) => {
+        className="absolute inset-0 z-10" 
+        style={{ cursor: 'pointer' }}
+        onMouseDown={(e) => {
+          console.log('Lightbox backdrop mousedown', e.target);
           e.stopPropagation();
           onClose();
         }}
