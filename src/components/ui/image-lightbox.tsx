@@ -73,12 +73,14 @@ export const ImageLightbox = ({
 
   const content = (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer"
+      className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 99999 }}
-      onClick={handleBackdropClick}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/95" />
+      {/* Backdrop - click to close */}
+      <div 
+        className="absolute inset-0 bg-black/95 cursor-pointer" 
+        onClick={handleBackdropClick}
+      />
 
       {/* Top bar */}
       <div 
