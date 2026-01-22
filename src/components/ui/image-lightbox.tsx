@@ -70,15 +70,15 @@ export const ImageLightbox = ({
     <div
       className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 99999 }}
-      onClick={(e) => {
-        // Only close if clicking the container itself, not its children
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
     >
-      {/* Backdrop - visible background, pointer-events-none so clicks pass through to container */}
-      <div className="absolute inset-0 bg-black/95 pointer-events-none" />
+      {/* Backdrop - captures clicks in capture phase to beat Dialog's handlers */}
+      <div 
+        className="absolute inset-0 bg-black/95 cursor-pointer" 
+        onClickCapture={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
 
       {/* Top bar */}
       <div 
