@@ -46,7 +46,8 @@ export const ImageLightbox = ({
     // Use document-level capture phase listener to intercept BEFORE Radix Dialog
     const handlePointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('[data-lightbox-backdrop]')) {
+      // Check if click is directly on backdrop element
+      if (target.hasAttribute('data-lightbox-backdrop')) {
         e.stopImmediatePropagation(); // Prevent Radix from seeing this event
         e.preventDefault();
         onClose();
@@ -86,13 +87,13 @@ export const ImageLightbox = ({
     >
       {/* Backdrop - marked for document-level pointer capture */}
       <div 
-        className="absolute inset-0 bg-black/95 cursor-pointer" 
+        className="absolute inset-0 bg-black/95 cursor-pointer z-10" 
         data-lightbox-backdrop="true"
       />
 
       {/* Top bar */}
       <div 
-        className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-20"
+        className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-30 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2">
@@ -142,7 +143,7 @@ export const ImageLightbox = ({
       )}
 
       {/* Image container */}
-      <div className="relative max-w-[85vw] max-h-[70vh] cursor-default"
+      <div className="relative max-w-[85vw] max-h-[70vh] cursor-default pointer-events-auto z-20"
       >
         <img
           src={currentImage.url}
@@ -154,7 +155,7 @@ export const ImageLightbox = ({
       </div>
 
       {/* Bottom bar */}
-      <div className="absolute bottom-0 left-0 right-0 p-4">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-auto z-30">
         {/* Caption and counter */}
         <div className="text-center mb-3">
           {currentImage.caption && (
