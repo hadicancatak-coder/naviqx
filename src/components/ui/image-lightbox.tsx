@@ -66,17 +66,19 @@ export const ImageLightbox = ({
     setZoom(1);
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent closing parent dialog
+    onClose();
+  };
+
   const content = (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer"
       style={{ zIndex: 99999 }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={handleBackdropClick}
     >
-      {/* Backdrop - clicking backdrop closes lightbox */}
-      <div 
-        className="absolute inset-0 bg-black/95 cursor-pointer" 
-        onClick={onClose}
-      />
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/95" />
 
       {/* Top bar */}
       <div 
