@@ -158,16 +158,20 @@ export default function CampaignsLog() {
     return getEntitiesForCampaign(c.id).some(t => t.entity === libraryEntityFilter);
   });
 
-  const handleBulkAssign = async (entityName: string) => {
-    if (!entityName || selectedCampaigns.length === 0) return;
+  const handleBulkAssignMultiple = async (entityNames: string[], status: EntityTrackingStatus) => {
+    if (entityNames.length === 0 || selectedCampaigns.length === 0) return;
     try {
-      await Promise.all(selectedCampaigns.map(id => 
-        createTracking.mutateAsync({ campaign_id: id, entity: entityName, status: "Draft" })
-      ));
-      toast.success(`${selectedCampaigns.length} campaigns added to ${entityName}`);
+      // Create tracking records for each campaign + entity combination
+      const operations = selectedCampaigns.flatMap(campaignId =>
+        entityNames.map(entity => 
+          createTracking.mutateAsync({ campaign_id: campaignId, entity, status })
+        )
+      );
+      await Promise.all(operations);
+      toast.success(`${selectedCampaigns.length} campaigns assigned to ${entityNames.length} entities as ${status}`);
       setSelectedCampaigns([]);
     } catch {
-      toast.error("Failed to assign campaigns");
+      toast.error("Failed to assign some campaigns (they may already exist in those entities)");
     }
   };
 
@@ -395,7 +399,7 @@ export default function CampaignsLog() {
         <CampaignBulkActionsBar
           selectedCount={selectedCampaigns.length}
           onClearSelection={() => setSelectedCampaigns([])}
-          onAssignToEntity={handleBulkAssign}
+          onAssignToEntities={handleBulkAssignMultiple}
           onDelete={handleBulkDelete}
           onBulkStatusChange={handleBulkStatusChange}
         />

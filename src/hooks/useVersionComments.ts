@@ -24,14 +24,61 @@ export const useVersionComments = (versionId: string | null) => {
     queryFn: async () => {
       if (!versionId) return [];
       
-      const { data, error } = await supabase
-        .from("utm_campaign_version_comments")
-        .select("*")
-        .eq("version_id", versionId)
-        .order("created_at", { ascending: false });
+      // Fetch both internal and external comments in parallel
+      const [internalResult, externalResult] = await Promise.all([
+        supabase
+          .from("utm_campaign_version_comments")
+          .select("*")
+          .eq("version_id", versionId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("external_campaign_review_comments")
+          .select("*")
+          .eq("version_id", versionId)
+          .order("created_at", { ascending: false })
+      ]);
 
-      if (error) throw error;
-      return data as VersionComment[];
+      if (internalResult.error) throw internalResult.error;
+
+      // Map internal comments
+      const internalComments: VersionComment[] = (internalResult.data || []).map(c => ({
+        id: c.id,
+        version_id: c.version_id,
+        campaign_id: c.campaign_id,
+        author_id: c.author_id,
+        author_name: c.author_name,
+        author_email: c.author_email,
+        comment_text: c.comment_text,
+        is_external: false,
+        entity: c.entity,
+        created_at: c.created_at,
+        updated_at: c.updated_at,
+      }));
+
+      // Map external comments (don't throw on error, just log it)
+      let externalComments: VersionComment[] = [];
+      if (!externalResult.error && externalResult.data) {
+        externalComments = externalResult.data.map(c => ({
+          id: c.id,
+          version_id: c.version_id || "",
+          campaign_id: c.campaign_id || "",
+          author_id: null,
+          author_name: c.reviewer_name || "External Reviewer",
+          author_email: c.reviewer_email,
+          comment_text: c.comment_text,
+          is_external: true,
+          entity: c.entity,
+          created_at: c.created_at,
+          updated_at: c.created_at, // external comments don't have updated_at
+        }));
+      }
+
+      // Merge and sort by created_at descending
+      const allComments = [...internalComments, ...externalComments].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return allComments;
     },
     enabled: !!versionId,
   });
@@ -86,6 +133,7 @@ export const useVersionComments = (versionId: string | null) => {
 
   const deleteComment = useMutation({
     mutationFn: async (commentId: string) => {
+      // Only delete from internal comments table (external comments can't be deleted by internal users)
       const { error } = await supabase
         .from("utm_campaign_version_comments")
         .delete()
