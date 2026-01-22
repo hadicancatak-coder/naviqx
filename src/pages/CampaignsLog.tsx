@@ -3,13 +3,15 @@ import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOv
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GripVertical, ExternalLink, Search, ChevronDown, Plus, Trash2, Loader2, BookOpen, Upload } from "lucide-react";
+import { GripVertical, ExternalLink, Search, ChevronDown, Plus, Trash2, Loader2, BookOpen, Upload, LayoutGrid, List } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EntityCampaignTable } from "@/components/campaigns/EntityCampaignTable";
 import { DraggableCampaignCard } from "@/components/campaigns/DraggableCampaignCard";
+import { CampaignListView } from "@/components/campaigns/CampaignListView";
 import { UtmCampaignDetailDialog } from "@/components/campaigns/UtmCampaignDetailDialog";
 import { CreateUtmCampaignDialog } from "@/components/campaigns/CreateUtmCampaignDialog";
 import { CampaignBulkActionsBar } from "@/components/campaigns/CampaignBulkActionsBar";
@@ -23,6 +25,7 @@ import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { PageContainer, PageHeader, DataCard } from "@/components/layout";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { EntityTrackingStatus } from "@/domain/campaigns";
 
 function TrashZone({ isActive }: { isActive: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: "trash-zone" });
@@ -60,10 +63,11 @@ export default function CampaignsLog() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const { data: entities = [] } = useSystemEntities();
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useUtmCampaigns();
-  const { createTracking, getEntitiesForCampaign, deleteTracking } = useCampaignEntityTracking();
+  const { createTracking, getEntitiesForCampaign, deleteTracking, bulkUpdateStatus } = useCampaignEntityTracking();
   const { generateLink } = useExternalAccess();
   const deleteCampaignMutation = useDeleteUtmCampaign();
   const { accessToken, signIn: googleSignIn } = useGoogleAuth();
@@ -175,6 +179,33 @@ export default function CampaignsLog() {
     } catch {
       toast.error("Failed to delete campaigns");
     }
+  };
+
+  const handleBulkStatusChange = async (status: EntityTrackingStatus) => {
+    // Get all tracking records for selected campaigns
+    const trackingIds: string[] = [];
+    selectedCampaigns.forEach(campaignId => {
+      const entities = getEntitiesForCampaign(campaignId);
+      entities.forEach(e => trackingIds.push(e.id));
+    });
+
+    if (trackingIds.length === 0) {
+      toast.error("Selected campaigns are not assigned to any entities");
+      return;
+    }
+
+    try {
+      await bulkUpdateStatus.mutateAsync({ trackingIds, status });
+      setSelectedCampaigns([]);
+    } catch {
+      toast.error("Failed to update status");
+    }
+  };
+
+  const handleSelectCampaign = (id: string) => {
+    setSelectedCampaigns(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleGenerateReviewLink = async () => {
@@ -313,26 +344,47 @@ export default function CampaignsLog() {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* View Toggle */}
+                <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
+                  <ToggleGroupItem value="grid" aria-label="Grid view" className="px-3">
+                    <LayoutGrid className="size-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="list" aria-label="List view" className="px-3">
+                    <List className="size-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
               
-              <ScrollArea className="h-[400px]">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-sm">
-                  {filteredCampaigns.map((c) => (
-                    <div key={c.id} className="relative">
-                      <Checkbox 
-                        checked={selectedCampaigns.includes(c.id)} 
-                        onCheckedChange={() => setSelectedCampaigns(p => p.includes(c.id) ? p.filter(i => i !== c.id) : [...p, c.id])} 
-                        className="absolute top-sm right-sm z-10 bg-background/80 backdrop-blur-sm" 
-                      />
-                      <DraggableCampaignCard 
-                        campaign={c} 
-                        isDragging={activeDragId === c.id} 
-                        onClick={() => setSelectedCampaignId(c.id)} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+              {viewMode === 'grid' ? (
+                <ScrollArea className="h-[400px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-sm">
+                    {filteredCampaigns.map((c) => (
+                      <div key={c.id} className="relative">
+                        <Checkbox 
+                          checked={selectedCampaigns.includes(c.id)} 
+                          onCheckedChange={() => handleSelectCampaign(c.id)} 
+                          className="absolute top-sm right-sm z-10 bg-background/80 backdrop-blur-sm" 
+                        />
+                        <DraggableCampaignCard 
+                          campaign={c} 
+                          isDragging={activeDragId === c.id} 
+                          onClick={() => setSelectedCampaignId(c.id)} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <ScrollArea className="h-[400px]">
+                  <CampaignListView 
+                    campaigns={filteredCampaigns}
+                    selectedCampaigns={selectedCampaigns}
+                    onSelectCampaign={handleSelectCampaign}
+                    onCampaignClick={setSelectedCampaignId}
+                  />
+                </ScrollArea>
+              )}
             </CollapsibleContent>
           </Collapsible>
         </div>
@@ -345,6 +397,7 @@ export default function CampaignsLog() {
           onClearSelection={() => setSelectedCampaigns([])}
           onAssignToEntity={handleBulkAssign}
           onDelete={handleBulkDelete}
+          onBulkStatusChange={handleBulkStatusChange}
         />
       </PageContainer>
 

@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,18 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { ExternalLink, MessageCircle, FileImage, Link2, Loader2, Edit, Save, Plus, Trash2, ChevronDown, ChevronRight, User, Calendar } from "lucide-react";
+import { ExternalLink, MessageCircle, Loader2, Edit, Save, Plus, Copy, Check } from "lucide-react";
 import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useCampaignVersions } from "@/hooks/useCampaignVersions";
 import { useCampaignMetadata } from "@/hooks/useCampaignMetadata";
 import { useUpdateUtmCampaign } from "@/hooks/useUtmCampaigns";
 import { CampaignComments } from "./CampaignComments";
+import { VersionCard } from "./VersionCard";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { ENTITY_STATUS_CONFIG, EntityTrackingStatus } from "@/domain/campaigns";
 
 interface UtmCampaignDetailDialogProps {
   open: boolean;
@@ -34,6 +34,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [landingPage, setLandingPage] = useState("");
+  const [copied, setCopied] = useState(false);
   
   // Add version state
   const [isAddingVersion, setIsAddingVersion] = useState(false);
@@ -41,7 +42,6 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
   const [versionAssetLink, setVersionAssetLink] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [deletingVersionId, setDeletingVersionId] = useState<string | null>(null);
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -83,6 +83,13 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
     } catch {
       toast.error("Failed to update campaign");
     }
+  };
+
+  const handleCopyLandingPage = async () => {
+    if (!campaign?.landing_page) return;
+    await navigator.clipboard.writeText(campaign.landing_page);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleAddVersion = async () => {
@@ -135,7 +142,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl bg-card">
+        <DialogContent className="max-w-2xl liquid-glass-elevated">
           <div className="flex items-center justify-center p-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -150,37 +157,38 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className={cn(
-          "max-h-[85vh] p-0 gap-0 bg-card",
-          showComments ? "max-w-[1000px]" : "max-w-2xl"
+          "max-h-[90vh] p-0 gap-0 liquid-glass-elevated border-border/50",
+          showComments ? "max-w-[1100px]" : "max-w-3xl"
         )}>
-          <div className="flex h-full max-h-[85vh]">
+          <div className="flex h-full max-h-[90vh]">
             <div className="flex-1 flex flex-col overflow-hidden">
-              <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+              {/* Header */}
+              <DialogHeader className="px-lg pt-lg pb-md border-b border-border/50">
+                <div className="flex items-start justify-between gap-md">
+                  <div className="flex-1 min-w-0">
                     {isEditing ? (
                       <Input 
                         value={name} 
                         onChange={(e) => setName(e.target.value)} 
-                        className="text-xl font-semibold mb-2 bg-background" 
+                        className="text-heading-md font-semibold mb-sm bg-card" 
                       />
                     ) : (
-                      <DialogTitle className="text-xl text-foreground">{campaign.name}</DialogTitle>
+                      <DialogTitle className="text-heading-md text-foreground">{campaign.name}</DialogTitle>
                     )}
                     {isEditing ? (
                       <Input 
                         value={description} 
                         onChange={(e) => setDescription(e.target.value)} 
                         placeholder="Short description..."
-                        className="text-sm text-muted-foreground bg-background"
+                        className="text-body-sm text-muted-foreground bg-card"
                       />
                     ) : (
-                      <DialogDescription className="mt-1">
+                      <DialogDescription className="mt-sm text-body-sm">
                         {campaign.description || "No description"}
                       </DialogDescription>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-sm flex-shrink-0">
                     <Button
                       variant={showComments ? "default" : "outline"}
                       size="sm"
@@ -208,43 +216,62 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                 </div>
               </DialogHeader>
 
-              <ScrollArea className="flex-1 px-6 py-4">
+              <ScrollArea className="flex-1 px-lg py-md">
                 <div className="space-y-lg">
                   {/* Landing Page */}
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Landing Page</Label>
+                  <Card className="p-md bg-card border-border">
+                    <Label className="text-metadata text-muted-foreground">Landing Page</Label>
                     {isEditing ? (
                       <Input
                         value={landingPage}
                         onChange={(e) => setLandingPage(e.target.value)}
                         placeholder="https://example.com"
-                        className="mt-1 bg-background"
+                        className="mt-sm bg-background"
                       />
                     ) : campaign.landing_page ? (
-                      <a 
-                        href={campaign.landing_page} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="text-primary hover:underline flex items-center gap-1 mt-1 break-all"
-                      >
-                        {campaign.landing_page}
-                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                      </a>
+                      <div className="flex items-center gap-sm mt-sm">
+                        <a 
+                          href={campaign.landing_page} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-primary hover:underline flex items-center gap-1 text-body-sm break-all flex-1"
+                        >
+                          {campaign.landing_page}
+                          <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                        </a>
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm" 
+                          onClick={handleCopyLandingPage}
+                          className="flex-shrink-0"
+                        >
+                          {copied ? <Check className="text-success" /> : <Copy />}
+                        </Button>
+                      </div>
                     ) : (
-                      <p className="text-muted-foreground mt-1">Not set</p>
+                      <p className="text-muted-foreground mt-sm text-body-sm">Not set</p>
                     )}
-                  </div>
+                  </Card>
 
                   {/* Active Entities */}
                   <div>
-                    <Label className="text-sm text-muted-foreground">Active Entities</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <Label className="text-metadata text-muted-foreground">Active Entities</Label>
+                    <div className="flex flex-wrap gap-sm mt-sm">
                       {entities.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">Not live on any entity</p>
+                        <p className="text-muted-foreground text-body-sm">Not live on any entity</p>
                       ) : (
-                        entities.map((e) => (
-                          <Badge key={e.id} variant="secondary">{e.entity}</Badge>
-                        ))
+                        entities.map((e) => {
+                          const statusConfig = ENTITY_STATUS_CONFIG[e.status as EntityTrackingStatus] || ENTITY_STATUS_CONFIG.Draft;
+                          return (
+                            <Badge 
+                              key={e.id} 
+                              className={cn("text-metadata", statusConfig.bgColor, statusConfig.color)}
+                            >
+                              {e.entity}
+                              <span className="ml-1 opacity-70">• {e.status}</span>
+                            </Badge>
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -254,7 +281,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                   {/* Version History */}
                   <div>
                     <div className="flex items-center justify-between mb-md">
-                      <h3 className="font-semibold text-foreground">Version History</h3>
+                      <h3 className="text-heading-sm font-semibold text-foreground">Version History</h3>
                       <Button size="sm" variant="outline" onClick={() => setIsAddingVersion(true)}>
                         <Plus />
                         Add Version
@@ -263,37 +290,37 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
 
                     {/* Add Version Form */}
                     {isAddingVersion && (
-                      <Card className="p-md mb-md border-primary/20 bg-background">
-                        <div className="space-y-3">
+                      <Card className="p-md mb-md border-primary/30 bg-card">
+                        <div className="space-y-md">
                           <div>
-                            <Label>Version Notes *</Label>
+                            <Label className="text-body-sm">Version Notes *</Label>
                             <Textarea
                               value={versionNotes}
                               onChange={(e) => setVersionNotes(e.target.value)}
-                              placeholder="Describe what changed..."
-                              rows={2}
-                              className="mt-1 bg-card"
+                              placeholder="Describe what changed in this version..."
+                              rows={3}
+                              className="mt-sm bg-background"
                             />
                           </div>
                           <div>
-                            <Label>Asset Link</Label>
+                            <Label className="text-body-sm">Asset Link</Label>
                             <Input
                               value={versionAssetLink}
                               onChange={(e) => setVersionAssetLink(e.target.value)}
                               placeholder="https://drive.google.com/..."
-                              className="mt-1 bg-card"
+                              className="mt-sm bg-background"
                             />
                           </div>
                           <div>
-                            <Label>Image (max 2MB)</Label>
+                            <Label className="text-body-sm">Creative Image (max 2MB)</Label>
                             <Input
                               type="file"
                               accept="image/*"
                               onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                              className="mt-1 bg-card"
+                              className="mt-sm bg-background"
                             />
                           </div>
-                          <div className="flex justify-end gap-2 pt-2">
+                          <div className="flex justify-end gap-sm pt-sm">
                             <Button variant="outline" size="sm" onClick={() => {
                               setIsAddingVersion(false);
                               setVersionNotes("");
@@ -312,151 +339,23 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                     )}
 
                     {versions.length === 0 ? (
-                      <p className="text-muted-foreground text-sm text-center py-6">No versions yet</p>
+                      <Card className="p-lg border-dashed">
+                        <p className="text-muted-foreground text-body-sm text-center">
+                          No versions yet. Add your first version to track creative changes.
+                        </p>
+                      </Card>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-border">
-                            <TableHead className="w-16 text-muted-foreground">Version</TableHead>
-                            <TableHead className="w-28 text-muted-foreground">Date</TableHead>
-                            <TableHead className="text-muted-foreground">Notes</TableHead>
-                            <TableHead className="text-muted-foreground">Asset Link</TableHead>
-                            <TableHead className="w-16 text-muted-foreground">Image</TableHead>
-                            <TableHead className="w-12"></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {versions.map((v) => {
-                            const isExpanded = selectedVersionId === v.id;
-                            return (
-                              <>
-                                <TableRow 
-                                  key={v.id} 
-                                  className="border-border cursor-pointer hover:bg-muted/50 transition-colors"
-                                  onClick={() => setSelectedVersionId(isExpanded ? null : v.id)}
-                                >
-                                  <TableCell>
-                                    <div className="flex items-center gap-1">
-                                      {isExpanded ? (
-                                        <ChevronDown className="size-3 text-muted-foreground" />
-                                      ) : (
-                                        <ChevronRight className="size-3 text-muted-foreground" />
-                                      )}
-                                      <Badge variant="outline">v{v.version_number}</Badge>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-sm text-muted-foreground">
-                                    {v.created_at ? format(new Date(v.created_at), 'MMM d') : '-'}
-                                  </TableCell>
-                                  <TableCell className="text-sm text-foreground max-w-[150px] truncate">
-                                    {v.version_notes || '-'}
-                                  </TableCell>
-                                  <TableCell className="text-sm max-w-[200px]">
-                                    {v.asset_link ? (
-                                      <a 
-                                        href={v.asset_link} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-primary hover:underline truncate block"
-                                        title={v.asset_link}
-                                      >
-                                        {(() => {
-                                          try {
-                                            return new URL(v.asset_link).hostname;
-                                          } catch {
-                                            return v.asset_link;
-                                          }
-                                        })()}
-                                      </a>
-                                    ) : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {v.image_url ? (
-                                      <a href={v.image_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                                        <FileImage className="size-4 text-primary hover:text-primary/80" />
-                                      </a>
-                                    ) : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon-xs"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeletingVersionId(v.id);
-                                      }}
-                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    >
-                                      <Trash2 />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                                {isExpanded && (
-                                  <TableRow key={`${v.id}-details`} className="border-border bg-muted/30">
-                                    <TableCell colSpan={6} className="p-md">
-                                      <div className="space-y-sm">
-                                        <div className="grid grid-cols-2 gap-md text-body-sm">
-                                          <div className="flex items-center gap-sm">
-                                            <Calendar className="size-4 text-muted-foreground" />
-                                            <span className="text-muted-foreground">Created:</span>
-                                            <span className="text-foreground">
-                                              {v.created_at ? format(new Date(v.created_at), 'MMM d, yyyy • HH:mm') : '-'}
-                                            </span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <User className="size-4 text-muted-foreground" />
-                                            <span className="text-muted-foreground">Created by:</span>
-                                            <span className="text-foreground">{v.created_by || 'Unknown'}</span>
-                                          </div>
-                                        </div>
-                                        
-                                        {v.version_notes && (
-                                          <div>
-                                            <span className="text-sm text-muted-foreground">Notes:</span>
-                                            <p className="mt-1 text-sm text-foreground bg-background rounded-md p-2 border border-border">
-                                              {v.version_notes}
-                                            </p>
-                                          </div>
-                                        )}
-
-                                        <div className="flex gap-md">
-                                          {v.image_url && (
-                                            <a 
-                                              href={v.image_url} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-2 text-sm text-primary hover:underline"
-                                            >
-                                              <FileImage className="size-4" />
-                                              View Image
-                                            </a>
-                                          )}
-                                          {v.asset_link && (
-                                            <a 
-                                              href={v.asset_link} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-2 text-sm text-primary hover:underline"
-                                            >
-                                              <Link2 className="size-4" />
-                                              Open Asset Link
-                                            </a>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                              </>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
+                      <div className="space-y-md">
+                        {versions.map((v) => (
+                          <VersionCard
+                            key={v.id}
+                            version={v}
+                            campaignId={campaignId}
+                            onDelete={(id) => setDeletingVersionId(id)}
+                            isDeleting={deleteVersion.isPending}
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -467,9 +366,9 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
             {showComments && (
               <>
                 <Separator orientation="vertical" />
-                <div className="w-[350px] flex flex-col bg-background">
-                  <div className="px-4 py-3 border-b border-border">
-                    <h3 className="font-semibold text-sm text-foreground">Comments</h3>
+                <div className="w-[380px] flex flex-col bg-card/50">
+                  <div className="px-md py-sm border-b border-border/50">
+                    <h3 className="text-heading-sm font-semibold text-foreground">Comments</h3>
                   </div>
                   <div className="flex-1 overflow-hidden">
                     <CampaignComments campaignId={campaignId} />
@@ -483,7 +382,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
 
       {/* Delete Version Confirmation */}
       <AlertDialog open={!!deletingVersionId} onOpenChange={() => setDeletingVersionId(null)}>
-        <AlertDialogContent className="bg-card">
+        <AlertDialogContent className="liquid-glass-elevated">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Version</AlertDialogTitle>
             <AlertDialogDescription>
