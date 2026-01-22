@@ -146,12 +146,34 @@ export const useCampaignEntityTracking = () => {
     },
   });
 
+  // Bulk update status for multiple tracking records
+  const bulkUpdateStatus = useMutation({
+    mutationFn: async ({ trackingIds, status }: { trackingIds: string[]; status: string }) => {
+      const { data, error } = await supabase
+        .from("campaign_entity_tracking")
+        .update({ status })
+        .in("id", trackingIds)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["campaign-entity-tracking"] });
+      toast.success(`Status updated to ${status}`);
+    },
+    onError: () => {
+      toast.error("Failed to update status");
+    },
+  });
+
   return {
     trackingRecords,
     isLoading,
     createTracking,
     updateTracking,
     deleteTracking,
+    bulkUpdateStatus,
     getCampaignsByEntity,
     getEntitiesForCampaign,
     getEntityComments,

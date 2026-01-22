@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Trash2, Building2, Download } from "lucide-react";
+import { X, Trash2, Building2, Download, Play, Pause, FileEdit } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,9 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
+import { ENTITY_TRACKING_STATUSES, EntityTrackingStatus } from "@/domain/campaigns";
 
 interface CampaignBulkActionsBarProps {
   selectedCount: number;
@@ -27,6 +34,7 @@ interface CampaignBulkActionsBarProps {
   onAssignToEntity?: (entity: string) => void;
   onDelete?: () => void;
   onExport?: () => void;
+  onBulkStatusChange?: (status: EntityTrackingStatus) => void;
   className?: string;
 }
 
@@ -36,6 +44,7 @@ export function CampaignBulkActionsBar({
   onAssignToEntity,
   onDelete,
   onExport,
+  onBulkStatusChange,
   className = "",
 }: CampaignBulkActionsBarProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -47,6 +56,12 @@ export function CampaignBulkActionsBar({
     onDelete?.();
     setShowDeleteDialog(false);
   };
+
+  const statusOptions: { value: EntityTrackingStatus; label: string; icon: React.ReactNode }[] = [
+    { value: "Live", label: "Set Live", icon: <Play className="size-4" /> },
+    { value: "Paused", label: "Set Paused", icon: <Pause className="size-4" /> },
+    { value: "Draft", label: "Set Draft", icon: <FileEdit className="size-4" /> },
+  ];
 
   return (
     <>
@@ -68,6 +83,29 @@ export function CampaignBulkActionsBar({
               <X />
               Clear
             </Button>
+
+            {onBulkStatusChange && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Play className="size-4" />
+                    Set Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center">
+                  {statusOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => onBulkStatusChange(option.value)}
+                      className="gap-2"
+                    >
+                      {option.icon}
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             {onAssignToEntity && (
               <Select onValueChange={onAssignToEntity}>
@@ -112,7 +150,7 @@ export function CampaignBulkActionsBar({
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="liquid-glass-elevated">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedCount} campaigns?</AlertDialogTitle>
             <AlertDialogDescription>
