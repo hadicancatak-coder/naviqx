@@ -70,6 +70,7 @@ export const ImageLightbox = ({
     <div
       className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ zIndex: 99999 }}
+      data-lightbox="true"
     >
       {/* Backdrop - captures clicks in capture phase to beat Dialog's handlers */}
       <div 

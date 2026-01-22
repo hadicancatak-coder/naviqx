@@ -157,7 +157,14 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          onInteractOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            // Allow lightbox clicks to pass through
+            const target = e.target as HTMLElement;
+            if (target.closest('[data-lightbox]')) {
+              return;
+            }
+            e.preventDefault();
+          }}
           className={cn(
           "max-h-[90vh] p-0 gap-0 liquid-glass-dialog border-border/50",
           showComments ? "max-w-[1100px]" : "max-w-3xl"
