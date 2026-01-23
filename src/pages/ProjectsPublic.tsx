@@ -371,7 +371,7 @@ export default function ProjectsPublic() {
                               style={{ left: `${left}%`, width: `${width}%`, minWidth: "100px" }}
                             >
                               <div className="h-full px-3 py-2 flex flex-col justify-between overflow-hidden">
-                                <span className={cn("text-body-sm font-semibold truncate", colors.text)}>
+                                <span className="text-body-sm font-semibold truncate text-foreground">
                                   {phase.phase_name}
                                 </span>
                                 <div className="flex items-center gap-2">
