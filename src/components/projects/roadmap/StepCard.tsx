@@ -4,6 +4,12 @@ import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ProjectTimeline } from "@/hooks/useProjects";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface StepCardProps {
   step: ProjectTimeline & { startDate: Date; endDate: Date };
@@ -15,6 +21,7 @@ interface StepCardProps {
   onClick: () => void;
   isAdmin?: boolean;
   onDelete?: () => void;
+  onStatusChange?: (status: string) => void;
 }
 
 // Status colors - reflects status, not priority
@@ -24,6 +31,13 @@ const statusColors: Record<string, { badge: string; ring: string }> = {
   blocked: { badge: "bg-destructive/20 text-destructive-text", ring: "ring-2 ring-destructive/30" },
   completed: { badge: "bg-success/20 text-success-text", ring: "" },
 };
+
+const stepStatuses = [
+  { value: "not_started", label: "Not Started" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "blocked", label: "Blocked" },
+  { value: "completed", label: "Completed" },
+];
 
 export function StepCard({
   step,
@@ -35,6 +49,7 @@ export function StepCard({
   onClick,
   isAdmin,
   onDelete,
+  onStatusChange,
 }: StepCardProps) {
   const status = (step as any).status || "not_started";
   const owner = (step as any).owner;
@@ -50,6 +65,14 @@ export function StepCard({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.();
+  };
+
+  const handleStatusClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    onStatusChange?.(newStatus);
   };
 
   return (
@@ -96,12 +119,44 @@ export function StepCard({
               {(owner || systemName) && (
                 <span className="text-muted-foreground/50">·</span>
               )}
-              <span className={cn(
-                "px-1.5 py-0.5 rounded text-metadata font-medium capitalize",
-                statusStyle.badge
-              )}>
-                {status.replace("_", " ")}
-              </span>
+              {isAdmin && onStatusChange ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={handleStatusClick}>
+                    <button className={cn(
+                      "px-1.5 py-0.5 rounded text-metadata font-medium capitalize cursor-pointer",
+                      "hover:ring-2 hover:ring-offset-1 hover:ring-primary/30 transition-all",
+                      statusStyle.badge
+                    )}>
+                      {status.replace("_", " ")}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="liquid-glass-dropdown">
+                    {stepStatuses.map((s) => (
+                      <DropdownMenuItem
+                        key={s.value}
+                        onClick={() => handleStatusChange(s.value)}
+                        className={cn(
+                          "cursor-pointer",
+                          status === s.value && "bg-accent"
+                        )}
+                      >
+                        <span className={cn(
+                          "w-2 h-2 rounded-full mr-2",
+                          statusColors[s.value]?.badge.replace("text-", "bg-").split(" ")[0]
+                        )} />
+                        {s.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded text-metadata font-medium capitalize",
+                  statusStyle.badge
+                )}>
+                  {status.replace("_", " ")}
+                </span>
+              )}
             </div>
           </div>
 

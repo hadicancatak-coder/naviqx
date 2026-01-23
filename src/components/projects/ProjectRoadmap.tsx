@@ -220,6 +220,13 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
     }
   };
 
+  const handleQuickStatusChange = async (stepId: string, newStatus: string) => {
+    await updateTimeline.mutateAsync({
+      id: stepId,
+      status: newStatus,
+    } as any);
+  };
+
   // Generate month markers
   const monthMarkers = useMemo(() => {
     const markers: { date: Date; position: number }[] = [];
@@ -380,6 +387,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                       onClick={() => setExpandedStepId(step.id)}
                       isAdmin={isAdmin}
                       onDelete={() => handleDeleteStep(step.id)}
+                      onStatusChange={(newStatus) => handleQuickStatusChange(step.id, newStatus)}
                     />
                   </div>
                 );
