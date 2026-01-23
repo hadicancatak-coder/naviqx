@@ -75,6 +75,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       return data || [];
     },
     staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const getInitials = (name: string) => {

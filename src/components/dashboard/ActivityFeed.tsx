@@ -13,7 +13,8 @@ export function ActivityFeed() {
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["activity-feed"],
     queryFn: () => getRecentActivity(10),
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Use centralized realtime service instead of creating own channel

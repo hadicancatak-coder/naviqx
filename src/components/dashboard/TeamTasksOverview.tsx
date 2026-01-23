@@ -98,6 +98,7 @@ export function TeamTasksOverview() {
       return result;
     },
     staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const toggleUser = (userId: string) => {
