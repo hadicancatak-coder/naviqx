@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import { ProjectTimeline, useProjectTimelines } from "@/hooks/useProjects";
 import { useAllProjectMilestones, usePhaseDependencies, usePhaseTaskStats } from "@/hooks/useRoadmap";
 import { calculatePhaseProgress } from "@/hooks/usePhaseProgress";
@@ -125,7 +126,12 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       const stepMilestones = milestones?.filter((m) => m.phase_id === step.id) || [];
       const stepTaskStat = taskStats?.find((s) => s.phase_id === step.id);
       const { calculatedProgress } = calculatePhaseProgress(stepMilestones, stepTaskStat);
-      return { ...step, progress: calculatedProgress };
+      const autoProgress = (step as any).auto_progress !== false; // Default true
+      const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
+      const effectiveProgress = (autoProgress && hasMilestonesOrTasks) 
+        ? calculatedProgress 
+        : (step.progress || 0);
+      return { ...step, progress: effectiveProgress };
     });
   }, [steps, milestones, taskStats]);
 
@@ -338,7 +344,12 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 
                 // Calculate auto-progress based on milestones and tasks
                 const progressResult = calculatePhaseProgress(stepMilestones, stepTaskStat);
-                const displayProgress = progressResult.calculatedProgress;
+                const autoProgress = (step as any).auto_progress !== false; // Default true
+                const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
+                // Use calculated if auto_progress is on AND there's something to calculate, else use manual
+                const displayProgress = (autoProgress && hasMilestonesOrTasks) 
+                  ? progressResult.calculatedProgress 
+                  : (step.progress || 0);
 
                 if (isExpanded) {
                   return (
@@ -669,15 +680,46 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Progress ({editingStep.progress}%)</Label>
-                  <Input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={editingStep.progress}
-                    onChange={(e) => setEditingStep({ ...editingStep, progress: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
+                  {(() => {
+                    const stepMilestones = milestones?.filter((m) => m.phase_id === editingStep.id) || [];
+                    const stepTaskStat = taskStats?.find((s) => s.phase_id === editingStep.id);
+                    const autoProgress = (editingStep as any).auto_progress !== false;
+                    const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
+                    const effectiveProgress = (autoProgress && hasMilestonesOrTasks) 
+                      ? calculatePhaseProgress(stepMilestones, stepTaskStat).calculatedProgress 
+                      : editingStep.progress;
+                    
+                    if (autoProgress && hasMilestonesOrTasks) {
+                      return (
+                        <>
+                          <Label>Progress ({effectiveProgress}%) <span className="text-muted-foreground text-metadata">– auto-calculated</span></Label>
+                          <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-md">
+                            <Progress value={effectiveProgress} className="h-2 flex-1" />
+                            <span className="text-body-sm font-medium">{effectiveProgress}%</span>
+                          </div>
+                          <p className="text-metadata text-muted-foreground">
+                            Progress is calculated from milestones ({stepMilestones.filter(m => m.is_completed).length}/{stepMilestones.length}) and tasks ({stepTaskStat?.completed_tasks || 0}/{stepTaskStat?.total_tasks || 0}).
+                          </p>
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        <Label>Progress ({editingStep.progress}%)</Label>
+                        <Input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={editingStep.progress}
+                          onChange={(e) => setEditingStep({ ...editingStep, progress: parseInt(e.target.value) })}
+                          className="w-full"
+                        />
+                        <p className="text-metadata text-muted-foreground">
+                          Add milestones or link tasks for automatic progress tracking.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="space-y-2">
