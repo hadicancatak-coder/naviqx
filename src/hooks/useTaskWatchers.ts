@@ -43,6 +43,8 @@ export function useTaskWatchers(taskId: string) {
       })) as Watcher[];
     },
     enabled: !!taskId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const isWatching = (watchers || []).some(w => w.user_id === user?.id);

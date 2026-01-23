@@ -34,7 +34,9 @@ import { prefetchTasksData } from "@/lib/taskPrefetch";
 import { 
   prefetchKnowledgeData, 
   prefetchProjectsData, 
-  prefetchTechStackData 
+  prefetchTechStackData,
+  prefetchCampaignTrackingData,
+  prefetchKPIsData,
 } from "@/lib/resourcesPrefetch";
 
   const coreItems = [
@@ -208,8 +210,14 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={getNavLinkClass}
-                      onMouseEnter={() => prefetchRoute(item.url)}
-                      onFocus={() => prefetchRoute(item.url)}
+                      onMouseEnter={() => {
+                        prefetchRoute(item.url);
+                        if (item.url === '/campaigns-log') prefetchCampaignTrackingData();
+                      }}
+                      onFocus={() => {
+                        prefetchRoute(item.url);
+                        if (item.url === '/campaigns-log') prefetchCampaignTrackingData();
+                      }}
                     >
                       <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                       {open && <span className="text-body">{item.title}</span>}

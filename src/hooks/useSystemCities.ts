@@ -22,6 +22,8 @@ export const useSystemCities = () => {
       if (error) throw error;
       return data as SeminarCity[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -38,6 +40,7 @@ export const useAllCities = () => {
       return data as SeminarCity[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - city data rarely changes
+    placeholderData: (previousData) => previousData,
   });
 };
 

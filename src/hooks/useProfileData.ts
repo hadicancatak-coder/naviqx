@@ -49,6 +49,7 @@ export const useProfile = (userId: string | undefined) => {
     },
     enabled: !!userId,
     staleTime: 60 * 1000, // 1 minute
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -68,6 +69,7 @@ export const useTeamMembers = (teams: string[] | null | undefined) => {
     },
     enabled: !!teams && teams.length > 0,
     staleTime: 2 * 60 * 1000, // 2 minutes
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -127,5 +129,6 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
     },
     enabled: !!userId,
     staleTime: 30 * 1000, // 30 seconds
+    placeholderData: (previousData) => previousData,
   });
 };

@@ -34,6 +34,8 @@ export function useAdTemplates() {
       if (error) throw error;
       return data as AdTemplate[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }
 

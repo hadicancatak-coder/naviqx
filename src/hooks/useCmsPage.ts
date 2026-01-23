@@ -27,6 +27,7 @@ export const useCmsPage = (slug: string) => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - CMS content rarely changes
     enabled: !!slug,
+    placeholderData: (previousData) => previousData,
   });
 };
 

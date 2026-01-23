@@ -67,6 +67,8 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
       return data as AgendaItem[];
     },
     enabled: !!effectiveUserId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Check if user is assigned to a task - strict matching

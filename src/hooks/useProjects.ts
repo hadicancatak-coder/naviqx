@@ -93,6 +93,7 @@ export function useProjects() {
     },
     staleTime: 60 * 1000, // 1 minute cache
     gcTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
   });
 
   const tree = projects ? buildTree(projects) : [];

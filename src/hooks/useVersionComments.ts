@@ -81,6 +81,8 @@ export const useVersionComments = (versionId: string | null) => {
       return allComments;
     },
     enabled: !!versionId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const createComment = useMutation({

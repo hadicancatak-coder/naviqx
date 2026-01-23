@@ -34,6 +34,8 @@ export const useCampaignVersions = () => {
       return data as CampaignVersion[];
     },
     enabled: !!campaignId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Create new version

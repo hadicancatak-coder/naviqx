@@ -23,6 +23,8 @@ export const useEntityPresets = () => {
       if (error) throw error;
       return data as EntityPreset[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 };
 

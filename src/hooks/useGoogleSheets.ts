@@ -18,6 +18,8 @@ export function useGoogleSheets(accessToken: string | null) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const createSheet = useMutation({

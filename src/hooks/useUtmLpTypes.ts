@@ -25,6 +25,8 @@ export const useUtmLpTypes = () => {
       if (error) throw error;
       return data as UtmLpType[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
   });
 };
 

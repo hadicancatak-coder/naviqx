@@ -33,6 +33,8 @@ export const useLpExternalComments = (mapId: string | null) => {
       return (data || []) as LpExternalComment[];
     },
     enabled: !!mapId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 };
 

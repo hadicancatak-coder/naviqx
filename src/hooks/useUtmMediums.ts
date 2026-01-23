@@ -23,6 +23,7 @@ export const useUtmMediums = () => {
       return data as UtmMedium[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - medium data rarely changes
+    placeholderData: (previousData) => previousData,
   });
 };
 

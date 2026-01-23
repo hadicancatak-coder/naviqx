@@ -35,6 +35,7 @@ export const useLpOrderPreferences = (entityId: string | null) => {
     },
     enabled: !!user?.id && !!entityId,
     staleTime: 60 * 1000, // 1 minute
+    placeholderData: (previousData) => previousData,
   });
 };
 

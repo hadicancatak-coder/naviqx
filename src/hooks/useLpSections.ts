@@ -79,6 +79,7 @@ export const useLpSections = (filters?: LpSectionFilters) => {
       })) as LpSection[];
     },
     staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 };
 

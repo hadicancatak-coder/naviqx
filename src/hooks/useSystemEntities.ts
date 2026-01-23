@@ -36,6 +36,7 @@ export const useSystemEntities = () => {
     },
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -59,6 +60,7 @@ export const useAllEntities = () => {
     staleTime: 2 * 60 * 1000, // 2 minutes - entities rarely change
     refetchOnWindowFocus: false,
     retry: 2,
+    placeholderData: (previousData) => previousData,
   });
 };
 

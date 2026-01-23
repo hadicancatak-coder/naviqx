@@ -76,6 +76,8 @@ export function useAdElements(filters?: {
       
       return results;
     },
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }
 

@@ -30,6 +30,8 @@ export const useCampaignEntityTracking = () => {
       if (error) throw error;
       return data as CampaignEntityTracking[];
     },
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Create tracking record
