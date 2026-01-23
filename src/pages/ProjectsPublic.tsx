@@ -133,11 +133,18 @@ export default function ProjectsPublic() {
     placeholderData: (previousData) => previousData,
   });
 
-  // Calculate progress for a phase using milestones + tasks
-  const getPhaseProgress = useCallback((phaseId: string) => {
+  // Calculate progress for a phase using milestones + tasks, fallback to stored progress
+  const getPhaseProgress = useCallback((phaseId: string, storedProgress?: number) => {
     const phaseMilestones = milestones.filter((m) => m.phase_id === phaseId);
     const phaseTaskStat = taskStats.find((s) => s.phase_id === phaseId);
-    return calculatePhaseProgress(phaseMilestones, phaseTaskStat);
+    
+    // If there are milestones or tasks, calculate dynamically
+    if (phaseMilestones.length > 0 || (phaseTaskStat?.total_tasks || 0) > 0) {
+      return calculatePhaseProgress(phaseMilestones, phaseTaskStat);
+    }
+    
+    // Otherwise use stored progress value from database
+    return { calculatedProgress: storedProgress || 0 };
   }, [milestones, taskStats]);
 
   // Fetch assignees
@@ -287,7 +294,7 @@ export default function ProjectsPublic() {
         {/* Summary Metrics */}
         {phases.length > 0 && (
           <PublicRoadmapSummary
-            phases={phases.map((p: any) => ({ ...p, progress: getPhaseProgress(p.id).calculatedProgress }))}
+            phases={phases.map((p: any) => ({ ...p, progress: getPhaseProgress(p.id, p.progress).calculatedProgress }))}
             milestones={milestones}
             projectDueDate={project.due_date}
           />
@@ -345,7 +352,7 @@ export default function ProjectsPublic() {
                     const left = getPosition(phase.startDate);
                     const width = getWidth(phase.startDate, phase.endDate);
                     const isActive = isWithinInterval(today, { start: phase.startDate, end: phase.endDate });
-                    const { calculatedProgress } = getPhaseProgress(phase.id);
+                    const { calculatedProgress } = getPhaseProgress(phase.id, phase.progress);
 
                     return (
                       <div key={phase.id} className="relative h-12">
@@ -408,7 +415,7 @@ export default function ProjectsPublic() {
             <div className="space-y-3">
               {phases.map((phase: any) => {
                 const colors = phaseColors[phase.color] || phaseColors.primary;
-                const { calculatedProgress } = getPhaseProgress(phase.id);
+                const { calculatedProgress } = getPhaseProgress(phase.id, phase.progress);
                 return (
                   <PublicPhaseCard
                     key={phase.id}
