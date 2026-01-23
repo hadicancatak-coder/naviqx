@@ -44,14 +44,15 @@ import {
   BookOpen,
   Globe,
   Eye,
-  MousePointerClick
+  MousePointerClick,
+  FolderKanban
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Label } from "@/components/ui/label";
 
 interface UnifiedLink {
   id: string;
-  type: 'campaign' | 'knowledge';
+  type: 'campaign' | 'knowledge' | 'project';
   title: string;
   entity?: string;
   reviewer_name?: string;
@@ -71,7 +72,7 @@ export default function ExternalLinksManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [extendLinkId, setExtendLinkId] = useState<string | null>(null);
   const [newExpiration, setNewExpiration] = useState("");
-  const [deleteLink, setDeleteLink] = useState<{ id: string; type: 'campaign' | 'knowledge' } | null>(null);
+  const [deleteLink, setDeleteLink] = useState<{ id: string; type: 'campaign' | 'knowledge' | 'project' } | null>(null);
 
   // Fetch all external access links
   const { data: campaignLinks = [] } = useQuery({
@@ -107,6 +108,22 @@ export default function ExternalLinksManagement() {
     },
   });
 
+  // Fetch public projects
+  const { data: publicProjects = [] } = useQuery({
+    queryKey: ["public-projects"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("is_public", true)
+        .not("public_token", "is", null)
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Unify all links into single list
   const unifiedLinks: UnifiedLink[] = [
     ...campaignLinks.map((link): UnifiedLink => ({
@@ -135,6 +152,16 @@ export default function ExternalLinksManagement() {
       click_count: page.click_count || 0,
       last_accessed_at: page.last_accessed_at,
       public_token: page.public_token,
+    })),
+    ...publicProjects.map((project): UnifiedLink => ({
+      id: project.id,
+      type: 'project',
+      title: project.name,
+      is_active: project.is_public,
+      created_at: project.created_at,
+      click_count: project.click_count || 0,
+      last_accessed_at: project.last_accessed_at,
+      public_token: project.public_token,
     })),
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -245,12 +272,54 @@ export default function ExternalLinksManagement() {
     onError: () => toast.error("Failed to remove public access"),
   });
 
+  // Toggle project public status
+  const toggleProjectPublicMutation = useMutation({
+    mutationFn: async ({ id, isPublic }: { id: string; isPublic: boolean }) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ is_public: isPublic })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["public-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Project visibility updated");
+    },
+    onError: () => toast.error("Failed to update project"),
+  });
+
+  // Delete project public access (make private + clear token)
+  const deleteProjectLinkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ 
+          is_public: false, 
+          public_token: null,
+          click_count: 0,
+          last_accessed_at: null
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["public-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Public access removed");
+      setDeleteLink(null);
+    },
+    onError: () => toast.error("Failed to remove public access"),
+  });
+
   const copyToClipboard = (link: UnifiedLink) => {
     let url: string;
     if (link.type === 'campaign') {
       url = `${getProductionUrl()}/campaigns-log/review/${link.access_token}`;
-    } else {
+    } else if (link.type === 'knowledge') {
       url = `${getProductionUrl()}/knowledge/public/${link.public_token}`;
+    } else {
+      url = `${getProductionUrl()}/projects/public/${link.public_token}`;
     }
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard");
@@ -259,16 +328,20 @@ export default function ExternalLinksManagement() {
   const handleDeactivate = (link: UnifiedLink) => {
     if (link.type === 'campaign') {
       deactivateCampaignMutation.mutate(link.id);
-    } else {
+    } else if (link.type === 'knowledge') {
       toggleKnowledgePublicMutation.mutate({ id: link.id, isPublic: false });
+    } else {
+      toggleProjectPublicMutation.mutate({ id: link.id, isPublic: false });
     }
   };
 
   const handleReactivate = (link: UnifiedLink) => {
     if (link.type === 'campaign') {
       reactivateCampaignMutation.mutate(link.id);
-    } else {
+    } else if (link.type === 'knowledge') {
       toggleKnowledgePublicMutation.mutate({ id: link.id, isPublic: true });
+    } else {
+      toggleProjectPublicMutation.mutate({ id: link.id, isPublic: true });
     }
   };
 
@@ -276,8 +349,10 @@ export default function ExternalLinksManagement() {
     if (!deleteLink) return;
     if (deleteLink.type === 'campaign') {
       deleteCampaignMutation.mutate(deleteLink.id);
-    } else {
+    } else if (deleteLink.type === 'knowledge') {
       deleteKnowledgeLinkMutation.mutate(deleteLink.id);
+    } else {
+      deleteProjectLinkMutation.mutate(deleteLink.id);
     }
   };
 
@@ -298,7 +373,10 @@ export default function ExternalLinksManagement() {
     if (link.type === 'campaign') {
       return <Badge variant="secondary"><Eye className="h-3 w-3 mr-1" />Campaign</Badge>;
     }
-    return <Badge variant="outline"><BookOpen className="h-3 w-3 mr-1" />Knowledge</Badge>;
+    if (link.type === 'knowledge') {
+      return <Badge variant="outline"><BookOpen className="h-3 w-3 mr-1" />Knowledge</Badge>;
+    }
+    return <Badge variant="outline"><FolderKanban className="h-3 w-3 mr-1" />Project</Badge>;
   };
 
   const filteredLinks = unifiedLinks.filter((link) =>
@@ -313,6 +391,7 @@ export default function ExternalLinksManagement() {
     total: unifiedLinks.length,
     campaigns: campaignLinks.length,
     knowledge: knowledgePages.length,
+    projects: publicProjects.length,
     active: unifiedLinks.filter((l) => l.is_active).length,
     totalClicks: unifiedLinks.reduce((sum, l) => sum + (l.click_count || 0), 0),
   };
@@ -322,12 +401,12 @@ export default function ExternalLinksManagement() {
       <div>
         <h2 className="text-heading-lg">External Access Links</h2>
         <p className="text-body-sm text-muted-foreground">
-          Manage all external review links for campaigns and knowledge pages
+          Manage all external review links for campaigns, knowledge pages, and projects
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-md">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-md">
         <Card>
           <CardHeader className="pb-sm">
             <CardTitle className="text-body-sm text-muted-foreground">Total Links</CardTitle>
@@ -350,6 +429,14 @@ export default function ExternalLinksManagement() {
           </CardHeader>
           <CardContent>
             <p className="text-heading-lg font-semibold text-primary">{stats.knowledge}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-sm">
+            <CardTitle className="text-body-sm text-muted-foreground">Projects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-heading-lg font-semibold text-primary">{stats.projects}</p>
           </CardContent>
         </Card>
         <Card>

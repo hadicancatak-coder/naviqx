@@ -198,10 +198,18 @@ export function useProjects() {
   const ensurePublicToken = useMutation({
     mutationFn: async (id: string) => {
       const project = projects?.find((p) => p.id === id);
+      
+      // If token already exists, just ensure is_public is true
       if (project?.public_token) {
+        const { error } = await supabase
+          .from("projects")
+          .update({ is_public: true })
+          .eq("id", id);
+        if (error) throw error;
         return project.public_token;
       }
 
+      // Generate new token and set public
       const token = crypto.randomUUID();
       const { error } = await supabase
         .from("projects")
