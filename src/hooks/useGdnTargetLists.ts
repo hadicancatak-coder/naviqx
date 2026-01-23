@@ -38,6 +38,8 @@ export function useGdnTargetLists() {
       if (error) throw error;
       return data as GdnTargetList[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Fetch all target items
@@ -51,6 +53,8 @@ export function useGdnTargetLists() {
       if (error) throw error;
       return data as GdnTargetItem[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Create target list

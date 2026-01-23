@@ -49,6 +49,8 @@ export const useWebIntelDeals = () => {
       if (error) throw error;
       return data as WebIntelDeal[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Fetch deal campaigns
@@ -62,6 +64,8 @@ export const useWebIntelDeals = () => {
       if (error) throw error;
       return data as DealCampaign[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Fetch deal UTM links
@@ -75,6 +79,8 @@ export const useWebIntelDeals = () => {
       if (error) throw error;
       return data as DealUtmLink[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Create deal

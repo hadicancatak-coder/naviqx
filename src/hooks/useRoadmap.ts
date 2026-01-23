@@ -46,6 +46,8 @@ export function usePhaseMilestones(phaseId: string | null) {
       return data as PhaseMilestone[];
     },
     enabled: !!phaseId,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const createMilestone = useMutation({
@@ -138,6 +140,8 @@ export function useAllProjectMilestones(projectId: string | null, phaseIds: stri
       return data as PhaseMilestone[];
     },
     enabled: !!projectId && phaseIds.length > 0,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   return { milestones, isLoading };
@@ -161,6 +165,8 @@ export function usePhaseDependencies(projectId: string | null, phaseIds: string[
       return data as PhaseDependency[];
     },
     enabled: !!projectId && phaseIds.length > 0,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const createDependency = useMutation({
@@ -238,6 +244,8 @@ export function usePhaseTaskStats(projectId: string | null) {
       return Array.from(statsMap.values());
     },
     enabled: !!projectId,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   return { taskStats, isLoading };
