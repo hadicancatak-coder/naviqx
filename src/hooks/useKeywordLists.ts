@@ -56,6 +56,8 @@ export function useKeywordLists() {
       if (error) throw error;
       return data as KeywordList[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Create a new keyword list with items

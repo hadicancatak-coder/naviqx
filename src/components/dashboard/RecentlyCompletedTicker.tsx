@@ -42,7 +42,8 @@ export function RecentlyCompletedTicker() {
         completed_by: (task.task_assignees as any)?.[0]?.profiles?.name || null,
       })) as CompletedTask[];
     },
-    staleTime: 30 * 1000, // 30 seconds cache
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const truncateTitle = (title: string, maxLength = 30) => {

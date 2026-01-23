@@ -34,6 +34,7 @@ export function NewsTicker() {
       return (data || []) as Announcement[];
     },
     staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   useEffect(() => {

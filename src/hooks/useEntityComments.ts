@@ -31,6 +31,8 @@ export const useEntityComments = () => {
       return data as EntityComment[];
     },
     enabled: !!entity,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Add comment

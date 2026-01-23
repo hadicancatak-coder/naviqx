@@ -47,6 +47,8 @@ export function KnowledgePageContent({
       return data;
     },
     enabled: !!page.updated_by,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
   
   // Get icon component
