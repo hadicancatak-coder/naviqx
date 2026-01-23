@@ -250,7 +250,7 @@ export function useProjectTimelines(projectId: string | null) {
   });
 
   const createTimeline = useMutation({
-    mutationFn: async (timeline: Partial<ProjectTimeline> & { project_id: string; phase_name: string }) => {
+    mutationFn: async (timeline: Partial<ProjectTimeline> & { project_id: string; phase_name: string } & Record<string, unknown>) => {
       const { data, error } = await supabase
         .from("project_timelines")
         .insert({
@@ -261,6 +261,11 @@ export function useProjectTimelines(projectId: string | null) {
           description: timeline.description || null,
           color: timeline.color || "primary",
           progress: timeline.progress || 0,
+          owner: (timeline as any).owner || null,
+          system_name: (timeline as any).system_name || null,
+          status: (timeline as any).status || "not_started",
+          step_lane: (timeline as any).step_lane || "execution",
+          expected_outcomes: (timeline as any).expected_outcomes || [],
         })
         .select()
         .single();
@@ -278,7 +283,7 @@ export function useProjectTimelines(projectId: string | null) {
   });
 
   const updateTimeline = useMutation({
-    mutationFn: async (timeline: Partial<ProjectTimeline> & { id: string }) => {
+    mutationFn: async (timeline: Partial<ProjectTimeline> & { id: string } & Record<string, unknown>) => {
       // Only pass valid database columns
       const updates: Record<string, unknown> = {};
       if (timeline.phase_name !== undefined) updates.phase_name = timeline.phase_name;
@@ -288,6 +293,12 @@ export function useProjectTimelines(projectId: string | null) {
       if (timeline.color !== undefined) updates.color = timeline.color;
       if (timeline.progress !== undefined) updates.progress = timeline.progress;
       if (timeline.order_index !== undefined) updates.order_index = timeline.order_index;
+      // New step columns
+      if ((timeline as any).owner !== undefined) updates.owner = (timeline as any).owner;
+      if ((timeline as any).system_name !== undefined) updates.system_name = (timeline as any).system_name;
+      if ((timeline as any).status !== undefined) updates.status = (timeline as any).status;
+      if ((timeline as any).step_lane !== undefined) updates.step_lane = (timeline as any).step_lane;
+      if ((timeline as any).expected_outcomes !== undefined) updates.expected_outcomes = (timeline as any).expected_outcomes;
 
       const { data, error } = await supabase
         .from("project_timelines")

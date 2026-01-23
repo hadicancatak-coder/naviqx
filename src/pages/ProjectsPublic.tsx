@@ -8,11 +8,12 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 import { PublicPhaseCard, PublicRoadmapSummary } from "@/components/projects/roadmap";
-import { PhaseMilestone } from "@/hooks/useRoadmap";
+import { PhaseMilestone, PhaseTaskStats } from "@/hooks/useRoadmap";
+import { calculatePhaseProgress } from "@/hooks/usePhaseProgress";
 import {
   Collapsible,
   CollapsibleContent,
@@ -94,7 +95,50 @@ export default function ProjectsPublic() {
       return data as PhaseMilestone[];
     },
     enabled: phaseIds.length > 0,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
+
+  // Fetch task stats for progress calculation
+  const { data: taskStats = [] } = useQuery({
+    queryKey: ["project-task-stats-public", project?.id],
+    queryFn: async () => {
+      if (!project?.id) return [];
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, phase_id, status")
+        .eq("project_id", project.id)
+        .not("phase_id", "is", null);
+
+      if (error) throw error;
+
+      const statsMap = new Map<string, PhaseTaskStats>();
+      for (const task of data || []) {
+        if (!task.phase_id) continue;
+        const existing = statsMap.get(task.phase_id) || {
+          phase_id: task.phase_id,
+          total_tasks: 0,
+          completed_tasks: 0,
+        };
+        existing.total_tasks++;
+        if (task.status === "Completed") {
+          existing.completed_tasks++;
+        }
+        statsMap.set(task.phase_id, existing);
+      }
+      return Array.from(statsMap.values());
+    },
+    enabled: !!project?.id,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
+
+  // Calculate progress for a phase using milestones + tasks
+  const getPhaseProgress = useCallback((phaseId: string) => {
+    const phaseMilestones = milestones.filter((m) => m.phase_id === phaseId);
+    const phaseTaskStat = taskStats.find((s) => s.phase_id === phaseId);
+    return calculatePhaseProgress(phaseMilestones, phaseTaskStat);
+  }, [milestones, taskStats]);
 
   // Fetch assignees
   const { data: assignees } = useQuery({
@@ -243,7 +287,7 @@ export default function ProjectsPublic() {
         {/* Summary Metrics */}
         {phases.length > 0 && (
           <PublicRoadmapSummary
-            phases={phases}
+            phases={phases.map((p: any) => ({ ...p, progress: getPhaseProgress(p.id).calculatedProgress }))}
             milestones={milestones}
             projectDueDate={project.due_date}
           />
@@ -301,6 +345,7 @@ export default function ProjectsPublic() {
                     const left = getPosition(phase.startDate);
                     const width = getWidth(phase.startDate, phase.endDate);
                     const isActive = isWithinInterval(today, { start: phase.startDate, end: phase.endDate });
+                    const { calculatedProgress } = getPhaseProgress(phase.id);
 
                     return (
                       <div key={phase.id} className="relative h-12">
@@ -323,9 +368,9 @@ export default function ProjectsPublic() {
                                   {phase.phase_name}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <Progress value={phase.progress} className="h-1.5 flex-1" />
+                                  <Progress value={calculatedProgress} className="h-1.5 flex-1" />
                                   <span className="text-metadata font-medium text-muted-foreground">
-                                    {phase.progress}%
+                                    {calculatedProgress}%
                                   </span>
                                 </div>
                               </div>
@@ -363,10 +408,11 @@ export default function ProjectsPublic() {
             <div className="space-y-3">
               {phases.map((phase: any) => {
                 const colors = phaseColors[phase.color] || phaseColors.primary;
+                const { calculatedProgress } = getPhaseProgress(phase.id);
                 return (
                   <PublicPhaseCard
                     key={phase.id}
-                    phase={phase}
+                    phase={{ ...phase, progress: calculatedProgress }}
                     milestones={milestones}
                     isActive={isWithinInterval(today, { start: phase.startDate, end: phase.endDate })}
                     colorClasses={colors}
