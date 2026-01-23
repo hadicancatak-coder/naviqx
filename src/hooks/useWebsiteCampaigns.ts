@@ -24,6 +24,8 @@ export const useWebsiteCampaigns = () => {
       if (error) throw error;
       return data as WebsiteCampaign[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Get websites for a specific campaign

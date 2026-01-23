@@ -100,6 +100,7 @@ export const useUtmLinks = (filters?: UtmLinkFilters) => {
     },
     staleTime: 30 * 1000, // 30 seconds - prevents excessive refetches
     refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
   });
 };
 

@@ -24,6 +24,7 @@ export const useUtmPlatforms = () => {
       return data as UtmPlatform[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - platform data rarely changes
+    placeholderData: (previousData) => previousData,
   });
 };
 

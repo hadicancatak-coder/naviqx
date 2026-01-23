@@ -44,5 +44,7 @@ export const useTaskChangeLogs = (taskId: string) => {
       return logsWithProfiles as TaskChangeLog[];
     },
     enabled: !!taskId && taskId !== "undefined" && taskId !== "",
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 };

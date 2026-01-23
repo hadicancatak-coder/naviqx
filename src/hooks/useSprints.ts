@@ -32,6 +32,8 @@ export function useSprints() {
       return data as Sprint[];
     },
     enabled: !!user,
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const createSprintMutation = useMutation({

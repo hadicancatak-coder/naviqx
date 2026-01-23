@@ -1,6 +1,6 @@
 /**
  * Resource data prefetching utilities for instant navigation
- * Preloads Knowledge, Projects, and Tech Stack data into React Query cache
+ * Preloads Knowledge, Projects, Tech Stack, and Campaigns data into React Query cache
  */
 
 import { queryClient } from './queryClient';
@@ -12,12 +12,16 @@ export const PROJECTS_QUERY_KEY = ['projects'] as const;
 export const TECH_STACK_QUERY_KEY = ['tech-stack-pages'] as const;
 export const DASHBOARD_QUERY_KEY = ['dashboard'] as const;
 export const UTM_CAMPAIGNS_QUERY_KEY = ['utm-campaigns'] as const;
+export const CAMPAIGN_TRACKING_QUERY_KEY = ['campaign-entity-tracking'] as const;
+export const KPIS_QUERY_KEY = ['kpis'] as const;
 
 // Track prefetch status to avoid duplicate requests
 const prefetchInProgress = {
   knowledge: false,
   projects: false,
   techStack: false,
+  campaignTracking: false,
+  kpis: false,
 };
 
 // Cache freshness threshold (30 seconds)
@@ -116,6 +120,65 @@ export async function prefetchTechStackData(): Promise<void> {
     console.error('Tech Stack prefetch failed:', err);
   } finally {
     prefetchInProgress.techStack = false;
+  }
+}
+
+/**
+ * Prefetch Campaign Entity Tracking data (for Campaigns Log page)
+ */
+export async function prefetchCampaignTrackingData(): Promise<void> {
+  if (prefetchInProgress.campaignTracking) return;
+  if (isCacheFresh(CAMPAIGN_TRACKING_QUERY_KEY)) return;
+
+  prefetchInProgress.campaignTracking = true;
+
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: CAMPAIGN_TRACKING_QUERY_KEY,
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('campaign_entity_tracking')
+          .select('*')
+          .order('entity', { ascending: true })
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 30000,
+    });
+  } catch (err) {
+    console.error('Campaign tracking prefetch failed:', err);
+  } finally {
+    prefetchInProgress.campaignTracking = false;
+  }
+}
+
+/**
+ * Prefetch KPIs data
+ */
+export async function prefetchKPIsData(): Promise<void> {
+  if (prefetchInProgress.kpis) return;
+  if (isCacheFresh(KPIS_QUERY_KEY)) return;
+
+  prefetchInProgress.kpis = true;
+
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: KPIS_QUERY_KEY,
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('kpis')
+          .select('*, targets:kpi_targets(*), assignments:kpi_assignments(*)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 60000,
+    });
+  } catch (err) {
+    console.error('KPIs prefetch failed:', err);
+  } finally {
+    prefetchInProgress.kpis = false;
   }
 }
 

@@ -26,6 +26,7 @@ export const useUtmCampaigns = () => {
       return data as UtmCampaign[];
     },
     staleTime: 30 * 1000, // 30 seconds cache
+    placeholderData: (previousData) => previousData,
   });
 };
 

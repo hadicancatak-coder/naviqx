@@ -20,6 +20,8 @@ export const useUtmTemplates = () => {
       if (error) throw error;
       return data as UtmTemplate[];
     },
+    staleTime: 60 * 1000, // 1 minute
+    placeholderData: (previousData) => previousData,
   });
 };
 

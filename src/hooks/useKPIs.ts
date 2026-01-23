@@ -21,6 +21,8 @@ export function useKPIs() {
       if (error) throw error;
       return data as unknown as KPIWithRelations[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const createKPI = useMutation({

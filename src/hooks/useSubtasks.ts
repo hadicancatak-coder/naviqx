@@ -60,6 +60,7 @@ export function useSubtasks(parentId: string | null) {
     },
     enabled: !!parentId,
     staleTime: 30 * 1000, // 30 seconds cache
+    placeholderData: (previousData) => previousData,
   });
 
   const createSubtask = useMutation({
