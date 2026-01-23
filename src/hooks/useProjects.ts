@@ -184,11 +184,32 @@ export function useProjects() {
 
   const togglePublic = useMutation({
     mutationFn: async ({ id, isPublic }: { id: string; isPublic: boolean }) => {
-      const { error } = await supabase
-        .from("projects")
-        .update({ is_public: isPublic })
-        .eq("id", id);
-      if (error) throw error;
+      if (isPublic) {
+        // When making public, always generate a NEW token
+        const token = crypto.randomUUID();
+        const { error } = await supabase
+          .from("projects")
+          .update({ 
+            is_public: true, 
+            public_token: token,
+            last_accessed_at: null, // Reset tracking
+            click_count: 0, // Reset click count for new link
+          })
+          .eq("id", id);
+        if (error) throw error;
+        return token;
+      } else {
+        // When making non-public, clear the token completely
+        const { error } = await supabase
+          .from("projects")
+          .update({ 
+            is_public: false, 
+            public_token: null,
+          })
+          .eq("id", id);
+        if (error) throw error;
+        return null;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -198,23 +219,16 @@ export function useProjects() {
 
   const ensurePublicToken = useMutation({
     mutationFn: async (id: string) => {
-      const project = projects?.find((p) => p.id === id);
-      
-      // If token already exists, just ensure is_public is true
-      if (project?.public_token) {
-        const { error } = await supabase
-          .from("projects")
-          .update({ is_public: true })
-          .eq("id", id);
-        if (error) throw error;
-        return project.public_token;
-      }
-
-      // Generate new token and set public
+      // Always generate a fresh token when ensuring public access
       const token = crypto.randomUUID();
       const { error } = await supabase
         .from("projects")
-        .update({ public_token: token, is_public: true })
+        .update({ 
+          public_token: token, 
+          is_public: true,
+          last_accessed_at: null,
+          click_count: 0,
+        })
         .eq("id", id);
 
       if (error) throw error;
