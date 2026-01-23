@@ -36,7 +36,8 @@ export function SearchCampaignForm({ entity, onCampaignCreated }: SearchCampaign
         .eq("entity", entity)
         .order("created_at", { ascending: false });
       return data || [];
-    }
+    },
+    staleTime: 30 * 1000,
   });
 
   const toggleLanguage = (langCode: string) => {

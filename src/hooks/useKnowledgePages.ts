@@ -36,6 +36,8 @@ export function useKnowledgePages() {
       if (error) throw error;
       return data as KnowledgePage[];
     },
+    staleTime: 60 * 1000, // 1 minute - data doesn't change frequently
+    placeholderData: (previousData) => previousData, // Show cached data instantly
   });
 
   // Build tree structure from flat list

@@ -1,35 +1,41 @@
 /**
  * Route-based prefetching for instant navigation
  * Preloads lazy-loaded page chunks on hover for zero-delay navigation
+ * 
+ * NOTE: Eagerly loaded pages are NOT in this registry:
+ * - Dashboard, Tasks, Sprints, Profile, Notifications, KPIs, CampaignsLog
+ * - Projects, Knowledge, TechStack, KeywordIntel
+ * - SearchPlanner, LpPlanner, UtmPlanner, Performance
  */
 
-// Maps routes to their dynamic import functions
+// Maps routes to their dynamic import functions (lazy-loaded pages only)
 const routeModules: Record<string, () => Promise<any>> = {
-  '/': () => import('@/pages/Dashboard'),
-  '/tasks': () => import('@/pages/Tasks'),
-  '/sprints': () => import('@/pages/Sprints'),
-  '/ads/search': () => import('@/pages/SearchPlanner'),
-  '/ads/lp': () => import('@/pages/LpPlanner'),
+  // Ads - CaptionLibrary still lazy
   '/ads/captions': () => import('@/pages/CaptionLibrary'),
-  '/utm-planner': () => import('@/pages/UtmPlanner'),
+  
+  // Intelligence
   '/web-intel': () => import('@/pages/WebIntel'),
-  '/keyword-intel': () => import('@/pages/KeywordIntel'),
-  '/campaigns-log': () => import('@/pages/CampaignsLog'),
-  '/performance': () => import('@/pages/Performance'),
-  '/knowledge': () => import('@/pages/Knowledge'),
-  '/projects': () => import('@/pages/Projects'),
-  '/tech-stack': () => import('@/pages/TechStack'),
+  
+  // Admin pages (all lazy)
   '/admin': () => import('@/pages/admin/AdminLayout'),
   '/admin/users': () => import('@/pages/admin/UsersManagement'),
   '/admin/kpis': () => import('@/pages/admin/KPIsManagement'),
-  '/admin/logs': () => import('@/pages/admin/ErrorLogs'),
+  '/admin/logs': () => import('@/pages/admin/Logs'),
   '/admin/config': () => import('@/pages/admin/Config'),
-  '/notifications': () => import('@/pages/Notifications'),
+  '/admin/security': () => import('@/pages/admin/SecurityPage'),
+  '/admin/errors': () => import('@/pages/admin/ErrorLogs'),
+  '/admin/security-scans': () => import('@/pages/admin/SecurityScans'),
+  '/admin/sprints': () => import('@/pages/admin/SprintsManagement'),
+  '/admin/ad-rules': () => import('@/pages/admin/AdRulesManagement'),
+  '/admin/external-links': () => import('@/pages/admin/ExternalLinksManagement'),
+  
+  // Static/info pages
   '/about': () => import('@/pages/About'),
   '/how-to': () => import('@/pages/HowTo'),
   '/security': () => import('@/pages/Security'),
-  '/profile': () => import('@/pages/Profile'),
-  '/kpis': () => import('@/pages/KPIs'),
+  
+  // Other lazy pages
+  '/copywriter': () => import('@/pages/CopyWriter'),
 };
 
 // Track already-prefetched routes to avoid duplicate fetches

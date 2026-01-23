@@ -37,6 +37,8 @@ export function useTechStackPages() {
       if (error) throw error;
       return data as TechStackPage[];
     },
+    staleTime: 60 * 1000, // 1 minute - data doesn't change frequently
+    placeholderData: (previousData) => previousData, // Show cached data instantly
   });
 
   // Build tree structure from flat list

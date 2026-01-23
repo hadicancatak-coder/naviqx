@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { 
@@ -31,6 +31,11 @@ import {
 } from "@/components/ui/sidebar";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { prefetchTasksData } from "@/lib/taskPrefetch";
+import { 
+  prefetchKnowledgeData, 
+  prefetchProjectsData, 
+  prefetchTechStackData 
+} from "@/lib/resourcesPrefetch";
 
   const coreItems = [
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
@@ -64,7 +69,7 @@ const resourcesItems = [
 export function AppSidebar() {
   const navigate = useNavigate();
   const { open } = useSidebar();
-  const { signOut, userRole, user } = useAuth();
+  const { signOut, user } = useAuth();
   const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
@@ -225,8 +230,19 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={getNavLinkClass}
-                      onMouseEnter={() => prefetchRoute(item.url)}
-                      onFocus={() => prefetchRoute(item.url)}
+                      onMouseEnter={() => {
+                        prefetchRoute(item.url);
+                        // Prefetch resource data for instant loading
+                        if (item.url === '/knowledge') prefetchKnowledgeData();
+                        if (item.url === '/projects') prefetchProjectsData();
+                        if (item.url === '/tech-stack') prefetchTechStackData();
+                      }}
+                      onFocus={() => {
+                        prefetchRoute(item.url);
+                        if (item.url === '/knowledge') prefetchKnowledgeData();
+                        if (item.url === '/projects') prefetchProjectsData();
+                        if (item.url === '/tech-stack') prefetchTechStackData();
+                      }}
                     >
                       <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                       {open && <span className="text-body">{item.title}</span>}

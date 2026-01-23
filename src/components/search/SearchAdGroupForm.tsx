@@ -30,7 +30,8 @@ export function SearchAdGroupForm({ campaign, entity, onAdGroupCreated }: Search
         .eq("campaign_id", campaign.id)
         .order("created_at", { ascending: false });
       return data || [];
-    }
+    },
+    staleTime: 30 * 1000,
   });
 
   const handleCreate = async () => {

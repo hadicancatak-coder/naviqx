@@ -46,6 +46,7 @@ export function EntityCommentsDialog({
       if (error) throw error;
       return data || [];
     },
+    staleTime: 30 * 1000,
   });
 
   // Merge and sort all comments

@@ -34,7 +34,8 @@ export function DuplicateAdGroupDialog({ open, onOpenChange, adGroup, adsCount, 
         .order('name');
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 60 * 1000,
   });
 
   const handleDuplicate = async () => {

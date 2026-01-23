@@ -32,7 +32,8 @@ export function SearchAdGroupAdsView({
         .eq("ad_group_id", adGroup.id)
         .order("created_at", { ascending: false });
       return data || [];
-    }
+    },
+    staleTime: 30 * 1000,
   });
 
   const handleCreateNew = () => {
