@@ -85,6 +85,8 @@ export const useCopywriterCopies = (filters?: CopywriterFilters) => {
 
       return data as CopywriterCopy[];
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 };
 

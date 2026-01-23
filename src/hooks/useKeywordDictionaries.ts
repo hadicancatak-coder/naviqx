@@ -78,6 +78,8 @@ export function useKeywordDictionaries() {
         enabled: d.enabled,
       }));
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Fetch all custom rules
@@ -101,6 +103,8 @@ export function useKeywordDictionaries() {
         enabled: r.enabled,
       }));
     },
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Add dictionary entry
@@ -245,6 +249,8 @@ export function useLeakageSuggestions(runId: string | null) {
       }));
     },
     enabled: !!runId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Save suggestions to database

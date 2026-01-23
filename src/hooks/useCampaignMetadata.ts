@@ -31,7 +31,8 @@ export const useCampaignMetadata = () => {
       return data as CampaignMetadata | null;
     },
     enabled: !!campaignId,
-    staleTime: 30 * 1000, // 30 seconds cache
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Upsert metadata

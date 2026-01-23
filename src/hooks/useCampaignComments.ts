@@ -32,6 +32,8 @@ export const useCampaignComments = () => {
       return data as CampaignComment[];
     },
     enabled: !!trackingId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Get all comments for a UTM campaign (campaign-level)
@@ -48,6 +50,8 @@ export const useCampaignComments = () => {
       return data;
     },
     enabled: !!campaignId,
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Add comment
