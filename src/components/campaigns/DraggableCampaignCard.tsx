@@ -74,12 +74,19 @@ export function DraggableCampaignCard({ campaign, isDragging, onClick }: Draggab
           )}
 
           {/* Landing Page */}
-          {campaign.landing_page && (
-            <div className="flex items-center gap-xs text-metadata text-muted-foreground">
-              <ExternalLink className="h-3 w-3" />
-              <span className="truncate">{new URL(campaign.landing_page).hostname}</span>
-            </div>
-          )}
+          {campaign.landing_page && (() => {
+            try {
+              const hostname = new URL(campaign.landing_page).hostname;
+              return (
+                <div className="flex items-center gap-xs text-metadata text-muted-foreground">
+                  <ExternalLink className="h-3 w-3" />
+                  <span className="truncate">{hostname}</span>
+                </div>
+              );
+            } catch {
+              return null;
+            }
+          })()}
 
           {/* Status */}
           {!campaign.is_active && (
