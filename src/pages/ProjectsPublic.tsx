@@ -376,7 +376,7 @@ export default function ProjectsPublic() {
                                 </span>
                                 <div className="flex items-center gap-2">
                                   <Progress value={calculatedProgress} className="h-1.5 flex-1" />
-                                  <span className="text-metadata font-medium text-muted-foreground">
+                                  <span className="text-metadata font-medium text-foreground">
                                     {calculatedProgress}%
                                   </span>
                                 </div>

@@ -76,7 +76,7 @@ export function StepExpandedCard({
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h4 className={cn("text-heading-sm font-bold truncate", colorClasses.text)}>
+              <h4 className="text-heading-sm font-bold truncate text-foreground">
                 {step.phase_name}
               </h4>
               <span className={cn(
@@ -105,7 +105,7 @@ export function StepExpandedCard({
 
           <div className="flex items-center gap-sm">
             <Progress value={progress} className="w-24 h-2" />
-            <span className={cn("text-body-sm font-semibold min-w-[3ch]", colorClasses.text)}>
+            <span className="text-body-sm font-semibold min-w-[3ch] text-foreground">
               {progress}%
             </span>
           </div>
