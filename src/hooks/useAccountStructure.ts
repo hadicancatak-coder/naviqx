@@ -22,7 +22,9 @@ export function useAccountStructure() {
         .order('name');
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const campaigns = useQuery({
@@ -34,7 +36,9 @@ export function useAccountStructure() {
         .order('name');
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const adGroups = useQuery({
@@ -46,7 +50,9 @@ export function useAccountStructure() {
         .order('name');
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const ads = useQuery({
@@ -58,7 +64,9 @@ export function useAccountStructure() {
         .order('name');
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const versionCounts = useQuery({
@@ -74,7 +82,9 @@ export function useAccountStructure() {
         counts[v.ad_id] = (counts[v.ad_id] || 0) + 1;
       });
       return counts;
-    }
+    },
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   return {

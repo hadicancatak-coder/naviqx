@@ -30,6 +30,10 @@ import Projects from "./pages/Projects";
 import Knowledge from "./pages/Knowledge";
 import TechStack from "./pages/TechStack";
 import KeywordIntel from "./pages/KeywordIntel";
+import SearchPlanner from "./pages/SearchPlanner";
+import LpPlanner from "./pages/LpPlanner";
+import UtmPlanner from "./pages/UtmPlanner";
+import Performance from "./pages/Performance";
 
 // Lazy-loaded pages for better initial load
 const SprintsManagement = lazy(() => import("./pages/admin/SprintsManagement"));
@@ -44,21 +48,17 @@ const ExternalLinksManagement = lazy(() => import("./pages/admin/ExternalLinksMa
 const KPIsManagement = lazy(() => import("./pages/admin/KPIsManagement"));
 const ErrorLogs = lazy(() => import("./pages/admin/ErrorLogs"));
 const SecurityScans = lazy(() => import("./pages/admin/SecurityScans"));
-const SearchPlanner = lazy(() => import("./pages/SearchPlanner"));
-const LpPlanner = lazy(() => import("./pages/LpPlanner"));
 const LpMapPublic = lazy(() => import("./pages/LpMapPublic"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Security = lazy(() => import("./pages/Security"));
 const About = lazy(() => import("./pages/About"));
 const HowTo = lazy(() => import("./pages/HowTo"));
-const UtmPlanner = lazy(() => import("./pages/UtmPlanner"));
 const CopyWriter = lazy(() => import("./pages/CopyWriter"));
 const CaptionLibrary = lazy(() => import("./pages/CaptionLibrary"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
 const CampaignReview = lazy(() => import("./pages/CampaignReview"));
 const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
 const KnowledgePublic = lazy(() => import("./pages/KnowledgePublic"));
-const Performance = lazy(() => import("./pages/Performance"));
 const ProjectsPublic = lazy(() => import("./pages/ProjectsPublic"));
 
 

@@ -261,5 +261,6 @@ export function useDashboardData() {
     staleTime: 60 * 1000, // 1 minute cache
     gcTime: 5 * 60 * 1000, // 5 minutes garbage collection
     refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData, // Show cached data instantly
   });
 }
