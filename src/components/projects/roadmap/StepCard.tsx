@@ -75,10 +75,7 @@ export function StepCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {/* Step Title - Large and prominent */}
-            <h4 className={cn(
-              "text-body font-bold truncate leading-tight",
-              colorClasses.text
-            )}>
+            <h4 className="text-body font-bold truncate leading-tight text-foreground">
               {step.phase_name}
             </h4>
             
@@ -143,7 +140,7 @@ export function StepCard({
         {/* Progress bar - always at bottom */}
         <div className="flex items-center gap-3 mt-auto pt-2">
           <Progress value={progress} className="h-2 flex-1" />
-          <span className={cn("text-metadata font-semibold min-w-[3ch]", colorClasses.text)}>
+          <span className="text-metadata font-semibold min-w-[3ch] text-foreground">
             {progress}%
           </span>
         </div>
