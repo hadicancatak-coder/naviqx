@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Plus, Search, FolderKanban, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,21 @@ export default function Projects() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const isAdmin = true;
+
+  // Keep selectedProject in sync with query data
+  useEffect(() => {
+    if (selectedProject && projects) {
+      const freshProject = projects.find(p => p.id === selectedProject.id);
+      if (freshProject && (
+        freshProject.is_public !== selectedProject.is_public ||
+        freshProject.public_token !== selectedProject.public_token ||
+        freshProject.name !== selectedProject.name ||
+        freshProject.status !== selectedProject.status
+      )) {
+        setSelectedProject(freshProject);
+      }
+    }
+  }, [projects, selectedProject]);
 
   // Filter projects based on search
   const filteredProjects = useMemo(() => {
@@ -127,11 +142,11 @@ export default function Projects() {
     if (!selectedProject) return;
 
     if (isPublic) {
-      const token = await ensurePublicToken.mutateAsync(selectedProject.id);
-      setSelectedProject({ ...selectedProject, is_public: true, public_token: token });
+      await ensurePublicToken.mutateAsync(selectedProject.id);
+      // State sync handled by useEffect after query invalidation
     } else {
       await togglePublic.mutateAsync({ id: selectedProject.id, isPublic: false });
-      setSelectedProject({ ...selectedProject, is_public: false });
+      // State sync handled by useEffect after query invalidation
     }
   };
 
