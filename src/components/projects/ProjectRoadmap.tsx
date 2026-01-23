@@ -119,6 +119,16 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
   const { dependencies, createDependency } = usePhaseDependencies(projectId, stepIds);
   const { taskStats } = usePhaseTaskStats(projectId);
 
+  // Compute steps with calculated progress for summary/display
+  const stepsWithProgress = useMemo(() => {
+    return steps.map((step) => {
+      const stepMilestones = milestones?.filter((m) => m.phase_id === step.id) || [];
+      const stepTaskStat = taskStats?.find((s) => s.phase_id === step.id);
+      const { calculatedProgress } = calculatePhaseProgress(stepMilestones, stepTaskStat);
+      return { ...step, progress: calculatedProgress };
+    });
+  }, [steps, milestones, taskStats]);
+
   const getPosition = (date: Date) => {
     const days = differenceInDays(date, minDate);
     return (days / totalDays) * 100;
@@ -254,9 +264,9 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       </div>
 
       {/* Summary Metrics - Full Width */}
-      {steps.length > 0 && (
+      {stepsWithProgress.length > 0 && (
         <RoadmapSummary
-          phases={steps}
+          phases={stepsWithProgress}
           milestones={milestones || []}
           projectDueDate={projectDueDate}
         />
@@ -338,6 +348,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                       steps={steps}
                       dependencies={dependencies || []}
                       taskStats={stepTaskStat}
+                      progress={displayProgress}
                       isAdmin={isAdmin}
                       onEdit={() => setEditingStep(step)}
                       onCollapse={() => setExpandedStepId(null)}

@@ -14,6 +14,7 @@ interface StepExpandedCardProps {
   steps: (ProjectTimeline & { startDate: Date; endDate: Date })[];
   dependencies: PhaseDependency[];
   taskStats: PhaseTaskStats | undefined;
+  progress: number;
   isAdmin?: boolean;
   onEdit: () => void;
   onCollapse: () => void;
@@ -33,6 +34,7 @@ export function StepExpandedCard({
   steps,
   dependencies,
   taskStats,
+  progress,
   isAdmin,
   onEdit,
   onCollapse,
@@ -102,9 +104,9 @@ export function StepExpandedCard({
           </div>
 
           <div className="flex items-center gap-sm">
-            <Progress value={step.progress} className="w-24 h-2" />
+            <Progress value={progress} className="w-24 h-2" />
             <span className={cn("text-body-sm font-semibold min-w-[3ch]", colorClasses.text)}>
-              {step.progress}%
+              {progress}%
             </span>
           </div>
         </div>
