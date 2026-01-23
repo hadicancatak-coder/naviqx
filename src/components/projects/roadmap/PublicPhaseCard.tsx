@@ -54,7 +54,7 @@ export function PublicPhaseCard({
           <div className={cn("w-3 h-3 rounded-full shrink-0", colorClasses.bg.replace('/20', ''))} />
           
           <div className="flex-1 min-w-0 text-left">
-            <h4 className="text-body font-semibold truncate text-foreground">
+            <h4 className="text-body font-semibold truncate !text-foreground">
               {phase.phase_name}
             </h4>
             <p className="text-metadata text-muted-foreground">
@@ -65,7 +65,7 @@ export function PublicPhaseCard({
           {/* Progress */}
           <div className="hidden sm:flex items-center gap-sm shrink-0">
             <Progress value={phase.progress} className="w-20 h-2" />
-            <span className="text-body-sm font-semibold min-w-[3ch] text-foreground">
+            <span className="text-body-sm font-semibold min-w-[3ch] !text-foreground">
               {phase.progress}%
             </span>
           </div>
@@ -104,7 +104,7 @@ export function PublicPhaseCard({
             <div className="sm:hidden">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-metadata text-muted-foreground">Progress</span>
-                <span className="text-body-sm font-semibold text-foreground">
+                <span className="text-body-sm font-semibold !text-foreground">
                   {phase.progress}%
                 </span>
               </div>
