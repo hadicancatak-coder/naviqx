@@ -371,12 +371,12 @@ export default function ProjectsPublic() {
                               style={{ left: `${left}%`, width: `${width}%`, minWidth: "100px" }}
                             >
                               <div className="h-full px-3 py-2 flex flex-col justify-between overflow-hidden">
-                                <span className="text-body-sm font-semibold truncate text-foreground">
+                                <span className="text-body-sm font-semibold truncate !text-foreground">
                                   {phase.phase_name}
                                 </span>
                                 <div className="flex items-center gap-2">
                                   <Progress value={calculatedProgress} className="h-1.5 flex-1" />
-                                  <span className="text-metadata font-medium text-foreground">
+                                  <span className="text-metadata font-medium !text-foreground">
                                     {calculatedProgress}%
                                   </span>
                                 </div>
