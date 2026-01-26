@@ -144,6 +144,12 @@ export const useUpsertUtmCampaigns = () => {
       asset_link?: string;
       version_number?: number;
       version_notes?: string;
+      status?: string;
+      platform?: string;
+      entity?: string;
+      launch_date?: string;
+      campaign_link?: string;
+      hubspot_utm_campaign?: string;
     }>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -173,6 +179,12 @@ export const useUpsertUtmCampaigns = () => {
               landing_page: campaign.landing_page || null,
               campaign_type: campaign.campaign_type || null,
               description: campaign.description || null,
+              status: campaign.status || null,
+              platform: campaign.platform || null,
+              entity: campaign.entity || null,
+              launch_date: campaign.launch_date || null,
+              campaign_link: campaign.campaign_link || null,
+              hubspot_utm_campaign: campaign.hubspot_utm_campaign || null,
             })
             .eq("id", existingId);
           
@@ -188,6 +200,12 @@ export const useUpsertUtmCampaigns = () => {
               landing_page: campaign.landing_page || null,
               campaign_type: campaign.campaign_type || null,
               description: campaign.description || null,
+              status: campaign.status || 'Active',
+              platform: campaign.platform || null,
+              entity: campaign.entity || null,
+              launch_date: campaign.launch_date || null,
+              campaign_link: campaign.campaign_link || null,
+              hubspot_utm_campaign: campaign.hubspot_utm_campaign || null,
               created_by: user.id,
             })
             .select("id")

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download, Upload, FileSpreadsheet, CheckCircle2, XCircle, RefreshCw, Loader2 } from "lucide-react";
 import { useUpsertUtmCampaigns } from "@/hooks/useUtmCampaigns";
-import { CAMPAIGN_TYPES, type CampaignType } from "@/domain/campaigns";
+import { CAMPAIGN_TYPES, CAMPAIGN_STATUSES, type CampaignType, type CampaignStatus } from "@/domain/campaigns";
 import { toast } from "sonner";
 
 interface CampaignBulkImportDialogProps {
@@ -23,11 +23,72 @@ interface ParsedRow {
   asset_link: string;
   version_number: string;
   version_notes: string;
+  status: string;
+  platform: string;
+  entity: string;
+  launch_date: string;
+  campaign_link: string;
+  hubspot_utm_campaign: string;
   isValid: boolean;
   errors: string[];
   isUpdate: boolean;
   hasVersionData: boolean;
 }
+
+// Column name mappings: user's CSV header -> internal field
+const COLUMN_MAPPINGS: Record<string, string> = {
+  // Name variations
+  "name": "name",
+  "campaign name": "name",
+  "campaign_name": "name",
+  
+  // Landing page variations
+  "landing_page": "landing_page",
+  "lp link": "landing_page",
+  "lp_link": "landing_page",
+  "landingpage": "landing_page",
+  
+  // Campaign type variations
+  "campaign_type": "campaign_type",
+  "campaign type": "campaign_type",
+  "type": "campaign_type",
+  
+  // Status variations
+  "status": "status",
+  "campaign status": "status",
+  "campaign_status": "status",
+  
+  // Platform variations
+  "platform": "platform",
+  "platfrom": "platform", // Common typo
+  
+  // Entity variations
+  "entity": "entity",
+  
+  // Launch date variations
+  "launch_date": "launch_date",
+  "launch date": "launch_date",
+  "launchdate": "launch_date",
+  
+  // Campaign link variations
+  "campaign_link": "campaign_link",
+  "campaign link": "campaign_link",
+  "campaignlink": "campaign_link",
+  
+  // Hubspot UTM Campaign variations
+  "hubspot_utm_campaign": "hubspot_utm_campaign",
+  "hubspot utm campaign": "hubspot_utm_campaign",
+  "hubspot": "hubspot_utm_campaign",
+  
+  // Description
+  "description": "description",
+  
+  // Version fields
+  "asset_link": "asset_link",
+  "version_number": "version_number",
+  "version": "version_number",
+  "version_notes": "version_notes",
+};
 
 export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImportDialogProps) {
   const [step, setStep] = useState<"upload" | "preview">("upload");
@@ -37,15 +98,19 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
   const upsertMutation = useUpsertUtmCampaigns();
 
   const downloadTemplate = () => {
-    const headers = ["name", "landing_page", "campaign_type", "description", "asset_link", "version_number", "version_notes"];
+    const headers = ["Campaign Name", "LP Link", "Campaign Type", "Campaign Status", "Platform", "Entity", "Launch Date", "Campaign Link", "Hubspot UTM Campaign", "Version", "Description"];
     const exampleRow = [
       "Summer Sale 2025",
       "https://example.com/promo",
       "Performance",
-      "Q2 promotional campaign",
-      "https://drive.google.com/file/xyz",
+      "Active",
+      "META",
+      "Kuwait",
+      "22/12/2026",
+      "https://ads.facebook.com/...",
+      "Summer_Sale_2025",
       "1",
-      "Initial version with approved creatives"
+      "Q2 promotional campaign"
     ];
     const csvContent = [headers.join(","), exampleRow.map(v => `"${v}"`).join(",")].join("\n");
     
@@ -61,17 +126,32 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
     const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
     if (lines.length < 2) return [];
     
-    const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
-    const nameIdx = headers.indexOf("name");
-    const landingPageIdx = headers.indexOf("landing_page");
-    const typeIdx = headers.indexOf("campaign_type");
-    const descIdx = headers.indexOf("description");
-    const assetLinkIdx = headers.indexOf("asset_link");
-    const versionNumIdx = headers.indexOf("version_number");
-    const versionNotesIdx = headers.indexOf("version_notes");
+    // Parse headers and map to internal field names
+    const rawHeaders = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
+    const headerMapping: Record<number, string> = {};
     
-    if (nameIdx === -1) {
-      toast.error("CSV must have a 'name' column");
+    rawHeaders.forEach((header, idx) => {
+      const mappedField = COLUMN_MAPPINGS[header];
+      if (mappedField) {
+        headerMapping[idx] = mappedField;
+      }
+    });
+    
+    // Check required columns
+    const hasName = Object.values(headerMapping).includes("name");
+    const hasLandingPage = Object.values(headerMapping).includes("landing_page");
+    const hasEntity = Object.values(headerMapping).includes("entity");
+    
+    if (!hasName) {
+      toast.error("CSV must have a 'Campaign Name' or 'name' column");
+      return [];
+    }
+    if (!hasLandingPage) {
+      toast.error("CSV must have a 'LP Link' or 'landing_page' column");
+      return [];
+    }
+    if (!hasEntity) {
+      toast.error("CSV must have an 'Entity' column");
       return [];
     }
     
@@ -96,24 +176,54 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
       }
       values.push(current.trim());
       
-      const name = values[nameIdx]?.replace(/"/g, "").trim() || "";
-      const landing_page = landingPageIdx >= 0 ? values[landingPageIdx]?.replace(/"/g, "").trim() || "" : "";
-      const campaign_type = typeIdx >= 0 ? values[typeIdx]?.replace(/"/g, "").trim() || "" : "";
-      const description = descIdx >= 0 ? values[descIdx]?.replace(/"/g, "").trim() || "" : "";
-      const asset_link = assetLinkIdx >= 0 ? values[assetLinkIdx]?.replace(/"/g, "").trim() || "" : "";
-      const version_number = versionNumIdx >= 0 ? values[versionNumIdx]?.replace(/"/g, "").trim() || "" : "";
-      const version_notes = versionNotesIdx >= 0 ? values[versionNotesIdx]?.replace(/"/g, "").trim() || "" : "";
+      // Extract values based on mapping
+      const getValue = (field: string): string => {
+        const idx = Object.entries(headerMapping).find(([_, f]) => f === field)?.[0];
+        if (idx !== undefined) {
+          return values[parseInt(idx)]?.replace(/"/g, "").trim() || "";
+        }
+        return "";
+      };
+      
+      const name = getValue("name");
+      const landing_page = getValue("landing_page");
+      const campaign_type = getValue("campaign_type");
+      const description = getValue("description");
+      const asset_link = getValue("asset_link");
+      const version_number = getValue("version_number");
+      const version_notes = getValue("version_notes");
+      const status = getValue("status");
+      const platform = getValue("platform");
+      const entity = getValue("entity");
+      const launch_date = getValue("launch_date");
+      const campaign_link = getValue("campaign_link");
+      const hubspot_utm_campaign = getValue("hubspot_utm_campaign");
       
       const errors: string[] = [];
       
+      // Validate required fields
       if (!name) {
-        errors.push("Name is required");
+        errors.push("Campaign Name is required");
       } else if (seenNames.has(name.toLowerCase())) {
         errors.push("Duplicate name in file");
       }
       
+      if (!landing_page) {
+        errors.push("LP Link is required");
+      }
+      
+      if (!entity) {
+        errors.push("Entity is required");
+      }
+      
+      // Validate campaign_type if provided
       if (campaign_type && !CAMPAIGN_TYPES.includes(campaign_type as CampaignType)) {
         errors.push(`Invalid type. Valid: ${CAMPAIGN_TYPES.join(", ")}`);
+      }
+      
+      // Validate status if provided
+      if (status && !CAMPAIGN_STATUSES.includes(status as CampaignStatus)) {
+        errors.push(`Invalid status. Valid: ${CAMPAIGN_STATUSES.join(", ")}`);
       }
       
       // Validate version_number if provided
@@ -124,12 +234,20 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         }
       }
       
-      // Validate asset_link URL format if provided
-      if (asset_link) {
+      // Validate URL formats if provided
+      if (landing_page) {
         try {
-          new URL(asset_link);
+          new URL(landing_page);
         } catch {
-          errors.push("Asset link must be a valid URL");
+          errors.push("LP Link must be a valid URL");
+        }
+      }
+      
+      if (campaign_link) {
+        try {
+          new URL(campaign_link);
+        } catch {
+          errors.push("Campaign Link must be a valid URL");
         }
       }
       
@@ -145,6 +263,12 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         asset_link,
         version_number,
         version_notes,
+        status,
+        platform,
+        entity,
+        launch_date,
+        campaign_link,
+        hubspot_utm_campaign,
         isValid: errors.length === 0,
         errors,
         isUpdate: existingNames.has(name.toLowerCase()),
@@ -193,6 +317,12 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         asset_link: r.asset_link || undefined,
         version_number: r.version_number ? parseInt(r.version_number, 10) : undefined,
         version_notes: r.version_notes || undefined,
+        status: r.status || undefined,
+        platform: r.platform || undefined,
+        entity: r.entity || undefined,
+        launch_date: r.launch_date || undefined,
+        campaign_link: r.campaign_link || undefined,
+        hubspot_utm_campaign: r.hubspot_utm_campaign || undefined,
       })));
       handleClose();
     } catch {
@@ -214,7 +344,7 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-sm">
             <FileSpreadsheet className="size-5" />
@@ -228,12 +358,11 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         {step === "upload" && (
           <div className="space-y-md py-md">
             <Alert>
-              <AlertDescription className="text-body-sm">
-                <strong>CSV Format:</strong> name (required), landing_page, campaign_type, description, asset_link, version_number, version_notes
-                <br />
-                <strong>Valid types:</strong> {CAMPAIGN_TYPES.join(", ")}
-                <br />
-                <strong>Version fields:</strong> If provided, a version will be created with the campaign
+              <AlertDescription className="text-body-sm space-y-1">
+                <div><strong>Required columns:</strong> Campaign Name, LP Link, Entity</div>
+                <div><strong>Optional columns:</strong> Campaign Type, Campaign Status, Platform, Launch Date, Campaign Link, Hubspot UTM Campaign, Version, Description</div>
+                <div><strong>Valid types:</strong> {CAMPAIGN_TYPES.join(", ")}</div>
+                <div><strong>Valid statuses:</strong> {CAMPAIGN_STATUSES.join(", ")}</div>
               </AlertDescription>
             </Alert>
             
@@ -290,14 +419,14 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[60px]">Status</TableHead>
+                    <TableHead className="w-[50px]">Status</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Landing Page</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>LP Link</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Asset Link</TableHead>
-                    <TableHead className="w-[50px]">V#</TableHead>
-                    <TableHead>Version Notes</TableHead>
+                    <TableHead>Platform</TableHead>
+                    <TableHead>Launch Date</TableHead>
+                    <TableHead>Campaign Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -322,31 +451,39 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                        {row.landing_page || "—"}
+                      <TableCell>
+                        {row.entity ? (
+                          <Badge variant="outline" className="text-xs">{row.entity}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
-                      <TableCell>{row.campaign_type || "—"}</TableCell>
-                      <TableCell className="max-w-[150px] truncate text-muted-foreground">
-                        {row.description || "—"}
-                      </TableCell>
-                      <TableCell className="max-w-[150px] truncate text-muted-foreground">
-                        {row.asset_link ? (
+                      <TableCell className="max-w-[180px] truncate text-muted-foreground">
+                        {row.landing_page ? (
                           <a 
-                            href={row.asset_link} 
+                            href={row.landing_page} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-primary hover:underline"
-                            title={row.asset_link}
+                            title={row.landing_page}
                           >
-                            {new URL(row.asset_link).hostname}
+                            {(() => {
+                              try {
+                                return new URL(row.landing_page).hostname;
+                              } catch {
+                                return row.landing_page.slice(0, 30);
+                              }
+                            })()}
                           </a>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-center">
-                        {row.version_number || "—"}
-                      </TableCell>
-                      <TableCell className="max-w-[150px] truncate text-muted-foreground" title={row.version_notes}>
-                        {row.version_notes || "—"}
+                      <TableCell>{row.campaign_type || "—"}</TableCell>
+                      <TableCell>{row.platform || "—"}</TableCell>
+                      <TableCell>{row.launch_date || "—"}</TableCell>
+                      <TableCell>
+                        {row.status ? (
+                          <Badge variant="outline" className="text-xs">{row.status}</Badge>
+                        ) : "—"}
                       </TableCell>
                     </TableRow>
                   ))}
