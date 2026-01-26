@@ -13,9 +13,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function Knowledge() {
-  const { userRole } = useAuth();
+  const { userRole, loading: authLoading } = useAuth();
   const isAdmin = userRole === "admin";
-  const { pages, pageTree, isLoading, createPage, updatePage, deletePage, togglePublic, ensurePublicToken } = useKnowledgePages();
+  const { pages, pageTree, isLoading, isError, createPage, updatePage, deletePage, togglePublic, ensurePublicToken } = useKnowledgePages();
 
   const [selectedPage, setSelectedPage] = useState<KnowledgePage | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -175,6 +175,28 @@ export default function Knowledge() {
       });
     }
   };
+
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state
+  if (isError) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <p className="text-muted-foreground">Could not load knowledge base.</p>
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (isLoading) {
     return (

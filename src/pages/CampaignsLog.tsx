@@ -22,6 +22,7 @@ import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { useExternalAccess } from "@/hooks/useExternalAccess";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { PageContainer, PageHeader, DataCard } from "@/components/layout";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ function TrashZone({ isActive }: { isActive: boolean }) {
 }
 
 export default function CampaignsLog() {
+  const { loading: authLoading } = useAuth();
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set(['library']));
   const [searchTerm, setSearchTerm] = useState("");
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -235,6 +237,17 @@ export default function CampaignsLog() {
       setGeneratingLink(false);
     }
   };
+
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer size="wide">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (isLoadingCampaigns) {
     return (

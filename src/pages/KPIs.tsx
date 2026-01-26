@@ -11,8 +11,8 @@ import { Target, TrendingUp, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 export default function KPIs() {
-  const { user } = useAuth();
-  const { kpis, isLoading } = useKPIs();
+  const { user, loading: authLoading } = useAuth();
+  const { kpis, isLoading, isError } = useKPIs();
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
 
   // Get current user's profile ID
@@ -38,6 +38,33 @@ export default function KPIs() {
   const myKPIs = kpis?.filter(kpi => 
     kpi.assignments?.some(assignment => assignment.user_id === userProfileId)
   ) || [];
+
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state
+  if (isError) {
+    return (
+      <PageContainer>
+        <PageHeader
+          icon={Target}
+          title="My KPIs"
+          description="Track your key performance indicators and goals"
+        />
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
+          <p className="text-muted-foreground">Could not load KPIs.</p>
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (isLoading) {
     return (

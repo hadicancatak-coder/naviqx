@@ -14,12 +14,12 @@ import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns"
 import { AnnouncementsSection } from "@/components/AnnouncementsSection";
 
 export default function Notifications() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { openTaskDrawer } = useTaskDrawer();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [filteredNotifications, setFilteredNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,7 +57,7 @@ export default function Notifications() {
   }, [notifications, readFilter, typeFilter, searchQuery]);
 
   const fetchNotifications = async () => {
-    setLoading(true);
+    setDataLoading(true);
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
@@ -68,7 +68,7 @@ export default function Notifications() {
       setNotifications(data || []);
       await enrichNotificationData(data);
     }
-    setLoading(false);
+    setDataLoading(false);
   };
 
   const enrichNotificationData = async (notifs: any[]) => {
@@ -372,7 +372,16 @@ export default function Notifications() {
   const notificationTypes = Array.from(new Set(notifications.map(n => n.type)));
   const groupedNotifications = groupByDate(filteredNotifications);
 
-  if (loading) {
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
@@ -563,7 +572,7 @@ export default function Notifications() {
           )
         ))}
 
-        {filteredNotifications.length === 0 && !loading && (
+        {filteredNotifications.length === 0 && !dataLoading && (
           <div className="py-12 text-center">
             <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-md" />
             <p className="text-body text-muted-foreground">
