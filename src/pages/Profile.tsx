@@ -22,7 +22,6 @@ import { useKPIs } from "@/hooks/useKPIs";
 import { Progress } from "@/components/ui/progress";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { PageLoadingState } from "@/components/layout/PageLoadingState";
 import { useProfile, useTeamMembers, useUserTasks } from "@/hooks/useProfileData";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -36,8 +35,8 @@ export default function Profile() {
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
   
-  // Use React Query hooks for data fetching - simplified: use native states only
-  const { data: profile, isPending: profilePending, isError: profileError } = useProfile(targetUserId);
+  // Use React Query hooks - use isLoading (not isPending) to avoid race conditions
+  const { data: profile, isLoading: profileLoading, isError: profileError } = useProfile(targetUserId);
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
@@ -157,38 +156,52 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  // SIMPLIFIED LOADING PATTERN: 2 checks instead of 5
-  // Check 1: Loading state (auth OR profile query pending when enabled)
-  // Check 2: Error/NotFound state (only after loading is done)
-  
-  // Early return guard - prevents accessing profile properties before data exists
-  if (authLoading || (!!targetUserId && profilePending)) {
+  // === DEAD SIMPLE EARLY RETURN PATTERN ===
+  // Guard 1: Auth still loading
+  if (authLoading) {
     return (
-      <PageLoadingState
-        authLoading={authLoading}
-        dataLoading={true}
-        isError={false}
-        hasData={false}
-        errorMessage="Loading..."
-        onBack={() => navigate(-1)}
-      >
-        <div />
-      </PageLoadingState>
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
     );
   }
-  
+
+  // Guard 2: No user ID (not logged in, no URL param)
+  if (!targetUserId) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <p className="text-muted-foreground">Please log in to view profiles.</p>
+          <Button onClick={() => navigate("/login")} variant="outline">Log In</Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Guard 3: Profile query is loading (isLoading = fetching + no cached data)
+  if (profileLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Guard 4: Error or no profile found
   if (profileError || !profile) {
     return (
-      <PageLoadingState
-        authLoading={false}
-        dataLoading={false}
-        isError={profileError}
-        hasData={false}
-        errorMessage={profileError ? "Could not load profile." : "Profile not found."}
-        onBack={() => navigate(-1)}
-      >
-        <div />
-      </PageLoadingState>
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <p className="text-muted-foreground">
+            {profileError ? "Could not load profile." : "Profile not found."}
+          </p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </PageContainer>
     );
   }
   
