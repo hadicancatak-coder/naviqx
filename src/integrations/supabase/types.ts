@@ -4501,6 +4501,7 @@ export type Database = {
         Row: {
           campaign_link: string | null
           campaign_type: string | null
+          click_count: number | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -4509,17 +4510,21 @@ export type Database = {
           hubspot_utm_campaign: string | null
           id: string
           is_active: boolean | null
+          is_public: boolean | null
           landing_page: string | null
+          last_accessed_at: string | null
           last_used_at: string | null
           launch_date: string | null
           name: string
           platform: string | null
+          public_token: string | null
           status: string | null
           usage_count: number | null
         }
         Insert: {
           campaign_link?: string | null
           campaign_type?: string | null
+          click_count?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -4528,17 +4533,21 @@ export type Database = {
           hubspot_utm_campaign?: string | null
           id?: string
           is_active?: boolean | null
+          is_public?: boolean | null
           landing_page?: string | null
+          last_accessed_at?: string | null
           last_used_at?: string | null
           launch_date?: string | null
           name: string
           platform?: string | null
+          public_token?: string | null
           status?: string | null
           usage_count?: number | null
         }
         Update: {
           campaign_link?: string | null
           campaign_type?: string | null
+          click_count?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -4547,11 +4556,14 @@ export type Database = {
           hubspot_utm_campaign?: string | null
           id?: string
           is_active?: boolean | null
+          is_public?: boolean | null
           landing_page?: string | null
+          last_accessed_at?: string | null
           last_used_at?: string | null
           launch_date?: string | null
           name?: string
           platform?: string | null
+          public_token?: string | null
           status?: string | null
           usage_count?: number | null
         }
