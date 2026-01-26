@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
 import { Loader2, ExternalLink } from "lucide-react";
 
@@ -82,7 +82,7 @@ export function ExternalReviewComments({
                   ({comment.reviewer_email})
                 </span>
                 <span className="text-metadata text-muted-foreground">
-                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                  {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                 </span>
               </div>
               <CommentText text={comment.comment_text} className="text-body-sm" />

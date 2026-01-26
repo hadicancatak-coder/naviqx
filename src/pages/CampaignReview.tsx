@@ -13,7 +13,7 @@ import { useExternalAccess } from "@/hooks/useExternalAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
@@ -598,7 +598,7 @@ export default function CampaignReview() {
                             {version.created_at && (
                               <div className="flex items-center gap-1 text-metadata text-muted-foreground">
                                 <Calendar className="h-3 w-3" />
-                                {formatDistanceToNow(new Date(version.created_at), { addSuffix: true })}
+                                {format(new Date(version.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(version.created_at), { addSuffix: true })})
                               </div>
                             )}
                           </div>
@@ -624,7 +624,7 @@ export default function CampaignReview() {
                                       <div className="flex items-center gap-sm flex-wrap">
                                         <span className="font-medium text-body-sm">{comment.reviewer_name}</span>
                                         <span className="text-metadata text-muted-foreground">
-                                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                                          {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                                         </span>
                                       </div>
                                       <p className="text-body-sm text-foreground mt-1">{comment.comment_text}</p>
@@ -706,7 +706,7 @@ export default function CampaignReview() {
                           <div className="flex items-center gap-sm flex-wrap">
                             <span className="font-medium text-body-sm">{comment.reviewer_name}</span>
                             <span className="text-metadata text-muted-foreground">
-                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                              {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                             </span>
                           </div>
                           <p className="text-body-sm text-foreground mt-1">{comment.comment_text}</p>
