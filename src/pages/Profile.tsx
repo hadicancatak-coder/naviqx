@@ -30,13 +30,13 @@ const TEAMS = ["SocialUA", "PPC", "PerMar"];
 export default function Profile() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
   
   // Use React Query hooks for data fetching
-  const { data: profile, isLoading: profileLoading } = useProfile(targetUserId);
+  const { data: profile, isLoading: profileLoading, isError: profileError } = useProfile(targetUserId);
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
@@ -156,6 +156,30 @@ export default function Profile() {
       .slice(0, 2);
   };
 
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state
+  if (profileError || (!profileLoading && !profile && targetUserId)) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <p className="text-muted-foreground">Could not load profile.</p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Only show loading if we're actively loading with a valid targetUserId
   if (profileLoading || !profile) {
     return (
       <PageContainer>

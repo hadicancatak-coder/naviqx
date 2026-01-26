@@ -26,7 +26,7 @@ export function useTechStackPages() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: pages, isLoading } = useQuery({
+  const { data: pages, isLoading, isError } = useQuery({
     queryKey: ["tech-stack-pages"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -163,6 +163,7 @@ export function useTechStackPages() {
     pages,
     pageTree,
     isLoading,
+    isError,
     createPage,
     updatePage,
     deletePage,
