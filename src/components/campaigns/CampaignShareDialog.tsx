@@ -44,6 +44,9 @@ export const CampaignShareDialog = ({
   const handleTogglePublic = async () => {
     setIsUpdating(true);
     try {
+      // Get current user for created_by field
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Check if an entity-wide access record exists
       const { data: existing } = await supabase
         .from("campaign_external_access")
@@ -77,7 +80,7 @@ export const CampaignShareDialog = ({
             .eq("id", existing.id);
           if (error) throw error;
         } else {
-          // Insert new record
+          // Insert new record WITH created_by
           const { error } = await supabase
             .from("campaign_external_access")
             .insert({
@@ -86,6 +89,7 @@ export const CampaignShareDialog = ({
               is_active: true,
               reviewer_email: "public@cfi.trade",
               reviewer_name: "Public Access",
+              created_by: user?.id,
             });
           if (error) throw error;
         }
