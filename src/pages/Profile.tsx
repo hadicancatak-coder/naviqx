@@ -36,7 +36,7 @@ export default function Profile() {
   const isOwnProfile = !userId || userId === user?.id;
   
   // Use React Query hooks for data fetching
-  const { data: profile, isLoading: profileLoading, isError: profileError } = useProfile(targetUserId);
+  const { data: profile, isInitialLoading: profileLoading, isError: profileError, isFetching: profileFetching } = useProfile(targetUserId);
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
@@ -167,8 +167,20 @@ export default function Profile() {
     );
   }
 
-  // Handle error state
-  if (profileError || (!profileLoading && !profile && targetUserId)) {
+  // Show loading while fetching initial data
+  // isPending = no cached data and fetching, OR isFetching without any data yet
+  if (profileLoading || (profileFetching && !profile)) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state - only show if we actually got an API error
+  if (profileError) {
     return (
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -179,12 +191,13 @@ export default function Profile() {
     );
   }
 
-  // Only show loading if we're actively loading with a valid targetUserId
-  if (profileLoading || !profile) {
+  // Handle case where profile genuinely doesn't exist after fetch completed
+  if (!profile && targetUserId) {
     return (
       <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <p className="text-muted-foreground">Profile not found.</p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
         </div>
       </PageContainer>
     );

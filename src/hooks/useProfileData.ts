@@ -24,7 +24,7 @@ export interface TeamMember {
 }
 
 export const useProfile = (userId: string | undefined) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["profile", userId],
     queryFn: async () => {
       if (!userId) return null;
@@ -50,8 +50,13 @@ export const useProfile = (userId: string | undefined) => {
     },
     enabled: !!userId,
     staleTime: 60 * 1000, // 1 minute
-    placeholderData: (previousData) => previousData,
   });
+
+  return {
+    ...query,
+    // Expose a combined loading state for initial fetch
+    isInitialLoading: query.isPending || (query.isFetching && !query.data),
+  };
 };
 
 export const useTeamMembers = (teams: string[] | null | undefined) => {
