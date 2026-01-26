@@ -66,7 +66,14 @@ export const CampaignShareDialog = ({
         }
         toast.success("Link deactivated");
       } else {
-        // Activate
+        // Activate - first deactivate any existing active tokens for this entity
+        await supabase
+          .from("campaign_external_access")
+          .update({ is_active: false })
+          .eq("entity", entity)
+          .is("campaign_id", null)
+          .eq("is_active", true);
+        
         const newToken = crypto.randomUUID();
         
         if (existing) {
@@ -76,6 +83,8 @@ export const CampaignShareDialog = ({
             .update({
               access_token: newToken,
               is_active: true,
+              click_count: 0,
+              last_accessed_at: null,
             })
             .eq("id", existing.id);
           if (error) throw error;
