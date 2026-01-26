@@ -131,7 +131,7 @@ export default function Auth() {
     <GlassBackground variant="centered">
       <Card className="w-full max-w-md p-lg glass-elevated">
         <div className="text-center mb-lg">
-          <h1 className="text-3xl font-bold text-foreground mb-sm">Prisma</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-sm">Naviqx</h1>
           <p className="text-muted-foreground">
             {isLogin ? "Welcome back" : "Create your account"}
           </p>

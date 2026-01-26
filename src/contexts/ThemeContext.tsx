@@ -14,7 +14,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     // Check localStorage first
-    const stored = localStorage.getItem("prisma-theme");
+    const stored = localStorage.getItem("naviqx-theme");
     if (stored === "light" || stored === "dark") {
       return stored;
     }
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Persist to localStorage
-    localStorage.setItem("prisma-theme", theme);
+    localStorage.setItem("naviqx-theme", theme);
     
     // Apply theme class to document
     const root = document.documentElement;

@@ -119,7 +119,7 @@ export default function HowTo() {
   return (
     <PageContainer size="narrow" className="animate-fade-in">
       <PageHeader
-        title="How to Use Prisma"
+        title="How to Use Naviqx"
         description="Learn how to get the most out of the platform"
         actions={
           userRole === 'admin' ? (
