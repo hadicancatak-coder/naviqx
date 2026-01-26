@@ -35,8 +35,8 @@ export default function Profile() {
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
   
-  // Use React Query hooks - use isLoading (not isPending) to avoid race conditions
-  const { data: profile, isLoading: profileLoading, isError: profileError } = useProfile(targetUserId);
+  // Use React Query hooks - use isPending (not isLoading) to catch initial state before fetch starts
+  const { data: profile, isPending: profilePending, isError: profileError } = useProfile(targetUserId);
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
@@ -180,8 +180,8 @@ export default function Profile() {
     );
   }
 
-  // Guard 3: Profile query is loading (isLoading = fetching + no cached data)
-  if (profileLoading) {
+  // Guard 3: Profile query is pending (isPending = no data yet, includes initial state)
+  if (profilePending) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
