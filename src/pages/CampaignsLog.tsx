@@ -88,7 +88,7 @@ export default function CampaignsLog() {
       .select("access_token, is_active, click_count")
       .eq("entity", selectedEntity)
       .is("campaign_id", null)
-      .single();
+      .maybeSingle();
     
     if (data) {
       setEntityShareInfo({
