@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
 
     // Generate TOTP URI
     const totp = new OTPAuth.TOTP({
-      issuer: 'Prisma',
+      issuer: 'Naviqx',
       label: profile?.email || user.email || '',
       secret: OTPAuth.Secret.fromBase32(secret),
       digits: 6,

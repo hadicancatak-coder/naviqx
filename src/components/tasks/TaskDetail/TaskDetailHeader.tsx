@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, MoreHorizontal, Trash2, X, CornerDownRight, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_BASE_URL } from "@/lib/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +55,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   };
 
   const handleCopyLink = () => {
-    const url = `https://prismax1.lovable.app/tasks?task=${taskId}`;
+    const url = `${APP_BASE_URL}/tasks?task=${taskId}`;
     navigator.clipboard.writeText(url);
     toast.success("Task link copied to clipboard");
   };

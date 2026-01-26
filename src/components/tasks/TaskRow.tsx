@@ -7,6 +7,7 @@ import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, Exter
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { APP_BASE_URL } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { getRecurrenceLabelNew } from "@/lib/recurrenceUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -324,7 +325,7 @@ export function TaskRow({
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
-                const url = `https://prismax1.lovable.app/tasks?task=${task.id}`;
+                const url = `${APP_BASE_URL}/tasks?task=${task.id}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Task link copied");
                 setOpenDropdown(false);

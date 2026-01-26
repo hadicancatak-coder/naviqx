@@ -52,7 +52,7 @@ export function TopHeader() {
         <div className="flex items-center gap-3">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all h-9 w-9" />
           <div className="hidden sm:flex items-center gap-xs text-body-sm">
-            <span className="font-semibold text-foreground">Prisma</span>
+            <span className="font-semibold text-foreground">Naviqx</span>
             {pageName && (
               <>
                 <span className="text-muted-foreground">/</span>

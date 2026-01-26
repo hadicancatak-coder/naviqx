@@ -107,12 +107,12 @@ export function AppSidebar() {
           >
             <img 
               src={logoImage} 
-              alt="Prisma" 
+              alt="Naviqx" 
               className={`transition-smooth ${open ? 'h-10' : 'h-8'}`}
             />
             {open && (
               <div className="flex flex-col">
-                <span className="text-section-title text-foreground font-semibold">Prisma</span>
+                <span className="text-section-title text-foreground font-semibold">Naviqx</span>
                 {userName && (
                   <span className="text-metadata text-muted-foreground mt-0.5">
                     {userName}

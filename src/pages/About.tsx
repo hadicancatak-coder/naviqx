@@ -112,7 +112,7 @@ export default function About() {
   return (
     <div className="p-lg space-y-lg max-w-4xl mx-auto animate-fade-in">
       <PageHeader
-        title="Prisma"
+        title="Naviqx"
         description="Comprehensive Task & Campaign Management Platform"
         actions={
           userRole === 'admin' ? (
@@ -186,7 +186,7 @@ export default function About() {
 
       {/* Footer */}
       <div className="text-center text-metadata text-muted-foreground pt-4">
-        <p>© 2025 Prisma. All rights reserved.</p>
+        <p>© 2025 Naviqx. All rights reserved.</p>
       </div>
 
       {/* Edit Dialog */}

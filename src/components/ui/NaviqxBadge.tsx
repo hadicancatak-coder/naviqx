@@ -1,5 +1,5 @@
 /**
- * PrismaBadge - Data-driven status and priority badges
+ * NaviqxBadge - Data-driven status and priority badges
  * MUST use domain layer enums - no manual styling allowed
  */
 
@@ -19,7 +19,7 @@ import {
 type BadgeSize = 'sm' | 'md' | 'lg';
 type BadgeType = 'status' | 'priority' | 'tag' | 'custom';
 
-interface PrismaBadgeProps {
+interface NaviqxBadgeProps {
   /** The type of badge - determines which config to use */
   type: BadgeType;
   /** The value to display (status, priority, or tag value) */
@@ -58,7 +58,7 @@ const dotSizeClasses: Record<BadgeSize, string> = {
 // COMPONENT
 // =============================================================================
 
-export function PrismaBadge({
+export function NaviqxBadge({
   type,
   value,
   size = 'md',
@@ -66,7 +66,7 @@ export function PrismaBadge({
   className,
   customClassName,
   customLabel,
-}: PrismaBadgeProps) {
+}: NaviqxBadgeProps) {
   // Get configuration based on type
   const getConfig = () => {
     switch (type) {
@@ -151,7 +151,7 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, size = 'md', showDot = true, className }: StatusBadgeProps) {
   return (
-    <PrismaBadge
+    <NaviqxBadge
       type="status"
       value={status}
       size={size}
@@ -170,7 +170,7 @@ interface PriorityBadgeProps {
 
 export function PriorityBadge({ priority, size = 'md', showDot = true, className }: PriorityBadgeProps) {
   return (
-    <PrismaBadge
+    <NaviqxBadge
       type="priority"
       value={priority}
       size={size}
@@ -188,7 +188,7 @@ interface TagBadgeProps {
 
 export function TagBadge({ tag, size = 'sm', className }: TagBadgeProps) {
   return (
-    <PrismaBadge
+    <NaviqxBadge
       type="tag"
       value={tag}
       size={size}
@@ -198,4 +198,7 @@ export function TagBadge({ tag, size = 'sm', className }: TagBadgeProps) {
   );
 }
 
-export default PrismaBadge;
+// Backwards compatibility alias
+export const PrismaBadge = NaviqxBadge;
+
+export default NaviqxBadge;
