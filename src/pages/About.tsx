@@ -132,7 +132,7 @@ export default function About() {
               Version {currentVersion}
             </Badge>
             <p className="text-body-sm text-muted-foreground">
-              Prisma is a powerful platform designed to streamline task management, campaign coordination, and team
+              Naviqx is a powerful platform designed to streamline task management, campaign coordination, and team
               collaboration. Built with security and efficiency in mind, it helps teams stay organized and productive.
               Created by and for the CFI Global Performance Marketing Team.
             </p>

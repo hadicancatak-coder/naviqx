@@ -16,5 +16,5 @@ export function getProductionUrl(): string {
     return import.meta.env.VITE_PUBLIC_URL;
   }
   // Known production URL for this project
-  return 'https://prismax1.lovable.app';
+  return 'https://naviqx.lovable.app';
 }

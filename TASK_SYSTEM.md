@@ -1,6 +1,6 @@
 # Task System Architecture
 
-> **Documentation for the Prisma Task Management System components and patterns.**
+> **Documentation for the Naviqx Task Management System components and patterns.**
 
 ---
 

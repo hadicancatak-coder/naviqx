@@ -133,7 +133,7 @@ export default function MfaVerify() {
       <Card className="w-full max-w-md p-lg glass-elevated">
         <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
-          <h1 className="text-heading-lg font-bold text-foreground mb-2">Two-Factor Authentication</h1>
+          <h1 className="text-heading-lg font-bold text-foreground mb-2">Naviqx Security Check</h1>
           <p className="text-body-sm text-muted-foreground">
             {useBackupCode 
               ? "Enter one of your backup codes"

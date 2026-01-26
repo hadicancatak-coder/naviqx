@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Shield, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { authPasswordSchema } from "@/lib/validationSchemas";
@@ -129,11 +129,15 @@ export default function Auth() {
 
   return (
     <GlassBackground variant="centered">
-      <Card className="w-full max-w-md p-lg glass-elevated">
+      <Card className="w-full max-w-md p-lg liquid-glass-elevated">
+        {/* Logo & Branding */}
         <div className="text-center mb-lg">
-          <h1 className="text-3xl font-bold text-foreground mb-sm">Naviqx</h1>
-          <p className="text-muted-foreground">
-            {isLogin ? "Welcome back" : "Create your account"}
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-md">
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-heading-lg font-bold text-foreground">Naviqx</h1>
+          <p className="text-body-sm text-muted-foreground mt-1">
+            {isLogin ? "Welcome back to CFI PerMar" : "Create your CFI account"}
           </p>
         </div>
 
@@ -147,10 +151,14 @@ export default function Auth() {
 
         <form onSubmit={handleSubmit} className="space-y-md">
           {!isLogin && (
-            <div>
+            <div className="space-y-1">
+              <label htmlFor="name" className="text-body-sm font-medium text-foreground">
+                Your Name
+              </label>
               <Input
+                id="name"
                 type="text"
-                placeholder="Your name"
+                placeholder="John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required={!isLogin}
@@ -158,20 +166,31 @@ export default function Auth() {
             </div>
           )}
           
-          <div>
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-body-sm font-medium text-foreground">
+              CFI Email
+            </label>
             <Input
+              id="email"
               type="email"
-              placeholder="Email"
+              placeholder="name@cfi.trade"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            <p className="text-metadata text-muted-foreground">
+              Only @cfi.trade email addresses are accepted
+            </p>
           </div>
 
-          <div>
+          <div className="space-y-1">
+            <label htmlFor="password" className="text-body-sm font-medium text-foreground">
+              Password
+            </label>
             <Input
+              id="password"
               type="password"
-              placeholder="Password"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -184,21 +203,36 @@ export default function Auth() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Please wait...
+              </>
+            ) : isLogin ? (
+              "Log In"
+            ) : (
+              "Create Account"
+            )}
           </Button>
-
         </form>
 
         <div className="mt-lg text-center">
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-body-sm text-primary hover:underline"
+            className="text-body-sm text-primary hover:underline transition-smooth"
           >
             {isLogin
               ? "Don't have an account? Sign up"
               : "Already have an account? Log in"}
           </button>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-lg pt-md border-t border-border">
+          <p className="text-metadata text-center text-muted-foreground">
+            CFI Performance Marketing • Secure Access
+          </p>
         </div>
       </Card>
     </GlassBackground>

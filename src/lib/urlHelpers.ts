@@ -5,7 +5,7 @@ export const getProductionUrl = (): string => {
   }
   
   // Use the production domain
-  const productionDomain = "prismax1.lovable.app";
+  const productionDomain = "naviqx.lovable.app";
   
   // In development, use current origin
   if (window.location.hostname === "localhost" || window.location.hostname.includes("lovableproject.com")) {

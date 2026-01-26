@@ -182,7 +182,7 @@ export default function MfaSetup() {
           <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
           <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
           <p className="text-body-sm text-muted-foreground">
-            Two-factor authentication is required for all accounts
+            Naviqx requires 2FA for all accounts to protect your data
           </p>
         </div>
 
