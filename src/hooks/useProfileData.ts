@@ -33,9 +33,10 @@ export const useProfile = (userId: string | undefined) => {
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) return null;
       
       // Parse working_days if it's a string
       const profile = data as Record<string, unknown>;
