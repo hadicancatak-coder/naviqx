@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Check, ExternalLink, Link2 } from "lucide-react";
 import {
   Dialog,
@@ -36,9 +36,19 @@ export const CampaignShareDialog = ({
 }: CampaignShareDialogProps) => {
   const [copied, setCopied] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Local state for immediate UI feedback
+  const [localIsPublic, setLocalIsPublic] = useState(isPublic);
+  const [localToken, setLocalToken] = useState(publicToken);
+  
+  // Sync local state with props when they change
+  useEffect(() => {
+    setLocalIsPublic(isPublic);
+    setLocalToken(publicToken);
+  }, [isPublic, publicToken]);
 
-  const shareUrl = publicToken
-    ? `${getProductionUrl()}/campaigns-log/review/${publicToken}`
+  const shareUrl = localToken
+    ? `${getProductionUrl()}/campaigns-log/review/${localToken}`
     : "";
 
   const handleTogglePublic = async () => {
@@ -55,8 +65,11 @@ export const CampaignShareDialog = ({
         .is("campaign_id", null)
         .maybeSingle();
 
-      if (isPublic) {
-        // Deactivate
+      if (localIsPublic) {
+        // Deactivate - immediate UI feedback
+        setLocalIsPublic(false);
+        setLocalToken(null);
+        
         if (existing) {
           const { error } = await supabase
             .from("campaign_external_access")
@@ -75,6 +88,10 @@ export const CampaignShareDialog = ({
           .eq("is_active", true);
         
         const newToken = crypto.randomUUID();
+        
+        // Immediate UI feedback
+        setLocalIsPublic(true);
+        setLocalToken(newToken);
         
         if (existing) {
           // Update existing record with new token
@@ -107,6 +124,9 @@ export const CampaignShareDialog = ({
       }
       onRefresh();
     } catch (error: any) {
+      // Revert local state on error
+      setLocalIsPublic(isPublic);
+      setLocalToken(publicToken);
       toast.error(error.message || "Failed to update sharing settings");
     } finally {
       setIsUpdating(false);
@@ -140,13 +160,13 @@ export const CampaignShareDialog = ({
             </div>
             <Switch
               id="public-link"
-              checked={isPublic}
+              checked={localIsPublic}
               onCheckedChange={handleTogglePublic}
               disabled={isUpdating}
             />
           </div>
 
-          {isPublic && publicToken && (
+          {localIsPublic && localToken && (
             <>
               <div className="space-y-2">
                 <Label>Share link</Label>
@@ -186,7 +206,7 @@ export const CampaignShareDialog = ({
             </>
           )}
 
-          {!isPublic && (
+          {!localIsPublic && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-muted text-sm text-muted-foreground">
               <Link2 className="h-4 w-4" />
               Enable the public link to share this campaign log
