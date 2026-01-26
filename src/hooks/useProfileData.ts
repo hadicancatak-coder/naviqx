@@ -12,7 +12,7 @@ export interface ProfileData {
   phone_number: string | null;
   tagline: string | null;
   teams: string[] | null;
-  working_days: string[] | null;
+  working_days: string | null;  // Plain string like "mon-fri" or "sun-thu"
 }
 
 export interface TeamMember {
@@ -38,14 +38,11 @@ export const useProfile = (userId: string | undefined) => {
       if (error) throw error;
       if (!data) return null;
       
-      // Parse working_days if it's a string
-      const profile = data as Record<string, unknown>;
+      // working_days is a plain string like "mon-fri", NOT JSON - just pass it through
       return {
-        ...profile,
-        teams: profile.teams as string[] | null,
-        working_days: typeof profile.working_days === 'string' 
-          ? JSON.parse(profile.working_days) 
-          : profile.working_days,
+        ...data,
+        teams: data.teams as string[] | null,
+        working_days: data.working_days,
       } as ProfileData;
     },
     enabled: !!userId,
