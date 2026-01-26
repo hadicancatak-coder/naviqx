@@ -4499,42 +4499,60 @@ export type Database = {
       }
       utm_campaigns: {
         Row: {
+          campaign_link: string | null
           campaign_type: string | null
           created_at: string
           created_by: string | null
           description: string | null
           display_order: number | null
+          entity: string | null
+          hubspot_utm_campaign: string | null
           id: string
           is_active: boolean | null
           landing_page: string | null
           last_used_at: string | null
+          launch_date: string | null
           name: string
+          platform: string | null
+          status: string | null
           usage_count: number | null
         }
         Insert: {
+          campaign_link?: string | null
           campaign_type?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           display_order?: number | null
+          entity?: string | null
+          hubspot_utm_campaign?: string | null
           id?: string
           is_active?: boolean | null
           landing_page?: string | null
           last_used_at?: string | null
+          launch_date?: string | null
           name: string
+          platform?: string | null
+          status?: string | null
           usage_count?: number | null
         }
         Update: {
+          campaign_link?: string | null
           campaign_type?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           display_order?: number | null
+          entity?: string | null
+          hubspot_utm_campaign?: string | null
           id?: string
           is_active?: boolean | null
           landing_page?: string | null
           last_used_at?: string | null
+          launch_date?: string | null
           name?: string
+          platform?: string | null
+          status?: string | null
           usage_count?: number | null
         }
         Relationships: []
