@@ -18,7 +18,7 @@ import tseslint from "typescript-eslint";
 //
 // If you generate violating code, the build WILL FAIL.
 // =============================================================================
-// PRISMA DESIGN SYSTEM - ESLint Token Enforcement
+// NAVIQX DESIGN SYSTEM - ESLint Token Enforcement
 // =============================================================================
 // ALL RULES = "error" (blocks build for all files)
 // See STYLE_GUIDE.md for the complete token reference.

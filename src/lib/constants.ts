@@ -7,7 +7,7 @@
  * Production base URL - used for generating public share links
  * This ensures links always use the production domain, not preview URLs
  */
-export const APP_BASE_URL = 'https://prismax1.lovable.app';
+export const APP_BASE_URL = 'https://naviqx.lovable.app';
 
 export const ENTITIES = [
   "Global Management",

@@ -1,4 +1,4 @@
-# Prisma Style Guide
+# Naviqx Style Guide
 
 > **Single source of truth for all styling.** All new code MUST follow this guide.
 

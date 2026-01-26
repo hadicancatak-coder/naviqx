@@ -198,7 +198,7 @@ export function TagBadge({ tag, size = 'sm', className }: TagBadgeProps) {
   );
 }
 
-// Backwards compatibility alias
+// Legacy alias - deprecated, use NaviqxBadge directly
 export const PrismaBadge = NaviqxBadge;
 
 export default NaviqxBadge;

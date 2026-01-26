@@ -210,7 +210,7 @@ export const TASK_TAG_OPTIONS = [
 ] as const;
 
 // =============================================================================
-// STATUS STYLING CONFIG - For PrismaBadge
+// STATUS STYLING CONFIG - For NaviqxBadge
 // =============================================================================
 
 export const TASK_STATUS_CONFIG: Record<string, {
