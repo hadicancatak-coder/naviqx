@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEntityComments } from "@/hooks/useEntityComments";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
 import { ExternalLink } from "lucide-react";
 
@@ -127,7 +127,7 @@ export function EntityCommentsDialog({
                         </span>
                       )}
                       <span className="text-metadata text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                        {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                       </span>
                     </div>
                     <CommentText text={comment.comment_text} className="text-body-sm" />

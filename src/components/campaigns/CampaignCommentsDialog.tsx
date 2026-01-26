@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCampaignComments } from "@/hooks/useCampaignComments";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Loader2, Send } from "lucide-react";
 import { CommentText } from "@/components/CommentText";
 
@@ -98,7 +98,7 @@ export function CampaignCommentsDialog({
                         </span>
                       )}
                       <span className="text-metadata text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                        {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                       </span>
                       {comment.is_external && (
                         <Badge variant="outline" className="text-metadata">External</Badge>

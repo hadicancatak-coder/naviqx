@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useVersionComments } from "@/hooks/useVersionComments";
 import { useAuth } from "@/hooks/useAuth";
 import { CommentText } from "@/components/CommentText";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface VersionCommentsProps {
@@ -91,7 +91,7 @@ export function VersionComments({ versionId, campaignId, entity }: VersionCommen
                     )}
                   </div>
                   <p className="text-metadata text-muted-foreground">
-                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                    {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                   </p>
                 </div>
                 {/* Only show delete for own internal comments */}

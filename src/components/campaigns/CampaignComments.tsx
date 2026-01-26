@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Send } from "lucide-react";
 import { useCampaignComments } from "@/hooks/useCampaignComments";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
 
 interface CampaignCommentsProps {
@@ -64,7 +64,7 @@ export function CampaignComments({ campaignId }: CampaignCommentsProps) {
                       )}
                     </div>
                     <span className="text-metadata text-muted-foreground">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                     </span>
                   </div>
                   <CommentText 
