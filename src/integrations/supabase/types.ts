@@ -1532,7 +1532,7 @@ export type Database = {
       external_campaign_review_comments: {
         Row: {
           access_token: string
-          campaign_id: string
+          campaign_id: string | null
           comment_text: string
           comment_type: string | null
           created_at: string | null
@@ -1544,7 +1544,7 @@ export type Database = {
         }
         Insert: {
           access_token: string
-          campaign_id: string
+          campaign_id?: string | null
           comment_text: string
           comment_type?: string | null
           created_at?: string | null
@@ -1556,7 +1556,7 @@ export type Database = {
         }
         Update: {
           access_token?: string
-          campaign_id?: string
+          campaign_id?: string | null
           comment_text?: string
           comment_type?: string | null
           created_at?: string | null
