@@ -52,10 +52,17 @@ export const useProfile = (userId: string | undefined) => {
     staleTime: 60 * 1000, // 1 minute
   });
 
+  // Properly detect loading state:
+  // - isPending: query was never enabled OR is enabled but hasn't fetched yet
+  // - isFetching without data: background refresh but no cached data
+  // - userId exists but status is "pending": query just got enabled
+  const isInitialLoading = !userId 
+    ? false  // No userId = nothing to load
+    : query.isPending || query.isFetching || query.status === 'pending';
+
   return {
     ...query,
-    // Expose a combined loading state for initial fetch
-    isInitialLoading: query.isPending || (query.isFetching && !query.data),
+    isInitialLoading,
   };
 };
 
