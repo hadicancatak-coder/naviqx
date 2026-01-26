@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOverlay, useDroppable } from "@dnd-kit/core";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GripVertical, ExternalLink, Search, ChevronDown, Plus, Trash2, Loader2, BookOpen, Upload, LayoutGrid, List } from "lucide-react";
+import { GripVertical, ExternalLink, Search, ChevronDown, Plus, Trash2, Loader2, BookOpen, Upload, LayoutGrid, List, Share2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,13 @@ import { CreateUtmCampaignDialog } from "@/components/campaigns/CreateUtmCampaig
 import { CampaignBulkActionsBar } from "@/components/campaigns/CampaignBulkActionsBar";
 import { CampaignBulkImportDialog } from "@/components/campaigns/CampaignBulkImportDialog";
 import { GoogleSheetSyncPanel } from "@/components/campaigns/GoogleSheetSyncPanel";
+import { CampaignShareDialog } from "@/components/campaigns/CampaignShareDialog";
 import { useUtmCampaigns, useDeleteUtmCampaign } from "@/hooks/useUtmCampaigns";
 import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
-import { useExternalAccess } from "@/hooks/useExternalAccess";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { PageContainer, PageHeader, DataCard } from "@/components/layout";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -64,15 +65,45 @@ export default function CampaignsLog() {
   const [libraryEntityFilter, setLibraryEntityFilter] = useState<string>("all");
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
-  const [generatingLink, setGeneratingLink] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [entityShareInfo, setEntityShareInfo] = useState<{
+    isPublic: boolean;
+    publicToken: string | null;
+    clickCount: number;
+  }>({ isPublic: false, publicToken: null, clickCount: 0 });
 
   const { data: entities = [] } = useSystemEntities();
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useUtmCampaigns();
   const { createTracking, getEntitiesForCampaign, deleteTracking, bulkUpdateStatus } = useCampaignEntityTracking();
-  const { generateLink } = useExternalAccess();
   const deleteCampaignMutation = useDeleteUtmCampaign();
   const { accessToken, signIn: googleSignIn } = useGoogleAuth();
+  
+  // Fetch entity share info when entity changes
+  const fetchEntityShareInfo = useCallback(async () => {
+    if (!selectedEntity) return;
+    
+    const { data } = await supabase
+      .from("campaign_external_access")
+      .select("access_token, is_active, click_count")
+      .eq("entity", selectedEntity)
+      .is("campaign_id", null)
+      .single();
+    
+    if (data) {
+      setEntityShareInfo({
+        isPublic: data.is_active ?? false,
+        publicToken: data.access_token,
+        clickCount: data.click_count ?? 0,
+      });
+    } else {
+      setEntityShareInfo({ isPublic: false, publicToken: null, clickCount: 0 });
+    }
+  }, [selectedEntity]);
+
+  useEffect(() => {
+    fetchEntityShareInfo();
+  }, [fetchEntityShareInfo]);
   
   useEffect(() => {
     if (entities.length > 0 && !selectedEntity) setSelectedEntity(entities[0].name);
@@ -214,30 +245,6 @@ export default function CampaignsLog() {
     );
   };
 
-  const handleGenerateReviewLink = async () => {
-    if (!selectedEntity) {
-      toast.error("Please select an entity first");
-      return;
-    }
-
-    setGeneratingLink(true);
-    try {
-      const result = await generateLink.mutateAsync({
-        entity: selectedEntity,
-        reviewerName: "External Reviewer",
-        reviewerEmail: "reviewer@cfi.trade",
-        expiresAt: undefined,
-      });
-
-      await navigator.clipboard.writeText(result.url);
-      toast.success("Review link generated and copied to clipboard!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to generate review link");
-    } finally {
-      setGeneratingLink(false);
-    }
-  };
-
   // Wait for auth to resolve first
   if (authLoading) {
     return (
@@ -279,21 +286,12 @@ export default function CampaignsLog() {
                 </SelectContent>
               </Select>
               <Button 
-                onClick={handleGenerateReviewLink} 
+                onClick={() => setShareDialogOpen(true)} 
                 variant="outline"
-                disabled={!selectedEntity || generatingLink}
+                disabled={!selectedEntity}
               >
-                {generatingLink ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink />
-                    Review Link
-                  </>
-                )}
+                <Share2 />
+                Share
               </Button>
             </div>
           }
@@ -433,6 +431,16 @@ export default function CampaignsLog() {
       <CreateUtmCampaignDialog open={createCampaignDialogOpen} onOpenChange={setCreateCampaignDialogOpen} />
       <CampaignBulkImportDialog open={bulkImportDialogOpen} onOpenChange={setBulkImportDialogOpen} />
       {selectedCampaignId && <UtmCampaignDetailDialog open={!!selectedCampaignId} onOpenChange={(o) => !o && setSelectedCampaignId(null)} campaignId={selectedCampaignId} />}
+      
+      <CampaignShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        entity={selectedEntity}
+        isPublic={entityShareInfo.isPublic}
+        publicToken={entityShareInfo.publicToken}
+        clickCount={entityShareInfo.clickCount}
+        onRefresh={fetchEntityShareInfo}
+      />
     </DndContext>
   );
 }
