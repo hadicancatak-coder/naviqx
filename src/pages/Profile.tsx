@@ -35,8 +35,13 @@ export default function Profile() {
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
   
-  // Use React Query hooks - use isPending (not isLoading) to catch initial state before fetch starts
-  const { data: profile, isPending: profilePending, isError: profileError } = useProfile(targetUserId);
+  // Use React Query hooks with ALL status fields for bulletproof loading
+  const { 
+    data: profile, 
+    status: profileStatus,      // 'pending' | 'error' | 'success'
+    fetchStatus,                // 'fetching' | 'paused' | 'idle'
+    isError: profileError 
+  } = useProfile(targetUserId);
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
@@ -156,13 +161,11 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  // === DEAD SIMPLE EARLY RETURN PATTERN ===
-  // Guard 1: Auth still loading OR waiting for user on own profile route
-  // When visiting /profile (no userId param), we need user.id, so wait for it
-  const needsCurrentUser = !userId; // /profile without param needs logged-in user
-  const waitingForUser = needsCurrentUser && !user;
+  // === BULLETPROOF LOADING PATTERN ===
+  // Uses BOTH status AND fetchStatus for complete coverage
   
-  if (authLoading || waitingForUser) {
+  // Guard 1: Auth still loading
+  if (authLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -172,20 +175,33 @@ export default function Profile() {
     );
   }
 
-  // Guard 2: No user ID available after loading complete (truly not logged in)
+  // Guard 2: Need current user but don't have it yet (visiting /profile without userId param)
+  if (!userId && !user) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Guard 3: No target user ID (truly not logged in on /profile route)
   if (!targetUserId) {
     return (
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
           <p className="text-muted-foreground">Please log in to view profiles.</p>
-          <Button onClick={() => navigate("/login")} variant="outline">Log In</Button>
+          <Button onClick={() => navigate("/auth")} variant="outline">Log In</Button>
         </div>
       </PageContainer>
     );
   }
 
-  // Guard 3: Profile query is pending (isPending = no data yet, includes initial state)
-  if (profilePending) {
+  // Guard 4: Query still loading (KEY FIX: combine status AND fetchStatus)
+  // This covers ALL scenarios: initial load, refetch, and enabled-but-fetching
+  const isQueryLoading = (profileStatus === 'pending') || (fetchStatus === 'fetching' && !profile);
+  if (isQueryLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -195,21 +211,31 @@ export default function Profile() {
     );
   }
 
-  // Guard 4: Error or no profile found
-  if (profileError || !profile) {
+  // Guard 5: Query completed with error
+  if (profileError) {
     return (
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">
-            {profileError ? "Could not load profile." : "Profile not found."}
-          </p>
+          <p className="text-muted-foreground">Could not load profile.</p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Guard 6: Query completed but no profile found
+  if (!profile) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <p className="text-muted-foreground">Profile not found.</p>
           <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
         </div>
       </PageContainer>
     );
   }
   
-  // At this point, profile is GUARANTEED to exist
+  // === PROFILE IS NOW GUARANTEED TO EXIST ===
   return (
     <PageContainer>
       <PageHeader

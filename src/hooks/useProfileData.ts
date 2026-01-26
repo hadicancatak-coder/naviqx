@@ -49,7 +49,8 @@ export const useProfile = (userId: string | undefined) => {
       } as ProfileData;
     },
     enabled: !!userId,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev, // Keeps previous data during refetch
   });
 };
 
