@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useSprints } from "@/hooks/useSprints";
 import { useTasks } from "@/hooks/useTasks";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
+import { useAuth } from "@/hooks/useAuth";
 import { SprintHeader } from "@/components/sprints/SprintHeader";
 import { SprintBacklog } from "@/components/sprints/SprintBacklog";
 import { UnifiedTaskBoard } from "@/components/tasks/UnifiedTaskBoard";
@@ -32,8 +33,9 @@ const priorityColors: Record<string, string> = {
 
 export default function Sprints() {
   const navigate = useNavigate();
+  const { loading: authLoading } = useAuth();
   const { sprints, activeSprint, upcomingSprints, createSprint, updateSprint, isCreating, isUpdating } = useSprints();
-  const { data: allTasks, isLoading: tasksLoading, refetch } = useTasks();
+  const { data: allTasks, isLoading: tasksLoading, isError: tasksError, refetch } = useTasks();
   const { setSprintBulk } = useTaskMutations();
   const { openTaskDrawer } = useTaskDrawer();
 
@@ -112,6 +114,28 @@ export default function Sprints() {
       setSelectedSprintId(null);
     }
   };
+
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer size="wide">
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state
+  if (tasksError) {
+    return (
+      <PageContainer size="wide">
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <p className="text-muted-foreground">Could not load sprints data.</p>
+        </div>
+      </PageContainer>
+    );
+  }
 
   // No active sprint state
   if (!currentSprint && !selectedSprintId) {

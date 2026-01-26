@@ -6,7 +6,7 @@ import type { TeamKPI, KPITarget, KPIAssignment, KPIWithRelations } from "@/type
 export function useKPIs() {
   const queryClient = useQueryClient();
 
-  const { data: kpis, isLoading } = useQuery({
+  const { data: kpis, isLoading, isError } = useQuery({
     queryKey: ["kpis"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -208,6 +208,7 @@ export function useKPIs() {
   return {
     kpis: kpis || [],
     isLoading,
+    isError,
     createKPI,
     updateKPI,
     deleteKPI,

@@ -7,3 +7,4 @@ export { EmptyState } from './EmptyState';
 export { AlertBanner } from './AlertBanner';
 export { DataCard, DataCardHeader } from './DataCard';
 export { TopHeader } from './TopHeader';
+export { PageLoadingState } from './PageLoadingState';

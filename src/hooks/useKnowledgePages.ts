@@ -25,7 +25,7 @@ export function useKnowledgePages() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: pages, isLoading } = useQuery({
+  const { data: pages, isLoading, isError } = useQuery({
     queryKey: ["knowledge-pages"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -206,6 +206,7 @@ export function useKnowledgePages() {
     pages,
     pageTree,
     isLoading,
+    isError,
     createPage,
     updatePage,
     deletePage,

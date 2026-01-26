@@ -24,9 +24,9 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 
 export default function Projects() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const { projects, tree, isLoading, createProject, updateProject, deleteProject, ensurePublicToken, togglePublic } =
+  const { projects, tree, isLoading, error: projectsError, createProject, updateProject, deleteProject, ensurePublicToken, togglePublic } =
     useProjects();
 
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -157,6 +157,28 @@ export default function Projects() {
       toast({ title: "Link copied to clipboard" });
     }
   };
+
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state
+  if (projectsError) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <p className="text-muted-foreground">Could not load projects.</p>
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (isLoading) {
     return (
