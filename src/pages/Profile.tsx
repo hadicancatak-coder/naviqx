@@ -157,8 +157,12 @@ export default function Profile() {
   };
 
   // === DEAD SIMPLE EARLY RETURN PATTERN ===
-  // Guard 1: Auth still loading
-  if (authLoading) {
+  // Guard 1: Auth still loading OR waiting for user on own profile route
+  // When visiting /profile (no userId param), we need user.id, so wait for it
+  const needsCurrentUser = !userId; // /profile without param needs logged-in user
+  const waitingForUser = needsCurrentUser && !user;
+  
+  if (authLoading || waitingForUser) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -168,7 +172,7 @@ export default function Profile() {
     );
   }
 
-  // Guard 2: No user ID (not logged in, no URL param)
+  // Guard 2: No user ID available after loading complete (truly not logged in)
   if (!targetUserId) {
     return (
       <PageContainer>
