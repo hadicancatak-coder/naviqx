@@ -13,9 +13,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import * as LucideIcons from "lucide-react";
 
 export default function TechStack() {
-  const { userRole } = useAuth();
+  const { userRole, loading: authLoading } = useAuth();
   const isAdmin = userRole === "admin";
-  const { pages, pageTree, isLoading, createPage, updatePage, deletePage } = useTechStackPages();
+  const { pages, pageTree, isLoading, isError, createPage, updatePage, deletePage } = useTechStackPages();
 
   const [selectedPage, setSelectedPage] = useState<TechStackPage | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -155,6 +155,28 @@ export default function TechStack() {
 
     setSelectedPage(treeNode || page);
   };
+
+  // Wait for auth to resolve first
+  if (authLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Handle error state
+  if (isError) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <p className="text-muted-foreground">Could not load tech stack.</p>
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (isLoading) {
     return (
