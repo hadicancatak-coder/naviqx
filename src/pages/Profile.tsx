@@ -22,6 +22,7 @@ import { useKPIs } from "@/hooks/useKPIs";
 import { Progress } from "@/components/ui/progress";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageLoadingState } from "@/components/layout/PageLoadingState";
 import { useProfile, useTeamMembers, useUserTasks } from "@/hooks/useProfileData";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -35,8 +36,8 @@ export default function Profile() {
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
   
-  // Use React Query hooks for data fetching
-  const { data: profile, isInitialLoading: profileLoading, isError: profileError, isFetching: profileFetching } = useProfile(targetUserId);
+  // Use React Query hooks for data fetching - simplified: use native states only
+  const { data: profile, isPending: profilePending, isError: profileError } = useProfile(targetUserId);
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
@@ -156,67 +157,20 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  // Wait for auth to resolve first
-  if (authLoading) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </PageContainer>
-    );
-  }
-
-  // Show loading while fetching profile data
-  // This includes when query is pending, fetching, or waiting for initial data
-  if (profileLoading) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </PageContainer>
-    );
-  }
-
-  // Handle error state - only show if we actually got an API error
-  if (profileError) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">Could not load profile.</p>
-          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  // Handle case where profile genuinely doesn't exist after fetch completed
-  // Only show this if we have a userId AND the query has finished AND there's no data
-  if (!profile && targetUserId && !profileFetching) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">Profile not found.</p>
-          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
-        </div>
-      </PageContainer>
-    );
-  }
+  // SIMPLIFIED LOADING PATTERN: 2 checks instead of 5
+  // Check 1: Loading state (auth OR profile query pending when enabled)
+  // Check 2: Error/NotFound state (only after loading is done)
   
-  // Final guard - if profile is still null, show loading (shouldn't happen but safety net)
-  if (!profile) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </PageContainer>
-    );
-  }
-
   return (
-    <PageContainer>
+    <PageLoadingState
+      authLoading={authLoading}
+      dataLoading={!!targetUserId && profilePending}
+      isError={profileError}
+      hasData={!!profile}
+      errorMessage={profileError ? "Could not load profile." : "Profile not found."}
+      onBack={() => navigate(-1)}
+    >
+      <PageContainer>
       <PageHeader
         title={isOwnProfile ? "My Profile" : profile?.name || "Profile"}
         description={profile?.title || "User profile and settings"}
@@ -483,6 +437,7 @@ export default function Profile() {
           ))}
         </Tabs>
       </Card>
-    </PageContainer>
+      </PageContainer>
+    </PageLoadingState>
   );
 }
