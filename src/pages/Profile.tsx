@@ -161,19 +161,43 @@ export default function Profile() {
   // Check 1: Loading state (auth OR profile query pending when enabled)
   // Check 2: Error/NotFound state (only after loading is done)
   
+  // Early return guard - prevents accessing profile properties before data exists
+  if (authLoading || (!!targetUserId && profilePending)) {
+    return (
+      <PageLoadingState
+        authLoading={authLoading}
+        dataLoading={true}
+        isError={false}
+        hasData={false}
+        errorMessage="Loading..."
+        onBack={() => navigate(-1)}
+      >
+        <div />
+      </PageLoadingState>
+    );
+  }
+  
+  if (profileError || !profile) {
+    return (
+      <PageLoadingState
+        authLoading={false}
+        dataLoading={false}
+        isError={profileError}
+        hasData={false}
+        errorMessage={profileError ? "Could not load profile." : "Profile not found."}
+        onBack={() => navigate(-1)}
+      >
+        <div />
+      </PageLoadingState>
+    );
+  }
+  
+  // At this point, profile is GUARANTEED to exist
   return (
-    <PageLoadingState
-      authLoading={authLoading}
-      dataLoading={!!targetUserId && profilePending}
-      isError={profileError}
-      hasData={!!profile}
-      errorMessage={profileError ? "Could not load profile." : "Profile not found."}
-      onBack={() => navigate(-1)}
-    >
-      <PageContainer>
+    <PageContainer>
       <PageHeader
-        title={isOwnProfile ? "My Profile" : profile?.name || "Profile"}
-        description={profile?.title || "User profile and settings"}
+        title={isOwnProfile ? "My Profile" : profile.name || "Profile"}
+        description={profile.title || "User profile and settings"}
         icon={User}
         actions={
           isOwnProfile && !editing ? (
@@ -437,7 +461,6 @@ export default function Profile() {
           ))}
         </Tabs>
       </Card>
-      </PageContainer>
-    </PageLoadingState>
+    </PageContainer>
   );
 }
