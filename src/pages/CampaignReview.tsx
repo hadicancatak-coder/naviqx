@@ -66,24 +66,37 @@ export default function CampaignReview() {
         const result = await verifyToken(token);
         setAccessData(result);
         
-        // Check if already verified
-        if (result.email_verified) {
+        // Check if user is already verified with a REAL identity (not placeholder "Public Access")
+        const isPublicPlaceholder = 
+          result.reviewer_name === "Public Access" || 
+          result.reviewer_email === "public@cfi.trade";
+        
+        if (result.email_verified && !isPublicPlaceholder) {
+          // Already verified with real identity
           setVerified(true);
           setEmail(result.reviewer_email || "");
           setName(result.reviewer_name || "");
           await loadCampaignData(result.entity, result.campaign_id);
         } else {
-          // Pre-fill email ONCE on initial load only
+          // For public links or first-time access, start with empty fields
+          // Do NOT pre-fill with "Public Access" placeholder values
           if (!hasSetInitialValues.current) {
-            setEmail(result.reviewer_email || "");
-            setName(result.reviewer_name || "");
+            if (!isPublicPlaceholder) {
+              setEmail(result.reviewer_email || "");
+              setName(result.reviewer_name || "");
+            }
+            // Otherwise leave name/email empty for user to fill
             hasSetInitialValues.current = true;
           }
         }
       } catch (error: any) {
         console.error("Token verification failed:", error);
         setAccessData(null);
-        toast.error(error.message || "This review link is invalid or has expired");
+        // Better error message for network failures
+        const errorMessage = error.message?.includes("fetch") 
+          ? "Network error - please check your connection and try again"
+          : (error.message || "This review link is invalid or has expired");
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }

@@ -72,36 +72,50 @@ export const useExternalAccess = () => {
 
   // Verify token - Works without authentication
   const verifyToken = async (token: string): Promise<ExternalAccess> => {
-    const { data, error } = await supabase
-      .from("campaign_external_access")
-      .select("*")
-      .eq("access_token", token)
-      .eq("is_active", true)
-      .maybeSingle();
-    
-    if (error) {
-      throw new Error(`Token verification failed: ${error.message}`);
-    }
-    
-    if (!data) {
-      throw new Error("Invalid or inactive review link");
-    }
-    
-    // Check expiration
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      throw new Error("This review link has expired");
-    }
+    try {
+      const { data, error } = await supabase
+        .from("campaign_external_access")
+        .select("*")
+        .eq("access_token", token)
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Token verification DB error:", error);
+        throw new Error(`Token verification failed: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("Invalid or inactive review link");
+      }
+      
+      // Check expiration
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        throw new Error("This review link has expired");
+      }
 
-    // Track click count and last accessed
-    await supabase
-      .from("campaign_external_access")
-      .update({
-        click_count: (data.click_count || 0) + 1,
-        last_accessed_at: new Date().toISOString(),
-      })
-      .eq("id", data.id);
-    
-    return data as ExternalAccess;
+      // Track click count and last accessed (fire-and-forget, don't block on errors)
+      supabase
+        .from("campaign_external_access")
+        .update({
+          click_count: (data.click_count || 0) + 1,
+          last_accessed_at: new Date().toISOString(),
+        })
+        .eq("id", data.id)
+        .then(({ error: updateError }) => {
+          if (updateError) {
+            console.warn("Failed to update click count:", updateError);
+          }
+        });
+      
+      return data as ExternalAccess;
+    } catch (err: any) {
+      // Handle network errors specifically
+      if (err.message?.includes("fetch") || err.name === "TypeError") {
+        throw new Error("Network error - please check your connection");
+      }
+      throw err;
+    }
   };
 
   // Update verification status
