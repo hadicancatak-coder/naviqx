@@ -83,11 +83,15 @@ export default function CampaignsLog() {
   const fetchEntityShareInfo = useCallback(async () => {
     if (!selectedEntity) return;
     
+    // Get the most recent active token for this entity
     const { data } = await supabase
       .from("campaign_external_access")
       .select("access_token, is_active, click_count")
       .eq("entity", selectedEntity)
       .is("campaign_id", null)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     
     if (data) {
