@@ -167,9 +167,9 @@ export default function Profile() {
     );
   }
 
-  // Show loading while fetching initial data
-  // isPending = no cached data and fetching, OR isFetching without any data yet
-  if (profileLoading || (profileFetching && !profile)) {
+  // Show loading while fetching profile data
+  // This includes when query is pending, fetching, or waiting for initial data
+  if (profileLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -192,12 +192,24 @@ export default function Profile() {
   }
 
   // Handle case where profile genuinely doesn't exist after fetch completed
-  if (!profile && targetUserId) {
+  // Only show this if we have a userId AND the query has finished AND there's no data
+  if (!profile && targetUserId && !profileFetching) {
     return (
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
           <p className="text-muted-foreground">Profile not found.</p>
           <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </PageContainer>
+    );
+  }
+  
+  // Final guard - if profile is still null, show loading (shouldn't happen but safety net)
+  if (!profile) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </PageContainer>
     );
