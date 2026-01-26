@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Eye, MessageSquare, Loader2, ExternalLink, Calendar, Image as ImageIcon } from "lucide-react";
+import { Eye, MessageSquare, Loader2, ExternalLink, LayoutGrid, List, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,11 +12,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useExternalAccess } from "@/hooks/useExternalAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { format, formatDistanceToNow } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
+import { FilterBar, FilterPill } from "@/components/layout/FilterBar";
+import { ExternalCampaignGrid } from "@/components/campaigns/ExternalCampaignGrid";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ExternalComment {
   id: string;
@@ -29,6 +32,9 @@ interface ExternalComment {
   comment_type: string | null;
   created_at: string;
 }
+
+type ViewMode = "grid" | "list";
+type SortMode = "latest" | "name" | "versions";
 
 export default function CampaignReview() {
   const { token } = useParams<{ token: string }>();
@@ -43,7 +49,7 @@ export default function CampaignReview() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   
-  const [campaignData, setCampaignData] = useState<any>(null);
+  const [campaignData, setCampaignData] = useState<any[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
   const [comments, setComments] = useState<{ [key: string]: string }>({});
   const [submitting, setSubmitting] = useState<{ [key: string]: boolean }>({});
@@ -52,6 +58,12 @@ export default function CampaignReview() {
   
   // Existing comments state
   const [existingComments, setExistingComments] = useState<ExternalComment[]>([]);
+
+  // UI state
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortMode, setSortMode] = useState<SortMode>("latest");
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const hasSetInitialValues = useRef(false);
 
@@ -239,9 +251,8 @@ export default function CampaignReview() {
     }
   };
 
-  const handleCommentSubmit = async (versionId: string, campaignId: string) => {
-    const commentText = comments[versionId];
-    if (!commentText?.trim()) return;
+  const handleCommentSubmit = async (versionId: string, campaignId: string, text: string) => {
+    if (!text?.trim()) return;
 
     setSubmitting({ ...submitting, [versionId]: true });
     try {
@@ -252,7 +263,7 @@ export default function CampaignReview() {
         entity: accessData.entity,
         reviewer_name: name,
         reviewer_email: email,
-        comment_text: commentText,
+        comment_text: text,
         comment_type: "version_feedback",
         created_at: new Date().toISOString(),
       };
@@ -265,7 +276,7 @@ export default function CampaignReview() {
           reviewer_name: name,
           reviewer_email: email,
           entity: accessData.entity,
-          comment_text: commentText,
+          comment_text: text,
           comment_type: "version_feedback",
           access_token: token!,
         });
@@ -275,10 +286,10 @@ export default function CampaignReview() {
       // Optimistic update - add to existing comments
       setExistingComments(prev => [newComment, ...prev]);
       setComments({ ...comments, [versionId]: "" });
-      toast.success("Comment submitted successfully");
+      toast.success("Feedback submitted");
     } catch (error: any) {
       console.error("Comment submission error:", error);
-      toast.error("Failed to submit comment");
+      toast.error("Failed to submit feedback");
     } finally {
       setSubmitting({ ...submitting, [versionId]: false });
     }
@@ -319,18 +330,13 @@ export default function CampaignReview() {
       // Optimistic update
       setExistingComments(prev => [newComment, ...prev]);
       setEntityComment("");
-      toast.success("Entity feedback submitted successfully");
+      toast.success("Entity feedback submitted");
     } catch (error: any) {
       console.error("Entity comment submission error:", error);
-      toast.error("Failed to submit entity feedback");
+      toast.error("Failed to submit feedback");
     } finally {
       setSubmittingEntityComment(false);
     }
-  };
-
-  // Helper to get comments for a specific version
-  const getVersionComments = (versionId: string) => {
-    return existingComments.filter(c => c.version_id === versionId);
   };
 
   // Helper to get entity-level comments
@@ -338,21 +344,37 @@ export default function CampaignReview() {
     return existingComments.filter(c => c.campaign_id === null && c.version_id === null);
   };
 
-  // Helper to get the latest version image for a campaign
-  const getLatestVersionImage = (campaignId: string) => {
-    const campaignVersions = versions.filter(v => v.utm_campaign_id === campaignId);
-    const latestWithImage = campaignVersions.find(v => v.image_url);
-    return latestWithImage?.image_url || null;
-  };
+  // Sort and filter campaigns
+  const getSortedCampaigns = () => {
+    let filtered = campaignData;
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.name?.toLowerCase().includes(query) ||
+        c.lp_type?.toLowerCase().includes(query) ||
+        c.campaign_type?.toLowerCase().includes(query)
+      );
+    }
 
-  // Helper to get version count for a campaign
-  const getVersionCount = (campaignId: string) => {
-    return versions.filter(v => v.utm_campaign_id === campaignId).length;
-  };
-
-  // Helper to get comment count for a version
-  const getVersionCommentCount = (versionId: string) => {
-    return existingComments.filter(c => c.version_id === versionId).length;
+    // Apply sort
+    return [...filtered].sort((a, b) => {
+      switch (sortMode) {
+        case "name":
+          return (a.name || "").localeCompare(b.name || "");
+        case "versions":
+          const aVersions = versions.filter(v => v.utm_campaign_id === a.id).length;
+          const bVersions = versions.filter(v => v.utm_campaign_id === b.id).length;
+          return bVersions - aVersions;
+        case "latest":
+        default:
+          // Sort by most recent version
+          const aLatest = versions.find(v => v.utm_campaign_id === a.id)?.created_at || "";
+          const bLatest = versions.find(v => v.utm_campaign_id === b.id)?.created_at || "";
+          return bLatest.localeCompare(aLatest);
+      }
+    });
   };
 
   if (loading) {
@@ -453,15 +475,17 @@ export default function CampaignReview() {
   }
 
   const entityLevelComments = getEntityComments();
+  const sortedCampaigns = getSortedCampaigns();
 
   return (
     <GlassBackground variant="full">
+      {/* Header */}
       <div className="border-b liquid-glass sticky top-0 z-40">
         <div className="container mx-auto py-md px-md">
           <div className="flex items-center gap-sm">
             <Eye className="h-6 w-6 text-primary" />
             <div className="flex-1">
-              <h1 className="text-page-title">Campaign Review</h1>
+              <h1 className="text-heading-lg font-semibold">Campaign Review</h1>
               <p className="text-body-sm text-muted-foreground">
                 {accessData?.entity} • Reviewing as {name}
               </p>
@@ -474,205 +498,149 @@ export default function CampaignReview() {
         </div>
       </div>
 
-      <div className="container mx-auto py-md px-md space-y-lg">
-        {!campaignData || campaignData.length === 0 ? (
+      <div className="container mx-auto py-md px-md space-y-md">
+        {/* Filter Bar */}
+        <FilterBar
+          search={{
+            value: searchQuery,
+            onChange: setSearchQuery,
+            placeholder: "Search campaigns..."
+          }}
+        >
+          <FilterPill>
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              className="bg-muted rounded-lg p-0.5"
+            >
+              <ToggleGroupItem value="grid" size="sm" className="h-8 px-3 data-[state=on]:bg-background">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" size="sm" className="h-8 px-3 data-[state=on]:bg-background">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </FilterPill>
+          
+          <FilterPill>
+            <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <ArrowUpDown className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="latest">Latest</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="versions">Versions</SelectItem>
+              </SelectContent>
+            </Select>
+          </FilterPill>
+          
+          <div className="ml-auto">
+            <Badge variant="secondary" className="text-metadata">
+              {sortedCampaigns.length} campaign{sortedCampaigns.length !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+        </FilterBar>
+
+        {/* Campaign Grid/List */}
+        {sortedCampaigns.length === 0 ? (
           <Card>
-            <CardContent className="py-8">
+            <CardContent className="py-12">
               <div className="text-center text-muted-foreground">
                 <p className="text-body">No campaigns available for review at this time.</p>
                 <p className="text-body-sm mt-2">Entity: {accessData?.entity}</p>
               </div>
             </CardContent>
           </Card>
+        ) : viewMode === "grid" ? (
+          <ExternalCampaignGrid
+            campaigns={sortedCampaigns}
+            versions={versions}
+            comments={existingComments}
+            expandedCampaignId={expandedCampaignId}
+            onToggleExpand={(id) => setExpandedCampaignId(prev => prev === id ? null : id)}
+            onSubmitFeedback={handleCommentSubmit}
+            submitting={submitting}
+            commentInputs={comments}
+            onCommentChange={(versionId, value) => setComments({ ...comments, [versionId]: value })}
+          />
         ) : (
-          campaignData.map((campaign: any) => {
-            const campaignVersions = versions.filter((v) => v.utm_campaign_id === campaign.id);
-            const latestImage = getLatestVersionImage(campaign.id);
-            const versionCount = getVersionCount(campaign.id);
-          
-          return (
-            <Card key={campaign.id} className="overflow-hidden">
-              <CardHeader className="pb-sm">
-                <div className="flex gap-md">
-                  {/* Campaign Thumbnail */}
-                  {latestImage ? (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={latestImage}
-                        alt={campaign.name}
-                        className="w-[120px] h-[90px] object-cover rounded-lg border border-border"
+          // List view - simpler table-like layout
+          <div className="space-y-sm">
+            {sortedCampaigns.map((campaign) => {
+              const campaignVersions = versions.filter(v => v.utm_campaign_id === campaign.id);
+              const latestVersion = campaignVersions[0];
+              const commentCount = existingComments.filter(c => 
+                campaignVersions.some(v => v.id === c.version_id)
+              ).length;
+
+              return (
+                <Card 
+                  key={campaign.id}
+                  interactive
+                  onClick={() => setExpandedCampaignId(prev => prev === campaign.id ? null : campaign.id)}
+                  className={expandedCampaignId === campaign.id ? "ring-2 ring-primary/20" : ""}
+                >
+                  <div className="flex items-center gap-md p-md">
+                    {/* Thumbnail */}
+                    <div className="flex-shrink-0 w-20 h-14 rounded-lg overflow-hidden bg-muted border border-border">
+                      {latestVersion?.image_url ? (
+                        <img
+                          src={latestVersion.image_url}
+                          alt={campaign.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <Eye className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-body truncate">{campaign.name}</h3>
+                      <p className="text-metadata text-muted-foreground">
+                        {campaign.lp_type || campaign.campaign_type || "Campaign"}
+                      </p>
+                    </div>
+                    
+                    {/* Badges */}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-metadata">
+                        {campaignVersions.length} v
+                      </Badge>
+                      {commentCount > 0 && (
+                        <Badge className="text-metadata">
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          {commentCount}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Expanded content */}
+                  {expandedCampaignId === campaign.id && (
+                    <div className="border-t border-border">
+                      <ExternalCampaignGrid
+                        campaigns={[campaign]}
+                        versions={versions}
+                        comments={existingComments}
+                        expandedCampaignId={campaign.id}
+                        onToggleExpand={() => {}}
+                        onSubmitFeedback={handleCommentSubmit}
+                        submitting={submitting}
+                        commentInputs={comments}
+                        onCommentChange={(versionId, value) => setComments({ ...comments, [versionId]: value })}
                       />
                     </div>
-                  ) : (
-                    <div className="flex-shrink-0 w-[120px] h-[90px] rounded-lg bg-muted flex items-center justify-center border border-border">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    </div>
                   )}
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-sm">
-                      <CardTitle className="text-heading-md">{campaign.name}</CardTitle>
-                      <Badge variant="secondary" className="text-metadata">
-                        {versionCount} version{versionCount !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                    <p className="text-body-sm text-muted-foreground mt-1">
-                      {campaign.lp_type || campaign.campaign_type || "Campaign"}
-                    </p>
-                    {campaign.landing_page && (
-                      <a
-                        href={campaign.landing_page}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-metadata text-primary hover:underline inline-flex items-center gap-1 mt-1"
-                      >
-                        View Landing Page
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-md">
-                <Accordion type="single" collapsible>
-                  {campaignVersions.map((version) => {
-                    const versionComments = getVersionComments(version.id);
-                    const commentCount = versionComments.length;
-                    
-                    return (
-                    <AccordionItem key={version.id} value={version.id}>
-                      <AccordionTrigger className="text-body font-medium hover:no-underline">
-                        <div className="flex items-center gap-sm flex-1">
-                          <Badge variant="outline" className="font-mono">v{version.version_number}</Badge>
-                          {version.version_notes && (
-                            <span className="text-body-sm text-muted-foreground truncate">
-                              {version.version_notes.substring(0, 40)}
-                              {version.version_notes.length > 40 ? '...' : ''}
-                            </span>
-                          )}
-                          {commentCount > 0 && (
-                            <Badge variant="secondary" className="ml-auto mr-2 text-metadata">
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              {commentCount}
-                            </Badge>
-                          )}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-md pt-sm">
-                        <div className="grid gap-md md:grid-cols-[1fr_1fr]">
-                          {/* Version Image */}
-                          <div>
-                            {version.image_url ? (
-                              <img
-                                src={version.image_url}
-                                alt={`Version ${version.version_number}`}
-                                className="rounded-lg max-w-full h-auto border border-border"
-                              />
-                            ) : (
-                              <div className="rounded-lg bg-muted h-[200px] flex items-center justify-center border border-border">
-                                <p className="text-muted-foreground text-body-sm">No image</p>
-                              </div>
-                            )}
-                            
-                            {version.asset_link && (
-                              <a
-                                href={version.asset_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-2 text-body-sm text-primary hover:underline inline-flex items-center gap-1"
-                              >
-                                View Asset Link
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </div>
-                          
-                          {/* Version Details & Comments */}
-                          <div className="space-y-md">
-                            {version.version_notes && (
-                              <div className="bg-muted/50 rounded-md p-sm border border-border/50">
-                                <p className="text-body-sm text-foreground">{version.version_notes}</p>
-                              </div>
-                            )}
-                            
-                            {version.created_at && (
-                              <div className="flex items-center gap-1 text-metadata text-muted-foreground">
-                                <Calendar className="h-3 w-3" />
-                                {format(new Date(version.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(version.created_at), { addSuffix: true })})
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Existing Comments for this version */}
-                        {versionComments.length > 0 && (
-                          <div className="border-t border-border pt-md">
-                            <div className="flex items-center gap-xs mb-sm">
-                              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-body-sm font-medium">Feedback ({versionComments.length})</span>
-                            </div>
-                            <ScrollArea className="max-h-[200px]">
-                              <div className="space-y-sm pr-sm">
-                                {versionComments.map((comment) => (
-                                  <div key={comment.id} className="flex gap-sm p-sm rounded-lg bg-muted/30 border border-border">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback className="text-metadata bg-primary/10">
-                                        {comment.reviewer_name?.charAt(0).toUpperCase() || "?"}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-sm flex-wrap">
-                                        <span className="font-medium text-body-sm">{comment.reviewer_name}</span>
-                                        <span className="text-metadata text-muted-foreground">
-                                          {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
-                                        </span>
-                                      </div>
-                                      <p className="text-body-sm text-foreground mt-1">{comment.comment_text}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </ScrollArea>
-                          </div>
-                        )}
-
-                        {/* New Comment Input */}
-                        <div className="space-y-sm border-t border-border pt-md">
-                          <div className="flex items-center gap-xs">
-                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                            <Label className="text-body-sm">Add your feedback:</Label>
-                          </div>
-                          <Textarea
-                            value={comments[version.id] || ""}
-                            onChange={(e) =>
-                              setComments({ ...comments, [version.id]: e.target.value })
-                            }
-                            placeholder="Share your feedback on lead quality, creative effectiveness, etc..."
-                            className="min-h-[80px]"
-                          />
-                          <Button
-                            onClick={() => handleCommentSubmit(version.id, campaign.id)}
-                            disabled={!comments[version.id]?.trim() || submitting[version.id]}
-                            size="sm"
-                          >
-                            {submitting[version.id] ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Submitting...
-                              </>
-                            ) : (
-                              "Submit Feedback"
-                            )}
-                          </Button>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )})}
-                </Accordion>
-              </CardContent>
-            </Card>
-          );
-        })
+                </Card>
+              );
+            })}
+          </div>
         )}
 
         {/* Entity-Level Feedback Section */}
