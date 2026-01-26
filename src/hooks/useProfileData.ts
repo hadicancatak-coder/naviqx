@@ -24,7 +24,7 @@ export interface TeamMember {
 }
 
 export const useProfile = (userId: string | undefined) => {
-  const query = useQuery({
+  return useQuery({
     queryKey: ["profile", userId],
     queryFn: async () => {
       if (!userId) return null;
@@ -51,19 +51,6 @@ export const useProfile = (userId: string | undefined) => {
     enabled: !!userId,
     staleTime: 60 * 1000, // 1 minute
   });
-
-  // Properly detect loading state:
-  // - isPending: query was never enabled OR is enabled but hasn't fetched yet
-  // - isFetching without data: background refresh but no cached data
-  // - userId exists but status is "pending": query just got enabled
-  const isInitialLoading = !userId 
-    ? false  // No userId = nothing to load
-    : query.isPending || query.isFetching || query.status === 'pending';
-
-  return {
-    ...query,
-    isInitialLoading,
-  };
 };
 
 export const useTeamMembers = (teams: string[] | null | undefined) => {
