@@ -56,5 +56,19 @@ export function PageLoadingState({
     );
   }
   
+  // Guard: don't render children until we have data
+  if (!hasData) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+          <p className="text-muted-foreground">{errorMessage}</p>
+          {onBack && (
+            <Button onClick={onBack} variant="outline">Go Back</Button>
+          )}
+        </div>
+      </PageContainer>
+    );
+  }
+  
   return <>{children}</>;
 }
