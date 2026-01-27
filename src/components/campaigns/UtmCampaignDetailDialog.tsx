@@ -65,11 +65,19 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
   });
 
   const { getEntitiesForCampaign } = useCampaignEntityTracking();
-  const { useVersions, createVersion, deleteVersion } = useCampaignVersions();
+  const { useVersions, createVersion, updateVersion, deleteVersion } = useCampaignVersions();
   const { uploadImage } = useCampaignMetadata();
   const updateMutation = useUpdateUtmCampaign();
   const { data: versions = [] } = useVersions(campaignId);
   const entities = getEntitiesForCampaign(campaignId);
+
+  const handleEditVersion = async (versionId: string, data: { versionNotes?: string; assetLink?: string }) => {
+    await updateVersion.mutateAsync({
+      versionId,
+      versionNotes: data.versionNotes,
+      assetLink: data.assetLink,
+    });
+  };
 
   const handleSave = async () => {
     try {
@@ -371,7 +379,9 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                             version={v}
                             campaignId={campaignId}
                             onDelete={(id) => setDeletingVersionId(id)}
+                            onEdit={handleEditVersion}
                             isDeleting={deleteVersion.isPending}
+                            isEditing={updateVersion.isPending}
                           />
                         ))}
                       </div>

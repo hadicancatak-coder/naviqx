@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageCircle } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
@@ -157,7 +158,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
                           </div>
                         </div>
 
-                        {/* Bottom Row: Assignees + Due */}
+                        {/* Bottom Row: Assignees + Comments + Due */}
                         <div className="flex items-center justify-between mt-2 pl-4">
                           {/* Assignees */}
                           <div className="flex -space-x-1">
@@ -176,15 +177,23 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
                             )}
                           </div>
 
-                          {/* Due Date */}
-                          {task.due_at && (
-                            <span className={cn(
-                              "text-metadata tabular-nums",
-                              overdue ? "text-destructive font-medium" : "text-muted-foreground"
-                            )}>
-                              {format(new Date(task.due_at), 'MMM d')}
-                            </span>
-                          )}
+                          {/* Comments + Due Date */}
+                          <div className="flex items-center gap-2">
+                            {task.comments_count > 0 && (
+                              <span className="text-metadata text-muted-foreground flex items-center gap-0.5">
+                                <MessageCircle className="h-3 w-3" />
+                                {task.comments_count}
+                              </span>
+                            )}
+                            {task.due_at && (
+                              <span className={cn(
+                                "text-metadata tabular-nums",
+                                overdue ? "text-destructive font-medium" : "text-muted-foreground"
+                              )}>
+                                {format(new Date(task.due_at), 'MMM d')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );

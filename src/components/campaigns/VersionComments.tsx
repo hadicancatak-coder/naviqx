@@ -136,12 +136,13 @@ export function VersionComments({ versionId, campaignId, entity }: VersionCommen
                     {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                   </p>
                 </div>
-                {/* Only show delete for own internal comments */}
-                {!comment.is_external && user?.id === comment.author_id && (
+                {/* Allow delete for own internal comments or admins */}
+                {!comment.is_external && (user?.id === comment.author_id || isAdmin) && (
                   <Button
                     variant="ghost"
                     size="icon-xs"
                     onClick={() => deleteComment.mutate(comment.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 />
                   </Button>
