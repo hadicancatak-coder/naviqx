@@ -135,7 +135,7 @@ export const useVersionComments = (versionId: string | null) => {
 
   const deleteComment = useMutation({
     mutationFn: async (commentId: string) => {
-      // Only delete from internal comments table (external comments can't be deleted by internal users)
+      // Only delete from internal comments table
       const { error } = await supabase
         .from("utm_campaign_version_comments")
         .delete()
@@ -149,6 +149,24 @@ export const useVersionComments = (versionId: string | null) => {
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to delete comment");
+    },
+  });
+
+  const deleteExternalComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { error } = await supabase
+        .from("external_campaign_review_comments")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["version-comments"] });
+      toast.success("External comment deleted");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete external comment");
     },
   });
 
@@ -182,6 +200,7 @@ export const useVersionComments = (versionId: string | null) => {
     isLoading,
     createComment,
     deleteComment,
+    deleteExternalComment,
     clearAllVersionComments,
   };
 };
