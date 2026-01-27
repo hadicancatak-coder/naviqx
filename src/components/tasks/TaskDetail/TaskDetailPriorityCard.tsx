@@ -36,7 +36,7 @@ export function TaskDetailPriorityCard() {
   return (
     <div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
       {/* Priority */}
-      <div className="flex flex-col gap-xs">
+      <div className="flex flex-col gap-xs min-w-0">
         <span className="text-metadata text-muted-foreground">Priority</span>
         <Select 
           value={priority} 
@@ -45,9 +45,9 @@ export function TaskDetailPriorityCard() {
             saveField('priority', v);
           }}
         >
-          <SelectTrigger className="h-8 w-full border-0 p-0 focus:ring-0 shadow-none">
+          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none">
             <div className={cn(
-              "flex items-center gap-xs px-sm py-xs rounded-md font-medium text-body-sm w-full",
+              "flex items-center gap-xs px-2.5 h-full rounded-md font-medium text-body-sm w-full min-w-0",
               priority === 'High' && 'bg-destructive/15 text-destructive border border-destructive/30',
               priority === 'Medium' && 'bg-primary/15 text-primary border border-primary/30',
               priority === 'Low' && 'bg-muted/50 text-muted-foreground border border-border'
@@ -65,7 +65,7 @@ export function TaskDetailPriorityCard() {
       </div>
 
       {/* Due Date */}
-      <div className="flex flex-col gap-xs">
+      <div className="flex flex-col gap-xs min-w-0">
         <span className="text-metadata text-muted-foreground">Due</span>
         <Popover>
           <PopoverTrigger asChild>
@@ -73,7 +73,7 @@ export function TaskDetailPriorityCard() {
               variant="ghost" 
               size="sm" 
               className={cn(
-                "h-8 w-full gap-xs px-sm rounded-md justify-start",
+                "h-9 w-full gap-xs px-2.5 rounded-md justify-start",
                 isOverdue && "bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive",
                 isDueToday && "bg-warning/10 text-warning-text hover:bg-warning/20",
                 isDueTomorrow && "bg-info/10 text-info-text hover:bg-info/20",
@@ -103,7 +103,7 @@ export function TaskDetailPriorityCard() {
       </div>
 
       {/* Status */}
-      <div className="flex flex-col gap-xs">
+      <div className="flex flex-col gap-xs min-w-0">
         <span className="text-metadata text-muted-foreground">Status</span>
         <Select 
           value={status} 
@@ -112,8 +112,8 @@ export function TaskDetailPriorityCard() {
             saveField('status', v);
           }}
         >
-          <SelectTrigger className="h-8 w-full border-0 p-0 focus:ring-0 shadow-none">
-            <Badge variant="outline" className={cn("text-body-sm w-full justify-start", getStatusColor(status))}>
+          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none">
+            <Badge variant="outline" className={cn("text-body-sm h-full w-full min-w-0 justify-start px-2.5", getStatusColor(status))}>
               <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
               <span className="truncate">{status}</span>
             </Badge>
