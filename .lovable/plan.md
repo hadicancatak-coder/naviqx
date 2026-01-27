@@ -1,383 +1,371 @@
 
-# Task Panel UX Improvements + Comment Attachments
+# Unified Comments System: Fixing Tagging, Image Previews & Consistency
 
-## Overview
+## Issues Identified
 
-Based on the user's screenshot and feedback, this plan addresses:
-1. **Title too small** - Make it more prominent
-2. **Priority/Status/Due alignment** - Fix the awkward horizontal layout in the Priority Card
-3. **Comments not visible on task rows** - Show comment count indicator in TaskRow
-4. **Comment attachments** - Allow attaching files (<2MB) and links to comments
+### 1. **@all Tagging Not Working**
+The `@all` option only appears when `assigneeIds.length > 0`. Looking at the code:
+- `TaskDetailCommentInput.tsx` passes `selectedAssignees` to `MentionAutocomplete`
+- If the task has no assignees yet, or the assignee IDs array is empty, `@all` won't show
+
+**Root cause**: The `selectedAssignees` state may not be properly populated when the context first loads, OR the `assigneeIds` prop is using the wrong property (profile IDs vs auth user IDs).
+
+### 2. **Box Size Inconsistency (Priority Card)**
+Looking at your screenshot, the Priority, Due, and Status columns have unequal widths. The current code uses `grid-cols-3` but the content inside each column has different sizing:
+- Priority Select uses a fixed badge style
+- Due Date button stretches differently
+- Status badge has `w-full` but still appears different
+
+**Root cause**: The grid columns are equal, but the inner elements have inconsistent `min-width` and padding that makes them appear misaligned.
+
+### 3. **No Image Previews in Comments**
+Current attachment display just shows text badges with icons - no thumbnail previews for images. The code at `TaskDetailComments.tsx:81-106` renders all attachments identically regardless of type.
+
+### 4. **Images Open in New Tab Instead of Same Window**
+Current code uses `target="_blank"` for all attachment links. User wants images to open in a lightbox within the same window.
+
+### 5. **Fragmented Comment Components**
+There are multiple comment implementations:
+- `TaskDetailComments.tsx` + `TaskDetailCommentInput.tsx` (most feature-rich)
+- `CampaignComments.tsx` (basic, no mentions/attachments)
+- `VersionComments.tsx` (basic, no mentions/attachments)
+- `EntityCommentsDialog.tsx` (dialog variant)
+- `ExternalVersionGallery.tsx` (inline render)
 
 ---
 
-## Issues Identified from Screenshot
+## Solution: Unified Comment System
 
-The current Priority Card layout shows:
-- High | Due today | Ongoing - all in a row with inconsistent sizing
-- They wrap awkwardly and don't align properly
-- The "Due today" badge isn't visually distinct enough
+### Part 1: Fix @all Tagging
 
-The title is using `text-heading-md` (20px) which feels small for the main task title.
+**Problem**: `MentionAutocomplete` receives `assigneeIds` as profile IDs, but the `users` array has `user_id` (auth user ID). The filter at line 147 compares `u.user_id` to `assigneeIds`.
 
----
+**Files to change**: 
+- `TaskDetailContext.tsx` - Verify the `selectedAssignees` contains the correct ID type
+- `MentionAutocomplete.tsx` - May need to support both ID types
 
-## Part 1: Larger Task Title
-
-**Current:** `text-heading-md font-semibold` (20px)
-**New:** `text-heading-lg font-semibold` (24px)
-
-**File:** `src/components/tasks/TaskDetail/TaskDetailFields.tsx`
-
+**Fix**:
 ```typescript
-// Change from:
-className="text-heading-md font-semibold ..."
+// In TaskDetailCommentInput.tsx - ensure we pass user_id, not profile.id
+// Current: assigneeIds={selectedAssignees} 
+// selectedAssignees contains profile IDs from task_assignees table
 
-// To:
-className="text-heading-lg font-semibold ..."
+// The users array has user_id from profiles table
+// We need to map selectedAssignees (profile IDs) to user_ids
+
+// Solution: Use realtimeAssignees which has the profile data including user_id
+const assigneeUserIds = realtimeAssignees.map(a => a.user_id).filter(Boolean);
 ```
 
----
-
-## Part 2: Priority Card Alignment Fix
-
-**Current Structure:**
-```text
-┌────────────────────────────────────────────────┐
-│ [🏴 High ▼] [📅 Due today] [⏱ Ongoing ▼]       │
-└────────────────────────────────────────────────┘
+Pass the correct IDs to `MentionAutocomplete`:
+```typescript
+<MentionAutocomplete
+  ...
+  assigneeIds={realtimeAssignees.map(a => a.user_id).filter(Boolean)}
+/>
 ```
 
-**Problems:**
-- Flex wrap causes awkward line breaks
-- Badges have inconsistent widths
-- No visual separation between urgency (overdue warning) and metadata
+### Part 2: Fix Priority Card Box Alignment
 
-**New Structure - Vertical Stack with Consistent Width:**
-```text
-┌────────────────────────────────────────────────┐
-│ Priority    ▶ [🏴 High            ▼]           │
-│ Due Date    ▶ [⚠️ Overdue (Jan 25)   ]         │
-│ Status      ▶ [⏱ Ongoing          ▼]           │
-└────────────────────────────────────────────────┘
-```
+**Problem**: The 3-column grid has equal column widths, but the inner elements (Select, Button, Badge) have inconsistent styling.
 
-**Alternative - Horizontal with Fixed Grid:**
-Use CSS Grid with 3 equal columns that don't wrap:
+**Fix**: Standardize all three elements to have the same visual treatment:
 
 ```typescript
 <div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
-  {/* Priority */}
-  <div className="flex flex-col gap-xs">
+  {/* Each column uses flex flex-col with consistent inner elements */}
+  <div className="flex flex-col gap-xs min-w-0">
     <span className="text-metadata text-muted-foreground">Priority</span>
-    <Select.../>
+    {/* Use a consistent h-9 button-like container */}
+    <div className="h-9 ...">
+      ...
+    </div>
   </div>
-  
-  {/* Due Date */}
-  <div className="flex flex-col gap-xs">
-    <span className="text-metadata text-muted-foreground">Due</span>
-    <DatePicker.../>
-  </div>
-  
-  {/* Status */}
-  <div className="flex flex-col gap-xs">
-    <span className="text-metadata text-muted-foreground">Status</span>
-    <Select.../>
-  </div>
+  {/* Repeat for Due and Status with same h-9 height */}
 </div>
 ```
 
-This ensures:
-- Equal column widths - no awkward wrapping
-- Clear labels above each field
-- Consistent alignment
+Key changes:
+- All three columns use `min-w-0` to prevent overflow
+- All inner controls use consistent `h-9` height
+- Remove `w-full` on Badge to let grid handle sizing
+- Standardize padding on all control elements
 
-**File:** `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx`
+### Part 3: Add Image Preview & Lightbox Support
 
----
-
-## Part 3: Show Comment Count on Task Rows
-
-The `useTasks` hook already fetches `comments_count` via the materialized view `task_comment_counts`. We just need to display it in TaskRow.
-
-**Current TaskRow Props:**
+**Create a helper to detect image files:**
 ```typescript
-interface TaskRowProps {
-  task: any;
-  subtaskCount?: number;
-  subtaskCompletedCount?: number;
-  // ... no comment count
-}
-```
-
-**Changes:**
-
-1. Add comment count to TaskRow display (no new prop needed - it's on `task.comments_count`)
-
-2. Add comment icon badge near subtask badge:
-
-```typescript
-// After subtask badge
-{task.comments_count > 0 && !compact && (
-  <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
-    <MessageCircle className="h-2.5 w-2.5 mr-0.5" />
-    {task.comments_count}
-  </Badge>
-)}
-```
-
-**File:** `src/components/tasks/TaskRow.tsx`
-
----
-
-## Part 4: Comment Attachments (Files + Links)
-
-This requires database changes and UI updates.
-
-### 4a. Database Changes
-
-Add columns to the `comments` table for attachments:
-
-```sql
--- Add attachment support to comments
-ALTER TABLE public.comments
-ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::jsonb;
-
--- Each attachment in the array has this structure:
--- { "type": "file" | "link", "name": "string", "url": "string", "size_bytes": number }
-```
-
-Create a new storage bucket for comment attachments:
-
-```sql
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('comment-attachments', 'comment-attachments', true)
-ON CONFLICT (id) DO NOTHING;
-
--- RLS policy for uploads
-CREATE POLICY "Authenticated users can upload comment attachments"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'comment-attachments');
-
--- RLS policy for reading
-CREATE POLICY "Anyone can view comment attachments"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'comment-attachments');
-
--- RLS policy for deleting own files
-CREATE POLICY "Users can delete their own comment attachments"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (bucket_id = 'comment-attachments' AND auth.uid()::text = (storage.foldername(name))[1]);
-```
-
-### 4b. Comment Input UI Changes
-
-**File:** `src/components/tasks/TaskDetail/TaskDetailCommentInput.tsx`
-
-Add:
-1. File upload button (paperclip icon)
-2. Link input button (link icon)
-3. Preview area for pending attachments
-4. File size validation (2MB limit with warning)
-
-```typescript
-// New state
-const [pendingAttachments, setPendingAttachments] = useState<Array<{
-  type: 'file' | 'link';
-  name: string;
-  file?: File;
-  url?: string;
-  size_bytes?: number;
-}>>([]);
-
-// File input handler
-const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  
-  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-  
-  if (file.size > MAX_SIZE) {
-    toast.warning(
-      "File too large", 
-      { description: `${file.name} exceeds 2MB. Please add as a link instead.` }
-    );
-    return;
-  }
-  
-  setPendingAttachments(prev => [...prev, {
-    type: 'file',
-    name: file.name,
-    file,
-    size_bytes: file.size
-  }]);
-};
-
-// Link dialog
-const [showLinkDialog, setShowLinkDialog] = useState(false);
-const [linkUrl, setLinkUrl] = useState('');
-const [linkName, setLinkName] = useState('');
-
-const addLink = () => {
-  if (!linkUrl.trim()) return;
-  setPendingAttachments(prev => [...prev, {
-    type: 'link',
-    name: linkName.trim() || linkUrl.trim(),
-    url: linkUrl.trim()
-  }]);
-  setLinkUrl('');
-  setLinkName('');
-  setShowLinkDialog(false);
+const isImageAttachment = (attachment: Attachment) => {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+  const imageMimeTypes = ['image/'];
+  const name = attachment.name.toLowerCase();
+  return imageExtensions.some(ext => name.endsWith(ext)) || 
+         imageMimeTypes.some(type => attachment.url.includes(type));
 };
 ```
 
-### 4c. Upload Logic in addComment
-
-When submitting a comment with attachments:
-
-1. Upload files to Supabase storage first
-2. Get public URLs
-3. Include attachments array in comment insert
-
+**Update TaskDetailComments.tsx to show image previews:**
 ```typescript
-const addComment = async () => {
-  // ... existing validation
-  
-  // Upload files first
-  const uploadedAttachments = [];
-  for (const attachment of pendingAttachments) {
-    if (attachment.type === 'file' && attachment.file) {
-      const fileName = `${user.id}/${taskId}/${Date.now()}_${attachment.name}`;
-      const { error } = await supabase.storage
-        .from('comment-attachments')
-        .upload(fileName, attachment.file);
-      
-      if (error) {
-        toast.error(`Failed to upload ${attachment.name}`);
-        return;
-      }
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('comment-attachments')
-        .getPublicUrl(fileName);
-      
-      uploadedAttachments.push({
-        type: 'file',
-        name: attachment.name,
-        url: publicUrl,
-        size_bytes: attachment.size_bytes
-      });
-    } else if (attachment.type === 'link') {
-      uploadedAttachments.push({
-        type: 'link',
-        name: attachment.name,
-        url: attachment.url
-      });
-    }
-  }
-  
-  // Insert comment with attachments
-  const { error } = await supabase
-    .from("comments")
-    .insert({
-      task_id: taskId,
-      author_id: user.id,
-      body: commentText,
-      attachments: uploadedAttachments
-    });
-  
-  // ... rest of logic
-  setPendingAttachments([]);
-};
-```
+// Add state for lightbox
+const [lightboxOpen, setLightboxOpen] = useState(false);
+const [lightboxImages, setLightboxImages] = useState<{url: string; caption?: string}[]>([]);
+const [lightboxIndex, setLightboxIndex] = useState(0);
 
-### 4d. Display Attachments in Comments
+// Separate attachments into images and other files
+const imageAttachments = attachments.filter(isImageAttachment);
+const otherAttachments = attachments.filter(att => !isImageAttachment(att));
 
-**File:** `src/components/tasks/TaskDetail/TaskDetailComments.tsx`
-
-Add attachment display below comment text:
-
-```typescript
-{comment.attachments?.length > 0 && (
+// Render image thumbnails that open lightbox on click
+{imageAttachments.length > 0 && (
   <div className="flex flex-wrap gap-xs mt-xs">
-    {comment.attachments.map((att: any, i: number) => (
-      <a
+    {imageAttachments.map((att, i) => (
+      <button
         key={i}
-        href={att.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "inline-flex items-center gap-xs px-sm py-xs rounded-md text-metadata",
-          "bg-muted/50 hover:bg-muted transition-colors",
-          att.type === 'file' && "border border-border"
-        )}
+        onClick={() => {
+          setLightboxImages(imageAttachments.map(a => ({ url: a.url, caption: a.name })));
+          setLightboxIndex(i);
+          setLightboxOpen(true);
+        }}
+        className="relative w-20 h-20 rounded-md overflow-hidden border border-border hover:opacity-80 transition-opacity"
       >
-        {att.type === 'file' ? (
-          <Paperclip className="h-3 w-3" />
-        ) : (
-          <ExternalLink className="h-3 w-3" />
-        )}
-        <span className="truncate max-w-[150px]">{att.name}</span>
-      </a>
+        <img src={att.url} alt={att.name} className="w-full h-full object-cover" />
+      </button>
     ))}
   </div>
 )}
+
+// Render non-image attachments as before
+{otherAttachments.length > 0 && (
+  <div className="flex flex-wrap gap-xs mt-xs">
+    {/* existing badge rendering */}
+  </div>
+)}
+
+// Add ImageLightbox at component level
+<ImageLightbox 
+  images={lightboxImages}
+  initialIndex={lightboxIndex}
+  open={lightboxOpen}
+  onClose={() => setLightboxOpen(false)}
+/>
+```
+
+### Part 4: Create Unified Comment Components
+
+Create a shared comment system that can be used across all contexts:
+
+**New files:**
+1. `src/components/comments/UnifiedCommentList.tsx` - Displays comments with all features
+2. `src/components/comments/UnifiedCommentInput.tsx` - Input with mentions + attachments
+3. `src/components/comments/types.ts` - Shared types
+
+**UnifiedCommentList props:**
+```typescript
+interface UnifiedCommentListProps {
+  comments: CommentItem[];
+  currentUserId?: string;
+  onDelete?: (commentId: string) => void;
+  isAdmin?: boolean;
+  showExternalBadge?: boolean;
+  // Display options
+  variant?: 'chat' | 'list'; // chat = bubbles, list = traditional rows
+}
+```
+
+**UnifiedCommentInput props:**
+```typescript
+interface UnifiedCommentInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  isSubmitting?: boolean;
+  // Mention support
+  users?: User[];
+  assigneeIds?: string[];
+  enableMentions?: boolean;
+  // Attachment support
+  enableAttachments?: boolean;
+  pendingAttachments?: PendingAttachment[];
+  onAddAttachment?: (attachment: PendingAttachment) => void;
+  onRemoveAttachment?: (index: number) => void;
+  maxFileSize?: number; // default 2MB
+  // UI
+  placeholder?: string;
+  minRows?: number;
+  maxRows?: number;
+}
 ```
 
 ---
 
 ## Implementation Files
 
-| File | Changes |
-|------|---------|
-| **Database** | Add `attachments` column to comments, create storage bucket + policies |
-| `TaskDetailFields.tsx` | Increase title size to `text-heading-lg` |
-| `TaskDetailPriorityCard.tsx` | Restructure to 3-column grid with labels for proper alignment |
-| `TaskRow.tsx` | Add comment count badge with MessageCircle icon |
-| `TaskDetailCommentInput.tsx` | Add file/link attachment UI with 2MB validation |
-| `TaskDetailComments.tsx` | Display attachments with file/link icons |
-| `TaskDetailContext.tsx` | Update `addComment` to handle attachments upload |
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/tasks/TaskDetail/TaskDetailCommentInput.tsx` | **Modify** | Pass correct `user_id` for assignees to fix @all |
+| `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx` | **Modify** | Standardize h-9 height and min-w-0 on all columns |
+| `src/components/tasks/TaskDetail/TaskDetailComments.tsx` | **Modify** | Add image detection, thumbnail preview, and ImageLightbox integration |
+| `src/components/comments/UnifiedCommentList.tsx` | **Create** | Unified display component for comments |
+| `src/components/comments/UnifiedCommentInput.tsx` | **Create** | Unified input with mentions + attachments |
+| `src/components/comments/types.ts` | **Create** | Shared TypeScript types |
+| `src/components/comments/utils.ts` | **Create** | Helper for detecting image files |
+| `src/components/comments/index.ts` | **Create** | Barrel export |
 
 ---
 
-## UI Preview
+## Detailed Changes
 
-**Priority Card (After):**
-```text
-┌────────────────────────────────────────────────┐
-│  Priority        Due              Status       │
-│ ┌──────────┐  ┌───────────────┐  ┌──────────┐  │
-│ │🏴 High ▼ │  │⚠️ Overdue...  │  │⏱ Ongoing▼│  │
-│ └──────────┘  └───────────────┘  └──────────┘  │
-└────────────────────────────────────────────────┘
+### TaskDetailCommentInput.tsx - Fix @all
+
+```typescript
+// Current (broken):
+<MentionAutocomplete
+  assigneeIds={selectedAssignees} // These are profile.id values
+/>
+
+// Fixed:
+// Get user_ids from realtimeAssignees context
+const { realtimeAssignees } = useTaskDetailContext();
+
+<MentionAutocomplete
+  assigneeIds={realtimeAssignees.map(a => a.user_id).filter(Boolean)}
+/>
 ```
 
-**Task Row with Comment Badge:**
-```text
-○ • Task title here                    [💬 3] [👤] Jan 28
+### TaskDetailPriorityCard.tsx - Fix Alignment
+
+```typescript
+<div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
+  {/* Priority - standardized container */}
+  <div className="flex flex-col gap-xs min-w-0">
+    <span className="text-metadata text-muted-foreground">Priority</span>
+    <Select value={priority} onValueChange={...}>
+      <SelectTrigger className="h-9 border-0 p-0 focus:ring-0 shadow-none">
+        <div className={cn(
+          "flex items-center gap-xs px-2.5 h-full rounded-md font-medium text-body-sm",
+          // Same width constraint for all
+          "w-full min-w-0",
+          // Colors based on priority
+          ...
+        )}>
+          <Flag className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">{priority}</span>
+        </div>
+      </SelectTrigger>
+      ...
+    </Select>
+  </div>
+
+  {/* Due - same h-9 */}
+  <div className="flex flex-col gap-xs min-w-0">
+    <span className="text-metadata text-muted-foreground">Due</span>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={cn(
+            "h-9 w-full gap-xs px-2.5 rounded-md justify-start",
+            ...
+          )}
+        >
+          ...
+        </Button>
+      </PopoverTrigger>
+      ...
+    </Popover>
+  </div>
+
+  {/* Status - same h-9 */}
+  <div className="flex flex-col gap-xs min-w-0">
+    <span className="text-metadata text-muted-foreground">Status</span>
+    <Select value={status} onValueChange={...}>
+      <SelectTrigger className="h-9 border-0 p-0 focus:ring-0 shadow-none">
+        <Badge variant="outline" className={cn(
+          "text-body-sm h-full w-full min-w-0 justify-start px-2.5",
+          getStatusColor(status)
+        )}>
+          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">{status}</span>
+        </Badge>
+      </SelectTrigger>
+      ...
+    </Select>
+  </div>
+</div>
 ```
 
-**Comment Input with Attachments:**
-```text
-┌────────────────────────────────────────────────┐
-│ Write a comment... Use @ to mention            │
-│                                                │
-│ [📎 report.pdf ×] [🔗 Figma link ×]            │
-│                                                │
-│ ⌘+Enter to send           [📎] [🔗]    [Send] │
-└────────────────────────────────────────────────┘
+### TaskDetailComments.tsx - Image Preview with Lightbox
+
+```typescript
+import { useState } from "react";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
+import { isImageUrl } from "@/components/comments/utils";
+
+// In component:
+const [lightboxOpen, setLightboxOpen] = useState(false);
+const [lightboxImages, setLightboxImages] = useState<{url: string; caption?: string}[]>([]);
+const [lightboxIndex, setLightboxIndex] = useState(0);
+
+// In render, for each comment:
+const imageAttachments = attachments.filter(att => isImageUrl(att.url) || isImageUrl(att.name));
+const fileAttachments = attachments.filter(att => !isImageUrl(att.url) && !isImageUrl(att.name));
+
+// Image thumbnails (clickable → lightbox)
+{imageAttachments.length > 0 && (
+  <div className="flex flex-wrap gap-xs mt-xs">
+    {imageAttachments.map((att, i) => (
+      <button
+        key={i}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setLightboxImages(imageAttachments.map(a => ({ url: a.url, caption: a.name })));
+          setLightboxIndex(i);
+          setLightboxOpen(true);
+        }}
+        className={cn(
+          "relative w-16 h-16 rounded-md overflow-hidden border transition-opacity hover:opacity-80",
+          isCurrentUser ? "border-primary-foreground/30" : "border-border"
+        )}
+      >
+        <img 
+          src={att.url} 
+          alt={att.name} 
+          className="w-full h-full object-cover"
+        />
+      </button>
+    ))}
+  </div>
+)}
+
+// Non-image attachments (existing badge style)
+{fileAttachments.length > 0 && (
+  <div className="flex flex-wrap gap-xs mt-xs">
+    {/* existing link badges */}
+  </div>
+)}
+
+// At end of component, outside the comment loop:
+<ImageLightbox 
+  images={lightboxImages}
+  initialIndex={lightboxIndex}
+  open={lightboxOpen}
+  onClose={() => setLightboxOpen(false)}
+/>
 ```
 
 ---
 
 ## Summary
 
-| Issue | Solution |
-|-------|----------|
-| Title too small | Change from `text-heading-md` to `text-heading-lg` |
-| Priority/Status/Due misaligned | Restructure to 3-column CSS Grid with labels |
-| Comments not visible | Add comment count badge to TaskRow |
-| Can't attach to comments | Add file upload (2MB limit) + link attachment with storage bucket |
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| @all not working | `assigneeIds` contains `profile.id` but `users` has `user_id` | Map `realtimeAssignees` to their `user_id` values |
+| Box sizes different | Inner elements have inconsistent heights/padding | Standardize all to `h-9` with `min-w-0` |
+| No image previews | All attachments rendered as text badges | Detect image URLs, render thumbnail, open in lightbox |
+| Images open new tab | Using `target="_blank"` on image links | Use `ImageLightbox` component instead |
+| Fragmented comments | Multiple separate implementations | Create unified components for reuse |
+
+This plan fixes all immediate issues and sets up the foundation for a proper unified comment system that can be adopted across all comment contexts in the application.
