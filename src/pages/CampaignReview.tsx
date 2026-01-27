@@ -18,6 +18,8 @@ import { GlassBackground } from "@/components/layout/GlassBackground";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 import { FilterBar, FilterPill } from "@/components/layout/FilterBar";
 import { ExternalCampaignGrid } from "@/components/campaigns/ExternalCampaignGrid";
+import { ExternalCampaignDetailPanel } from "@/components/campaigns/ExternalCampaignDetailPanel";
+import { ExternalVersionGallery } from "@/components/campaigns/ExternalVersionGallery";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -555,17 +557,39 @@ export default function CampaignReview() {
             </CardContent>
           </Card>
         ) : viewMode === "grid" ? (
-          <ExternalCampaignGrid
-            campaigns={sortedCampaigns}
-            versions={versions}
-            comments={existingComments}
-            expandedCampaignId={expandedCampaignId}
-            onToggleExpand={(id) => setExpandedCampaignId(prev => prev === id ? null : id)}
-            onSubmitFeedback={handleCommentSubmit}
-            submitting={submitting}
-            commentInputs={comments}
-            onCommentChange={(versionId, value) => setComments({ ...comments, [versionId]: value })}
-          />
+          <>
+            {/* Campaign Thumbnail Grid */}
+            <ExternalCampaignGrid
+              campaigns={sortedCampaigns}
+              versions={versions}
+              comments={existingComments}
+              selectedCampaignId={expandedCampaignId}
+              onSelectCampaign={setExpandedCampaignId}
+            />
+
+            {/* Detail Panel - appears below grid when campaign selected */}
+            {expandedCampaignId && (() => {
+              const selectedCampaign = sortedCampaigns.find(c => c.id === expandedCampaignId);
+              const campaignVersions = versions
+                .filter(v => v.utm_campaign_id === expandedCampaignId)
+                .sort((a, b) => b.version_number - a.version_number);
+              
+              if (!selectedCampaign) return null;
+              
+              return (
+                <ExternalCampaignDetailPanel
+                  campaign={selectedCampaign}
+                  versions={campaignVersions}
+                  comments={existingComments}
+                  onClose={() => setExpandedCampaignId(null)}
+                  onSubmitFeedback={handleCommentSubmit}
+                  submitting={submitting}
+                  commentInputs={comments}
+                  onCommentChange={(versionId, value) => setComments({ ...comments, [versionId]: value })}
+                />
+              );
+            })()}
+          </>
         ) : (
           // List view - simpler table-like layout
           <div className="space-y-sm">
@@ -621,19 +645,17 @@ export default function CampaignReview() {
                     </div>
                   </div>
                   
-                  {/* Expanded content */}
+                  {/* Expanded content - now uses full-width version gallery */}
                   {expandedCampaignId === campaign.id && (
-                    <div className="border-t border-border">
-                      <ExternalCampaignGrid
-                        campaigns={[campaign]}
-                        versions={versions}
-                        comments={existingComments}
-                        expandedCampaignId={campaign.id}
-                        onToggleExpand={() => {}}
-                        onSubmitFeedback={handleCommentSubmit}
+                    <div className="border-t border-border p-md">
+                      <ExternalVersionGallery
+                        versions={campaignVersions.sort((a, b) => b.version_number - a.version_number)}
+                        comments={existingComments.filter(c => campaignVersions.some(v => v.id === c.version_id))}
+                        onSubmitFeedback={(versionId, text) => handleCommentSubmit(versionId, campaign.id, text)}
                         submitting={submitting}
                         commentInputs={comments}
                         onCommentChange={(versionId, value) => setComments({ ...comments, [versionId]: value })}
+                        expanded
                       />
                     </div>
                   )}
