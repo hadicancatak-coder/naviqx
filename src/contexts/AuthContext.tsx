@@ -49,6 +49,7 @@ interface AuthContextType {
   mfaStatusLoading: boolean;
   setMfaVerifiedStatus: (verified: boolean, sessionToken?: string, expiresAt?: string) => void;
   validateMfaSession: (currentUser?: User) => Promise<boolean>;
+  refreshMfaStatus: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -368,6 +369,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Refresh MFA status after setup completes - updates cache immediately
+  const refreshMfaStatus = () => {
+    logger.debug('Refreshing MFA status cache - setting mfaEnabled=true');
+    setMfaEnabled(true);
+    
+    // Update sessionStorage cache immediately
+    if (user) {
+      sessionStorage.setItem('mfa_status_cache', JSON.stringify({
+        mfaEnabled: true,
+        mfaEnrollmentRequired: true,
+        userId: user.id,
+        cachedAt: Date.now()
+      }));
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setMfaSessionToken(null);
@@ -395,6 +412,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         mfaStatusLoading: false,
         validateMfaSession: async () => false,
         setMfaVerifiedStatus: () => {},
+        refreshMfaStatus: () => {},
         signOut: async () => {
           // Sign out on external review page is a no-op
         },
@@ -417,7 +435,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         mfaEnrollmentRequired,
         mfaStatusLoading,
         validateMfaSession,
-        setMfaVerifiedStatus, 
+        setMfaVerifiedStatus,
+        refreshMfaStatus,
         signOut 
       }}
     >

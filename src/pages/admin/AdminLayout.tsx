@@ -22,7 +22,7 @@ export default function AdminLayout() {
       />
 
       <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <TabsList className="grid grid-cols-4 sm:grid-cols-8 w-full lg:w-auto bg-muted/50">
+        <TabsList className="grid grid-cols-5 sm:grid-cols-9 w-full lg:w-auto bg-muted/50">
           <TabsTrigger value="overview" className="gap-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
@@ -54,6 +54,10 @@ export default function AdminLayout() {
           <TabsTrigger value="logs" className="gap-2">
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Logs</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
           </TabsTrigger>
         </TabsList>
 
