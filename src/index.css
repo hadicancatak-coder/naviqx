@@ -425,6 +425,23 @@ All colors MUST be HSL.
   .scroll-smooth-hidden::-webkit-scrollbar {
     display: none;
   }
+
+  /* Scrollbar hiding for horizontal scroll on mobile */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile safe area padding */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
 }
 
 /* Typography utilities */

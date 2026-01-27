@@ -89,10 +89,8 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
   const colCount = Math.min(groups.length, 5);
 
   return (
-    <div 
-      className="grid gap-md"
-      style={{ gridTemplateColumns: `repeat(${colCount}, minmax(240px, 1fr))` }}
-    >
+    <div className="overflow-x-auto -mx-md px-md sm:overflow-visible sm:mx-0 sm:px-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md min-w-[280px] sm:min-w-0">
       {groups.map(group => {
         const groupTasks = filterTasksByGroup(group);
 
@@ -204,6 +202,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
           </div>
         );
       })}
+      </div>
     </div>
   );
 };

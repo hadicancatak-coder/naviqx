@@ -84,7 +84,7 @@ export const HeadlineDiversityChecker = ({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-sm p-sm rounded-md bg-muted/50">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-md bg-muted/50">
           <div className="text-center">
             <div className="text-heading-md font-bold text-foreground">
               {validHeadlines.length}
