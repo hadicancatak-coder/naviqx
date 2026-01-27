@@ -1,4 +1,4 @@
-import { X, ExternalLink, Calendar } from "lucide-react";
+import { X, ExternalLink, Calendar, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -33,6 +33,7 @@ interface Campaign {
   lp_type?: string;
   campaign_type?: string;
   landing_page?: string;
+  description?: string | null;
 }
 
 interface ExternalCampaignDetailPanelProps {
@@ -123,6 +124,27 @@ export function ExternalCampaignDetailPanel({
           </Button>
         </div>
       </div>
+
+      {/* Campaign Description / Review Guide */}
+      {campaign.description && (
+        <div className="px-lg pt-md">
+          <div className="p-md rounded-lg bg-info-soft border border-info/20">
+            <div className="flex items-start gap-sm">
+              <div className="p-1.5 rounded-full bg-info/20 flex-shrink-0">
+                <Info className="h-4 w-4 text-info-text" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-body-sm font-medium text-foreground mb-1">
+                  About This Campaign
+                </h4>
+                <p className="text-body-sm text-muted-foreground whitespace-pre-wrap">
+                  {campaign.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Version Gallery - Full Width */}
       <div className="p-lg">

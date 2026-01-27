@@ -85,6 +85,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
         id: campaignId,
         name,
         landing_page: landingPage || null,
+        description: description || null,
       });
       setIsEditing(false);
       toast.success("Campaign updated");

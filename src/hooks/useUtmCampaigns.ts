@@ -89,10 +89,15 @@ export const useUpdateUtmCampaign = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, name, landing_page }: { id: string; name?: string; landing_page?: string | null }) => {
+    mutationFn: async ({ id, name, landing_page, description }: { 
+      id: string; 
+      name?: string; 
+      landing_page?: string | null;
+      description?: string | null;
+    }) => {
       const { data, error } = await supabase
         .from("utm_campaigns")
-        .update({ name, landing_page })
+        .update({ name, landing_page, description })
         .eq("id", id)
         .select()
         .single();
