@@ -1,279 +1,256 @@
 
-# LP Button Re-Add and Comments Cleanup Feature
+# Campaign LP Button & Reviewer Identification Improvements
 
 ## Overview
-This plan addresses two requests:
-1. **Re-add the LP button** - The LP (Landing Page) button needs to be added to the internal Campaigns Log page for direct access to campaign landing pages
-2. **Add option to clean comments** - Ability to delete comments on boards (entity-level) and campaign versions for internal users/admins
+
+This plan addresses three issues:
+1. **Remove identification popups** - Replace the blocking popup/card that asks for name/email with an inline header bar showing "Reviewing as [Name]"
+2. **Store reviewer identity by IP** - Persist reviewer details with their IP address so returning visitors don't need to re-enter info
+3. **Add LP button to Campaign Detail Dialog** - The Landing Page link exists in UtmCampaignDetailDialog but should also have a prominent "View LP" button
 
 ---
 
-## Part 1: Re-Add LP Button
+## Part 1: Database Changes
 
-### Problem Analysis
-The LP button exists in several components for external reviews but is missing or hidden in the internal Campaigns Log page:
-- `DraggableCampaignCard.tsx` shows only the hostname, not a clickable "LP" button
-- `EntityCampaignTable.tsx` (CampaignTrackingCard) has no LP button at all
-- `CampaignListView.tsx` shows the hostname as a link but no prominent "LP" button
+### Create `external_reviewer_sessions` Table
 
-### Implementation
+Store reviewer identity linked to IP address for seamless return visits:
 
-#### File 1: `src/components/campaigns/EntityCampaignTable.tsx`
-Add an LP button to the CampaignTrackingCard component:
+```sql
+CREATE TABLE external_reviewer_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ip_address TEXT NOT NULL,
+  reviewer_name TEXT NOT NULL,
+  reviewer_email TEXT NOT NULL,
+  page_type TEXT NOT NULL CHECK (page_type IN ('campaign_review', 'lp_map')),
+  access_token TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-```typescript
-// Inside CampaignTrackingCard, after the status badge (around line 121)
-// Add LP button if campaign has landing_page
-{campaign.landing_page && (() => {
-  try {
-    const url = new URL(campaign.landing_page);
-    if (!['http:', 'https:'].includes(url.protocol)) return null;
-    return (
-      <a
-        href={campaign.landing_page}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-metadata text-primary hover:underline mt-sm"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ExternalLink className="size-3" />
-        LP
-      </a>
-    );
-  } catch {
-    return null;
-  }
-})()}
-```
+-- Index for fast IP lookups
+CREATE INDEX idx_reviewer_sessions_ip ON external_reviewer_sessions(ip_address);
 
-#### File 2: `src/components/campaigns/DraggableCampaignCard.tsx`
-Make the LP link more prominent - change from just hostname to "LP" button style:
+-- RLS policies for anonymous access
+ALTER TABLE external_reviewer_sessions ENABLE ROW LEVEL SECURITY;
 
-```typescript
-// Replace lines 77-89 with a more prominent LP link
-{campaign.landing_page && (() => {
-  try {
-    new URL(campaign.landing_page); // Validate
-    return (
-      <a
-        href={campaign.landing_page}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-metadata text-primary hover:underline font-medium"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ExternalLink className="h-3 w-3" />
-        View LP
-      </a>
-    );
-  } catch {
-    return null;
-  }
-})()}
+-- Allow anonymous SELECT and INSERT
+CREATE POLICY "Allow anonymous read" ON external_reviewer_sessions
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anonymous insert" ON external_reviewer_sessions
+  FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anonymous update" ON external_reviewer_sessions
+  FOR UPDATE TO anon USING (true);
 ```
 
 ---
 
-## Part 2: Add Comments Cleanup Options
+## Part 2: Create IP-Based Reviewer Session Hook
 
-### Comment Tables in Scope
-Based on the campaign system, these tables store comments:
-1. **`utm_campaign_version_comments`** - Internal version comments (already has individual delete)
-2. **`external_campaign_review_comments`** - External reviewer feedback
-3. **`entity_comments`** - Board/entity-level internal comments
-4. **`utm_campaign_comments`** - Campaign-level comments
+### New File: `src/hooks/useReviewerSession.ts`
 
-### Feature Design
-
-#### 2.1: Add "Clear All Comments" Button to Version Comments
-
-**File: `src/components/campaigns/VersionComments.tsx`**
-
-Add a "Clear All" button for admins/campaign owners to delete all comments on a version:
+This hook will:
+1. Check if we have a stored session for this IP
+2. If yes, auto-fill the reviewer info
+3. If no, show the inline identification bar
+4. Save reviewer info with IP when they identify
 
 ```typescript
-// Add imports
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
-         AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, 
-         AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useUserRole } from "@/hooks/useUserRole";
+// Hook that manages reviewer sessions by IP
+export const useReviewerSession = (pageType: 'campaign_review' | 'lp_map', accessToken?: string) => {
+  const [session, setSession] = useState<{ name: string; email: string } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-// Add state and hook
-const [clearDialogOpen, setClearDialogOpen] = useState(false);
-const { isAdmin } = useUserRole();
+  // On mount, check for existing session by IP
+  useEffect(() => {
+    const checkSession = async () => {
+      // Get client IP from request headers or use a fallback
+      const { data } = await supabase
+        .from('external_reviewer_sessions')
+        .select('reviewer_name, reviewer_email')
+        .eq('page_type', pageType)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (data) {
+        setSession({ name: data.reviewer_name, email: data.reviewer_email });
+      }
+      setLoading(false);
+    };
+    checkSession();
+  }, [pageType]);
 
-// Add mutation to useVersionComments hook
-const clearAllComments = useMutation({...});
+  const saveSession = async (name: string, email: string) => {
+    await supabase.from('external_reviewer_sessions').upsert({
+      ip_address: 'client', // Will be enhanced with edge function
+      reviewer_name: name,
+      reviewer_email: email,
+      page_type: pageType,
+      access_token: accessToken,
+      updated_at: new Date().toISOString(),
+    });
+    setSession({ name, email });
+  };
 
-// Add UI button in header section
-{isAdmin && comments.length > 0 && (
-  <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
-    <AlertDialogTrigger asChild>
-      <Button variant="ghost" size="icon-xs" className="text-destructive">
-        <Trash2 />
-      </Button>
-    </AlertDialogTrigger>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Clear All Comments</AlertDialogTitle>
-        <AlertDialogDescription>
-          This will permanently delete all {comments.length} comments. This action cannot be undone.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction onClick={handleClearAll} className="bg-destructive">
-          Delete All
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-)}
-```
-
-**File: `src/hooks/useVersionComments.ts`**
-
-Add bulk delete mutation:
-
-```typescript
-const clearAllVersionComments = useMutation({
-  mutationFn: async (versionId: string) => {
-    // Delete internal comments
-    const { error: internalError } = await supabase
-      .from("utm_campaign_version_comments")
-      .delete()
-      .eq("version_id", versionId);
-    if (internalError) throw internalError;
-    
-    // Delete external comments for this version
-    const { error: externalError } = await supabase
-      .from("external_campaign_review_comments")
-      .delete()
-      .eq("version_id", versionId);
-    if (externalError) throw externalError;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["version-comments"] });
-    toast.success("All comments cleared");
-  },
-  onError: (error: any) => {
-    toast.error(error.message || "Failed to clear comments");
-  },
-});
-```
-
-#### 2.2: Add "Clear All Comments" to Entity/Board Comments
-
-**File: `src/components/campaigns/EntityCommentsDialog.tsx`**
-
-Add clear all functionality:
-
-```typescript
-// Add hook and state
-const { isAdmin } = useUserRole();
-const [clearDialogOpen, setClearDialogOpen] = useState(false);
-
-// Add clear all handler
-const handleClearAll = async () => {
-  // Delete internal entity comments
-  await supabase.from("entity_comments").delete().eq("entity", entityName);
-  // Delete external entity feedback  
-  await supabase.from("external_campaign_review_comments")
-    .delete().eq("entity", entityName).eq("comment_type", "entity_feedback");
-  // Invalidate queries
-  queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
-  queryClient.invalidateQueries({ queryKey: ["external-entity-comments"] });
-  setClearDialogOpen(false);
+  return { session, loading, saveSession, hasSession: !!session };
 };
+```
 
-// Add button in header (for admins only)
-{isAdmin && allComments.length > 0 && (
-  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setClearDialogOpen(true)}>
-    <Trash2 /> Clear All
-  </Button>
+---
+
+## Part 3: Campaign Review Page Changes
+
+### File: `src/pages/CampaignReview.tsx`
+
+**Remove**: The blocking popup (lines 411-477) that forces users to enter name/email before seeing content
+
+**Replace with**: Inline identification bar at top + always show content
+
+**Changes:**
+
+1. **Add Inline Identification Bar Component**
+```typescript
+// New component at top of page when not identified
+const IdentificationBar = ({ name, email, setName, setEmail, onSubmit, isSubmitting }) => (
+  <Card className="mb-md border-primary/30">
+    <CardContent className="py-sm px-md">
+      <div className="flex items-center gap-md flex-wrap">
+        <span className="text-body-sm text-muted-foreground">To leave feedback:</span>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          className="w-40 h-8"
+        />
+        <Input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@cfi.trade"
+          className="w-48 h-8"
+        />
+        <Button size="sm" onClick={onSubmit} disabled={isSubmitting || !name.trim() || !email.trim()}>
+          Start Reviewing
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+```
+
+2. **Update Page Logic**
+- Remove the `if (!verified) return <popup>` block
+- Always show the campaigns grid
+- Show identification bar only when user tries to comment (or at top if not identified)
+- Auto-populate from IP session if available
+
+3. **Update Header to Show Reviewer Info**
+```typescript
+// In the header section (lines 484-499)
+<p className="text-body-sm text-muted-foreground">
+  {accessData?.entity} • {verified ? `Reviewing as ${name}` : "Not identified yet"}
+</p>
+```
+
+---
+
+## Part 4: LP Map Public Page Changes
+
+### File: `src/pages/LpMapPublic.tsx`
+
+**Remove**: The blocking card (lines 319-354) that forces identification before viewing
+
+**Replace with**: Inline identification bar similar to Campaign Review
+
+**Changes:**
+
+1. **Remove the Identification Card Block** (lines 319-354)
+
+2. **Add Inline Identification Bar** at the top of the page content:
+```typescript
+// After the header section, before sections list
+{!hasIdentified && (
+  <Card className="mb-md border-primary/30">
+    <CardContent className="py-sm px-md">
+      <div className="flex items-center gap-md flex-wrap">
+        <span className="text-body-sm text-muted-foreground">To leave comments:</span>
+        <Input
+          value={reviewerName}
+          onChange={(e) => setReviewerName(e.target.value)}
+          placeholder="Your name"
+          className="w-40 h-8"
+        />
+        <Input
+          value={reviewerEmail}
+          onChange={(e) => setReviewerEmail(e.target.value)}
+          placeholder="your@email.com"
+          className="w-48 h-8"
+        />
+        <Button size="sm" onClick={handleIdentify} disabled={!reviewerName.trim() || !reviewerEmail.trim()}>
+          Continue
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
 )}
 ```
 
-**File: `src/hooks/useEntityComments.ts`**
-
-Add delete mutations for entity comments:
-
+3. **Update Header to Show Reviewer**:
 ```typescript
-const deleteComment = useMutation({
-  mutationFn: async (commentId: string) => {
-    const { error } = await supabase
-      .from("entity_comments")
-      .delete()
-      .eq("id", commentId);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
-    toast.success("Comment deleted");
-  },
-});
-
-const clearAllEntityComments = useMutation({
-  mutationFn: async (entityName: string) => {
-    const { error } = await supabase
-      .from("entity_comments")
-      .delete()
-      .eq("entity", entityName);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
-    toast.success("All entity comments cleared");
-  },
-});
-```
-
-#### 2.3: Add Individual Comment Delete to CampaignComments
-
-**File: `src/components/campaigns/CampaignComments.tsx`**
-
-Add delete button for user's own comments:
-
-```typescript
-// Add imports and hook
-import { Trash2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-
-// In component
-const { user } = useAuth();
-
-// Add mutation to useCampaignComments hook for deletion
-// Then add delete button next to each comment (for own comments):
-{user?.id === comment.author_id && (
-  <Button
-    variant="ghost"
-    size="icon-xs"
-    onClick={() => deleteComment.mutate(comment.id)}
-    className="text-destructive"
-  >
-    <Trash2 />
-  </Button>
+// In header section, add:
+{hasIdentified && (
+  <p className="text-sm text-muted-foreground">
+    Reviewing as {reviewerName}
+  </p>
 )}
 ```
 
-**File: `src/hooks/useCampaignComments.ts`**
+4. **Integrate useReviewerSession hook** to auto-populate from IP
 
-Add delete mutations:
+---
+
+## Part 5: Add LP Button to Campaign Detail Dialog
+
+### File: `src/components/campaigns/UtmCampaignDetailDialog.tsx`
+
+The Landing Page section already exists (lines 230-280) with a link. Add a more prominent "View LP" button:
+
+**Update the Landing Page Card** (lines 231-280):
 
 ```typescript
-const deleteUtmCampaignComment = useMutation({
-  mutationFn: async (commentId: string) => {
-    const { error } = await supabase
-      .from("utm_campaign_comments")
-      .delete()
-      .eq("id", commentId);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["utm-campaign-comments"] });
-    toast.success("Comment deleted");
-  },
-});
+<Card className="p-md bg-card border-border">
+  <Label className="text-metadata text-muted-foreground">Landing Page</Label>
+  {isEditing ? (
+    <Input ... />
+  ) : campaign.landing_page ? (
+    <div className="flex items-center gap-sm mt-sm flex-wrap">
+      {/* Prominent LP Button */}
+      <Button 
+        variant="default" 
+        size="sm"
+        onClick={() => window.open(
+          campaign.landing_page.startsWith('http') ? campaign.landing_page : `https://${campaign.landing_page}`,
+          '_blank'
+        )}
+      >
+        <ExternalLink className="h-4 w-4 mr-2" />
+        View LP
+      </Button>
+      
+      {/* Existing URL text + copy button */}
+      <span className="text-body-sm text-muted-foreground break-all flex-1">
+        {campaign.landing_page}
+      </span>
+      <Button variant="ghost" size="icon-sm" onClick={handleCopyLandingPage}>
+        {copied ? <Check className="text-success" /> : <Copy />}
+      </Button>
+    </div>
+  ) : (
+    <p className="text-muted-foreground mt-sm text-body-sm">Not set</p>
+  )}
+</Card>
 ```
 
 ---
@@ -282,32 +259,36 @@ const deleteUtmCampaignComment = useMutation({
 
 | File | Changes |
 |------|---------|
-| `src/components/campaigns/EntityCampaignTable.tsx` | Add LP button to CampaignTrackingCard |
-| `src/components/campaigns/DraggableCampaignCard.tsx` | Make LP link more prominent |
-| `src/components/campaigns/VersionComments.tsx` | Add delete individual + clear all UI |
-| `src/hooks/useVersionComments.ts` | Add clearAllVersionComments mutation |
-| `src/components/campaigns/EntityCommentsDialog.tsx` | Add individual delete + clear all UI for admins |
-| `src/hooks/useEntityComments.ts` | Add deleteComment and clearAllEntityComments mutations |
-| `src/components/campaigns/CampaignComments.tsx` | Add delete button for own comments |
-| `src/hooks/useCampaignComments.ts` | Add deleteUtmCampaignComment mutation |
+| **Database** | Create `external_reviewer_sessions` table with RLS |
+| `src/hooks/useReviewerSession.ts` | NEW - Hook for IP-based session management |
+| `src/pages/CampaignReview.tsx` | Remove blocking popup, add inline bar, integrate IP session |
+| `src/pages/LpMapPublic.tsx` | Remove blocking card, add inline bar, integrate IP session |
+| `src/components/campaigns/UtmCampaignDetailDialog.tsx` | Add prominent "View LP" button |
 
 ---
 
-## Permission Model
+## User Experience Flow (After Changes)
 
-| Action | Who Can Do It |
-|--------|---------------|
-| Delete own comment | Comment author |
-| Clear all version comments | Admin only |
-| Clear all entity comments | Admin only |
-| Delete any comment | Admin only |
+### Campaign Review Page:
+1. User opens link → Sees campaigns immediately (no popup blocking)
+2. At the top, sees: "Jordan • Reviewing as [Name]" (if IP session exists) OR inline identification bar
+3. User can browse all campaigns and versions without identifying
+4. When they try to submit feedback, they must identify first (if not already)
+
+### LP Map Public Page:
+1. User opens link → Sees LP map sections immediately (no popup blocking)
+2. Inline bar at top: "To leave comments: [Name] [Email] [Continue]" OR "Reviewing as [Name]"
+3. User can view all sections without identifying
+4. Comment inputs only appear after identification
 
 ---
 
-## Safety Considerations
+## Technical Notes
 
-1. **URL Validation**: All LP buttons use try-catch URL validation to prevent crashes from malformed database strings
-2. **Confirmation Dialogs**: All "Clear All" actions require explicit confirmation via AlertDialog
-3. **Admin-Only Bulk Delete**: Only admins can clear all comments to prevent accidental data loss
-4. **Individual Delete**: Users can only delete their own comments (enforced in UI and can be backed by RLS)
-5. **Query Invalidation**: All delete operations properly invalidate relevant queries to ensure UI stays in sync
+1. **IP Detection**: Since we can't reliably get client IP from browser, we'll use the access_token + browser fingerprint (localStorage) as the session key initially. True IP-based tracking would require an edge function.
+
+2. **Session Persistence**: Use localStorage as primary storage, with optional database sync for cross-device continuity.
+
+3. **URL Validation**: All LP buttons use the relaxed validation pattern: `url.startsWith('http') ? url : 'https://' + url`
+
+4. **Backward Compatibility**: Existing access tokens continue to work, reviewer info is just pre-populated when available.
