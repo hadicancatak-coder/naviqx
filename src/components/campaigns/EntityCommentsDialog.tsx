@@ -5,12 +5,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useEntityComments } from "@/hooks/useEntityComments";
-import { useQuery } from "@tanstack/react-query";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface EntityCommentsDialogProps {
   open: boolean;
@@ -30,7 +44,10 @@ export function EntityCommentsDialog({
   externalReviewerEmail,
 }: EntityCommentsDialogProps) {
   const [newComment, setNewComment] = useState("");
-  const { useComments, addComment } = useEntityComments();
+  const { useComments, addComment, deleteComment, clearAllEntityComments } = useEntityComments();
+  const { isAdmin } = useUserRole();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: internalComments = [], isLoading: loadingInternal } = useComments(entityName);
   
   // Fetch external comments
@@ -51,19 +68,56 @@ export function EntityCommentsDialog({
 
   // Merge and sort all comments
   const allComments = [
-    ...internalComments.map(c => ({ ...c, isExternal: c.is_external || false })),
+    ...internalComments.map(c => ({ ...c, isExternal: c.is_external || false, author_id: c.author_id })),
     ...externalComments.map(c => ({ 
       id: c.id,
       entity: c.entity,
       comment_text: c.comment_text,
       author_name: c.reviewer_name,
       author_email: c.reviewer_email,
+      author_id: null as string | null,
       created_at: c.created_at,
       isExternal: true,
+      isExternalTable: true,
     }))
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const isLoading = loadingInternal || loadingExternal;
+
+  const handleClearAll = async () => {
+    try {
+      // Delete internal entity comments
+      await clearAllEntityComments.mutateAsync(entityName);
+      // Delete external entity feedback  
+      await supabase
+        .from("external_campaign_review_comments")
+        .delete()
+        .eq("entity", entityName)
+        .eq("comment_type", "entity_feedback");
+      // Invalidate external comments query
+      queryClient.invalidateQueries({ queryKey: ["external-entity-comments"] });
+      toast.success("All comments cleared");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to clear comments");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string, isExternalTable?: boolean) => {
+    try {
+      if (isExternalTable) {
+        await supabase
+          .from("external_campaign_review_comments")
+          .delete()
+          .eq("id", commentId);
+        queryClient.invalidateQueries({ queryKey: ["external-entity-comments"] });
+        toast.success("Comment deleted");
+      } else {
+        await deleteComment.mutateAsync(commentId);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete comment");
+    }
+  };
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -86,7 +140,34 @@ export function EntityCommentsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[600px] p-lg">
         <DialogHeader className="space-y-sm">
-          <DialogTitle>Entity Comments</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Entity Comments</DialogTitle>
+            {/* Clear All button for admins */}
+            {isAdmin && allComments.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-destructive gap-1">
+                    <Trash2 className="size-3.5" />
+                    Clear All
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear All Comments</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete all {allComments.length} comments for {entityName}. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAll} className="bg-destructive hover:bg-destructive/90">
+                      Delete All
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
           <DialogDescription>
             Overall comments for {entityName}
           </DialogDescription>
@@ -103,8 +184,8 @@ export function EntityCommentsDialog({
                 No comments yet. Be the first to add one!
               </div>
             ) : (
-              allComments.map((comment) => (
-                <div key={comment.id} className="flex gap-sm p-sm rounded-lg bg-muted/50">
+              allComments.map((comment: any) => (
+                <div key={comment.id} className="flex gap-sm p-sm rounded-lg bg-muted/50 group">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-metadata">
                       {comment.author_name?.charAt(0).toUpperCase() || "?"}
@@ -129,6 +210,29 @@ export function EntityCommentsDialog({
                       <span className="text-metadata text-muted-foreground">
                         {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                       </span>
+                      
+                      {/* Delete button - for own comments or admin */}
+                      {(user?.id === comment.author_id || isAdmin) && !comment.isExternal && (
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => handleDeleteComment(comment.id, false)}
+                          className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      )}
+                      {/* Admin can also delete external comments */}
+                      {isAdmin && comment.isExternalTable && (
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => handleDeleteComment(comment.id, true)}
+                          className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      )}
                     </div>
                     <CommentText text={comment.comment_text} className="text-body-sm" />
                   </div>

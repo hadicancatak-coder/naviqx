@@ -152,10 +152,36 @@ export const useVersionComments = (versionId: string | null) => {
     },
   });
 
+  const clearAllVersionComments = useMutation({
+    mutationFn: async (versionId: string) => {
+      // Delete internal comments
+      const { error: internalError } = await supabase
+        .from("utm_campaign_version_comments")
+        .delete()
+        .eq("version_id", versionId);
+      if (internalError) throw internalError;
+      
+      // Delete external comments for this version
+      const { error: externalError } = await supabase
+        .from("external_campaign_review_comments")
+        .delete()
+        .eq("version_id", versionId);
+      if (externalError) throw externalError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["version-comments"] });
+      toast.success("All comments cleared");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to clear comments");
+    },
+  });
+
   return {
     comments,
     isLoading,
     createComment,
     deleteComment,
+    clearAllVersionComments,
   };
 };

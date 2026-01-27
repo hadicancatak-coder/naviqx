@@ -3,8 +3,20 @@ import { MessageSquare, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useVersionComments } from "@/hooks/useVersionComments";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { CommentText } from "@/components/CommentText";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -18,7 +30,8 @@ interface VersionCommentsProps {
 export function VersionComments({ versionId, campaignId, entity }: VersionCommentsProps) {
   const [newComment, setNewComment] = useState("");
   const { user } = useAuth();
-  const { comments, isLoading, createComment, deleteComment } = useVersionComments(versionId);
+  const { isAdmin } = useUserRole();
+  const { comments, isLoading, createComment, deleteComment, clearAllVersionComments } = useVersionComments(versionId);
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -32,12 +45,41 @@ export function VersionComments({ versionId, campaignId, entity }: VersionCommen
     setNewComment("");
   };
 
+  const handleClearAll = () => {
+    clearAllVersionComments.mutate(versionId);
+  };
+
   return (
     <div className="space-y-md">
       <div className="flex items-center gap-sm">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
         <h4 className="text-body font-medium text-foreground">Comments</h4>
         <span className="text-metadata text-muted-foreground">({comments.length})</span>
+        
+        {/* Clear All button for admins */}
+        {isAdmin && comments.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon-xs" className="text-destructive ml-auto">
+                <Trash2 className="size-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear All Comments</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all {comments.length} comments on this version. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearAll} className="bg-destructive hover:bg-destructive/90">
+                  Delete All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Comment input */}

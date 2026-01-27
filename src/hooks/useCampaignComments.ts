@@ -138,6 +138,24 @@ export const useCampaignComments = () => {
     },
   });
 
+  // Delete UTM campaign comment
+  const deleteUtmCampaignComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { error } = await supabase
+        .from("utm_campaign_comments")
+        .delete()
+        .eq("id", commentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["utm-campaign-comments"] });
+      toast.success("Comment deleted");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete comment");
+    },
+  });
+
   // Get comment count for a tracking
   const getCommentCount = (trackingId: string) => {
     const { data: comments } = useComments(trackingId);
@@ -149,6 +167,7 @@ export const useCampaignComments = () => {
     useUtmCampaignComments,
     addComment,
     addUtmCampaignComment,
+    deleteUtmCampaignComment,
     getCommentCount,
   };
 };
