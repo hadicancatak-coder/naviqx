@@ -1,74 +1,204 @@
 
-# Fix Campaign Log External Review Issues
+# Site-Wide Footer Audit & Standardization Plan
 
-## Problem Analysis
+## Current State Analysis
 
-After thorough investigation, I found that the new external review components ARE implemented and exist in the codebase. However, there are several issues preventing them from working correctly:
+### Footer Implementations Found
 
-### Issue 1: Duplicate Active Tokens
-The database currently has **4 active tokens for Jordan** - each time the share link is toggled, a NEW token is created without deactivating the old ones. This causes:
-- Query confusion about which token to display
-- Link appearing blank because the query returns the wrong (or first) record
+| Page | Current Footer | Issue |
+|------|---------------|-------|
+| **External/Public Pages** |||
+| `CampaignReview.tsx` | `ExternalPageFooter` | Correct |
+| `KnowledgePublic.tsx` | `ExternalPageFooter` | Correct |
+| `LpMapPublic.tsx` | `ExternalPageFooter` | Correct |
+| `ProjectsPublic.tsx` | `ExternalPageFooter` | Correct |
+| `CampaignsLogExternal.tsx` | Redirects to CampaignReview | OK (deprecated) |
+| **Authentication Flow** |||
+| `Auth.tsx` | Hardcoded: "CFI Performance Marketing • Secure Access" | Missing year, missing Naviqx |
+| `MfaSetup.tsx` | No footer | Missing entirely |
+| `MfaVerify.tsx` | No footer | Missing entirely |
+| **Internal Pages** |||
+| `About.tsx` | Hardcoded: "© 2025 Naviqx. All rights reserved." | Inconsistent style |
+| `HowTo.tsx` | No footer | Missing entirely |
+| `NotFound.tsx` | No footer | Missing entirely |
+| `Layout.tsx` (global) | No footer | Missing for all internal pages |
 
-### Issue 2: Share Dialog State Refresh
-After creating a new share link, the `fetchEntityShareInfo` query may not be returning the newly created token because:
-- Multiple records exist for the same entity
-- No ordering ensures the latest record is returned
+### Key Problems Identified
 
-### Issue 3: Token Rotation Logic Missing
-When a user deactivates and reactivates a link, the system should:
-- Either update the EXISTING record's `is_active` flag
-- OR deactivate ALL old tokens before creating a new one
-
----
-
-## Technical Implementation
-
-### Step 1: Fix Token Creation/Activation Logic
-
-Update `CampaignShareDialog.tsx` to:
-1. First check if a record already exists for the entity
-2. If exists: UPDATE the existing record (set `is_active = true`, regenerate token if needed)
-3. If not exists: INSERT a new record
-4. Deactivate any other active tokens for the same entity
-
-### Step 2: Fix Query to Get Latest Token
-
-Update `fetchEntityShareInfo` in `CampaignsLog.tsx` to:
-1. Order by `created_at DESC` to get the most recent record
-2. Filter by `is_active = true`
-3. Limit to 1 result
-
-### Step 3: Database Cleanup
-
-Create a migration to:
-1. Deactivate duplicate tokens (keep only the most recent per entity)
-2. Add a unique partial index to prevent future duplicates
-
-### Step 4: Ensure External Page Works
-
-Verify that:
-1. The external review page (`/campaigns-log/review/:token`) renders the new `ExternalCampaignGrid`
-2. Public access bypass is working correctly
-3. Data loads properly for anonymous users
+1. **Missing "© 2025 Naviqx" branding** - The `ExternalPageFooter` component does NOT include the year or copyright notice you requested
+2. **Inconsistent footer patterns** - 3 different footer styles across the app
+3. **No global internal footer** - Internal authenticated pages have no footer at all
+4. **Auth flow lacks branding** - Login and MFA pages don't show the Naviqx brand
 
 ---
 
-## Files to Modify
+## Proposed Architecture
 
-| File | Change |
+### Create Two Standardized Footer Components
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    EXTERNAL PAGE FOOTER                          │
+│  (For public-facing pages: CampaignReview, KnowledgePublic, etc)│
+├─────────────────────────────────────────────────────────────────┤
+│  © 2025 Naviqx. All rights reserved.                            │
+│  ™ Proudly presented by the Performance Marketing Team,         │
+│    CFI Financial Group.                                          │
+│  This asset has been designed and developed internally...        │
+│  Confidential material — for internal circulation only.          │
+│  Unauthorized distribution or third-party sharing is prohibited. │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    INTERNAL PAGE FOOTER                          │
+│  (For authenticated pages + auth flow: Dashboard, Tasks, etc.)  │
+├─────────────────────────────────────────────────────────────────┤
+│  © 2025 Naviqx                                                   │
+│  CFI Performance Marketing • Internal Use Only                   │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     AUTH PAGE FOOTER                             │
+│  (Compact version for Login, MFA Setup, MFA Verify)             │
+├─────────────────────────────────────────────────────────────────┤
+│  © 2025 Naviqx • CFI Performance Marketing                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Plan
+
+### Step 1: Update ExternalPageFooter Component
+Add the "© 2025 Naviqx" branding line to the existing component:
+
+**File:** `src/components/layout/ExternalPageFooter.tsx`
+
+```typescript
+export function ExternalPageFooter({ className }: ExternalPageFooterProps) {
+  return (
+    <footer className={cn("border-t border-border bg-card/80 backdrop-blur-sm mt-12", className)}>
+      <div className="max-w-5xl mx-auto px-6 py-8 text-center space-y-3">
+        {/* NEW: Add copyright line */}
+        <p className="text-body-sm font-semibold text-foreground">
+          © 2025 Naviqx. All rights reserved.
+        </p>
+        <p className="text-body-sm text-foreground">
+          ™ Proudly presented by the Performance Marketing Team, CFI Financial Group.
+        </p>
+        <div className="space-y-1">
+          <p className="text-metadata text-muted-foreground">
+            This asset has been designed and developed internally using proprietary AI-assisted workflows.
+          </p>
+          <p className="text-metadata text-muted-foreground font-medium">
+            Confidential material — for internal circulation only.
+          </p>
+          <p className="text-metadata text-destructive-text">
+            Unauthorized distribution or third-party sharing is strictly prohibited.
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+```
+
+**Impact:** Automatically propagates to all 4 public pages already using this component.
+
+---
+
+### Step 2: Create InternalPageFooter Component
+Create a new minimal footer for authenticated internal pages.
+
+**File:** `src/components/layout/InternalPageFooter.tsx`
+
+```typescript
+export function InternalPageFooter({ className }: { className?: string }) {
+  return (
+    <footer className={cn("py-6 text-center", className)}>
+      <p className="text-metadata text-muted-foreground">
+        © 2025 Naviqx • CFI Performance Marketing • Internal Use Only
+      </p>
+    </footer>
+  );
+}
+```
+
+---
+
+### Step 3: Create AuthPageFooter Component
+Create a compact footer for auth-flow pages.
+
+**File:** `src/components/layout/AuthPageFooter.tsx`
+
+```typescript
+export function AuthPageFooter({ className }: { className?: string }) {
+  return (
+    <div className={cn("mt-lg pt-md border-t border-border", className)}>
+      <p className="text-metadata text-center text-muted-foreground">
+        © 2025 Naviqx • CFI Performance Marketing
+      </p>
+    </div>
+  );
+}
+```
+
+---
+
+### Step 4: Update Auth Flow Pages
+
+| Page | Change |
 |------|--------|
-| `src/components/campaigns/CampaignShareDialog.tsx` | Fix toggle logic to upsert instead of always insert |
-| `src/pages/CampaignsLog.tsx` | Add ordering to fetchEntityShareInfo query |
-| `supabase/migrations/` | Cleanup duplicate tokens, add unique constraint |
+| `Auth.tsx` | Replace hardcoded footer with `AuthPageFooter` |
+| `MfaSetup.tsx` | Add `AuthPageFooter` before closing `</GlassBackground>` |
+| `MfaVerify.tsx` | Add `AuthPageFooter` before closing `</GlassBackground>` |
 
 ---
 
-## Expected Outcome
+### Step 5: Update Internal Pages
 
-After this fix:
-1. Share link toggle will work reliably (activate/deactivate)
-2. The link will appear immediately after activation
-3. External review page will display the new visual board layout
-4. Entity feedback submission will work (already fixed in DB)
-5. No duplicate tokens cluttering the database
+| Page | Change |
+|------|--------|
+| `About.tsx` | Replace hardcoded footer with `InternalPageFooter` |
+| `HowTo.tsx` | Add `InternalPageFooter` at bottom |
+| `NotFound.tsx` | Add compact copyright below the card |
+
+---
+
+### Step 6: Consider Global Internal Footer (Optional)
+For a truly site-wide internal footer, add `InternalPageFooter` to `Layout.tsx` so ALL authenticated pages automatically have it:
+
+**File:** `src/components/Layout.tsx`
+```typescript
+// At the bottom of the main content area, after <Outlet />
+<InternalPageFooter className="mt-auto" />
+```
+
+**Trade-off:** This adds a footer to every single page. Recommend discussing if this is desired or if it should remain per-page for internal content.
+
+---
+
+## Summary of Changes
+
+| File | Action |
+|------|--------|
+| `src/components/layout/ExternalPageFooter.tsx` | Add "© 2025 Naviqx" line |
+| `src/components/layout/InternalPageFooter.tsx` | **Create new** |
+| `src/components/layout/AuthPageFooter.tsx` | **Create new** |
+| `src/pages/Auth.tsx` | Use `AuthPageFooter` |
+| `src/pages/MfaSetup.tsx` | Add `AuthPageFooter` |
+| `src/pages/MfaVerify.tsx` | Add `AuthPageFooter` |
+| `src/pages/About.tsx` | Use `InternalPageFooter` |
+| `src/pages/HowTo.tsx` | Add `InternalPageFooter` |
+| `src/pages/NotFound.tsx` | Add minimal copyright |
+| `src/components/Layout.tsx` | *Optional:* Add global `InternalPageFooter` |
+
+---
+
+## Technical Notes
+
+- All footer components use semantic tokens (`text-foreground`, `text-muted-foreground`, `border-border`) for theme compatibility
+- All footer components are in `src/components/layout/` for organization
+- The year "2025" could be made dynamic with `new Date().getFullYear()` if desired
+- No changes to the 4 external public pages needed since they already use `ExternalPageFooter`
+
