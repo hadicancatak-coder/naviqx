@@ -1,323 +1,355 @@
 
-# Comprehensive Fix Plan: Links, UI Alignment, @all Tagging & Comments
+# Comprehensive Fix: Campaign Review Layout, User Names, Version Editing, Comments & Task Icons
 
-## Critical Issues Summary
+## Issues Identified from Screenshot & Analysis
 
 | Issue | Root Cause | Impact |
 |-------|-----------|--------|
-| Links in descriptions don't open | TipTap editor intercepts clicks even in "view" mode | Users can't navigate to links |
-| Buttons not matching | Inconsistent inner element structure in PriorityCard | Visual misalignment |
-| @all tagging broken | ID mismatch between profiles and assignees | Can't mention all assignees |
-| "Connection not secure" warnings | URLs without `https://` protocol | Browser security warnings |
-| Comments not working | Multiple potential issues in comment flow | Comments may not save/display |
+| **External page overlapping elements** | Missing proper spacing between sections (mb-lg between filter bar, grid, feedback) | Visual mess |
+| **VersionCard shows UUID** | `created_by` displays raw user ID, not joined with profiles | User sees "6496321c-9988-4e26..." |
+| **Can't edit versions** | No edit button/functionality in VersionCard | Users can't modify version notes/links |
+| **Can't delete comments** | Delete button only shows for author, not admins | Admins can't moderate |
+| **Task cards missing comment icons** | `TaskBoardView.tsx` and `SortableTaskCard.tsx` don't show `comments_count` | Users can't see at-a-glance which tasks have discussions |
 
 ---
 
-## Part 1: Fix Links in Descriptions
+## Part 1: Fix CampaignReview.tsx Layout Spacing
 
-**Problem**: The RichTextEditor uses TipTap with `openOnClick: false`, which is correct for editing. However, when the editor is not focused or when viewing content, links should still be clickable.
+**Problem**: The filter bar, campaign grid, detail panel, and entity feedback section are all stacking without proper spacing, causing visual overlap.
 
-**Root Cause**: TipTap's editor captures all clicks including on links. Even with `target="_blank"` in the HTML, the editor prevents navigation.
+**Current structure** (lines 450-717):
+- Container uses `py-lg px-md` but children don't have proper bottom margins
+- FilterBar immediately followed by campaign grid with no gap
+- ExternalCampaignGrid has no bottom margin
+- Entity Feedback Card stacks too close
 
-**Solution**: Enable link clicking with modifier key OR add a click handler to detect link clicks:
+**Fix**: Add consistent `space-y-lg` wrapper and proper margins:
 
 ```typescript
-// In useRichTextEditor.ts - Update Link configuration
-Link.configure({
-  openOnClick: true, // Allow clicking links
-  linkOnPaste: true,
-  HTMLAttributes: {
-    class: 'text-primary underline cursor-pointer hover:text-primary/80',
-    target: '_blank',
-    rel: 'noopener noreferrer nofollow',
-  },
-}),
+// Line ~450: Add space-y-lg to main container
+<div className="container mx-auto py-lg px-md space-y-lg">
 ```
 
-**Alternative** (if openOnClick causes editing issues): Add event delegation to handle link clicks:
+Also ensure each major section has proper containment:
+- Identification bar: `mb-lg`
+- FilterBar: proper gap below
+- Campaign Grid + Detail Panel: wrapped in `space-y-md`
+- Entity Feedback: natural spacing from `space-y-lg`
+
+---
+
+## Part 2: Fix VersionCard - Show User Name Instead of UUID
+
+**Files to modify:**
+- `src/hooks/useCampaignVersions.ts` - Fetch profile name alongside version
+- `src/components/campaigns/VersionCard.tsx` - Display name properly
+
+**Changes in useCampaignVersions.ts:**
+
+Update the interface and query to include creator profile:
 
 ```typescript
-// In RichTextEditor.tsx - Add click handler for links
-const handleEditorClick = (e: React.MouseEvent) => {
-  const target = e.target as HTMLElement;
-  const anchor = target.closest('a');
-  if (anchor && anchor.href) {
-    e.preventDefault();
-    window.open(anchor.href, '_blank', 'noopener,noreferrer');
-  }
-};
+export interface CampaignVersion {
+  // ... existing fields
+  created_by: string | null;
+  creator_name?: string | null; // NEW FIELD
+}
 
-// Wrap EditorContent in div with onClick={handleEditorClick}
+// In useVersions query:
+const { data, error } = await supabase
+  .from("utm_campaign_versions")
+  .select("*")
+  .eq("utm_campaign_id", campaignId)
+  .order("version_number", { ascending: false });
+
+if (error) throw error;
+
+// Fetch profiles for creators
+const creatorIds = [...new Set((data || []).map(v => v.created_by).filter(Boolean))];
+let profileMap = new Map();
+
+if (creatorIds.length > 0) {
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id, name")
+    .in("user_id", creatorIds);
+  
+  profileMap = new Map((profiles || []).map(p => [p.user_id, p.name]));
+}
+
+return (data || []).map(version => ({
+  ...version,
+  creator_name: profileMap.get(version.created_by) || null,
+})) as CampaignVersion[];
+```
+
+**Update VersionCard.tsx line 64-69:**
+
+```typescript
+// Replace UUID display with name
+{version.creator_name && (
+  <span className="text-metadata text-muted-foreground flex items-center gap-1">
+    <User className="size-3" />
+    {version.creator_name}
+  </span>
+)}
 ```
 
 ---
 
-## Part 2: Fix Priority Card Alignment
+## Part 3: Add Edit Button to VersionCard
 
-**Problem**: The three columns have different inner element structures causing visual mismatch.
+**File**: `src/components/campaigns/VersionCard.tsx`
 
-**Current State**:
-- Priority: `SelectTrigger` → `div` (badge-like styling)
-- Due Date: `Button` (direct)
-- Status: `SelectTrigger` → `Badge`
-
-**Solution**: Standardize all three to use identical wrapper structure:
+Add edit functionality with inline editing:
 
 ```typescript
-// STANDARDIZED STRUCTURE FOR ALL THREE:
-<div className="flex flex-col gap-xs min-w-0">
-  <span className="text-metadata text-muted-foreground">{label}</span>
-  {/* ALL use same container height and padding */}
-  <div className={cn(
-    "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
-    getColorClasses(value)
-  )}>
-    <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-    <span className="truncate flex-1">{displayValue}</span>
+interface VersionCardProps {
+  version: CampaignVersion;
+  campaignId: string;
+  onDelete: (versionId: string) => void;
+  onEdit: (versionId: string, data: { versionNotes?: string; assetLink?: string }) => void; // NEW
+  isDeleting?: boolean;
+  isEditing?: boolean; // NEW
+}
+
+// Inside component:
+const [editing, setEditing] = useState(false);
+const [editNotes, setEditNotes] = useState(version.version_notes || "");
+const [editAssetLink, setEditAssetLink] = useState(version.asset_link || "");
+
+// Add Edit button next to Delete (line ~71-79):
+<div className="flex items-center gap-1">
+  <Button
+    variant="ghost"
+    size="icon-xs"
+    onClick={() => setEditing(true)}
+    className="text-muted-foreground hover:text-foreground"
+  >
+    <Edit className="size-3.5" />
+  </Button>
+  <Button
+    variant="ghost"
+    size="icon-xs"
+    onClick={() => onDelete(version.id)}
+    disabled={isDeleting}
+    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+  >
+    <Trash2 />
+  </Button>
+</div>
+
+// Inline edit form (replace static notes display when editing):
+{editing ? (
+  <div className="space-y-sm">
+    <Textarea
+      value={editNotes}
+      onChange={(e) => setEditNotes(e.target.value)}
+      placeholder="Version notes..."
+      className="min-h-[60px]"
+    />
+    <Input
+      value={editAssetLink}
+      onChange={(e) => setEditAssetLink(e.target.value)}
+      placeholder="Asset link URL..."
+    />
+    <div className="flex gap-sm">
+      <Button size="sm" onClick={() => {
+        onEdit(version.id, { versionNotes: editNotes, assetLink: editAssetLink });
+        setEditing(false);
+      }}>Save</Button>
+      <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+    </div>
+  </div>
+) : (
+  // existing notes display
+)}
+```
+
+Also need to wire up `onEdit` prop in parent component (UtmCampaignDetailDialog).
+
+---
+
+## Part 4: Fix Comment Delete Button (Allow Admins)
+
+**File**: `src/components/campaigns/VersionComments.tsx`
+
+**Current (line 139-148):**
+```typescript
+{!comment.is_external && user?.id === comment.author_id && (
+  <Button ...>
+    <Trash2 />
+  </Button>
+)}
+```
+
+**Fixed - Allow admins to delete any internal comment:**
+```typescript
+{!comment.is_external && (user?.id === comment.author_id || isAdmin) && (
+  <Button
+    variant="ghost"
+    size="icon-xs"
+    onClick={() => deleteComment.mutate(comment.id)}
+    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+  >
+    <Trash2 />
+  </Button>
+)}
+```
+
+The `isAdmin` is already available from `useUserRole()` hook (line 33).
+
+---
+
+## Part 5: Add Comment Icons to Task Board & Card Views
+
+**File 1: `src/components/tasks/TaskBoardView.tsx`**
+
+Add import at top:
+```typescript
+import { MessageCircle } from "lucide-react";
+```
+
+Update the bottom row (around line 160-188) to include comment count:
+
+```typescript
+{/* Bottom Row: Assignees + Comments + Due */}
+<div className="flex items-center justify-between mt-2 pl-4">
+  {/* Assignees */}
+  <div className="flex -space-x-1">
+    {task.assignees?.slice(0, 2).map((a: any) => (
+      // ... existing avatar code
+    ))}
+  </div>
+
+  {/* Comments + Due Date */}
+  <div className="flex items-center gap-2">
+    {task.comments_count > 0 && (
+      <span className="text-metadata text-muted-foreground flex items-center gap-0.5">
+        <MessageCircle className="h-3 w-3" />
+        {task.comments_count}
+      </span>
+    )}
+    {task.due_at && (
+      <span className={cn(
+        "text-metadata tabular-nums",
+        overdue ? "text-destructive font-medium" : "text-muted-foreground"
+      )}>
+        {format(new Date(task.due_at), 'MMM d')}
+      </span>
+    )}
   </div>
 </div>
 ```
 
-**File**: `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx`
+**File 2: `src/components/tasks/SortableTaskCard.tsx`**
 
-Key changes:
-1. Remove the Badge wrapper from Status - use same div structure as Priority
-2. For Due Date, move Button styling into the same pattern
-3. Ensure all three have `h-9`, `px-2.5`, `gap-xs`, `rounded-md`, `border`
-
----
-
-## Part 3: Fix @all Tagging
-
-**Problem**: The `assigneeUserIds` extraction is not matching the user IDs in the `users` array.
-
-**Diagnosis needed**: Check what `realtimeAssignees` actually contains.
-
-Based on memory context and typical patterns, `realtimeAssignees` comes from `task_assignees` table with joined profile data. The structure is likely:
+Add import at top:
 ```typescript
-{
-  user_id: "profile-table-id",  // This is profile.id, NOT auth user ID
-  profiles: {
-    id: "profile-table-id",
-    user_id: "auth-user-id",    // THIS is what we need
-    name: "...",
-  }
-}
+import { MessageCircle } from "lucide-react";
 ```
 
-**Solution**: Fix the mapping in `TaskDetailCommentInput.tsx`:
+Update the bottom section (around line 116-140):
 
 ```typescript
-// CURRENT (broken):
-const assigneeUserIds = realtimeAssignees
-  .map(a => a.user_id)
-  .filter((id): id is string => Boolean(id));
-
-// FIXED: Access the nested profiles.user_id
-const assigneeUserIds = realtimeAssignees
-  .map(a => a.profiles?.user_id || a.user_id)
-  .filter((id): id is string => Boolean(id));
-```
-
-Also verify that `users` array contains auth `user_id` values (not profile table IDs).
-
----
-
-## Part 4: Fix "Connection Not Secure" Warnings
-
-**Problem**: URLs stored without protocol prefix (e.g., "example.com" instead of "https://example.com") trigger browser security warnings.
-
-**Solution**: Add URL normalization helper and apply to all link rendering:
-
-```typescript
-// In src/components/comments/utils.ts
-export function normalizeUrl(url: string): string {
-  if (!url) return url;
+<div className="flex items-center justify-between mt-sm">
+  <div className="flex -space-x-2">
+    {/* existing assignee avatars */}
+  </div>
   
-  // Already has protocol
-  if (url.match(/^https?:\/\//i)) {
-    return url;
-  }
-  
-  // Has other protocol (mailto:, tel:, etc.)
-  if (url.includes('://') || url.startsWith('mailto:') || url.startsWith('tel:')) {
-    return url;
-  }
-  
-  // Add https:// prefix
-  return `https://${url}`;
-}
-```
-
-**Apply in TaskDetailComments.tsx**:
-```typescript
-import { normalizeUrl } from "@/components/comments/utils";
-
-// For file/link attachments
-<a href={normalizeUrl(att.url)} target="_blank" rel="noopener noreferrer">
-```
-
-**Apply in TaskDetailCommentInput.tsx** when adding links:
-```typescript
-const handleAddLink = () => {
-  if (!linkUrl.trim()) return;
-  
-  setPendingAttachments((prev) => [...prev, {
-    type: 'link',
-    name: linkName.trim() || linkUrl.trim(),
-    url: normalizeUrl(linkUrl.trim())  // Normalize on add
-  }]);
-  // ...
-};
+  <div className="flex items-center gap-2">
+    {task.comments_count > 0 && (
+      <span className="text-metadata text-muted-foreground flex items-center gap-0.5">
+        <MessageCircle className="h-3 w-3" />
+        {task.comments_count}
+      </span>
+    )}
+    {task.due_at && (
+      <span className={cn(
+        "text-metadata",
+        isOverdue(task.due_at, task.status) && "text-destructive font-medium"
+      )}>
+        {format(new Date(task.due_at), 'MMM d')}
+      </span>
+    )}
+  </div>
+</div>
 ```
 
 ---
 
-## Part 5: Verify Comments Functionality
-
-**Files to check/fix**:
-
-1. **TaskDetailContext.tsx** - Verify `addComment` function handles attachments correctly
-2. **Database** - Verify `attachments` column exists on `comments` table
-3. **Storage** - Verify `comment-attachments` bucket exists and has correct RLS
-
-**Potential issues**:
-- File upload might fail silently
-- Comment insert might not include attachments
-- Fetch query might not include attachments column
-
-**Solution**: Add comprehensive error handling and logging:
-
-```typescript
-// In addComment function
-const addComment = async () => {
-  if (!newComment.trim() && pendingAttachments.length === 0) return;
-  if (!user || !task) return;
-
-  setIsSubmittingComment(true);
-  
-  try {
-    const uploadedAttachments = [];
-    
-    // Upload files with error handling
-    for (const att of pendingAttachments) {
-      if (att.type === 'file' && att.file) {
-        const fileName = `${user.id}/${task.id}/${Date.now()}_${att.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('comment-attachments')
-          .upload(fileName, att.file);
-        
-        if (uploadError) {
-          console.error('File upload failed:', uploadError);
-          toast.error(`Failed to upload ${att.name}`);
-          throw uploadError;
-        }
-        
-        const { data: urlData } = supabase.storage
-          .from('comment-attachments')
-          .getPublicUrl(fileName);
-        
-        uploadedAttachments.push({
-          type: 'file',
-          name: att.name,
-          url: urlData.publicUrl,
-          size_bytes: att.size_bytes
-        });
-      } else if (att.type === 'link') {
-        uploadedAttachments.push({
-          type: 'link',
-          name: att.name,
-          url: normalizeUrl(att.url!)
-        });
-      }
-    }
-    
-    // Insert comment with attachments
-    const { error: insertError } = await supabase
-      .from('comments')
-      .insert({
-        task_id: task.id,
-        author_id: user.id,
-        body: newComment.trim(),
-        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : null
-      });
-    
-    if (insertError) {
-      console.error('Comment insert failed:', insertError);
-      toast.error('Failed to add comment');
-      throw insertError;
-    }
-    
-    // Clear state on success
-    setNewComment('');
-    setPendingAttachments([]);
-    await fetchComments();
-    
-    toast.success('Comment added');
-  } catch (error) {
-    console.error('addComment error:', error);
-  } finally {
-    setIsSubmittingComment(false);
-  }
-};
-```
-
----
-
-## Implementation Files
+## Implementation Files Summary
 
 | File | Changes |
 |------|---------|
-| `src/components/editor/useRichTextEditor.ts` | Enable `openOnClick: true` for links |
-| `src/components/editor/RichTextEditor.tsx` | Add click handler for link navigation fallback |
-| `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx` | Standardize all three columns to identical structure |
-| `src/components/tasks/TaskDetail/TaskDetailCommentInput.tsx` | Fix assignee ID extraction, normalize URLs on add |
-| `src/components/tasks/TaskDetail/TaskDetailComments.tsx` | Normalize URLs when rendering links |
-| `src/components/tasks/TaskDetail/TaskDetailContext.tsx` | Add error handling to addComment, verify attachment flow |
-| `src/components/comments/utils.ts` | Add `normalizeUrl` helper function |
+| `src/pages/CampaignReview.tsx` | Add `space-y-lg` to container for proper section spacing |
+| `src/hooks/useCampaignVersions.ts` | Fetch profiles to get creator names, add `creator_name` field |
+| `src/components/campaigns/VersionCard.tsx` | Show creator name instead of UUID, add Edit button with inline editing |
+| `src/components/campaigns/VersionComments.tsx` | Allow admins to delete any internal comment |
+| `src/components/tasks/TaskBoardView.tsx` | Add comment count icon to task cards |
+| `src/components/tasks/SortableTaskCard.tsx` | Add comment count icon to sortable task cards |
+| `src/components/campaigns/UtmCampaignDetailDialog.tsx` | Wire up `onEdit` prop to VersionCard |
 
 ---
 
-## Visual Fixes Summary
+## Visual Result
 
-**Priority Card BEFORE:**
+**CampaignReview BEFORE:**
 ```text
-┌─────────────────────────────────────────────────────┐
-│ Priority      Due              Status               │
-│ ┌──────┐    ┌──────────────┐  ┌─────────────────┐   │
-│ │High▼ │    │ Due today    │  │   Ongoing    ▼ │   │
-│ └──────┘    └──────────────┘  └─────────────────┘   │
-│  (div)         (Button)          (Badge)            │
-└─────────────────────────────────────────────────────┘
+┌────────────────────────────────────┐
+│ Header                             │
+├────────────────────────────────────┤
+│ [Search] [Grid|List] [Sort]        │ ← No gap
+│ ┌────┐ ┌────┐                      │ ← Overlapping
+│ │Card│ │Card│                      │
+│ └────┘ └────┘                      │
+│ ┌──────────────────────────────────┤ ← No gap
+│ │ General Feedback Section         │
+│ └──────────────────────────────────┘
+└────────────────────────────────────┘
 ```
 
-**Priority Card AFTER:**
+**CampaignReview AFTER:**
 ```text
-┌─────────────────────────────────────────────────────┐
-│ Priority        Due              Status             │
-│ ┌────────────┐ ┌────────────┐ ┌────────────┐        │
-│ │ 🚩 High  ▼ │ │ 📅 Due... │ │ ⏱ Ongoing▼│        │
-│ └────────────┘ └────────────┘ └────────────┘        │
-│  (same div)     (same div)     (same div)           │
-└─────────────────────────────────────────────────────┘
+┌────────────────────────────────────┐
+│ Header                             │
+├────────────────────────────────────┤
+│                                    │
+│ [Search] [Grid|List] [Sort]        │
+│                                    │ ← space-y-lg gap
+│ ┌────┐ ┌────┐                      │
+│ │Card│ │Card│                      │
+│ └────┘ └────┘                      │
+│                                    │ ← space-y-lg gap
+│ ┌──────────────────────────────────┤
+│ │ General Feedback Section         │
+│ └──────────────────────────────────┘
+└────────────────────────────────────┘
 ```
 
-All three use identical:
-- `h-9` height
-- `px-2.5` horizontal padding
-- `gap-xs` icon spacing
-- `rounded-md` corners
-- `border` outline
-- `flex items-center` layout
+**VersionCard - User Name Display:**
+```text
+BEFORE: 👤 6496321c-9988-4e26-91d3-01e0243caa2c
+AFTER:  👤 John Smith
+```
+
+**Task Cards with Comment Icons:**
+```text
+┌─────────────────────────────────┐
+│ 🔴 High                    ...  │
+│ Task title here                 │
+│ 👤👤  💬 3   📅 Jan 28          │ ← NEW comment icon
+└─────────────────────────────────┘
+```
 
 ---
 
 ## Testing Checklist
 
 After implementation, verify:
-1. Click links in task descriptions - they should open in new tabs
-2. Priority/Due/Status boxes are visually identical in size
-3. Type `@a` in comments - "Mention All" option should appear when task has assignees
-4. Add a link without `https://` - no security warnings should appear
-5. Add a comment with file attachment - file should upload and display
-6. Add a comment with link attachment - link should save and be clickable
+1. ✓ CampaignReview page has proper vertical spacing between sections
+2. ✓ Version cards show user names instead of UUIDs  
+3. ✓ Can click Edit button on version card and modify notes/link
+4. ✓ Admins can delete any internal comment (not just their own)
+5. ✓ Task board view shows comment icons on tasks with comments
+6. ✓ Sortable task cards show comment icons on tasks with comments
