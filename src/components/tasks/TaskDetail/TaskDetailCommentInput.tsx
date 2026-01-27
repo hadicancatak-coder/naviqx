@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { MentionAutocomplete } from "@/components/MentionAutocomplete";
 import { useTaskDetailContext } from "./TaskDetailContext";
+import { normalizeUrl } from "@/components/comments/utils";
 
 interface PendingAttachment {
   type: 'file' | 'link';
@@ -30,9 +31,14 @@ export function TaskDetailCommentInput() {
   } = useTaskDetailContext();
 
   // Map realtime assignees to their auth user_ids for @all functionality
-  // realtimeAssignees contains profile data with user_id (auth user ID)
+  // realtimeAssignees structure: { id (profile.id), user_id, profiles?: { user_id } }
+  // We need the auth user_id which matches what users array contains
   const assigneeUserIds = realtimeAssignees
-    .map(a => a.user_id)
+    .map(a => {
+      // Try nested profiles.user_id first (if joined), then direct user_id
+      const authUserId = a.profiles?.user_id || a.user_id;
+      return authUserId;
+    })
     .filter((id): id is string => Boolean(id));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,10 +77,13 @@ export function TaskDetailCommentInput() {
   const handleAddLink = () => {
     if (!linkUrl.trim()) return;
 
+    // Normalize URL to ensure https:// prefix for security
+    const normalizedUrl = normalizeUrl(linkUrl.trim());
+
     setPendingAttachments((prev: PendingAttachment[]) => [...prev, {
       type: 'link',
       name: linkName.trim() || linkUrl.trim(),
-      url: linkUrl.trim()
+      url: normalizedUrl
     }]);
 
     setLinkUrl('');

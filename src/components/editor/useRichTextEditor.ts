@@ -44,11 +44,12 @@ export function useRichTextEditor({
         underline: false,
       }),
       Link.configure({
-        openOnClick: false,
+        openOnClick: true,
+        linkOnPaste: true,
         HTMLAttributes: {
           class: 'text-primary underline cursor-pointer hover:text-primary/80',
           target: '_blank',
-          rel: 'noopener noreferrer',
+          rel: 'noopener noreferrer nofollow',
         },
       }),
       Underline,
