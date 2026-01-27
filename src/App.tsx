@@ -48,6 +48,7 @@ const ExternalLinksManagement = lazy(() => import("./pages/admin/ExternalLinksMa
 const KPIsManagement = lazy(() => import("./pages/admin/KPIsManagement"));
 const ErrorLogs = lazy(() => import("./pages/admin/ErrorLogs"));
 const SecurityScans = lazy(() => import("./pages/admin/SecurityScans"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 const LpMapPublic = lazy(() => import("./pages/LpMapPublic"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Security = lazy(() => import("./pages/Security"));
@@ -105,6 +106,7 @@ const App = () => (
                         <Route path="errors" element={<ErrorLogs />} />
                         <Route path="security-scans" element={<SecurityScans />} />
                         <Route path="sprints" element={<SprintsManagement />} />
+                        <Route path="settings" element={<AdminSettings />} />
                       </Route>
                       <Route path="/ads" element={<Navigate to="/ads/search" replace />} />
                       <Route path="/ads/search" element={<SearchPlanner adType="search" key="search" />} />

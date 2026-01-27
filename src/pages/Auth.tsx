@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,25 +13,64 @@ import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicato
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
 
-const authSchema = z.object({
-  email: z.string()
-    .email("Invalid email address")
-    .regex(/@cfi\.trade$/, "Only @cfi.trade email addresses are allowed"),
-  password: authPasswordSchema,
-  name: z.string()
-    .min(1, "Name is required")
-    .max(100, "Name must not exceed 100 characters")
-    .optional(),
-});
-
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [allowedDomains, setAllowedDomains] = useState<string[]>(['cfi.trade']);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Fetch allowed domains on mount
+  useEffect(() => {
+    const fetchAllowedDomains = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'allowed_email_domains')
+          .maybeSingle();
+        
+        if (!error && data?.value && Array.isArray(data.value)) {
+          // Cast to string array explicitly
+          const domains = (data.value as unknown[]).filter(
+            (d): d is string => typeof d === 'string'
+          );
+          if (domains.length > 0) {
+            setAllowedDomains(domains);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching allowed domains:', err);
+        // Fall back to default
+      }
+    };
+    
+    fetchAllowedDomains();
+  }, []);
+
+  // Create dynamic schema based on allowed domains
+  const authSchema = useMemo(() => {
+    const domainPattern = allowedDomains.map(d => d.replace('.', '\\.')).join('|');
+    const regex = new RegExp(`@(${domainPattern})$`, 'i');
+    const domainList = allowedDomains.map(d => `@${d}`).join(', ');
+    
+    return z.object({
+      email: z.string()
+        .email("Invalid email address")
+        .refine(
+          (email) => regex.test(email),
+          `Only ${domainList} email addresses are allowed`
+        ),
+      password: authPasswordSchema,
+      name: z.string()
+        .min(1, "Name is required")
+        .max(100, "Name must not exceed 100 characters")
+        .optional(),
+    });
+  }, [allowedDomains]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -180,7 +219,7 @@ export default function Auth() {
               required
             />
             <p className="text-metadata text-muted-foreground">
-              Only @cfi.trade email addresses are accepted
+              Only {allowedDomains.map(d => `@${d}`).join(', ')} email addresses are accepted
             </p>
           </div>
 

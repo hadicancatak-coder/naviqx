@@ -24,7 +24,7 @@ export default function MfaSetup() {
   const [copiedCodes, setCopiedCodes] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setMfaVerifiedStatus } = useAuth();
+  const { setMfaVerifiedStatus, refreshMfaStatus } = useAuth();
 
   useEffect(() => {
     setupMfa();
@@ -87,6 +87,8 @@ export default function MfaSetup() {
 
       if (!sessionError && sessionData?.sessionToken && sessionData?.expiresAt) {
         setMfaVerifiedStatus(true, sessionData.sessionToken, sessionData.expiresAt);
+        // CRITICAL: Update mfaEnabled cache immediately to prevent redirect loop
+        refreshMfaStatus();
       }
 
       toast({
