@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Save, X, BookOpen } from "lucide-react";
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PageContainer, PageHeader, InternalPageFooter } from "@/components/layout";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,6 +152,8 @@ export default function HowTo() {
           <p className="text-muted-foreground">Content not available.</p>
         )}
       </Card>
+
+      <InternalPageFooter />
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

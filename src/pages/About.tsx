@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Mail, Edit, Save, X } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { PageHeader, InternalPageFooter } from "@/components/layout";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -184,10 +184,7 @@ export default function About() {
         </div>
       </Card>
 
-      {/* Footer */}
-      <div className="text-center text-metadata text-muted-foreground pt-4">
-        <p>© 2025 Naviqx. All rights reserved.</p>
-      </div>
+      <InternalPageFooter />
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

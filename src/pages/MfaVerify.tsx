@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
 import { MfaSetupGuide } from "@/components/MfaSetupGuide";
 import { GlassBackground } from "@/components/layout/GlassBackground";
+import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
 
 export default function MfaVerify() {
   const [otp, setOtp] = useState("");
@@ -237,6 +238,8 @@ export default function MfaVerify() {
             Sign Out
           </Button>
         </div>
+
+        <AuthPageFooter />
       </Card>
     </GlassBackground>
   );

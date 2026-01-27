@@ -8,3 +8,8 @@ export { AlertBanner } from './AlertBanner';
 export { DataCard, DataCardHeader } from './DataCard';
 export { TopHeader } from './TopHeader';
 export { PageLoadingState } from './PageLoadingState';
+
+// Footer components
+export { ExternalPageFooter } from './ExternalPageFooter';
+export { InternalPageFooter } from './InternalPageFooter';
+export { AuthPageFooter } from './AuthPageFooter';
