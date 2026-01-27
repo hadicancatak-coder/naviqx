@@ -1,214 +1,331 @@
 
-# Favicon, Links, Campaign Comments & Task Panel Improvements
+# Task Panel UX Improvements + Comment Attachments
 
 ## Overview
 
-This plan addresses four issues:
-1. **Update favicon** - Replace with the new Naviqx logo
-2. **Open links in new tabs** - Ensure links in rich text content always open in new tabs
-3. **Fix campaign comment deletion** - The RLS policy only allows admins to delete, but UI shows button for authors too - need to add author deletion policy
-4. **Improve task side panel** - Reduce clutter, make priority prominent, separate comments from activity
+Based on the user's screenshot and feedback, this plan addresses:
+1. **Title too small** - Make it more prominent
+2. **Priority/Status/Due alignment** - Fix the awkward horizontal layout in the Priority Card
+3. **Comments not visible on task rows** - Show comment count indicator in TaskRow
+4. **Comment attachments** - Allow attaching files (<2MB) and links to comments
 
 ---
 
-## Part 1: Favicon Update
+## Issues Identified from Screenshot
 
-### Current State
-- `index.html` has no favicon link tag
-- `public/favicon.ico` exists but is the old/default icon
+The current Priority Card layout shows:
+- High | Due today | Ongoing - all in a row with inconsistent sizing
+- They wrap awkwardly and don't align properly
+- The "Due today" badge isn't visually distinct enough
 
-### Implementation
-1. Copy the uploaded image to `public/favicon.png`
-2. Add favicon link tag to `index.html`:
-
-```html
-<link rel="icon" type="image/png" href="/favicon.png" />
-```
-
-### Files
-- `index.html` - Add favicon link
-- `public/favicon.png` - Copy uploaded image
+The title is using `text-heading-md` (20px) which feels small for the main task title.
 
 ---
 
-## Part 2: Links Opening in New Tabs
+## Part 1: Larger Task Title
 
-### Current State
-The TipTap Link extension (line 46-51 in `useRichTextEditor.ts`) sets `openOnClick: false` but doesn't add `target="_blank"` to the HTML output. When descriptions are rendered in read-only mode, links open in the same tab.
+**Current:** `text-heading-md font-semibold` (20px)
+**New:** `text-heading-lg font-semibold` (24px)
 
-### Fix
-Add `target: '_blank'` and `rel: 'noopener noreferrer'` to Link HTMLAttributes:
+**File:** `src/components/tasks/TaskDetail/TaskDetailFields.tsx`
 
 ```typescript
-Link.configure({
-  openOnClick: false,
-  HTMLAttributes: {
-    class: 'text-primary underline cursor-pointer hover:text-primary/80',
-    target: '_blank',           // ADD
-    rel: 'noopener noreferrer', // ADD
-  },
-}),
-```
+// Change from:
+className="text-heading-md font-semibold ..."
 
-### Files
-- `src/components/editor/useRichTextEditor.ts`
+// To:
+className="text-heading-lg font-semibold ..."
+```
 
 ---
 
-## Part 3: Fix Campaign Comment Deletion
+## Part 2: Priority Card Alignment Fix
 
-### Issue Found
-The RLS policy on `utm_campaign_comments` only allows **admins** to delete comments:
-
-```sql
-CREATE POLICY "Admins can delete any comment"
-  ON public.utm_campaign_comments FOR DELETE
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
-    )
-  );
-```
-
-But the UI in `CampaignComments.tsx` shows the delete button for both admins AND comment authors:
-
-```typescript
-{(user?.id === comment.author_id || isAdmin) && (
-  <Button onClick={() => deleteUtmCampaignComment.mutate(comment.id)}
-```
-
-Non-admin authors can see the button but the database rejects their delete request.
-
-### Fix - Database Migration
-Add a policy that allows comment authors to delete their own comments:
-
-```sql
--- Allow comment authors to delete their own comments
-CREATE POLICY "Users can delete their own campaign comments"
-  ON public.utm_campaign_comments FOR DELETE
-  TO authenticated
-  USING (auth.uid() = author_id);
-```
-
-### Files
-- Database migration (add author delete policy)
-
----
-
-## Part 4: Task Side Panel Improvements
-
-### Problems Identified
-1. **Too cluttered/dense** - All fields stacked with minimal visual hierarchy
-2. **Priority info unclear** - Status/Priority/Due Date are small inline badges, easy to miss
-3. **Activity/comments confusing** - Mixed timeline of comments and activity logs is hard to follow
-
-### Current Structure
+**Current Structure:**
 ```text
-┌─────────────────────────────────────┐
-│ Header                              │
-├─────────────────────────────────────┤
-│ Badges (Subtask/Recurring)          │
-│ TITLE                               │
-│ Status | Priority | Due Date        │ ← Small badges
-├─────────────────────────────────────┤
-│ Assignees, Tags, Project, Sprint    │
-│ Created | Updated | Age             │
-├─────────────────────────────────────┤
-│ Description                         │
-├─────────────────────────────────────┤
-│ Subtasks                            │
-├─────────────────────────────────────┤
-│ Activity (mixed comments + logs)    │ ← Confusing
-└─────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│ [🏴 High ▼] [📅 Due today] [⏱ Ongoing ▼]       │
+└────────────────────────────────────────────────┘
 ```
 
-### New Structure
+**Problems:**
+- Flex wrap causes awkward line breaks
+- Badges have inconsistent widths
+- No visual separation between urgency (overdue warning) and metadata
+
+**New Structure - Vertical Stack with Consistent Width:**
 ```text
-┌─────────────────────────────────────┐
-│ Header                              │
-├─────────────────────────────────────┤
-│ TITLE                               │
-│                                     │
-│ ┌─────────────────────────────────┐ │
-│ │ 🔴 HIGH  │  📅 Jan 28  │ Ongoing│ │ ← Priority Card
-│ └─────────────────────────────────┘ │
-│                                     │
-│ 👤 John, Jane  (inline avatars)     │
-├─────────────────────────────────────┤
-│ ▼ Description                       │ ← Collapsible
-├─────────────────────────────────────┤
-│ ▼ Subtasks (3)                      │ ← Collapsible with count
-├─────────────────────────────────────┤
-│ ▼ Comments (5)                      │ ← SEPARATED
-├─────────────────────────────────────┤
-│ ▼ Activity Log (collapsed)          │ ← Collapsed by default
-├─────────────────────────────────────┤
-│ ▼ Details (collapsed)               │ ← Tags, Project, etc.
-│   Created | Updated | Age           │
-└─────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│ Priority    ▶ [🏴 High            ▼]           │
+│ Due Date    ▶ [⚠️ Overdue (Jan 25)   ]         │
+│ Status      ▶ [⏱ Ongoing          ▼]           │
+└────────────────────────────────────────────────┘
 ```
 
-### Key Changes
-
-#### 1. Create Prominent Priority Card
-A visual card at the top showing the three most important fields with visual urgency:
+**Alternative - Horizontal with Fixed Grid:**
+Use CSS Grid with 3 equal columns that don't wrap:
 
 ```typescript
-<div className="flex items-center gap-sm p-sm rounded-lg bg-card border border-border">
-  {/* Priority - Color-coded */}
-  <div className={cn(
-    "flex items-center gap-xs px-sm py-xs rounded-md font-medium",
-    priority === 'High' && 'bg-destructive/15 text-destructive border border-destructive/30',
-    priority === 'Medium' && 'bg-primary/15 text-primary border border-primary/30',
-    priority === 'Low' && 'border-border text-muted-foreground bg-muted/50'
-  )}>
-    <Flag className="h-4 w-4" />
-    {priority}
+<div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
+  {/* Priority */}
+  <div className="flex flex-col gap-xs">
+    <span className="text-metadata text-muted-foreground">Priority</span>
+    <Select.../>
   </div>
   
-  {/* Due Date - With urgency color */}
-  <div className={cn(
-    "flex items-center gap-xs px-sm py-xs rounded-md",
-    isOverdue && "bg-destructive/10 text-destructive",
-    isDueToday && "bg-warning/10 text-warning-text",
-    !isOverdue && !isDueToday && "bg-muted/50 text-muted-foreground"
-  )}>
-    <CalendarIcon className="h-4 w-4" />
-    {dueDate ? format(dueDate, "MMM d") : "No due"}
+  {/* Due Date */}
+  <div className="flex flex-col gap-xs">
+    <span className="text-metadata text-muted-foreground">Due</span>
+    <DatePicker.../>
   </div>
   
   {/* Status */}
-  <Badge variant="outline" className={getStatusColor(status)}>
-    {status}
-  </Badge>
+  <div className="flex flex-col gap-xs">
+    <span className="text-metadata text-muted-foreground">Status</span>
+    <Select.../>
+  </div>
 </div>
 ```
 
-#### 2. Separate Comments from Activity Log
+This ensures:
+- Equal column widths - no awkward wrapping
+- Clear labels above each field
+- Consistent alignment
 
-**Current:** Single `TaskDetailActivity` mixes comments and system logs into one timeline.
+**File:** `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx`
 
-**New Approach:**
-- Split into `TaskDetailComments` (chat-style, expanded by default)
-- And `TaskDetailActivityLog` (system changes, collapsed by default)
+---
 
-This makes it crystal clear where discussions happen vs. what changed.
+## Part 3: Show Comment Count on Task Rows
 
-#### 3. Move Metadata to Collapsible "Details"
+The `useTasks` hook already fetches `comments_count` via the materialized view `task_comment_counts`. We just need to display it in TaskRow.
 
-Move these fields into a collapsed "Details" section:
-- Project, Phase, Sprint
-- Tags
-- Created/Updated/Age metadata
-- Collaborative mode settings
+**Current TaskRow Props:**
+```typescript
+interface TaskRowProps {
+  task: any;
+  subtaskCount?: number;
+  subtaskCompletedCount?: number;
+  // ... no comment count
+}
+```
 
-This reduces visual noise while keeping everything accessible.
+**Changes:**
 
-#### 4. Make Assignees More Compact
+1. Add comment count to TaskRow display (no new prop needed - it's on `task.comments_count`)
 
-Show assignees as compact avatar row near the title, not in a separate labeled section.
+2. Add comment icon badge near subtask badge:
+
+```typescript
+// After subtask badge
+{task.comments_count > 0 && !compact && (
+  <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
+    <MessageCircle className="h-2.5 w-2.5 mr-0.5" />
+    {task.comments_count}
+  </Badge>
+)}
+```
+
+**File:** `src/components/tasks/TaskRow.tsx`
+
+---
+
+## Part 4: Comment Attachments (Files + Links)
+
+This requires database changes and UI updates.
+
+### 4a. Database Changes
+
+Add columns to the `comments` table for attachments:
+
+```sql
+-- Add attachment support to comments
+ALTER TABLE public.comments
+ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::jsonb;
+
+-- Each attachment in the array has this structure:
+-- { "type": "file" | "link", "name": "string", "url": "string", "size_bytes": number }
+```
+
+Create a new storage bucket for comment attachments:
+
+```sql
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('comment-attachments', 'comment-attachments', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- RLS policy for uploads
+CREATE POLICY "Authenticated users can upload comment attachments"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'comment-attachments');
+
+-- RLS policy for reading
+CREATE POLICY "Anyone can view comment attachments"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'comment-attachments');
+
+-- RLS policy for deleting own files
+CREATE POLICY "Users can delete their own comment attachments"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'comment-attachments' AND auth.uid()::text = (storage.foldername(name))[1]);
+```
+
+### 4b. Comment Input UI Changes
+
+**File:** `src/components/tasks/TaskDetail/TaskDetailCommentInput.tsx`
+
+Add:
+1. File upload button (paperclip icon)
+2. Link input button (link icon)
+3. Preview area for pending attachments
+4. File size validation (2MB limit with warning)
+
+```typescript
+// New state
+const [pendingAttachments, setPendingAttachments] = useState<Array<{
+  type: 'file' | 'link';
+  name: string;
+  file?: File;
+  url?: string;
+  size_bytes?: number;
+}>>([]);
+
+// File input handler
+const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+  
+  if (file.size > MAX_SIZE) {
+    toast.warning(
+      "File too large", 
+      { description: `${file.name} exceeds 2MB. Please add as a link instead.` }
+    );
+    return;
+  }
+  
+  setPendingAttachments(prev => [...prev, {
+    type: 'file',
+    name: file.name,
+    file,
+    size_bytes: file.size
+  }]);
+};
+
+// Link dialog
+const [showLinkDialog, setShowLinkDialog] = useState(false);
+const [linkUrl, setLinkUrl] = useState('');
+const [linkName, setLinkName] = useState('');
+
+const addLink = () => {
+  if (!linkUrl.trim()) return;
+  setPendingAttachments(prev => [...prev, {
+    type: 'link',
+    name: linkName.trim() || linkUrl.trim(),
+    url: linkUrl.trim()
+  }]);
+  setLinkUrl('');
+  setLinkName('');
+  setShowLinkDialog(false);
+};
+```
+
+### 4c. Upload Logic in addComment
+
+When submitting a comment with attachments:
+
+1. Upload files to Supabase storage first
+2. Get public URLs
+3. Include attachments array in comment insert
+
+```typescript
+const addComment = async () => {
+  // ... existing validation
+  
+  // Upload files first
+  const uploadedAttachments = [];
+  for (const attachment of pendingAttachments) {
+    if (attachment.type === 'file' && attachment.file) {
+      const fileName = `${user.id}/${taskId}/${Date.now()}_${attachment.name}`;
+      const { error } = await supabase.storage
+        .from('comment-attachments')
+        .upload(fileName, attachment.file);
+      
+      if (error) {
+        toast.error(`Failed to upload ${attachment.name}`);
+        return;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('comment-attachments')
+        .getPublicUrl(fileName);
+      
+      uploadedAttachments.push({
+        type: 'file',
+        name: attachment.name,
+        url: publicUrl,
+        size_bytes: attachment.size_bytes
+      });
+    } else if (attachment.type === 'link') {
+      uploadedAttachments.push({
+        type: 'link',
+        name: attachment.name,
+        url: attachment.url
+      });
+    }
+  }
+  
+  // Insert comment with attachments
+  const { error } = await supabase
+    .from("comments")
+    .insert({
+      task_id: taskId,
+      author_id: user.id,
+      body: commentText,
+      attachments: uploadedAttachments
+    });
+  
+  // ... rest of logic
+  setPendingAttachments([]);
+};
+```
+
+### 4d. Display Attachments in Comments
+
+**File:** `src/components/tasks/TaskDetail/TaskDetailComments.tsx`
+
+Add attachment display below comment text:
+
+```typescript
+{comment.attachments?.length > 0 && (
+  <div className="flex flex-wrap gap-xs mt-xs">
+    {comment.attachments.map((att: any, i: number) => (
+      <a
+        key={i}
+        href={att.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          "inline-flex items-center gap-xs px-sm py-xs rounded-md text-metadata",
+          "bg-muted/50 hover:bg-muted transition-colors",
+          att.type === 'file' && "border border-border"
+        )}
+      >
+        {att.type === 'file' ? (
+          <Paperclip className="h-3 w-3" />
+        ) : (
+          <ExternalLink className="h-3 w-3" />
+        )}
+        <span className="truncate max-w-[150px]">{att.name}</span>
+      </a>
+    ))}
+  </div>
+)}
+```
 
 ---
 
@@ -216,15 +333,43 @@ Show assignees as compact avatar row near the title, not in a separate labeled s
 
 | File | Changes |
 |------|---------|
-| `index.html` | Add favicon link tag |
-| `public/favicon.png` | Copy uploaded image |
-| `src/components/editor/useRichTextEditor.ts` | Add `target: '_blank'` to Link config |
-| **Database** | Add RLS policy for authors to delete their own comments |
-| `src/components/tasks/TaskDetail/TaskDetailFields.tsx` | Reorganize: Priority Card at top, Details section collapsed |
-| `src/components/tasks/TaskDetail/TaskDetailActivity.tsx` | Rename to `TaskDetailComments.tsx`, show only comments |
-| `src/components/tasks/TaskDetail/TaskDetailActivityLog.tsx` | NEW - System activity only, collapsed by default |
-| `src/components/tasks/TaskDetail/TaskDetailDetails.tsx` | NEW - Collapsible metadata section |
-| `src/components/tasks/TaskDetail/index.tsx` | Update section order |
+| **Database** | Add `attachments` column to comments, create storage bucket + policies |
+| `TaskDetailFields.tsx` | Increase title size to `text-heading-lg` |
+| `TaskDetailPriorityCard.tsx` | Restructure to 3-column grid with labels for proper alignment |
+| `TaskRow.tsx` | Add comment count badge with MessageCircle icon |
+| `TaskDetailCommentInput.tsx` | Add file/link attachment UI with 2MB validation |
+| `TaskDetailComments.tsx` | Display attachments with file/link icons |
+| `TaskDetailContext.tsx` | Update `addComment` to handle attachments upload |
+
+---
+
+## UI Preview
+
+**Priority Card (After):**
+```text
+┌────────────────────────────────────────────────┐
+│  Priority        Due              Status       │
+│ ┌──────────┐  ┌───────────────┐  ┌──────────┐  │
+│ │🏴 High ▼ │  │⚠️ Overdue...  │  │⏱ Ongoing▼│  │
+│ └──────────┘  └───────────────┘  └──────────┘  │
+└────────────────────────────────────────────────┘
+```
+
+**Task Row with Comment Badge:**
+```text
+○ • Task title here                    [💬 3] [👤] Jan 28
+```
+
+**Comment Input with Attachments:**
+```text
+┌────────────────────────────────────────────────┐
+│ Write a comment... Use @ to mention            │
+│                                                │
+│ [📎 report.pdf ×] [🔗 Figma link ×]            │
+│                                                │
+│ ⌘+Enter to send           [📎] [🔗]    [Send] │
+└────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -232,9 +377,7 @@ Show assignees as compact avatar row near the title, not in a separate labeled s
 
 | Issue | Solution |
 |-------|----------|
-| Favicon | Copy new image, add link tag to index.html |
-| Links not opening in new tab | Add `target: '_blank'` to TipTap Link config |
-| Campaign comments not deleting | Add RLS policy for author deletion |
-| Panel too cluttered | Move metadata to collapsible "Details" section |
-| Priority info unclear | Create prominent Priority Card at top |
-| Activity/comments confusing | Separate Comments (expanded) from Activity Log (collapsed) |
+| Title too small | Change from `text-heading-md` to `text-heading-lg` |
+| Priority/Status/Due misaligned | Restructure to 3-column CSS Grid with labels |
+| Comments not visible | Add comment count badge to TaskRow |
+| Can't attach to comments | Add file upload (2MB limit) + link attachment with storage bucket |
