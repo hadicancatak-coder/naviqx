@@ -68,7 +68,7 @@ export function SprintKanban({ tasks, onTaskClick }: SprintKanbanProps) {
     tasks.filter(t => t.status === status);
 
   return (
-    <div className="grid grid-cols-4 gap-md h-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md h-full overflow-x-auto">
       {columns.map(column => {
         const columnTasks = getTasksByStatus(column.id);
         const Icon = column.icon;

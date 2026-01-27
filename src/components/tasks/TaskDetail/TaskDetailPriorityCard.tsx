@@ -51,7 +51,7 @@ export function TaskDetailPriorityCard() {
   };
 
   return (
-    <div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
       {/* Priority */}
       <div className="flex flex-col gap-xs min-w-0">
         <span className="text-metadata text-muted-foreground">Priority</span>

@@ -22,7 +22,7 @@ export default function AdminLayout() {
       />
 
       <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <TabsList className="grid grid-cols-5 sm:grid-cols-9 w-full lg:w-auto bg-muted/50">
+        <TabsList className="flex overflow-x-auto w-full lg:w-auto bg-muted/50 gap-1 pb-1 scrollbar-none">
           <TabsTrigger value="overview" className="gap-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>

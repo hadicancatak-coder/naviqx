@@ -395,7 +395,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
             </div>
 
             {/* Row 1: Status, Priority, Due Date */}
-            <div className="grid grid-cols-3 gap-md">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={status} onValueChange={handleStatusChange}>
@@ -462,7 +462,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
             )}
 
             {/* Row 2: Assignees, Tags */}
-            <div className="grid grid-cols-2 gap-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
               <div className="space-y-2">
                 <Label>Assignees</Label>
                 <TaskAssigneeSelector

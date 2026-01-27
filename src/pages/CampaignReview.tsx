@@ -452,19 +452,19 @@ export default function CampaignReview() {
         {!isIdentified && (
           <Card className="mb-md border-primary/30">
             <CardContent className="py-sm px-md">
-              <div className="flex items-center gap-md flex-wrap">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-sm sm:gap-md">
                 <span className="text-body-sm text-muted-foreground">To leave feedback:</span>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className="w-40 h-8"
+                  className="w-full sm:w-40 h-8"
                 />
                 <Input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@cfi.trade"
-                  className="w-48 h-8"
+                  className="w-full sm:w-48 h-8"
                 />
                 <Button 
                   size="sm" 

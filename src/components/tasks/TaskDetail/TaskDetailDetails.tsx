@@ -169,7 +169,7 @@ export function TaskDetailDetails() {
         <Separator />
 
         {/* Date Metadata */}
-        <div className="grid grid-cols-3 gap-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm">
           <div className="space-y-0.5">
             <Label className="text-metadata text-muted-foreground flex items-center gap-1">
               <Clock className="h-3 w-3" />

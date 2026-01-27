@@ -29,7 +29,7 @@ export function FilterBar({ children, className, search }: FilterBarProps) {
       {/* Content wrapper with z-index above liquid-glass ::before overlay (z-index: 1) */}
       <div className="relative z-[2] flex flex-wrap items-center gap-sm w-full">
         {search && (
-          <div className="relative min-w-[200px] max-w-[260px]">
+          <div className="relative w-full sm:min-w-[200px] sm:max-w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder={search.placeholder || "Search..."}
