@@ -143,8 +143,6 @@ export function useKPIs() {
           throw new Error("Please select either a user or a team to assign the KPI to.");
         }
 
-        console.log("Attempting to insert KPI assignment:", finalAssignment);
-
         const { error: insertError } = await supabase
           .from("kpi_assignments")
           .insert(finalAssignment);

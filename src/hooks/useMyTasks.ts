@@ -158,8 +158,6 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
 
     // Bulk insert new auto-populated items
     if (tasksToAdd.length > 0) {
-      console.log('Auto-adding tasks to agenda:', tasksToAdd.map(t => t.task_id));
-      
       const { error } = await supabase
         .from('user_agenda')
         .upsert(

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LpMapListCompact } from "@/components/lp-planner/LpMapListCompact";
 import { LpCanvas } from "@/components/lp-planner/LpCanvas";
 import { useLpMapWithSections } from "@/hooks/useLpMaps";
+import { PageContainer } from "@/components/layout";
 
 const LpPlanner = () => {
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
@@ -20,23 +21,25 @@ const LpPlanner = () => {
   }, [refetchMap, queryClient]);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
-      {/* Left Panel - Map List (30%) */}
-      <div className="w-[280px] flex-shrink-0 border-r border-border">
-        <LpMapListCompact
-          selectedMapId={selectedMapId}
-          onSelectMap={handleSelectMap}
-        />
-      </div>
+    <PageContainer size="full" className="!p-0 !pt-0 !pb-0">
+      <div className="h-[calc(100vh-80px)] flex">
+        {/* Left Panel - Map List (30%) */}
+        <div className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto">
+          <LpMapListCompact
+            selectedMapId={selectedMapId}
+            onSelectMap={handleSelectMap}
+          />
+        </div>
 
-      {/* Right Panel - Canvas (70%) */}
-      <div className="flex-1 min-w-0">
-        <LpCanvas
-          map={selectedMap || null}
-          onRefresh={handleRefreshMap}
-        />
+        {/* Right Panel - Canvas (70%) */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <LpCanvas
+            map={selectedMap || null}
+            onRefresh={handleRefreshMap}
+          />
+        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

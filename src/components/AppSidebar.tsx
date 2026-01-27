@@ -213,10 +213,12 @@ export function AppSidebar() {
                       onMouseEnter={() => {
                         prefetchRoute(item.url);
                         if (item.url === '/campaigns-log') prefetchCampaignTrackingData();
+                        if (item.url === '/performance') prefetchKPIsData();
                       }}
                       onFocus={() => {
                         prefetchRoute(item.url);
                         if (item.url === '/campaigns-log') prefetchCampaignTrackingData();
+                        if (item.url === '/performance') prefetchKPIsData();
                       }}
                     >
                       <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />

@@ -46,22 +46,17 @@ function findEditorFromElement(element: Element | null): Editor | null {
     iterations++;
     // Check for __tiptap_editor property (attached by useRichTextEditor)
     if ((current as any).__tiptap_editor) {
-      console.log('[GlobalBubbleMenu] Found editor via __tiptap_editor at:', current.className);
       return (current as any).__tiptap_editor as Editor;
     }
     // Check if this is a ProseMirror element
     if (current.classList?.contains('ProseMirror')) {
       const editor = (current as any).__tiptap_editor;
       if (editor) {
-        console.log('[GlobalBubbleMenu] Found editor on ProseMirror element');
         return editor as Editor;
-      } else {
-        console.warn('[GlobalBubbleMenu] Found ProseMirror element but no __tiptap_editor attached!', current);
       }
     }
     current = current.parentElement;
   }
-  console.warn('[GlobalBubbleMenu] No editor found after walking DOM', { startElement: element?.className, iterations });
   return null;
 }
 

@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { prefetchTasksData } from "@/lib/taskPrefetch";
+import { logger } from "@/lib/logger";
 
 // MFA session token storage with expiry
 const MFA_SESSION_KEY = 'mfa_session_data';
@@ -110,20 +111,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userToCheck = currentUser || user;
     
     if (skipNextValidation) {
-      console.log('⏭️ Skipping validation (just verified)');
+      logger.debug('Skipping validation (just verified)');
       setSkipNextValidation(false);
       return true;
     }
 
     const sessionToken = getMfaSessionToken();
     
-    console.log('🔍 Validating MFA session:', { 
+    logger.debug('Validating MFA session', { 
       hasToken: !!sessionToken, 
       hasUser: !!userToCheck 
     });
 
     if (!sessionToken || !userToCheck) {
-      console.log('❌ No token or user');
+      logger.debug('No token or user');
       setMfaVerified(false);
       return false;
     }
@@ -134,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // If user was active recently and we already verified, trust the local token
     if (idleTime < SKIP_VALIDATION_THRESHOLD && mfaVerified) {
-      console.log('⚡ User active recently, skipping validation (using cached result)');
+      logger.debug('User active recently, skipping validation (using cached result)');
       return true;
     }
     
@@ -153,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const validationTime = performance.now() - startTime;
       
-      console.log('📋 Validation response:', { 
+      logger.debug('Validation response', { 
         error: error?.message, 
         valid: data?.valid,
         reason: data?.reason,
@@ -163,11 +164,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error || !data?.valid) {
         const reason = data?.reason || error?.message;
-        console.log('❌ Validation failed:', reason);
+        logger.debug('Validation failed', { reason });
         
         // SECURITY: If IP mismatch, clear token and require re-verification
         if (reason === 'ip_mismatch') {
-          console.log('🔒 IP address changed - requiring re-verification');
+          logger.debug('IP address changed - requiring re-verification');
         }
         setMfaSessionToken(null);
         setMfaVerified(false);
@@ -181,7 +182,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const ONE_HOUR = 60 * 60 * 1000;
         
         if (timeRemaining < ONE_HOUR && timeRemaining > 0) {
-          console.log('🔄 Session expiring soon, refreshing...');
+          logger.debug('Session expiring soon, refreshing...');
           try {
             const { data: refreshData } = await supabase.functions.invoke('manage-mfa-session', {
               body: { 
@@ -192,19 +193,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             if (refreshData?.sessionToken && refreshData?.expiresAt) {
               setMfaSessionToken(refreshData.sessionToken, refreshData.expiresAt);
-              console.log('✅ Session refreshed successfully');
+              logger.debug('Session refreshed successfully');
             }
           } catch (refreshErr) {
-            console.error('⚠️ Session refresh failed:', refreshErr);
+            logger.warn('Session refresh failed', { error: refreshErr });
           }
         }
       }
 
-      console.log('✅ MFA session valid');
+      logger.debug('MFA session valid');
       setMfaVerified(true);
       return true;
     } catch (err) {
-      console.error('❌ Validation error:', err);
+      logger.error('Validation error', { error: err });
       setMfaSessionToken(null);
       setMfaVerified(false);
       return false;
@@ -260,12 +261,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Check if we have a valid session token in localStorage
         const sessionToken = getMfaSessionToken();
         if (sessionToken) {
-          console.log('✅ Found MFA session token in localStorage, setting verified=true');
+          logger.debug('Found MFA session token in localStorage, setting verified=true');
           setMfaVerified(true);
           // Fire-and-forget background validation - don't block render
           setTimeout(() => validateMfaSession(session.user), 50);
         } else {
-          console.log('❌ No MFA session token found');
+          logger.debug('No MFA session token found');
           validateMfaSession(session.user);
         }
       } else {
@@ -319,13 +320,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Phase 6: Enhanced debug logging - State transition tracker
   useEffect(() => {
-    console.log('🔐 Auth State Transition:', {
+    logger.debug('Auth State Transition', {
       userId: user?.id?.substring(0, 8),
       email: user?.email,
       mfaVerified,
       hasToken: !!getMfaSessionToken(),
-      currentRoute: location.pathname,
-      timestamp: new Date().toISOString()
+      currentRoute: location.pathname
     });
   }, [user, mfaVerified, location.pathname]);
 
@@ -354,14 +354,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setMfaVerifiedStatus = (verified: boolean, sessionToken?: string, expiresAt?: string) => {
-    console.log('🔐 Setting MFA status:', { verified });
+    logger.debug('Setting MFA status', { verified });
     setMfaVerified(verified);
     if (verified && sessionToken && expiresAt) {
       setMfaSessionToken(sessionToken, expiresAt);
       setSkipNextValidation(true); // Skip immediate re-validation
       
       // Prefetch task data immediately after MFA verification for instant navigation
-      console.log('🚀 Prefetching task data after MFA verification...');
+      logger.debug('Prefetching task data after MFA verification');
       prefetchTasksData();
     } else {
       setMfaSessionToken(null);
@@ -381,7 +381,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // For public access pages, provide a simplified context without auth
   if (isPublicAccessPage) {
-    console.log('🌐 Public access page detected, bypassing auth:', location.pathname);
+    logger.debug('Public access page detected, bypassing auth', { path: location.pathname });
     return (
       <AuthContext.Provider value={{
         user: null,
@@ -396,7 +396,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         validateMfaSession: async () => false,
         setMfaVerifiedStatus: () => {},
         signOut: async () => {
-          console.log('Sign out called on external review page - ignoring');
+          // Sign out on external review page is a no-op
         },
       }}>
         {children}

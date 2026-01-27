@@ -45,16 +45,6 @@ export default function Profile() {
     isFetching,
   } = useProfile(targetUserId);
   
-  // DEBUG: Log profile query state
-  console.log('🔍 Profile Query Debug:', {
-    targetUserId,
-    profileStatus,
-    fetchStatus,
-    isFetching,
-    profileError,
-    hasProfile: !!profile,
-    errorDetails: profileErrorDetails,
-  });
   
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
   const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
@@ -218,7 +208,6 @@ export default function Profile() {
   const isActuallyFetching = fetchStatus === 'fetching';
   
   if (isActuallyFetching && !profile) {
-    console.log('🔄 Showing loading spinner - fetching in progress');
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -230,7 +219,6 @@ export default function Profile() {
 
   // Guard 5: Query completed with error
   if (profileError) {
-    console.log('❌ Profile error:', profileError);
     return (
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -243,7 +231,6 @@ export default function Profile() {
 
   // Guard 6: Query completed but no profile found
   if (!profile) {
-    console.log('⚠️ No profile data - status:', profileStatus, 'fetchStatus:', fetchStatus);
     return (
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
