@@ -87,22 +87,32 @@ export function ExternalCampaignDetailPanel({
         </div>
         
         <div className="flex items-center gap-sm flex-shrink-0">
-          {campaign.landing_page && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a
-                href={campaign.landing_page}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View LP
-              </a>
-            </Button>
-          )}
+          {campaign.landing_page && (() => {
+            // Validate URL before rendering button
+            try {
+              const url = new URL(campaign.landing_page);
+              if (!['http:', 'https:'].includes(url.protocol)) return null;
+              return (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                >
+                  <a
+                    href={campaign.landing_page}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View LP
+                  </a>
+                </Button>
+              );
+            } catch {
+              // Invalid URL - don't render the button
+              return null;
+            }
+          })()}
           <Button
             variant="ghost"
             size="icon"

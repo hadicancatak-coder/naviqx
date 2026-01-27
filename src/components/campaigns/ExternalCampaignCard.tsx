@@ -115,17 +115,25 @@ export function ExternalCampaignCard({
           <span className="text-metadata text-muted-foreground truncate">
             {campaign.lp_type || campaign.campaign_type || "Campaign"}
           </span>
-          {campaign.landing_page && (
-            <a
-              href={campaign.landing_page}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-metadata text-primary hover:underline inline-flex items-center gap-0.5 flex-shrink-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              LP <ExternalLink className="h-2.5 w-2.5" />
-            </a>
-          )}
+          {campaign.landing_page && (() => {
+            try {
+              const url = new URL(campaign.landing_page);
+              if (!['http:', 'https:'].includes(url.protocol)) return null;
+              return (
+                <a
+                  href={campaign.landing_page}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-metadata text-primary hover:underline inline-flex items-center gap-0.5 flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  LP <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              );
+            } catch {
+              return null;
+            }
+          })()}
         </div>
       </div>
     </Card>
