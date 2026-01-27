@@ -101,7 +101,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check for public access pages - must be after hooks
   const isPublicAccessPage = location.pathname.startsWith('/campaigns-log/review/') || 
                              location.pathname.startsWith('/campaigns-log/external/') ||
-                             location.pathname.startsWith('/knowledge/public/');
+                             location.pathname.startsWith('/knowledge/public/') ||
+                             location.pathname.startsWith('/projects/public/') ||
+                             location.pathname.startsWith('/lp-planner/public/');
 
   // Validate MFA session with server - Phase 1: Fix closure race condition
   const validateMfaSession = async (currentUser?: User): Promise<boolean> => {
