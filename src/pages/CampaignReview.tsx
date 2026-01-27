@@ -447,7 +447,7 @@ export default function CampaignReview() {
         </div>
       </div>
 
-      <div className="container mx-auto py-lg px-md">
+      <div className="container mx-auto py-lg px-md space-y-lg">
         {/* Inline Identification Bar - shown when not identified */}
         {!isIdentified && (
           <Card className="mb-md border-primary/30">

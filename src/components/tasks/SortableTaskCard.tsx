@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, CheckCircle, Copy, Trash2, Loader2 } from "lucide-react";
+import { MoreVertical, CheckCircle, Copy, Trash2, Loader2, MessageCircle } from "lucide-react";
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -129,14 +129,22 @@ export function SortableTaskCard({
             </div>
           )}
         </div>
-        {task.due_at && (
-          <span className={cn(
-            "text-metadata",
-            isOverdue(task.due_at, task.status) && "text-destructive font-medium"
-          )}>
-            {format(new Date(task.due_at), 'MMM d')}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {task.comments_count > 0 && (
+            <span className="text-metadata text-muted-foreground flex items-center gap-0.5">
+              <MessageCircle className="h-3 w-3" />
+              {task.comments_count}
+            </span>
+          )}
+          {task.due_at && (
+            <span className={cn(
+              "text-metadata",
+              isOverdue(task.due_at, task.status) && "text-destructive font-medium"
+            )}>
+              {format(new Date(task.due_at), 'MMM d')}
+            </span>
+          )}
+        </div>
       </div>
     </Card>
   );

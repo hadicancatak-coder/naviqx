@@ -15,6 +15,7 @@ export interface CampaignVersion {
   version_notes: string | null;
   created_by: string | null;
   created_at: string;
+  creator_name?: string | null;
 }
 
 export const useCampaignVersions = () => {
@@ -31,7 +32,24 @@ export const useCampaignVersions = () => {
         .order("version_number", { ascending: false });
       
       if (error) throw error;
-      return data as CampaignVersion[];
+      
+      // Fetch profiles for creators
+      const creatorIds = [...new Set((data || []).map(v => v.created_by).filter(Boolean))] as string[];
+      let profileMap = new Map<string, string>();
+
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, name")
+          .in("user_id", creatorIds);
+        
+        profileMap = new Map((profiles || []).map(p => [p.user_id, p.name]));
+      }
+
+      return (data || []).map(version => ({
+        ...version,
+        creator_name: profileMap.get(version.created_by) || null,
+      })) as CampaignVersion[];
     },
     enabled: !!campaignId,
     staleTime: 30 * 1000,
