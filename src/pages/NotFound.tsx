@@ -26,7 +26,7 @@ const NotFound = () => {
           </Button>
         </Card>
         <p className="mt-6 text-metadata text-muted-foreground">
-          © 2025 Naviqx • CFI Performance Marketing
+          © 2026 Naviqx • CFI Performance Marketing
         </p>
       </div>
     </GlassBackground>

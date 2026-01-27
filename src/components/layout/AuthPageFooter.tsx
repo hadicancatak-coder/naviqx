@@ -12,7 +12,7 @@ export function AuthPageFooter({ className }: AuthPageFooterProps) {
   return (
     <div className={cn("mt-lg pt-md border-t border-border", className)}>
       <p className="text-metadata text-center text-muted-foreground">
-        © 2025 Naviqx • CFI Performance Marketing
+        © 2026 Naviqx • CFI Performance Marketing
       </p>
     </div>
   );
