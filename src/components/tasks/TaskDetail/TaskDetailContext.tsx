@@ -8,6 +8,14 @@ import { useRealtimeAssignees } from "@/hooks/useRealtimeAssignees";
 import { useTaskChangeLogs } from "@/hooks/useTaskChangeLogs";
 import { completeTask as completeTaskAction, setTaskCollaborative, getCollaborativeStatus } from "@/domain/tasks/actions";
 
+interface PendingAttachment {
+  type: 'file' | 'link';
+  name: string;
+  file?: File;
+  url?: string;
+  size_bytes?: number;
+}
+
 interface TaskDetailContextValue {
   // Task data
   taskId: string;
@@ -57,6 +65,8 @@ interface TaskDetailContextValue {
   isSubmittingComment: boolean;
   addComment: () => Promise<void>;
   fetchComments: () => Promise<void>;
+  pendingAttachments: PendingAttachment[];
+  setPendingAttachments: React.Dispatch<React.SetStateAction<PendingAttachment[]>>;
   
   // Blocker
   blocker: any;
@@ -154,6 +164,7 @@ export function TaskDetailProvider({
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   
   // Blocker
   const [blocker, setBlocker] = useState<any>(null);
@@ -214,13 +225,13 @@ export function TaskDetailProvider({
     }
   }, [taskId, toast]);
 
-  // Fetch comments
+  // Fetch comments (including attachments)
   const fetchComments = useCallback(async () => {
     if (!taskId) return;
     
     const { data: commentsData, error } = await supabase
       .from("comments")
-      .select("id, task_id, author_id, body, created_at")
+      .select("id, task_id, author_id, body, created_at, attachments")
       .eq("task_id", taskId)
       .order("created_at", { ascending: true });
 
@@ -385,17 +396,57 @@ export function TaskDetailProvider({
     setSaving(false);
   }, [taskId, queryClient, toast]);
 
-  // Add comment
+  // Add comment (with attachments support)
   const addComment = useCallback(async () => {
-    if (!newComment.trim() || !taskId || isSubmittingComment || !user) return;
+    if ((!newComment.trim() && pendingAttachments.length === 0) || !taskId || isSubmittingComment || !user) return;
 
     setIsSubmittingComment(true);
     const commentText = newComment.trim();
     
     try {
+      // Upload files first
+      const uploadedAttachments: Array<{type: string; name: string; url: string; size_bytes?: number}> = [];
+      
+      for (const attachment of pendingAttachments) {
+        if (attachment.type === 'file' && attachment.file) {
+          const fileName = `${user.id}/${taskId}/${Date.now()}_${attachment.name}`;
+          const { error: uploadError } = await supabase.storage
+            .from('comment-attachments')
+            .upload(fileName, attachment.file);
+          
+          if (uploadError) {
+            toast({ title: "Error", description: `Failed to upload ${attachment.name}`, variant: "destructive" });
+            setIsSubmittingComment(false);
+            return;
+          }
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('comment-attachments')
+            .getPublicUrl(fileName);
+          
+          uploadedAttachments.push({
+            type: 'file',
+            name: attachment.name,
+            url: publicUrl,
+            size_bytes: attachment.size_bytes
+          });
+        } else if (attachment.type === 'link' && attachment.url) {
+          uploadedAttachments.push({
+            type: 'link',
+            name: attachment.name,
+            url: attachment.url
+          });
+        }
+      }
+      
       const { data: newCommentData, error } = await supabase
         .from("comments")
-        .insert({ task_id: taskId, author_id: user.id, body: commentText })
+        .insert({ 
+          task_id: taskId, 
+          author_id: user.id, 
+          body: commentText,
+          attachments: uploadedAttachments.length > 0 ? uploadedAttachments : []
+        })
         .select('id')
         .single();
 
@@ -429,12 +480,13 @@ export function TaskDetailProvider({
       }
 
       setNewComment("");
+      setPendingAttachments([]);
       fetchComments();
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } finally {
       setIsSubmittingComment(false);
     }
-  }, [newComment, taskId, isSubmittingComment, user, users, toast, fetchComments]);
+  }, [newComment, pendingAttachments, taskId, isSubmittingComment, user, users, toast, fetchComments]);
 
   // Mark complete (with collaborative support)
   const markComplete = useCallback(async () => {
@@ -561,6 +613,8 @@ export function TaskDetailProvider({
     isSubmittingComment,
     addComment,
     fetchComments,
+    pendingAttachments,
+    setPendingAttachments,
     blocker,
     blockerDialogOpen,
     setBlockerDialogOpen,
