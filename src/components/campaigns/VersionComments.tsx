@@ -31,7 +31,7 @@ export function VersionComments({ versionId, campaignId, entity }: VersionCommen
   const [newComment, setNewComment] = useState("");
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
-  const { comments, isLoading, createComment, deleteComment, clearAllVersionComments } = useVersionComments(versionId);
+  const { comments, isLoading, createComment, deleteComment, deleteExternalComment, clearAllVersionComments } = useVersionComments(versionId);
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -136,15 +136,19 @@ export function VersionComments({ versionId, campaignId, entity }: VersionCommen
                     {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                   </p>
                 </div>
-                {/* Allow delete for own internal comments or admins */}
-                {!comment.is_external && (user?.id === comment.author_id || isAdmin) && (
+                {/* Allow delete: internal by author/admin, external only by admin */}
+                {((!comment.is_external && (user?.id === comment.author_id || isAdmin)) || 
+                  (comment.is_external && isAdmin)) && (
                   <Button
                     variant="ghost"
                     size="icon-xs"
-                    onClick={() => deleteComment.mutate(comment.id)}
+                    onClick={() => comment.is_external 
+                      ? deleteExternalComment.mutate(comment.id) 
+                      : deleteComment.mutate(comment.id)
+                    }
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    <Trash2 />
+                    <Trash2 className="size-3.5" />
                   </Button>
                 )}
               </div>
