@@ -238,25 +238,42 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                         className="mt-sm bg-background"
                       />
                     ) : campaign.landing_page ? (
-                      <div className="flex items-center gap-sm mt-sm">
-                        <a 
-                          href={campaign.landing_page} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-primary hover:underline flex items-center gap-1 text-body-sm break-all flex-1"
-                        >
-                          {campaign.landing_page}
-                          <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                        </a>
-                        <Button 
-                          variant="ghost" 
-                          size="icon-sm" 
-                          onClick={handleCopyLandingPage}
-                          className="flex-shrink-0"
-                        >
-                          {copied ? <Check className="text-success" /> : <Copy />}
-                        </Button>
-                      </div>
+                      (() => {
+                        // Validate URL before rendering link
+                        let isValidUrl = false;
+                        try {
+                          const url = new URL(campaign.landing_page);
+                          isValidUrl = ['http:', 'https:'].includes(url.protocol);
+                        } catch {
+                          isValidUrl = false;
+                        }
+                        
+                        return isValidUrl ? (
+                          <div className="flex items-center gap-sm mt-sm">
+                            <a 
+                              href={campaign.landing_page} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-primary hover:underline flex items-center gap-1 text-body-sm break-all flex-1"
+                            >
+                              {campaign.landing_page}
+                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                            </a>
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm" 
+                              onClick={handleCopyLandingPage}
+                              className="flex-shrink-0"
+                            >
+                              {copied ? <Check className="text-success" /> : <Copy />}
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-warning-text mt-sm text-body-sm">
+                            Invalid URL: {campaign.landing_page}
+                          </p>
+                        );
+                      })()
                     ) : (
                       <p className="text-muted-foreground mt-sm text-body-sm">Not set</p>
                     )}

@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -70,8 +71,8 @@ export const useExternalAccess = () => {
     },
   });
 
-  // Verify token - Works without authentication
-  const verifyToken = async (token: string): Promise<ExternalAccess> => {
+  // Verify token - Works without authentication (memoized to prevent unnecessary re-renders)
+  const verifyToken = useCallback(async (token: string): Promise<ExternalAccess> => {
     try {
       const { data, error } = await supabase
         .from("campaign_external_access")
@@ -81,7 +82,6 @@ export const useExternalAccess = () => {
         .maybeSingle();
       
       if (error) {
-        console.error("Token verification DB error:", error);
         throw new Error(`Token verification failed: ${error.message}`);
       }
       
@@ -95,18 +95,13 @@ export const useExternalAccess = () => {
       }
 
       // Track click count and last accessed (fire-and-forget, don't block on errors)
-      supabase
+      void supabase
         .from("campaign_external_access")
         .update({
           click_count: (data.click_count || 0) + 1,
           last_accessed_at: new Date().toISOString(),
         })
-        .eq("id", data.id)
-        .then(({ error: updateError }) => {
-          if (updateError) {
-            console.warn("Failed to update click count:", updateError);
-          }
-        });
+        .eq("id", data.id);
       
       return data as ExternalAccess;
     } catch (err: any) {
@@ -116,7 +111,7 @@ export const useExternalAccess = () => {
       }
       throw err;
     }
-  };
+  }, []);
 
   // Update verification status
   const verifyEmail = useMutation({
