@@ -1,9 +1,7 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Flag, AlertTriangle, Clock } from "lucide-react";
+import { CalendarIcon, Flag, AlertTriangle, Clock, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isPast, isTomorrow } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
@@ -33,6 +31,25 @@ export function TaskDetailPriorityCard() {
     return format(dueDate, "MMM d");
   };
 
+  const getPriorityStyles = () => {
+    switch (priority) {
+      case 'High':
+        return 'bg-destructive/15 text-destructive border-destructive/30';
+      case 'Medium':
+        return 'bg-primary/15 text-primary border-primary/30';
+      case 'Low':
+      default:
+        return 'bg-muted/50 text-muted-foreground border-border';
+    }
+  };
+
+  const getDueDateStyles = () => {
+    if (isOverdue) return 'bg-destructive/10 text-destructive border-destructive/30';
+    if (isDueToday) return 'bg-warning/10 text-warning-text border-warning/30';
+    if (isDueTomorrow) return 'bg-info/10 text-info-text border-info/30';
+    return 'bg-muted/50 text-muted-foreground border-border';
+  };
+
   return (
     <div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
       {/* Priority */}
@@ -45,15 +62,14 @@ export function TaskDetailPriorityCard() {
             saveField('priority', v);
           }}
         >
-          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none">
+          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
             <div className={cn(
-              "flex items-center gap-xs px-2.5 h-full rounded-md font-medium text-body-sm w-full min-w-0",
-              priority === 'High' && 'bg-destructive/15 text-destructive border border-destructive/30',
-              priority === 'Medium' && 'bg-primary/15 text-primary border border-primary/30',
-              priority === 'Low' && 'bg-muted/50 text-muted-foreground border border-border'
+              "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
+              getPriorityStyles()
             )}>
               <Flag className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{priority}</span>
+              <span className="truncate flex-1 text-left">{priority}</span>
+              <ChevronDown className="h-3 w-3 flex-shrink-0 opacity-50" />
             </div>
           </SelectTrigger>
           <SelectContent>
@@ -69,15 +85,11 @@ export function TaskDetailPriorityCard() {
         <span className="text-metadata text-muted-foreground">Due</span>
         <Popover>
           <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <button 
+              type="button"
               className={cn(
-                "h-9 w-full gap-xs px-2.5 rounded-md justify-start",
-                isOverdue && "bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive",
-                isDueToday && "bg-warning/10 text-warning-text hover:bg-warning/20",
-                isDueTomorrow && "bg-info/10 text-info-text hover:bg-info/20",
-                !isOverdue && !isDueToday && !isDueTomorrow && "bg-muted/50 text-muted-foreground hover:bg-muted"
+                "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0 text-left transition-colors",
+                getDueDateStyles()
               )}
             >
               {isOverdue ? (
@@ -85,8 +97,8 @@ export function TaskDetailPriorityCard() {
               ) : (
                 <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
               )}
-              <span className="text-body-sm font-medium truncate">{getDueDateLabel()}</span>
-            </Button>
+              <span className="truncate flex-1">{getDueDateLabel()}</span>
+            </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
@@ -112,11 +124,15 @@ export function TaskDetailPriorityCard() {
             saveField('status', v);
           }}
         >
-          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none">
-            <Badge variant="outline" className={cn("text-body-sm h-full w-full min-w-0 justify-start px-2.5", getStatusColor(status))}>
-              <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-              <span className="truncate">{status}</span>
-            </Badge>
+          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
+            <div className={cn(
+              "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
+              getStatusColor(status)
+            )}>
+              <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate flex-1 text-left">{status}</span>
+              <ChevronDown className="h-3 w-3 flex-shrink-0 opacity-50" />
+            </div>
           </SelectTrigger>
           <SelectContent>
             {TASK_STATUSES.map((s) => (

@@ -10,7 +10,7 @@ import { CommentText } from "@/components/CommentText";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useTaskDetailContext } from "./TaskDetailContext";
-import { isImageUrl } from "@/components/comments/utils";
+import { isImageUrl, normalizeUrl } from "@/components/comments/utils";
 import type { CommentAttachment } from "@/components/comments/types";
 
 export function TaskDetailComments() {
@@ -125,7 +125,7 @@ export function TaskDetailComments() {
                             {fileAttachments.map((att, i) => (
                               <a
                                 key={i}
-                                href={att.url}
+                                href={normalizeUrl(att.url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={cn(
