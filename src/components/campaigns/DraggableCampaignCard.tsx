@@ -74,26 +74,18 @@ export function DraggableCampaignCard({ campaign, isDragging, onClick }: Draggab
           )}
 
           {/* Landing Page */}
-          {campaign.landing_page && (() => {
-            try {
-              const url = new URL(campaign.landing_page);
-              if (!['http:', 'https:'].includes(url.protocol)) return null;
-              return (
-                <a
-                  href={campaign.landing_page}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-metadata text-primary hover:underline font-medium"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  View LP
-                </a>
-              );
-            } catch {
-              return null;
-            }
-          })()}
+          {campaign.landing_page && (
+            <a
+              href={campaign.landing_page.startsWith('http') ? campaign.landing_page : `https://${campaign.landing_page}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-metadata text-primary hover:underline font-medium"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-3 w-3" />
+              View LP
+            </a>
+          )}
 
           {/* Status */}
           {!campaign.is_active && (

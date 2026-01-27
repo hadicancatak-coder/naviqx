@@ -122,26 +122,18 @@ function CampaignTrackingCard({
                 </Badge>
                 
                 {/* LP Button */}
-                {campaign.landing_page && (() => {
-                  try {
-                    const url = new URL(campaign.landing_page);
-                    if (!['http:', 'https:'].includes(url.protocol)) return null;
-                    return (
-                      <a
-                        href={campaign.landing_page}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-metadata text-primary hover:underline mt-sm"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink className="size-3" />
-                        LP
-                      </a>
-                    );
-                  } catch {
-                    return null;
-                  }
-                })()}
+                {campaign.landing_page && (
+                  <a
+                    href={campaign.landing_page.startsWith('http') ? campaign.landing_page : `https://${campaign.landing_page}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-metadata text-primary hover:underline mt-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="size-3" />
+                    LP
+                  </a>
+                )}
               </div>
             </div>
           </CardContent>
