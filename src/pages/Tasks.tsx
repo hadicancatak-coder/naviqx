@@ -457,7 +457,7 @@ export default function Tasks() {
     : finalFilteredTasks;
   const totalPages = Math.ceil(finalFilteredTasks.length / itemsPerPage);
 
-  const TaskListContent = () => (
+  const taskListContent = (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-auto p-md space-y-md">
         <PageHeader
@@ -704,7 +704,7 @@ export default function Tasks() {
       />
       
       <div className="h-full overflow-auto">
-        <TaskListContent />
+        {taskListContent}
       </div>
 
       <CreateTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} />
