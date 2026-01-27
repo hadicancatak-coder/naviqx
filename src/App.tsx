@@ -67,65 +67,72 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <BrowserRouter>
-          <AuthProvider>
-            <TaskDrawerProvider>
-            <Sonner position="bottom-right" expand={false} richColors closeButton />
-            <GlobalBubbleMenu />
-            <TaskDrawer />
-            <Routes>
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
-                  <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
-              <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
-              <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><CampaignsLogExternal /></Suspense>} />
-              <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />
-              <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><ProjectsPublic /></Suspense>} />
-              <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><LpMapPublic /></Suspense>} />
-                  <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/dashboard" element={<Navigate to="/" replace />} />
-                    <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/sprints" element={<Sprints />} />
-                    
-                    <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-                      <Route index element={<Navigate to="overview" replace />} />
-                      <Route path="overview" element={<Overview />} />
-                      <Route path="users" element={<UsersManagement />} />
-                      <Route path="kpis" element={<KPIsManagement />} />
-                      <Route path="config" element={<Config />} />
-                      <Route path="external-links" element={<ExternalLinksManagement />} />
-                      <Route path="security" element={<SecurityPage />} />
-                      <Route path="logs" element={<Logs />} />
-                      <Route path="ad-rules" element={<AdRulesManagement />} />
-                      <Route path="errors" element={<ErrorLogs />} />
-                      <Route path="security-scans" element={<SecurityScans />} />
-                      <Route path="sprints" element={<SprintsManagement />} />
+          <Routes>
+            {/* PUBLIC ROUTES - Outside AuthProvider to prevent MFA redirects */}
+            <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
+            <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><CampaignsLogExternal /></Suspense>} />
+            <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />
+            <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><ProjectsPublic /></Suspense>} />
+            <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><LpMapPublic /></Suspense>} />
+            
+            {/* AUTHENTICATED ROUTES - Inside AuthProvider */}
+            <Route path="/*" element={
+              <AuthProvider>
+                <TaskDrawerProvider>
+                  <Sonner position="bottom-right" expand={false} richColors closeButton />
+                  <GlobalBubbleMenu />
+                  <TaskDrawer />
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
+                    <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
+                    <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                      <Route path="/tasks" element={<Tasks />} />
+                      <Route path="/sprints" element={<Sprints />} />
+                      
+                      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                        <Route index element={<Navigate to="overview" replace />} />
+                        <Route path="overview" element={<Overview />} />
+                        <Route path="users" element={<UsersManagement />} />
+                        <Route path="kpis" element={<KPIsManagement />} />
+                        <Route path="config" element={<Config />} />
+                        <Route path="external-links" element={<ExternalLinksManagement />} />
+                        <Route path="security" element={<SecurityPage />} />
+                        <Route path="logs" element={<Logs />} />
+                        <Route path="ad-rules" element={<AdRulesManagement />} />
+                        <Route path="errors" element={<ErrorLogs />} />
+                        <Route path="security-scans" element={<SecurityScans />} />
+                        <Route path="sprints" element={<SprintsManagement />} />
+                      </Route>
+                      <Route path="/ads" element={<Navigate to="/ads/search" replace />} />
+                      <Route path="/ads/search" element={<SearchPlanner adType="search" key="search" />} />
+                      <Route path="/ads/library" element={<Navigate to="/ads/captions" replace />} />
+                      <Route path="/ads/captions" element={<CaptionLibrary />} />
+                      <Route path="/ads/lp" element={<LpPlanner />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/profile/:userId?" element={<Profile />} />
+                      <Route path="/utm-planner" element={<UtmPlanner />} />
+                      <Route path="/copywriter" element={<CopyWriter />} />
+                      <Route path="/security" element={<Security />} />
+                      <Route path="/kpis" element={<KPIs />} />
+                      <Route path="/campaigns-log" element={<CampaignsLog />} />
+                      <Route path="/web-intel" element={<WebIntel />} />
+                      <Route path="/keyword-intel" element={<KeywordIntel />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/how-to" element={<HowTo />} />
+                      <Route path="/knowledge" element={<Knowledge />} />
+                      <Route path="/projects" element={<Projects />} />
+                      <Route path="/tech-stack" element={<TechStack />} />
+                      <Route path="/performance" element={<Performance />} />
                     </Route>
-                    <Route path="/ads" element={<Navigate to="/ads/search" replace />} />
-                    <Route path="/ads/search" element={<SearchPlanner adType="search" key="search" />} />
-                    <Route path="/ads/library" element={<Navigate to="/ads/captions" replace />} />
-                    <Route path="/ads/captions" element={<CaptionLibrary />} />
-                    <Route path="/ads/lp" element={<LpPlanner />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/profile/:userId?" element={<Profile />} />
-                    <Route path="/utm-planner" element={<UtmPlanner />} />
-                    <Route path="/copywriter" element={<CopyWriter />} />
-                    <Route path="/security" element={<Security />} />
-                    <Route path="/kpis" element={<KPIs />} />
-                    <Route path="/campaigns-log" element={<CampaignsLog />} />
-                    <Route path="/web-intel" element={<WebIntel />} />
-                    <Route path="/keyword-intel" element={<KeywordIntel />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/how-to" element={<HowTo />} />
-                    <Route path="/knowledge" element={<Knowledge />} />
-                    <Route path="/projects" element={<Projects />} />
-                    <Route path="/tech-stack" element={<TechStack />} />
-                    <Route path="/performance" element={<Performance />} />
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TaskDrawerProvider>
-          </AuthProvider>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </TaskDrawerProvider>
+              </AuthProvider>
+            } />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
