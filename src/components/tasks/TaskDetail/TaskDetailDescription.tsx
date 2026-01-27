@@ -52,10 +52,6 @@ export function TaskDetailDescription() {
     
     const currentValue = descriptionRef.current;
     if (currentValue !== lastSavedRef.current) {
-      console.log('[TaskDetailDescription] Saving on blur:', {
-        length: currentValue.length,
-        preview: currentValue.substring(0, 80)
-      });
       await saveField('description', currentValue);
       lastSavedRef.current = currentValue;
     }

@@ -8,6 +8,7 @@ export { AlertBanner } from './AlertBanner';
 export { DataCard, DataCardHeader } from './DataCard';
 export { TopHeader } from './TopHeader';
 export { PageLoadingState } from './PageLoadingState';
+export { PageLoadingSpinner } from './PageLoadingSpinner';
 
 // Footer components
 export { ExternalPageFooter } from './ExternalPageFooter';

@@ -27,8 +27,6 @@ export function DeleteAdDialog({ open, onOpenChange, ad, onSuccess }: DeleteAdDi
 
     setIsDeleting(true);
     try {
-      console.log("Attempting to delete ad:", { id: ad.id, name: ad.name });
-      
       const { error } = await supabase
         .from('ads')
         .delete()

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 
 // MFA is required for ALL routes when enabled - no exemptions
 // Only these routes don't trigger MFA redirect (they handle it themselves)
@@ -42,7 +43,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
     // SECURITY: If MFA is not enabled but enrollment is required, force setup
     if (!mfaEnabled && mfaEnrollmentRequired !== false) {
-      console.log('🔒 MFA not enabled but required, redirecting to setup');
+      logger.debug('MFA not enabled but required, redirecting to setup');
       navigate("/mfa-setup");
       return;
     }
@@ -53,12 +54,12 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       
       if (hasStoredToken) {
         // Token exists - trust it immediately, validate in background
-        console.log('✅ MFA token found in localStorage, proceeding');
+        logger.debug('MFA token found in localStorage, proceeding');
         return;
       }
       
       // No token at all - redirect to verify
-      console.log('🔒 MFA enabled but no token, redirecting to verification');
+      logger.debug('MFA enabled but no token, redirecting to verification');
       navigate("/mfa-verify");
       return;
     }

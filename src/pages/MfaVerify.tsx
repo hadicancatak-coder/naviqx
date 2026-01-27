@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { MfaSetupGuide } from "@/components/MfaSetupGuide";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
+import { logger } from "@/lib/logger";
 
 export default function MfaVerify() {
   const [otp, setOtp] = useState("");
@@ -30,7 +31,7 @@ export default function MfaVerify() {
     // Use getUser() instead of getSession() - getSession() can return stale cached tokens
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
-      console.log('No valid user session, redirecting to auth');
+      logger.debug('No valid user session, redirecting to auth');
       navigate("/auth");
     }
   };
@@ -54,7 +55,7 @@ export default function MfaVerify() {
       const { data: { session }, error: sessionRefreshError } = await supabase.auth.refreshSession();
       
       if (sessionRefreshError || !session) {
-        console.error('Session refresh failed:', sessionRefreshError?.message);
+        logger.error('Session refresh failed', { error: sessionRefreshError?.message });
         toast({
           title: "Session expired",
           description: "Please sign in again",
@@ -84,9 +85,7 @@ export default function MfaVerify() {
           throw new Error('Failed to create session');
         }
 
-        console.log('✅ MFA session created:', { 
-          token: sessionData.sessionToken.substring(0, 10) + '...'
-        });
+        logger.debug('MFA session created', { hasToken: !!sessionData.sessionToken });
 
         // Use server's expiry time for consistency
         const expiresAt = sessionData.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -100,11 +99,11 @@ export default function MfaVerify() {
         });
 
         // Navigate immediately - state is now properly managed
-        console.log('🚀 Navigating to home page');
+        logger.debug('Navigating to home page');
         navigate("/", { replace: true });
       }
     } catch (error: any) {
-      console.error('Error verifying OTP:', error);
+      logger.error('Error verifying OTP', { error: error.message });
       
       let description = "Invalid code. Please try again.";
       if (error.message?.includes("Invalid code")) {

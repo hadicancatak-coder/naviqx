@@ -23,12 +23,7 @@ export function AdminStatusBadge() {
           .eq('user_id', user.id)
           .single();
 
-        console.log('👤 Admin status check:', {
-          userId: user.id,
-          email: user.email,
-          role: data?.role,
-          error: error?.message
-        });
+        // Admin status checked - role data stored in state
 
         setIsAdmin(data?.role === 'admin');
         setLoading(false);

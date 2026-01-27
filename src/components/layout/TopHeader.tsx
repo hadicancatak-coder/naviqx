@@ -14,19 +14,43 @@ export function TopHeader() {
   // Get current page name for breadcrumb
   const getPageName = () => {
     const path = location.pathname;
+    
+    // Core
     if (path === "/" || path === "/dashboard") return "Dashboard";
     if (path === "/tasks") return "Tasks";
+    if (path === "/sprints") return "Sprints";
     if (path === "/calendar") return "Agenda";
+    
+    // Ads - specific paths first
+    if (path === "/ads/search") return "Search Planner";
+    if (path === "/ads/lp") return "LP Planner";
+    if (path.startsWith("/ads/captions")) return "Captions";
     if (path === "/utm-planner") return "UTM Planner";
+    if (path.includes("/ads")) return "Ads";
+    
+    // Intelligence
+    if (path === "/web-intel") return "Web Intel";
+    if (path === "/keyword-intel") return "Keyword Intel";
+    
+    // Operations
+    if (path === "/campaigns-log") return "Campaigns Log";
+    if (path === "/performance") return "Performance";
+    if (path === "/kpis") return "KPIs";
+    
+    // Resources
     if (path === "/knowledge") return "Knowledge";
+    if (path === "/projects") return "Projects";
+    if (path === "/tech-stack") return "Tech Stack";
+    
+    // Other
+    if (path === "/copywriter") return "Copywriter";
     if (path === "/profile") return "Profile";
     if (path === "/security") return "Security";
     if (path === "/notifications") return "Notifications";
-    if (path.startsWith("/ads/captions")) return "Captions";
-    if (path.includes("/ads")) return "Ads";
     if (path.startsWith("/admin")) return "Admin";
     if (path === "/how-to") return "How To";
     if (path === "/about") return "About";
+    
     return null;
   };
 
