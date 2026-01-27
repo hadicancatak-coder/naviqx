@@ -38,6 +38,7 @@ interface ExternalVersionGalleryProps {
   submitting: { [key: string]: boolean };
   commentInputs: { [key: string]: string };
   onCommentChange: (versionId: string, value: string) => void;
+  expanded?: boolean;
 }
 
 export function ExternalVersionGallery({
@@ -47,6 +48,7 @@ export function ExternalVersionGallery({
   submitting,
   commentInputs,
   onCommentChange,
+  expanded = false,
 }: ExternalVersionGalleryProps) {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
     versions[0]?.id || null
@@ -74,7 +76,7 @@ export function ExternalVersionGallery({
   };
 
   return (
-    <div className="p-md space-y-md">
+    <div className="space-y-md">
       {/* Version Thumbnails Strip */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {versions.map((version) => (
@@ -92,10 +94,16 @@ export function ExternalVersionGallery({
               <img
                 src={version.image_url}
                 alt={`v${version.version_number}`}
-                className="w-16 h-12 object-cover"
+                className={cn(
+                  "object-cover",
+                  expanded ? "w-20 h-14" : "w-16 h-12"
+                )}
               />
             ) : (
-              <div className="w-16 h-12 bg-muted flex items-center justify-center">
+              <div className={cn(
+                "bg-muted flex items-center justify-center",
+                expanded ? "w-20 h-14" : "w-16 h-12"
+              )}>
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
               </div>
             )}
@@ -113,30 +121,39 @@ export function ExternalVersionGallery({
 
       {/* Selected Version Detail */}
       {selectedVersion && (
-        <div className="grid gap-md lg:grid-cols-[1fr_1fr]">
+        <div className={cn(
+          "grid gap-lg",
+          expanded ? "lg:grid-cols-[1.2fr_1fr]" : "lg:grid-cols-[1fr_1fr]"
+        )}>
           {/* Image Section */}
-          <div className="space-y-2">
+          <div className="space-y-sm">
             {selectedVersion.image_url ? (
               <div 
-                className="relative cursor-pointer group rounded-lg overflow-hidden border border-border"
+                className="relative cursor-pointer group rounded-xl overflow-hidden border border-border bg-muted"
                 onClick={() => handleImageClick(selectedVersion)}
               >
                 <img
                   src={selectedVersion.image_url}
                   alt={`Version ${selectedVersion.version_number}`}
-                  className="w-full h-auto max-h-[400px] object-contain bg-muted transition-transform group-hover:scale-[1.02]"
+                  className={cn(
+                    "w-full h-auto object-contain transition-transform group-hover:scale-[1.02]",
+                    expanded ? "max-h-[550px]" : "max-h-[400px]"
+                  )}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <span className="text-white bg-black/50 px-3 py-1 rounded-full text-body-sm">
+                  <span className="text-white bg-black/50 px-4 py-2 rounded-full text-body-sm font-medium">
                     Click to expand
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg bg-muted h-[200px] flex items-center justify-center border border-border">
+              <div className={cn(
+                "rounded-xl bg-muted flex items-center justify-center border border-border",
+                expanded ? "h-[300px]" : "h-[200px]"
+              )}>
                 <div className="text-center">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground text-body-sm">No image</p>
+                  <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground text-body-sm">No image available</p>
                 </div>
               </div>
             )}
@@ -146,6 +163,9 @@ export function ExternalVersionGallery({
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 {format(new Date(selectedVersion.created_at), "MMM d, h:mm a")}
+                <span className="text-muted-foreground/60">
+                  ({formatDistanceToNow(new Date(selectedVersion.created_at), { addSuffix: true })})
+                </span>
               </div>
               {selectedVersion.asset_link && (
                 <a
@@ -161,7 +181,7 @@ export function ExternalVersionGallery({
             
             {/* Version notes */}
             {selectedVersion.version_notes && (
-              <div className="bg-muted/50 rounded-md p-sm border border-border/50">
+              <div className="bg-muted/50 rounded-lg p-md border border-border/50">
                 <p className="text-body-sm text-foreground">{selectedVersion.version_notes}</p>
               </div>
             )}
@@ -178,15 +198,17 @@ export function ExternalVersionGallery({
                     Feedback ({versionComments.length})
                   </span>
                 </div>
-                <ScrollArea className="max-h-[200px]">
+                <ScrollArea className={cn(
+                  expanded ? "max-h-[280px]" : "max-h-[200px]"
+                )}>
                   <div className="space-y-sm pr-sm">
                     {versionComments.map((comment) => (
                       <div 
                         key={comment.id} 
                         className="flex gap-sm p-sm rounded-lg bg-muted/30 border border-border"
                       >
-                        <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-[10px] bg-primary/10">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-metadata bg-primary/10">
                             {comment.reviewer_name?.charAt(0).toUpperCase() || "?"}
                           </AvatarFallback>
                         </Avatar>
@@ -216,11 +238,16 @@ export function ExternalVersionGallery({
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 <span className="text-body-sm font-medium">Add Feedback</span>
               </div>
+              <p className="text-metadata text-muted-foreground">
+                Share your thoughts on this version. Your feedback helps improve our campaigns.
+              </p>
               <Textarea
                 value={commentInputs[selectedVersion.id] || ""}
                 onChange={(e) => onCommentChange(selectedVersion.id, e.target.value)}
                 placeholder="Share your feedback on this version..."
-                className="min-h-[80px]"
+                className={cn(
+                  expanded ? "min-h-[100px]" : "min-h-[80px]"
+                )}
               />
               <Button
                 onClick={() => onSubmitFeedback(selectedVersion.id, commentInputs[selectedVersion.id] || "")}
