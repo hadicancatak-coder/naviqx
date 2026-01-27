@@ -3,6 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { TopHeader } from "@/components/layout/TopHeader";
+import { InternalPageFooter } from "@/components/layout/InternalPageFooter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVisitTracker } from "@/hooks/useVisitTracker";
 
@@ -56,13 +57,14 @@ export const Layout = () => {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[300px] bg-gradient-to-b from-primary/20 via-primary/10 to-transparent blur-[60px] dark:from-primary/30 dark:via-primary/15" />
             <div className="absolute bottom-0 right-0 w-[50%] h-[400px] bg-gradient-to-tl from-cyan-500/15 via-transparent to-transparent blur-[40px] dark:from-cyan-400/25" />
           </div>
-          <div className="relative z-[2]">
+          <div className="relative z-[2] min-h-full flex flex-col">
             <TopHeader />
-            <div className="pt-md px-md pb-lg page-transition">
+            <div className="pt-md px-md pb-lg page-transition flex-1">
               <Suspense fallback={<div className="min-h-[200px]" />}>
                 <Outlet />
               </Suspense>
             </div>
+            <InternalPageFooter className="mt-auto" />
           </div>
         </main>
       </div>
