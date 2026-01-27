@@ -1,231 +1,221 @@
 
-# Mobile Responsiveness Fix Plan
+# Campaign Descriptions for External Review
 
-## Problem Summary
-The website has significant mobile responsiveness issues caused by:
-1. **Fixed grid columns** without mobile breakpoints (e.g., `grid-cols-3`, `grid-cols-4`)
-2. **Horizontal overflow** from rigid layouts that don't stack vertically on small screens
-3. **Admin tab bar** with 9 tabs cramped into a fixed grid
-4. **Task board** using inline styles with `minmax(240px, 1fr)` causing horizontal scroll
-5. **Filter bars** and form layouts not adapting to narrow viewports
-6. **Kanban boards** with 4-column layouts that can't fit on mobile
+## Overview
 
----
+Add campaign descriptions that guide external reviewers about what each campaign is about, how to review versions, and how to provide feedback. The description field already exists in the database but is not currently saved during edits or displayed on external review pages.
 
-## Implementation Overview
+## Current Gap Analysis
 
-| Area | Issue | Fix |
-|------|-------|-----|
-| Task Detail Cards | `grid-cols-3` fixed | `grid-cols-1 sm:grid-cols-3` |
-| Sprint Kanban | `grid-cols-4` fixed | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` |
-| Admin Tab Bar | 9 tabs in cramped grid | Horizontal scrollable tabs |
-| Task Board View | Inline grid with fixed minmax | Responsive grid with mobile stacking |
-| Create Task Dialog | `grid-cols-3` fixed | `grid-cols-1 sm:grid-cols-3` |
-| Filter Bars | Fixed min-widths | Flexible widths with wrapping |
-| Campaign Review | Input widths fixed | Full-width on mobile |
+| Area | Current State | Required Change |
+|------|--------------|-----------------|
+| Database | `description` field exists in `utm_campaigns` | No change needed |
+| Update Hook | Does NOT save description | Add `description` parameter |
+| Internal Dialog | Shows description but save doesn't persist it | Fix save to include description |
+| External Review | No description displayed | Add description section |
+| External Cards | No description shown | Add truncated description |
 
 ---
 
-## Part 1: Core Layout Components
+## Implementation
 
-### 1.1 TaskDetailPriorityCard.tsx (Priority/Due/Status Grid)
-**Current**: `grid-cols-3` - Forces 3 columns on all screen sizes
-**Fix**: `grid-cols-1 sm:grid-cols-3` - Stack vertically on mobile
+### Part 1: Fix Description Saving (Internal Campaign Log)
+
+**File: `src/hooks/useUtmCampaigns.ts`**
+
+Update the `useUpdateUtmCampaign` mutation to accept and save the description field:
 
 ```typescript
-// Line 54: Change
-<div className="grid grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
+// Line 92: Update function signature
+mutationFn: async ({ id, name, landing_page, description }: { 
+  id: string; 
+  name?: string; 
+  landing_page?: string | null;
+  description?: string | null;  // ADD THIS
+}) => {
+  const { data, error } = await supabase
+    .from("utm_campaigns")
+    .update({ name, landing_page, description })  // ADD description
+    .eq("id", id)
+    .select()
+    .single();
 
-// To
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
+  if (error) throw error;
+  return data;
+},
 ```
 
-### 1.2 SprintKanban.tsx (4-Column Board)
-**Current**: `grid-cols-4` - 4 columns always
-**Fix**: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` + horizontal scroll option
+**File: `src/components/campaigns/UtmCampaignDetailDialog.tsx`**
+
+Update `handleSave` to include description:
 
 ```typescript
-// Line 71: Change
-<div className="grid grid-cols-4 gap-md h-full">
-
-// To
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md h-full overflow-x-auto">
-```
-
-### 1.3 TaskDetailDetails.tsx (Date Metadata)
-**Current**: `grid-cols-3` for Created/Updated/Age
-**Fix**: `grid-cols-1 sm:grid-cols-3`
-
-```typescript
-// Line 172: Change
-<div className="grid grid-cols-3 gap-sm">
-
-// To
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-sm">
-```
-
-### 1.4 CreateTaskDialog.tsx (Form Fields)
-**Current**: `grid-cols-3` for Status/Priority/Due
-**Fix**: `grid-cols-1 sm:grid-cols-3`
-
-```typescript
-// Line 398: Change
-<div className="grid grid-cols-3 gap-md">
-
-// To
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
+// Line 82-94: Update handleSave
+const handleSave = async () => {
+  try {
+    await updateMutation.mutateAsync({
+      id: campaignId,
+      name,
+      landing_page: landingPage || null,
+      description: description || null,  // ADD THIS
+    });
+    setIsEditing(false);
+    toast.success("Campaign updated");
+  } catch {
+    toast.error("Failed to update campaign");
+  }
+};
 ```
 
 ---
 
-## Part 2: Task Board View
+### Part 2: Display Description on External Review Pages
 
-### 2.1 TaskBoardView.tsx
-**Current Issue**: Inline style with `gridTemplateColumns: repeat(${colCount}, minmax(240px, 1fr))` - causes horizontal scroll and doesn't adapt to mobile
+**File: `src/components/campaigns/ExternalCampaignDetailPanel.tsx`**
 
-**Fix Strategy**:
-- Use Tailwind responsive classes instead of inline styles
-- On mobile: Show 1 column with horizontal scrollable option
-- On tablet: 2 columns
-- On desktop: Dynamic based on group count
+Add description to the Campaign interface and display it prominently:
 
 ```typescript
-// Line 91-95: Replace inline style grid
-<div 
-  className="grid gap-md"
-  style={{ gridTemplateColumns: `repeat(${colCount}, minmax(240px, 1fr))` }}
->
+// Update Campaign interface (Line 30-36)
+interface Campaign {
+  id: string;
+  name: string;
+  lp_type?: string;
+  campaign_type?: string;
+  landing_page?: string;
+  description?: string | null;  // ADD THIS
+}
 
-// With responsive Tailwind classes
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-md">
-```
+// Add description section after header (Line 126-145)
+// Inside the component, after the header div and before version gallery:
 
-For the dynamism, add a wrapper with horizontal scroll on mobile:
-```typescript
-<div className="overflow-x-auto -mx-md px-md sm:overflow-visible sm:mx-0 sm:px-0">
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md min-w-[300px] sm:min-w-0">
-    ...
+{/* Campaign Description / Review Guide */}
+{campaign.description && (
+  <div className="px-lg pt-md">
+    <div className="p-md rounded-lg bg-info-soft border border-info/20">
+      <div className="flex items-start gap-sm">
+        <div className="p-1.5 rounded-full bg-info/20">
+          <Info className="h-4 w-4 text-info-text" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-body-sm font-medium text-foreground mb-1">
+            About This Campaign
+          </h4>
+          <p className="text-body-sm text-muted-foreground whitespace-pre-wrap">
+            {campaign.description}
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-```
-
----
-
-## Part 3: Admin Layout Tabs
-
-### 3.1 AdminLayout.tsx
-**Current Issue**: `grid grid-cols-5 sm:grid-cols-9` - 9 tabs cramped into grid, overflow on mobile
-
-**Fix Strategy**:
-- Remove grid layout
-- Use horizontal scroll with `overflow-x-auto`
-- Add `flex-nowrap` to keep tabs in single row
-- Style with proper spacing
-
-```typescript
-// Line 25: Change
-<TabsList className="grid grid-cols-5 sm:grid-cols-9 w-full lg:w-auto bg-muted/50">
-
-// To
-<TabsList className="flex overflow-x-auto w-full lg:w-auto bg-muted/50 gap-1 pb-1">
-```
-
-### 3.2 TabsList Component (tabs.tsx)
-Add scrollable behavior support:
-
-```typescript
-// Line 14-18: Update base styles
-className={cn(
-  "inline-flex h-10 items-center justify-start gap-1 border-b border-border text-muted-foreground overflow-x-auto scrollbar-none",
-  className,
 )}
 ```
 
 ---
 
-## Part 4: Filter Bar & Form Inputs
+### Part 3: Update External Grid/Card Components
 
-### 4.1 FilterBar.tsx
-**Current**: `min-w-[200px] max-w-[260px]` for search - too rigid
+**File: `src/components/campaigns/ExternalCampaignGrid.tsx`**
 
-**Fix**: Make responsive with full-width on mobile:
+Update Campaign interface to include description:
+
 ```typescript
-// Line 32: Change
-<div className="relative min-w-[200px] max-w-[260px]">
-
-// To
-<div className="relative w-full sm:min-w-[200px] sm:max-w-[260px]">
+interface Campaign {
+  id: string;
+  name: string;
+  lp_type?: string;
+  campaign_type?: string;
+  landing_page?: string;
+  description?: string | null;  // ADD THIS
+}
 ```
 
-### 4.2 Campaign Review (CampaignReview.tsx)
-**Current**: Fixed width inputs `w-40`, `w-48`
-**Fix**: Full width on mobile with breakpoints
+**File: `src/components/campaigns/ExternalCampaignCard.tsx`**
+
+Add description to interface and show truncated preview:
 
 ```typescript
-// Lines 461-467: Change
-<Input ... className="w-40 h-8" />
-<Input ... className="w-48 h-8" />
+// Update interface (Line 28-35)
+interface ExternalCampaignCardProps {
+  campaign: {
+    id: string;
+    name: string;
+    lp_type?: string;
+    campaign_type?: string;
+    landing_page?: string;
+    description?: string | null;  // ADD THIS
+  };
+  // ... rest of props
+}
 
-// To
-<Input ... className="w-full sm:w-40 h-8" />
-<Input ... className="w-full sm:w-48 h-8" />
-```
+// Add description preview below card meta (Line 110-120)
+// After the existing meta section in the card:
 
-Also update the flex container to stack on mobile:
-```typescript
-// Line 455: Change
-<div className="flex items-center gap-md flex-wrap">
-
-// To
-<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-sm sm:gap-md">
+{campaign.description && (
+  <p className="text-metadata text-muted-foreground line-clamp-2 mt-1">
+    {campaign.description}
+  </p>
+)}
 ```
 
 ---
 
-## Part 5: Dashboard Grids
+### Part 4: Add Reviewer Guidance Section
 
-### 5.1 Dashboard.tsx
-**Current**: Already has `grid-cols-1 lg:grid-cols-2` and `grid-cols-1 lg:grid-cols-3` - GOOD!
-**Status**: Dashboard is already mobile-responsive.
+**File: `src/pages/CampaignReview.tsx`**
 
----
-
-## Part 6: Stats & Analytics Cards
-
-### 6.1 HeadlineDiversityChecker.tsx
-**Current**: `grid-cols-3` for stats
-**Fix**: `grid-cols-1 sm:grid-cols-3`
+Add a guidance callout below the header for first-time reviewers:
 
 ```typescript
-// Line 87: Change
-<div className="grid grid-cols-3 gap-sm p-sm rounded-md bg-muted/50">
+// After the identification bar section (around line 486), add:
 
-// To
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-md bg-muted/50">
+{/* Reviewer Guidance */}
+<Card className="bg-muted/30 border-border/50">
+  <CardContent className="py-md px-lg">
+    <div className="flex items-start gap-md">
+      <div className="p-2 rounded-full bg-primary/10 flex-shrink-0">
+        <Eye className="h-5 w-5 text-primary" />
+      </div>
+      <div className="space-y-sm">
+        <h3 className="text-body font-semibold text-foreground">How to Review</h3>
+        <ul className="text-body-sm text-muted-foreground space-y-1 list-disc list-inside">
+          <li>Click any campaign card below to view its creative versions</li>
+          <li>Each version shows the visual asset and version notes</li>
+          <li>Leave feedback on specific versions using the comment box</li>
+          <li>Your feedback helps improve our campaigns for {accessData?.entity}</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
 ```
 
 ---
 
-## Part 7: Global CSS Utilities
+## Visual Design
 
-Add mobile-friendly utilities to `src/index.css`:
+The description will appear as an info callout with a blue/info theme:
 
-```css
-/* Scrollbar hiding for horizontal scroll on mobile */
-.scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-
-/* Mobile safe area padding */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ○ Gold Campaign                                                       [X]   │
+│   Campaign • 3 versions • 5 comments                           [View LP]   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ ℹ️  About This Campaign                                              │   │
+│  │                                                                      │   │
+│  │ This campaign promotes gold trading with competitive spreads.        │   │
+│  │ Please review each version and provide feedback on:                  │   │
+│  │ - Visual appeal and brand consistency                                │   │
+│  │ - Call-to-action clarity                                             │   │
+│  │ - Mobile readability                                                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌───────┐                                                                  │
+│  │  v1   │   Version Gallery...                                            │
+│  └───────┘                                                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -234,46 +224,40 @@ Add mobile-friendly utilities to `src/index.css`:
 
 | File | Changes |
 |------|---------|
-| `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx` | `grid-cols-1 sm:grid-cols-3` |
-| `src/components/tasks/TaskDetail/TaskDetailDetails.tsx` | `grid-cols-1 sm:grid-cols-3` |
-| `src/components/sprints/SprintKanban.tsx` | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` |
-| `src/components/tasks/TaskBoardView.tsx` | Responsive grid + scroll wrapper |
-| `src/components/CreateTaskDialog.tsx` | `grid-cols-1 sm:grid-cols-3` |
-| `src/pages/admin/AdminLayout.tsx` | Scrollable tabs |
-| `src/components/ui/tabs.tsx` | Support overflow scroll |
-| `src/components/layout/FilterBar.tsx` | Flexible widths |
-| `src/pages/CampaignReview.tsx` | Stack inputs on mobile |
-| `src/components/search/HeadlineDiversityChecker.tsx` | `grid-cols-1 sm:grid-cols-3` |
-| `src/index.css` | Add scrollbar-none utility |
+| `src/hooks/useUtmCampaigns.ts` | Add `description` to update mutation |
+| `src/components/campaigns/UtmCampaignDetailDialog.tsx` | Include description in save |
+| `src/components/campaigns/ExternalCampaignDetailPanel.tsx` | Display description callout |
+| `src/components/campaigns/ExternalCampaignGrid.tsx` | Update interface |
+| `src/components/campaigns/ExternalCampaignCard.tsx` | Add description preview |
+| `src/pages/CampaignReview.tsx` | Add reviewer guidance section |
+
+---
+
+## Technical Notes
+
+- The `description` field already exists in the database schema (`utm_campaigns.description: text`)
+- No database migration required
+- The internal dialog already has the description state and input field - it just wasn't being saved
+- External components need their Campaign interfaces updated to include the optional `description` field
+- Use `whitespace-pre-wrap` CSS to preserve line breaks in descriptions
 
 ---
 
 ## Testing Checklist
 
-After implementation, test on these viewports:
-1. Mobile (320px-480px) - iPhone SE, small phones
-2. Mobile (480px-768px) - Large phones
-3. Tablet (768px-1024px) - iPad
-4. Desktop (1024px+) - Laptops and monitors
-
-Key tests:
-- [ ] Admin tabs scrollable horizontally on mobile
-- [ ] Task board columns stack/scroll properly
-- [ ] Sprint kanban adapts to screen size
-- [ ] Create task dialog fields stack vertically on mobile
-- [ ] Filter bars wrap naturally
-- [ ] No horizontal page overflow
-- [ ] All interactive elements are tap-friendly (min 44px touch targets)
-
----
-
-## Summary
-
-The core issue is that many components use fixed grid column counts (e.g., `grid-cols-3`, `grid-cols-4`) without mobile-first responsive breakpoints. The fix is systematic:
-
-1. **Replace** `grid-cols-N` with `grid-cols-1 sm:grid-cols-N`
-2. **Add** horizontal scroll for unavoidably wide content (tabs, kanban)
-3. **Make** input widths flexible with `w-full sm:w-[fixed]`
-4. **Stack** flex layouts vertically on mobile with `flex-col sm:flex-row`
-
-This follows the mobile-first design principle where the default is mobile layout, and larger screens progressively enhance.
+1. Internal Campaign Log:
+   - [ ] Edit a campaign and add/modify description
+   - [ ] Save and verify description persists after reopening
+   
+2. External Review Page:
+   - [ ] Campaign with description shows the info callout
+   - [ ] Campaign without description shows no empty box
+   - [ ] Description text preserves line breaks
+   
+3. External Campaign Cards:
+   - [ ] Cards show truncated description (2 lines max)
+   - [ ] Cards without description show normally
+   
+4. Reviewer Guidance:
+   - [ ] "How to Review" guidance section appears for all reviewers
+   - [ ] Instructions are clear and entity-specific
