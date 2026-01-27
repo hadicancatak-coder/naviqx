@@ -32,6 +32,7 @@ interface ExternalCampaignCardProps {
     lp_type?: string;
     campaign_type?: string;
     landing_page?: string;
+    description?: string | null;
   };
   versions: Version[];
   comments: ExternalComment[];
@@ -135,6 +136,11 @@ export function ExternalCampaignCard({
             }
           })()}
         </div>
+        {campaign.description && (
+          <p className="text-metadata text-muted-foreground line-clamp-2 mt-1">
+            {campaign.description}
+          </p>
+        )}
       </div>
     </Card>
   );

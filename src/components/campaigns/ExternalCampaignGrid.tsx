@@ -28,6 +28,7 @@ interface Campaign {
   lp_type?: string;
   campaign_type?: string;
   landing_page?: string;
+  description?: string | null;
 }
 
 interface ExternalCampaignGridProps {
