@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, ChevronUp, ChevronDown, GripVertical, MessageCircle } from "lucide-react";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -434,13 +434,21 @@ export function TaskListView({
                 />
               </div>
 
-              {/* Task Title + Description */}
+              {/* Task Title + Description + Comment Icon */}
               <div style={{ minWidth: columnWidths.task }} className="flex-1 min-w-0 pl-2 pr-2">
-                <div className={cn(
-                  "truncate text-body-sm font-medium leading-tight",
-                  completed && "line-through text-muted-foreground"
-                )}>
-                  {task.title}
+                <div className="flex items-center gap-1.5">
+                  <span className={cn(
+                    "truncate text-body-sm font-medium leading-tight",
+                    completed && "line-through text-muted-foreground"
+                  )}>
+                    {task.title}
+                  </span>
+                  {task.comments_count > 0 && (
+                    <span className="text-metadata text-muted-foreground flex items-center gap-0.5 flex-shrink-0">
+                      <MessageCircle className="h-3 w-3" />
+                      {task.comments_count}
+                    </span>
+                  )}
                 </div>
                 {descPreview && (
                   <div className="truncate text-body-sm text-muted-foreground/70 leading-tight">
