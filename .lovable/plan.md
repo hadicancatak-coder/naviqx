@@ -1,350 +1,313 @@
 
-# Site-Wide Improvement Plan - Safe Implementation Strategy
+# LP Button Re-Add and Comments Cleanup Feature
 
-## Executive Summary
-This plan addresses 5 key improvement areas discovered during the audit, with a phased approach that prioritizes stability. Each change is designed to be non-breaking and fully testable.
-
----
-
-## Phase 1: Security - Remove Debug Console Logs (High Priority)
-
-### Problem
-Production code contains 15+ `console.log` statements that:
-- Leak MFA session tokens (even partially masked)
-- Expose user IDs and email addresses
-- Reveal internal routing logic to browser devtools
-
-### Files to Modify
-
-| File | Lines | Action |
-|------|-------|--------|
-| `src/pages/MfaVerify.tsx` | 33, 57, 87-89, 103, 107 | Replace with `logger.debug()` |
-| `src/pages/Profile.tsx` | 49-57, 221, 233, 246 | Remove entirely or use `logger.debug()` |
-| `src/components/ProtectedRoute.tsx` | 45, 56, 61 | Replace with `logger.debug()` |
-| `src/contexts/AuthContext.tsx` | 113-114, 120-123, 126, 137, 156-161, 166, 171, 203, 263-264, 268, 322-329, 357, 364, 384, 399 | Replace with `logger.debug()` |
-| `src/components/admin/AdminStatusBadge.tsx` | 26-31 | Remove entirely |
-| `src/components/search/DeleteAdDialog.tsx` | 30 | Replace with `logger.debug()` |
-| `src/hooks/useKPIs.ts` | 146 | Remove entirely |
-| `src/components/editor/GlobalBubbleMenu.tsx` | 56-64 | Replace with `logger.debug()` |
-| `src/components/tasks/TaskDetail/TaskDetailDescription.tsx` | 55-58 | Replace with `logger.debug()` |
-| `src/hooks/useMyTasks.ts` | 161 | Replace with `logger.debug()` |
-| `src/pages/CampaignReview.tsx` | 171 | Replace with `logger.debug()` |
-
-### Implementation Pattern
-Use the existing `src/lib/logger.ts` utility which automatically:
-- Only logs in development (`import.meta.env.DEV`)
-- Silences all info/debug/warn logs in production
-- Still reports errors to monitoring
-
-```typescript
-// BEFORE (leaks to production)
-console.log('✅ MFA session created:', { token: sessionData.sessionToken.substring(0, 10) + '...' });
-
-// AFTER (safe - dev only)
-import { logger } from '@/lib/logger';
-logger.debug('MFA session created', { hasToken: !!sessionData.sessionToken });
-```
-
-### Edge Functions (Backend)
-These also need cleanup but run server-side (less critical):
-- `supabase/functions/check-admin-status/index.ts` - lines 49-54
-- `supabase/functions/admin-reset-mfa/index.ts` - line 55
-- `supabase/functions/delete-users/index.ts` - line 39
-
-### Safety Check
-- No behavioral changes - only logging removal
-- Existing error handling remains intact
-- `console.error` calls kept for genuine errors (already in logger pattern)
+## Overview
+This plan addresses two requests:
+1. **Re-add the LP button** - The LP (Landing Page) button needs to be added to the internal Campaigns Log page for direct access to campaign landing pages
+2. **Add option to clean comments** - Ability to delete comments on boards (entity-level) and campaign versions for internal users/admins
 
 ---
 
-## Phase 2: UX - Complete Breadcrumb Navigation
+## Part 1: Re-Add LP Button
 
-### Problem
-`TopHeader.tsx` is missing breadcrumb labels for 11 routes, causing the header to show only "Naviqx" without context.
-
-### Current Coverage (lines 15-30)
-```typescript
-// MISSING from getPageName():
-- /sprints          -> "Sprints"
-- /kpis             -> "KPIs"
-- /campaigns-log    -> "Campaigns Log"
-- /web-intel        -> "Web Intel"
-- /keyword-intel    -> "Keyword Intel"
-- /copywriter       -> "Copywriter"
-- /projects         -> "Projects"
-- /tech-stack       -> "Tech Stack"
-- /performance      -> "Performance"
-- /ads/search       -> "Search Planner"
-- /ads/lp           -> "LP Planner"
-```
+### Problem Analysis
+The LP button exists in several components for external reviews but is missing or hidden in the internal Campaigns Log page:
+- `DraggableCampaignCard.tsx` shows only the hostname, not a clickable "LP" button
+- `EntityCampaignTable.tsx` (CampaignTrackingCard) has no LP button at all
+- `CampaignListView.tsx` shows the hostname as a link but no prominent "LP" button
 
 ### Implementation
-Update `src/components/layout/TopHeader.tsx` lines 15-30:
+
+#### File 1: `src/components/campaigns/EntityCampaignTable.tsx`
+Add an LP button to the CampaignTrackingCard component:
 
 ```typescript
-const getPageName = () => {
-  const path = location.pathname;
-  
-  // Core
-  if (path === "/" || path === "/dashboard") return "Dashboard";
-  if (path === "/tasks") return "Tasks";
-  if (path === "/sprints") return "Sprints";
-  if (path === "/calendar") return "Agenda";
-  
-  // Ads
-  if (path === "/ads/search") return "Search Planner";
-  if (path === "/ads/lp") return "LP Planner";
-  if (path.startsWith("/ads/captions")) return "Captions";
-  if (path === "/utm-planner") return "UTM Planner";
-  if (path.includes("/ads")) return "Ads";
-  
-  // Intelligence
-  if (path === "/web-intel") return "Web Intel";
-  if (path === "/keyword-intel") return "Keyword Intel";
-  
-  // Operations
-  if (path === "/campaigns-log") return "Campaigns Log";
-  if (path === "/performance") return "Performance";
-  if (path === "/kpis") return "KPIs";
-  
-  // Resources
-  if (path === "/knowledge") return "Knowledge";
-  if (path === "/projects") return "Projects";
-  if (path === "/tech-stack") return "Tech Stack";
-  
-  // Other
-  if (path === "/copywriter") return "Copywriter";
-  if (path === "/profile") return "Profile";
-  if (path === "/security") return "Security";
-  if (path === "/notifications") return "Notifications";
-  if (path.startsWith("/admin")) return "Admin";
-  if (path === "/how-to") return "How To";
-  if (path === "/about") return "About";
-  
-  return null;
+// Inside CampaignTrackingCard, after the status badge (around line 121)
+// Add LP button if campaign has landing_page
+{campaign.landing_page && (() => {
+  try {
+    const url = new URL(campaign.landing_page);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    return (
+      <a
+        href={campaign.landing_page}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-metadata text-primary hover:underline mt-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ExternalLink className="size-3" />
+        LP
+      </a>
+    );
+  } catch {
+    return null;
+  }
+})()}
+```
+
+#### File 2: `src/components/campaigns/DraggableCampaignCard.tsx`
+Make the LP link more prominent - change from just hostname to "LP" button style:
+
+```typescript
+// Replace lines 77-89 with a more prominent LP link
+{campaign.landing_page && (() => {
+  try {
+    new URL(campaign.landing_page); // Validate
+    return (
+      <a
+        href={campaign.landing_page}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-metadata text-primary hover:underline font-medium"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ExternalLink className="h-3 w-3" />
+        View LP
+      </a>
+    );
+  } catch {
+    return null;
+  }
+})()}
+```
+
+---
+
+## Part 2: Add Comments Cleanup Options
+
+### Comment Tables in Scope
+Based on the campaign system, these tables store comments:
+1. **`utm_campaign_version_comments`** - Internal version comments (already has individual delete)
+2. **`external_campaign_review_comments`** - External reviewer feedback
+3. **`entity_comments`** - Board/entity-level internal comments
+4. **`utm_campaign_comments`** - Campaign-level comments
+
+### Feature Design
+
+#### 2.1: Add "Clear All Comments" Button to Version Comments
+
+**File: `src/components/campaigns/VersionComments.tsx`**
+
+Add a "Clear All" button for admins/campaign owners to delete all comments on a version:
+
+```typescript
+// Add imports
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+         AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, 
+         AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useUserRole } from "@/hooks/useUserRole";
+
+// Add state and hook
+const [clearDialogOpen, setClearDialogOpen] = useState(false);
+const { isAdmin } = useUserRole();
+
+// Add mutation to useVersionComments hook
+const clearAllComments = useMutation({...});
+
+// Add UI button in header section
+{isAdmin && comments.length > 0 && (
+  <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+    <AlertDialogTrigger asChild>
+      <Button variant="ghost" size="icon-xs" className="text-destructive">
+        <Trash2 />
+      </Button>
+    </AlertDialogTrigger>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Clear All Comments</AlertDialogTitle>
+        <AlertDialogDescription>
+          This will permanently delete all {comments.length} comments. This action cannot be undone.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={handleClearAll} className="bg-destructive">
+          Delete All
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+)}
+```
+
+**File: `src/hooks/useVersionComments.ts`**
+
+Add bulk delete mutation:
+
+```typescript
+const clearAllVersionComments = useMutation({
+  mutationFn: async (versionId: string) => {
+    // Delete internal comments
+    const { error: internalError } = await supabase
+      .from("utm_campaign_version_comments")
+      .delete()
+      .eq("version_id", versionId);
+    if (internalError) throw internalError;
+    
+    // Delete external comments for this version
+    const { error: externalError } = await supabase
+      .from("external_campaign_review_comments")
+      .delete()
+      .eq("version_id", versionId);
+    if (externalError) throw externalError;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["version-comments"] });
+    toast.success("All comments cleared");
+  },
+  onError: (error: any) => {
+    toast.error(error.message || "Failed to clear comments");
+  },
+});
+```
+
+#### 2.2: Add "Clear All Comments" to Entity/Board Comments
+
+**File: `src/components/campaigns/EntityCommentsDialog.tsx`**
+
+Add clear all functionality:
+
+```typescript
+// Add hook and state
+const { isAdmin } = useUserRole();
+const [clearDialogOpen, setClearDialogOpen] = useState(false);
+
+// Add clear all handler
+const handleClearAll = async () => {
+  // Delete internal entity comments
+  await supabase.from("entity_comments").delete().eq("entity", entityName);
+  // Delete external entity feedback  
+  await supabase.from("external_campaign_review_comments")
+    .delete().eq("entity", entityName).eq("comment_type", "entity_feedback");
+  // Invalidate queries
+  queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
+  queryClient.invalidateQueries({ queryKey: ["external-entity-comments"] });
+  setClearDialogOpen(false);
 };
+
+// Add button in header (for admins only)
+{isAdmin && allComments.length > 0 && (
+  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setClearDialogOpen(true)}>
+    <Trash2 /> Clear All
+  </Button>
+)}
 ```
 
-### Safety Check
-- Additive change only - no existing routes affected
-- Order matters: specific paths before wildcards (e.g., `/ads/search` before `/ads`)
+**File: `src/hooks/useEntityComments.ts`**
+
+Add delete mutations for entity comments:
+
+```typescript
+const deleteComment = useMutation({
+  mutationFn: async (commentId: string) => {
+    const { error } = await supabase
+      .from("entity_comments")
+      .delete()
+      .eq("id", commentId);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
+    toast.success("Comment deleted");
+  },
+});
+
+const clearAllEntityComments = useMutation({
+  mutationFn: async (entityName: string) => {
+    const { error } = await supabase
+      .from("entity_comments")
+      .delete()
+      .eq("entity", entityName);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
+    toast.success("All entity comments cleared");
+  },
+});
+```
+
+#### 2.3: Add Individual Comment Delete to CampaignComments
+
+**File: `src/components/campaigns/CampaignComments.tsx`**
+
+Add delete button for user's own comments:
+
+```typescript
+// Add imports and hook
+import { Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+
+// In component
+const { user } = useAuth();
+
+// Add mutation to useCampaignComments hook for deletion
+// Then add delete button next to each comment (for own comments):
+{user?.id === comment.author_id && (
+  <Button
+    variant="ghost"
+    size="icon-xs"
+    onClick={() => deleteComment.mutate(comment.id)}
+    className="text-destructive"
+  >
+    <Trash2 />
+  </Button>
+)}
+```
+
+**File: `src/hooks/useCampaignComments.ts`**
+
+Add delete mutations:
+
+```typescript
+const deleteUtmCampaignComment = useMutation({
+  mutationFn: async (commentId: string) => {
+    const { error } = await supabase
+      .from("utm_campaign_comments")
+      .delete()
+      .eq("id", commentId);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["utm-campaign-comments"] });
+    toast.success("Comment deleted");
+  },
+});
+```
 
 ---
 
-## Phase 3: Performance - Add Missing Route Prefetching
+## Files to Modify
 
-### Problem
-Sidebar hover prefetching is incomplete - 3 routes lack data prefetch:
-- `/kpis` - no `prefetchKPIsData()` call
-- `/performance` - no prefetch exists
-- `/sprints` - no prefetch exists
-
-### Current State in `AppSidebar.tsx`
-The sidebar already calls `prefetchRoute()` for chunk loading, but doesn't prefetch the actual data for these pages like it does for Tasks, Knowledge, etc.
-
-### Implementation
-
-**Step 1:** Add prefetch calls in `src/components/AppSidebar.tsx` for Operations section (lines 206-228):
-
-```typescript
-// Operations section - add data prefetching
-onMouseEnter={() => {
-  prefetchRoute(item.url);
-  if (item.url === '/campaigns-log') prefetchCampaignTrackingData();
-  if (item.url === '/kpis') prefetchKPIsData();  // ADD THIS
-}}
-```
-
-**Step 2:** Also add to Core section for Sprints (similar pattern to Tasks).
-
-**Step 3:** Create `prefetchSprintsData` and `prefetchPerformanceData` functions in `src/lib/resourcesPrefetch.ts` if needed, following the existing pattern:
-
-```typescript
-export function prefetchSprintsData() {
-  queryClient.prefetchQuery({
-    queryKey: ['sprints'],
-    queryFn: async () => {
-      const { data } = await supabase.from('sprints').select('*').order('start_date', { ascending: false });
-      return data;
-    },
-    staleTime: 30 * 1000,
-  });
-}
-```
-
-### Safety Check
-- Prefetching is fire-and-forget - failures are silent
-- No impact on page functionality
-- Uses existing `staleTime` patterns
+| File | Changes |
+|------|---------|
+| `src/components/campaigns/EntityCampaignTable.tsx` | Add LP button to CampaignTrackingCard |
+| `src/components/campaigns/DraggableCampaignCard.tsx` | Make LP link more prominent |
+| `src/components/campaigns/VersionComments.tsx` | Add delete individual + clear all UI |
+| `src/hooks/useVersionComments.ts` | Add clearAllVersionComments mutation |
+| `src/components/campaigns/EntityCommentsDialog.tsx` | Add individual delete + clear all UI for admins |
+| `src/hooks/useEntityComments.ts` | Add deleteComment and clearAllEntityComments mutations |
+| `src/components/campaigns/CampaignComments.tsx` | Add delete button for own comments |
+| `src/hooks/useCampaignComments.ts` | Add deleteUtmCampaignComment mutation |
 
 ---
 
-## Phase 4: Consistency - Standardize LpPlanner Layout
+## Permission Model
 
-### Problem
-`src/pages/LpPlanner.tsx` uses a custom layout that doesn't match the standard `PageContainer` + `PageHeader` pattern used across 90% of pages.
-
-### Current Code (43 lines total)
-```typescript
-return (
-  <div className="h-[calc(100vh-64px)] flex">
-    <div className="w-[280px] flex-shrink-0 border-r border-border">
-      <LpMapListCompact ... />
-    </div>
-    <div className="flex-1 min-w-0">
-      <LpCanvas ... />
-    </div>
-  </div>
-);
-```
-
-### Proposed Update
-Wrap in PageContainer with `size="full"` for edge-to-edge layout while maintaining the split-pane design:
-
-```typescript
-import { PageContainer, PageHeader } from "@/components/layout";
-import { Target } from "lucide-react";
-
-return (
-  <PageContainer size="full" className="!p-0">
-    <div className="h-[calc(100vh-120px)] flex">
-      {/* Left Panel */}
-      <div className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto">
-        <LpMapListCompact ... />
-      </div>
-      
-      {/* Right Panel */}
-      <div className="flex-1 min-w-0 overflow-hidden">
-        <LpCanvas ... />
-      </div>
-    </div>
-  </PageContainer>
-);
-```
-
-### Safety Check
-- Visual-only change
-- Maintains existing split-pane layout
-- Height calculation adjusted for header presence
+| Action | Who Can Do It |
+|--------|---------------|
+| Delete own comment | Comment author |
+| Clear all version comments | Admin only |
+| Clear all entity comments | Admin only |
+| Delete any comment | Admin only |
 
 ---
 
-## Phase 5: Maintainability - Create PageLoadingSpinner Component
+## Safety Considerations
 
-### Problem
-Loading spinner pattern is duplicated 20+ times across pages:
-```typescript
-<div className="flex items-center justify-center min-h-[400px]">
-  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-</div>
-```
-
-### Solution
-Create a reusable component. Note: `PageLoader.tsx` already exists but uses `min-h-screen` (full page), we need a section-level variant.
-
-### Implementation
-
-**Create** `src/components/layout/PageLoadingSpinner.tsx`:
-
-```typescript
-import { cn } from "@/lib/utils";
-
-interface PageLoadingSpinnerProps {
-  className?: string;
-  message?: string;
-  minHeight?: string;
-}
-
-export function PageLoadingSpinner({ 
-  className,
-  message,
-  minHeight = "min-h-[400px]"
-}: PageLoadingSpinnerProps) {
-  return (
-    <div className={cn(
-      "flex flex-col items-center justify-center gap-md",
-      minHeight,
-      className
-    )}>
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      {message && (
-        <span className="text-body-sm text-muted-foreground">{message}</span>
-      )}
-    </div>
-  );
-}
-```
-
-**Update** `src/components/layout/index.ts` to export it.
-
-### Usage Pattern
-```typescript
-// BEFORE
-if (authLoading) {
-  return (
-    <PageContainer>
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    </PageContainer>
-  );
-}
-
-// AFTER
-import { PageContainer, PageLoadingSpinner } from "@/components/layout";
-
-if (authLoading) {
-  return <PageContainer><PageLoadingSpinner /></PageContainer>;
-}
-```
-
-### Files to Update (gradual migration)
-Priority pages for first migration:
-- `src/pages/Profile.tsx` (4 instances)
-- `src/pages/KPIs.tsx` (1 instance)  
-- `src/pages/Sprints.tsx`
-- `src/pages/CampaignsLog.tsx`
-
-### Safety Check
-- New component, no existing code affected until migrated
-- Migration is opt-in per page
-- Maintains exact visual output
-
----
-
-## Implementation Order
-
-| Phase | Risk Level | Files Changed | Estimated Impact |
-|-------|------------|---------------|------------------|
-| Phase 1: Remove console.logs | Low | ~12 files | Security improvement, no functional change |
-| Phase 2: Breadcrumbs | Low | 1 file | UX improvement, additive only |
-| Phase 3: Prefetching | Low | 2-3 files | Performance improvement, fire-and-forget |
-| Phase 4: LpPlanner layout | Medium | 1 file | Visual consistency, needs visual QA |
-| Phase 5: LoadingSpinner | Low | New + gradual | Maintainability, opt-in migration |
-
----
-
-## Testing Checklist
-
-### Phase 1 (Console Logs)
-- [ ] Verify no console output in production build
-- [ ] Verify MFA flow still works (setup, verify, logout)
-- [ ] Verify error toasts still appear for failed operations
-
-### Phase 2 (Breadcrumbs)
-- [ ] Navigate to all sidebar routes - verify breadcrumb appears
-- [ ] Check nested routes (/admin/users, /ads/lp) show correct label
-
-### Phase 3 (Prefetching)
-- [ ] Open Network tab, hover over KPIs - verify prefetch request fires
-- [ ] Navigate to KPIs - verify instant load (no spinner flash)
-
-### Phase 4 (LpPlanner)
-- [ ] Verify split-pane layout renders correctly
-- [ ] Verify canvas interactions work (drag, zoom, edit)
-- [ ] Verify responsive behavior on narrow screens
-
-### Phase 5 (LoadingSpinner)
-- [ ] Verify spinner renders identically to current pattern
-- [ ] Verify optional message displays correctly
+1. **URL Validation**: All LP buttons use try-catch URL validation to prevent crashes from malformed database strings
+2. **Confirmation Dialogs**: All "Clear All" actions require explicit confirmation via AlertDialog
+3. **Admin-Only Bulk Delete**: Only admins can clear all comments to prevent accidental data loss
+4. **Individual Delete**: Users can only delete their own comments (enforced in UI and can be backed by RLS)
+5. **Query Invalidation**: All delete operations properly invalidate relevant queries to ensure UI stays in sync
