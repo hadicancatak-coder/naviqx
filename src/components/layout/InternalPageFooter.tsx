@@ -12,7 +12,7 @@ export function InternalPageFooter({ className }: InternalPageFooterProps) {
   return (
     <footer className={cn("py-6 text-center", className)}>
       <p className="text-metadata text-muted-foreground">
-        © 2025 Naviqx • CFI Performance Marketing • Internal Use Only
+        © 2026 Naviqx • CFI Performance Marketing • Internal Use Only
       </p>
     </footer>
   );
