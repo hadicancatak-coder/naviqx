@@ -77,8 +77,46 @@ export const useEntityComments = () => {
     },
   });
 
+  // Delete single comment
+  const deleteComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { error } = await supabase
+        .from("entity_comments")
+        .delete()
+        .eq("id", commentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
+      toast.success("Comment deleted");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete comment");
+    },
+  });
+
+  // Clear all comments for an entity
+  const clearAllEntityComments = useMutation({
+    mutationFn: async (entityName: string) => {
+      const { error } = await supabase
+        .from("entity_comments")
+        .delete()
+        .eq("entity", entityName);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["entity-comments"] });
+      toast.success("All entity comments cleared");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to clear comments");
+    },
+  });
+
   return {
     useComments,
     addComment,
+    deleteComment,
+    clearAllEntityComments,
   };
 };

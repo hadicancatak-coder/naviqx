@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Trash2 } from "lucide-react";
 import { useCampaignComments } from "@/hooks/useCampaignComments";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
 
@@ -15,8 +17,10 @@ interface CampaignCommentsProps {
 
 export function CampaignComments({ campaignId }: CampaignCommentsProps) {
   const [newComment, setNewComment] = useState("");
-  const { useUtmCampaignComments, addUtmCampaignComment } = useCampaignComments();
+  const { useUtmCampaignComments, addUtmCampaignComment, deleteUtmCampaignComment } = useCampaignComments();
   const { data: comments = [], isLoading } = useUtmCampaignComments(campaignId);
+  const { user } = useAuth();
+  const { isAdmin } = useUserRole();
 
   const handleSubmit = () => {
     if (!newComment.trim()) return;
@@ -48,7 +52,7 @@ export function CampaignComments({ campaignId }: CampaignCommentsProps) {
           ) : (
             <div className="space-y-md">
               {comments.map((comment: any) => (
-                <div key={comment.id} className="border-b pb-sm last:border-0">
+                <div key={comment.id} className="border-b pb-sm last:border-0 group">
                   <div className="flex items-start justify-between mb-xs">
                     <div className="flex flex-col gap-xs">
                       <span className="font-medium text-body-sm">{comment.author_name}</span>
@@ -63,9 +67,22 @@ export function CampaignComments({ campaignId }: CampaignCommentsProps) {
                         </Badge>
                       )}
                     </div>
-                    <span className="text-metadata text-muted-foreground">
-                      {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
-                    </span>
+                    <div className="flex items-center gap-sm">
+                      <span className="text-metadata text-muted-foreground">
+                        {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
+                      </span>
+                      {/* Delete button - for own comments or admin */}
+                      {(user?.id === comment.author_id || isAdmin) && (
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => deleteUtmCampaignComment.mutate(comment.id)}
+                          className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <CommentText 
                     text={comment.comment_text}

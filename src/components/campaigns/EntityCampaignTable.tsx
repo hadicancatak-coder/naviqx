@@ -3,7 +3,7 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, GripVertical, ImageIcon } from "lucide-react";
+import { MessageSquare, GripVertical, ImageIcon, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CampaignEntityTracking, useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useUtmCampaigns } from "@/hooks/useUtmCampaigns";
@@ -15,6 +15,7 @@ import { ENTITY_STATUS_CONFIG, EntityTrackingStatus } from "@/domain/campaigns";
 interface Campaign {
   id: string;
   name: string;
+  landing_page?: string;
 }
 
 interface CampaignTrackingCardProps {
@@ -119,6 +120,28 @@ function CampaignTrackingCard({
                 >
                   {tracking.status}
                 </Badge>
+                
+                {/* LP Button */}
+                {campaign.landing_page && (() => {
+                  try {
+                    const url = new URL(campaign.landing_page);
+                    if (!['http:', 'https:'].includes(url.protocol)) return null;
+                    return (
+                      <a
+                        href={campaign.landing_page}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-metadata text-primary hover:underline mt-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="size-3" />
+                        LP
+                      </a>
+                    );
+                  } catch {
+                    return null;
+                  }
+                })()}
               </div>
             </div>
           </CardContent>

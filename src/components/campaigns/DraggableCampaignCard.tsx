@@ -76,12 +76,19 @@ export function DraggableCampaignCard({ campaign, isDragging, onClick }: Draggab
           {/* Landing Page */}
           {campaign.landing_page && (() => {
             try {
-              const hostname = new URL(campaign.landing_page).hostname;
+              const url = new URL(campaign.landing_page);
+              if (!['http:', 'https:'].includes(url.protocol)) return null;
               return (
-                <div className="flex items-center gap-xs text-metadata text-muted-foreground">
+                <a
+                  href={campaign.landing_page}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-metadata text-primary hover:underline font-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <ExternalLink className="h-3 w-3" />
-                  <span className="truncate">{hostname}</span>
-                </div>
+                  View LP
+                </a>
               );
             } catch {
               return null;
