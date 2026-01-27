@@ -47,6 +47,8 @@ export function useRichTextEditor({
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-primary underline cursor-pointer hover:text-primary/80',
+          target: '_blank',
+          rel: 'noopener noreferrer',
         },
       }),
       Underline,

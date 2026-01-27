@@ -8,7 +8,9 @@ import { TaskDetailHeader } from "./TaskDetailHeader";
 import { TaskDetailFields } from "./TaskDetailFields";
 import { TaskDetailDescription } from "./TaskDetailDescription";
 import { TaskDetailSubtasks } from "./TaskDetailSubtasks";
-import { TaskDetailActivity } from "./TaskDetailActivity";
+import { TaskDetailComments } from "./TaskDetailComments";
+import { TaskDetailActivityLog } from "./TaskDetailActivityLog";
+import { TaskDetailDetails } from "./TaskDetailDetails";
 import { TaskDetailCommentInput } from "./TaskDetailCommentInput";
 
 // Loading skeleton
@@ -61,13 +63,33 @@ function TaskDetailContent({ onClose }: { onClose?: () => void }) {
       
       <ScrollArea className="flex-1">
         <div className="p-md space-y-md">
+          {/* Core Info: Title, Priority Card, Assignees */}
           <TaskDetailFields />
+          
           <Separator />
+          
+          {/* Description - Collapsible */}
           <TaskDetailDescription />
+          
           <Separator />
+          
+          {/* Subtasks */}
           <TaskDetailSubtasks />
+          
           <Separator />
-          <TaskDetailActivity />
+          
+          {/* Comments - Separated from Activity, expanded by default */}
+          <TaskDetailComments />
+          
+          <Separator />
+          
+          {/* Activity Log - Collapsed by default */}
+          <TaskDetailActivityLog />
+          
+          <Separator />
+          
+          {/* Details - Tags, Project, Sprint, Metadata - Collapsed by default */}
+          <TaskDetailDetails />
         </div>
       </ScrollArea>
       
