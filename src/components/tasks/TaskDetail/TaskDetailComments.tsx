@@ -2,13 +2,20 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronDown, ChevronRight, MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageCircle, Paperclip, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CommentText } from "@/components/CommentText";
 import { useAuth } from "@/hooks/useAuth";
 import { useTaskDetailContext } from "./TaskDetailContext";
+
+interface Attachment {
+  type: 'file' | 'link';
+  name: string;
+  url: string;
+  size_bytes?: number;
+}
 
 export function TaskDetailComments() {
   const { user } = useAuth();
@@ -39,6 +46,7 @@ export function TaskDetailComments() {
           <div className="space-y-sm">
             {comments.map((comment) => {
               const isCurrentUser = comment.author?.user_id === user?.id;
+              const attachments: Attachment[] = comment.attachments || [];
               
               return (
                 <div 
@@ -68,6 +76,34 @@ export function TaskDetailComments() {
                         profiles={users}
                         inverted={isCurrentUser}
                       />
+
+                      {/* Attachments */}
+                      {attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-xs mt-xs">
+                          {attachments.map((att, i) => (
+                            <a
+                              key={i}
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "inline-flex items-center gap-xs px-sm py-xs rounded-md text-metadata transition-colors",
+                                isCurrentUser 
+                                  ? "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground"
+                                  : "bg-muted hover:bg-muted/80 text-foreground",
+                                att.type === 'file' && "border border-border/50"
+                              )}
+                            >
+                              {att.type === 'file' ? (
+                                <Paperclip className="h-3 w-3" />
+                              ) : (
+                                <ExternalLink className="h-3 w-3" />
+                              )}
+                              <span className="truncate max-w-[120px]">{att.name}</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <span className="text-metadata text-muted-foreground mt-xs">
                       {format(new Date(comment.created_at), "MMM d, h:mm a")}

@@ -1128,6 +1128,7 @@ export type Database = {
       }
       comments: {
         Row: {
+          attachments: Json | null
           author_id: string
           body: string
           created_at: string
@@ -1135,6 +1136,7 @@ export type Database = {
           task_id: string
         }
         Insert: {
+          attachments?: Json | null
           author_id: string
           body: string
           created_at?: string
@@ -1142,6 +1144,7 @@ export type Database = {
           task_id: string
         }
         Update: {
+          attachments?: Json | null
           author_id?: string
           body?: string
           created_at?: string

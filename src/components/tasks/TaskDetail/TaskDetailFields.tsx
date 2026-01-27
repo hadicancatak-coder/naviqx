@@ -73,7 +73,7 @@ export function TaskDetailFields() {
         ) : (
           <h2 
             className={cn(
-              "text-heading-md font-semibold cursor-text hover:bg-muted/50 rounded-lg px-1 -mx-1 py-0.5 transition-smooth",
+              "text-heading-lg font-semibold cursor-text hover:bg-muted/50 rounded-lg px-1 -mx-1 py-0.5 transition-smooth",
               isCompleted && "line-through text-muted-foreground"
             )}
             onClick={() => setIsEditingTitle(true)}

@@ -3,7 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks, Link2 as LinkIcon } from "lucide-react";
+import { MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, GripVertical, ExternalLink, RotateCcw, ListChecks, Link2 as LinkIcon, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -250,7 +250,13 @@ export function TaskRow({
         </Badge>
       )}
 
-      {/* Badges (subtasks, recurring, external, stale, dependencies) */}
+      {/* Badges (comments, subtasks, recurring, external, stale, dependencies) */}
+      {task.comments_count > 0 && !compact && (
+        <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
+          <MessageCircle className="h-2.5 w-2.5 mr-0.5" />
+          {task.comments_count}
+        </Badge>
+      )}
       {subtaskCount > 0 && !compact && (
         <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-muted border-border text-muted-foreground flex-shrink-0 rounded-full">
           <ListChecks className="h-2.5 w-2.5 mr-0.5" />
