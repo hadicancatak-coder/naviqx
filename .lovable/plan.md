@@ -1,204 +1,128 @@
 
-# Site-Wide Footer Audit & Standardization Plan
+# External Review Page - Layout Expansion Plan
 
-## Current State Analysis
+## Problem Analysis
 
-### Footer Implementations Found
+The current layout has these issues:
 
-| Page | Current Footer | Issue |
-|------|---------------|-------|
-| **External/Public Pages** |||
-| `CampaignReview.tsx` | `ExternalPageFooter` | Correct |
-| `KnowledgePublic.tsx` | `ExternalPageFooter` | Correct |
-| `LpMapPublic.tsx` | `ExternalPageFooter` | Correct |
-| `ProjectsPublic.tsx` | `ExternalPageFooter` | Correct |
-| `CampaignsLogExternal.tsx` | Redirects to CampaignReview | OK (deprecated) |
-| **Authentication Flow** |||
-| `Auth.tsx` | Hardcoded: "CFI Performance Marketing • Secure Access" | Missing year, missing Naviqx |
-| `MfaSetup.tsx` | No footer | Missing entirely |
-| `MfaVerify.tsx` | No footer | Missing entirely |
-| **Internal Pages** |||
-| `About.tsx` | Hardcoded: "© 2025 Naviqx. All rights reserved." | Inconsistent style |
-| `HowTo.tsx` | No footer | Missing entirely |
-| `NotFound.tsx` | No footer | Missing entirely |
-| `Layout.tsx` (global) | No footer | Missing for all internal pages |
+1. **Narrow grid columns**: Cards are in a `grid-cols-4` layout, so when expanded, the version gallery is crammed into ~25% of the screen width
+2. **Nested content**: The `ExternalVersionGallery` with its side-by-side image + comments layout is inside the card, but has no room to breathe
+3. **Wasted space**: 75% of the screen is empty when viewing campaign details
+4. **Not scalable**: With many campaigns, the narrow cards don't show enough detail
 
-### Key Problems Identified
+## Proposed Solution: Master-Detail Layout
 
-1. **Missing "© 2025 Naviqx" branding** - The `ExternalPageFooter` component does NOT include the year or copyright notice you requested
-2. **Inconsistent footer patterns** - 3 different footer styles across the app
-3. **No global internal footer** - Internal authenticated pages have no footer at all
-4. **Auth flow lacks branding** - Login and MFA pages don't show the Naviqx brand
+When a campaign is expanded, it should break out of the grid and display in a full-width detail panel below the grid header. This is the iOS-style "selected item" pattern.
 
----
-
-## Proposed Architecture
-
-### Create Two Standardized Footer Components
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    EXTERNAL PAGE FOOTER                          │
-│  (For public-facing pages: CampaignReview, KnowledgePublic, etc)│
-├─────────────────────────────────────────────────────────────────┤
-│  © 2025 Naviqx. All rights reserved.                            │
-│  ™ Proudly presented by the Performance Marketing Team,         │
-│    CFI Financial Group.                                          │
-│  This asset has been designed and developed internally...        │
-│  Confidential material — for internal circulation only.          │
-│  Unauthorized distribution or third-party sharing is prohibited. │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                    INTERNAL PAGE FOOTER                          │
-│  (For authenticated pages + auth flow: Dashboard, Tasks, etc.)  │
-├─────────────────────────────────────────────────────────────────┤
-│  © 2025 Naviqx                                                   │
-│  CFI Performance Marketing • Internal Use Only                   │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                     AUTH PAGE FOOTER                             │
-│  (Compact version for Login, MFA Setup, MFA Verify)             │
-├─────────────────────────────────────────────────────────────────┤
-│  © 2025 Naviqx • CFI Performance Marketing                       │
-└─────────────────────────────────────────────────────────────────┘
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Header: Campaign Review • Entity • Badge                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  [Search] [Grid/List] [Sort]                       [X campaigns]    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐        │
+│  │ Card │  │ Card │  │ Card │  │ Card │  │ Card │  │ Card │        │
+│  │  1   │  │  2   │  │ GOLD │  │  4   │  │  5   │  │  6   │        │
+│  │      │  │      │  │(sel) │  │      │  │      │  │      │        │
+│  └──────┘  └──────┘  └──────┘  └──────┘  └──────┘  └──────┘        │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                    EXPANDED DETAIL PANEL                        ││
+│  │  ┌─────────────────────────────────────────────────────────────┐││
+│  │  │ Campaign Name: Gold                    [LP] [Close X]       │││
+│  │  └─────────────────────────────────────────────────────────────┘││
+│  │                                                                  ││
+│  │  Version Tabs: [v1] [v2] [v3]                                   ││
+│  │                                                                  ││
+│  │  ┌──────────────────────────┐  ┌───────────────────────────────┐││
+│  │  │                          │  │ Feedback (2)                  │││
+│  │  │      Large Preview       │  │ ┌──────────────────────────┐  │││
+│  │  │        (500px+)          │  │ │ User: "TEST AHA"         │  │││
+│  │  │                          │  │ └──────────────────────────┘  │││
+│  │  │                          │  │ ┌──────────────────────────┐  │││
+│  │  │                          │  │ │ User: "Another comment"  │  │││
+│  │  │                          │  │ └──────────────────────────┘  │││
+│  │  │   Click to expand        │  │                               │││
+│  │  │                          │  │ Add Feedback                  │││
+│  │  │                          │  │ [                          ]  │││
+│  │  │                          │  │ [Submit Feedback]             │││
+│  │  └──────────────────────────┘  └───────────────────────────────┘││
+│  │  Jan 22, 11:21 AM • "January 26 version - USPs"                 ││
+│  └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │  General Feedback for Entity                                    ││
+│  └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+│  Footer: © 2025 Naviqx                                              │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
----
+## Technical Implementation
 
-## Implementation Plan
+### Step 1: Modify ExternalCampaignCard
+- **Remove** the `CollapsibleContent` from inside the card
+- Card becomes a simple clickable thumbnail that sets `expandedCampaignId`
+- Selected card gets a visual indicator (ring, glow, or checkmark)
 
-### Step 1: Update ExternalPageFooter Component
-Add the "© 2025 Naviqx" branding line to the existing component:
+### Step 2: Create ExternalCampaignDetailPanel Component
+New component that renders the full-width detail view:
+- Header with campaign name, LP link, and close button
+- Full-width `ExternalVersionGallery` with proper breathing room
+- Appears BELOW the entire grid when a campaign is selected
 
-**File:** `src/components/layout/ExternalPageFooter.tsx`
+### Step 3: Update CampaignReview.tsx Layout
+```tsx
+{/* Campaign Grid - always visible */}
+<ExternalCampaignGrid
+  campaigns={sortedCampaigns}
+  versions={versions}
+  comments={existingComments}
+  expandedCampaignId={expandedCampaignId}
+  onToggleExpand={(id) => setExpandedCampaignId(prev => prev === id ? null : id)}
+/>
 
-```typescript
-export function ExternalPageFooter({ className }: ExternalPageFooterProps) {
-  return (
-    <footer className={cn("border-t border-border bg-card/80 backdrop-blur-sm mt-12", className)}>
-      <div className="max-w-5xl mx-auto px-6 py-8 text-center space-y-3">
-        {/* NEW: Add copyright line */}
-        <p className="text-body-sm font-semibold text-foreground">
-          © 2025 Naviqx. All rights reserved.
-        </p>
-        <p className="text-body-sm text-foreground">
-          ™ Proudly presented by the Performance Marketing Team, CFI Financial Group.
-        </p>
-        <div className="space-y-1">
-          <p className="text-metadata text-muted-foreground">
-            This asset has been designed and developed internally using proprietary AI-assisted workflows.
-          </p>
-          <p className="text-metadata text-muted-foreground font-medium">
-            Confidential material — for internal circulation only.
-          </p>
-          <p className="text-metadata text-destructive-text">
-            Unauthorized distribution or third-party sharing is strictly prohibited.
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-}
+{/* Detail Panel - appears when campaign selected */}
+{expandedCampaignId && (
+  <ExternalCampaignDetailPanel
+    campaign={sortedCampaigns.find(c => c.id === expandedCampaignId)}
+    versions={versions.filter(v => v.utm_campaign_id === expandedCampaignId)}
+    comments={existingComments}
+    onClose={() => setExpandedCampaignId(null)}
+    onSubmitFeedback={handleCommentSubmit}
+    submitting={submitting}
+    commentInputs={comments}
+    onCommentChange={(vId, val) => setComments({...comments, [vId]: val})}
+  />
+)}
 ```
 
-**Impact:** Automatically propagates to all 4 public pages already using this component.
+### Step 4: Improve Grid Responsiveness
+- Keep the 4-column grid for campaign overview
+- Make cards more compact (smaller thumbnails: aspect-[3/2] instead of [4/3])
+- Show campaign name, version count, comment count prominently
+- Remove expanded content from cards entirely
 
----
+### Step 5: Update ExternalVersionGallery for Detail Panel
+- Increase image max height from 400px to 500px+
+- Use full width for the 2-column layout (image left, comments right)
+- Add more padding and breathing room
 
-### Step 2: Create InternalPageFooter Component
-Create a new minimal footer for authenticated internal pages.
+## Files to Modify
 
-**File:** `src/components/layout/InternalPageFooter.tsx`
-
-```typescript
-export function InternalPageFooter({ className }: { className?: string }) {
-  return (
-    <footer className={cn("py-6 text-center", className)}>
-      <p className="text-metadata text-muted-foreground">
-        © 2025 Naviqx • CFI Performance Marketing • Internal Use Only
-      </p>
-    </footer>
-  );
-}
-```
-
----
-
-### Step 3: Create AuthPageFooter Component
-Create a compact footer for auth-flow pages.
-
-**File:** `src/components/layout/AuthPageFooter.tsx`
-
-```typescript
-export function AuthPageFooter({ className }: { className?: string }) {
-  return (
-    <div className={cn("mt-lg pt-md border-t border-border", className)}>
-      <p className="text-metadata text-center text-muted-foreground">
-        © 2025 Naviqx • CFI Performance Marketing
-      </p>
-    </div>
-  );
-}
-```
-
----
-
-### Step 4: Update Auth Flow Pages
-
-| Page | Change |
+| File | Change |
 |------|--------|
-| `Auth.tsx` | Replace hardcoded footer with `AuthPageFooter` |
-| `MfaSetup.tsx` | Add `AuthPageFooter` before closing `</GlassBackground>` |
-| `MfaVerify.tsx` | Add `AuthPageFooter` before closing `</GlassBackground>` |
+| `src/components/campaigns/ExternalCampaignCard.tsx` | Remove Collapsible expand, make it selection-only with visual indicator |
+| `src/components/campaigns/ExternalCampaignGrid.tsx` | Minor styling updates, pass selection state |
+| `src/components/campaigns/ExternalCampaignDetailPanel.tsx` | **Create new** - full-width detail panel with header and close button |
+| `src/pages/CampaignReview.tsx` | Restructure layout to show grid + detail panel below |
+| `src/components/campaigns/ExternalVersionGallery.tsx` | Increase image sizes and spacing for detail panel context |
 
----
+## Benefits
 
-### Step 5: Update Internal Pages
-
-| Page | Change |
-|------|--------|
-| `About.tsx` | Replace hardcoded footer with `InternalPageFooter` |
-| `HowTo.tsx` | Add `InternalPageFooter` at bottom |
-| `NotFound.tsx` | Add compact copyright below the card |
-
----
-
-### Step 6: Consider Global Internal Footer (Optional)
-For a truly site-wide internal footer, add `InternalPageFooter` to `Layout.tsx` so ALL authenticated pages automatically have it:
-
-**File:** `src/components/Layout.tsx`
-```typescript
-// At the bottom of the main content area, after <Outlet />
-<InternalPageFooter className="mt-auto" />
-```
-
-**Trade-off:** This adds a footer to every single page. Recommend discussing if this is desired or if it should remain per-page for internal content.
-
----
-
-## Summary of Changes
-
-| File | Action |
-|------|--------|
-| `src/components/layout/ExternalPageFooter.tsx` | Add "© 2025 Naviqx" line |
-| `src/components/layout/InternalPageFooter.tsx` | **Create new** |
-| `src/components/layout/AuthPageFooter.tsx` | **Create new** |
-| `src/pages/Auth.tsx` | Use `AuthPageFooter` |
-| `src/pages/MfaSetup.tsx` | Add `AuthPageFooter` |
-| `src/pages/MfaVerify.tsx` | Add `AuthPageFooter` |
-| `src/pages/About.tsx` | Use `InternalPageFooter` |
-| `src/pages/HowTo.tsx` | Add `InternalPageFooter` |
-| `src/pages/NotFound.tsx` | Add minimal copyright |
-| `src/components/Layout.tsx` | *Optional:* Add global `InternalPageFooter` |
-
----
-
-## Technical Notes
-
-- All footer components use semantic tokens (`text-foreground`, `text-muted-foreground`, `border-border`) for theme compatibility
-- All footer components are in `src/components/layout/` for organization
-- The year "2025" could be made dynamic with `new Date().getFullYear()` if desired
-- No changes to the 4 external public pages needed since they already use `ExternalPageFooter`
-
+1. **Full width for details**: When viewing a campaign, the image and feedback get proper space
+2. **Grid stays visible**: Users can still see all campaigns while one is expanded
+3. **Scalable**: Works well with 1 or 100 campaigns
+4. **Better UX**: Matches familiar patterns (iOS Photos, Finder, etc.)
+5. **Guide texts preserved**: All feedback forms and instructions remain intact
