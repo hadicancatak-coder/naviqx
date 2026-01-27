@@ -13,6 +13,9 @@ export function ExternalPageFooter({ className }: ExternalPageFooterProps) {
     <footer className={cn("border-t border-border bg-card/80 backdrop-blur-sm mt-12", className)}>
       <div className="max-w-5xl mx-auto px-6 py-8 text-center space-y-3">
         <p className="text-body-sm font-semibold text-foreground">
+          © 2025 Naviqx. All rights reserved.
+        </p>
+        <p className="text-body-sm text-foreground">
           ™ Proudly presented by the Performance Marketing Team, CFI Financial Group.
         </p>
         <div className="space-y-1">

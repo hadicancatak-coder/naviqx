@@ -11,6 +11,7 @@ import { z } from "zod";
 import { authPasswordSchema } from "@/lib/validationSchemas";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { GlassBackground } from "@/components/layout/GlassBackground";
+import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
 
 const authSchema = z.object({
   email: z.string()
@@ -229,11 +230,7 @@ export default function Auth() {
         </div>
 
         {/* Footer */}
-        <div className="mt-lg pt-md border-t border-border">
-          <p className="text-metadata text-center text-muted-foreground">
-            CFI Performance Marketing • Secure Access
-          </p>
-        </div>
+        <AuthPageFooter />
       </Card>
     </GlassBackground>
   );

@@ -11,6 +11,7 @@ import QRCode from "qrcode";
 import { useAuth } from "@/hooks/useAuth";
 import { MfaSetupGuide } from "@/components/MfaSetupGuide";
 import { GlassBackground } from "@/components/layout/GlassBackground";
+import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
 
 export default function MfaSetup() {
   const [loading, setLoading] = useState(true);
@@ -170,6 +171,8 @@ export default function MfaSetup() {
           <Button onClick={finishSetup} className="w-full">
             I've Saved My Codes
           </Button>
+
+          <AuthPageFooter />
         </Card>
       </GlassBackground>
     );
@@ -249,6 +252,8 @@ export default function MfaSetup() {
             )}
           </Button>
         </div>
+
+        <AuthPageFooter />
       </Card>
     </GlassBackground>
   );
