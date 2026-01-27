@@ -24,10 +24,16 @@ export function TaskDetailCommentInput() {
     isSubmittingComment, 
     addComment, 
     users,
-    selectedAssignees,
+    realtimeAssignees,
     pendingAttachments,
     setPendingAttachments
   } = useTaskDetailContext();
+
+  // Map realtime assignees to their auth user_ids for @all functionality
+  // realtimeAssignees contains profile data with user_id (auth user ID)
+  const assigneeUserIds = realtimeAssignees
+    .map(a => a.user_id)
+    .filter((id): id is string => Boolean(id));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
@@ -91,7 +97,7 @@ export function TaskDetailCommentInput() {
           value={newComment}
           onChange={setNewComment}
           users={users}
-          assigneeIds={selectedAssignees}
+          assigneeIds={assigneeUserIds}
           placeholder="Write a comment... Use @ to mention"
           minRows={2}
           maxRows={3}
