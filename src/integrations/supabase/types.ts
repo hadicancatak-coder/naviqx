@@ -1583,6 +1583,39 @@ export type Database = {
           },
         ]
       }
+      external_reviewer_sessions: {
+        Row: {
+          access_token: string | null
+          created_at: string | null
+          id: string
+          ip_address: string
+          page_type: string
+          reviewer_email: string
+          reviewer_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address: string
+          page_type: string
+          reviewer_email: string
+          reviewer_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string
+          page_type?: string
+          reviewer_email?: string
+          reviewer_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       gdn_target_items: {
         Row: {
           ads_txt_checked_at: string | null

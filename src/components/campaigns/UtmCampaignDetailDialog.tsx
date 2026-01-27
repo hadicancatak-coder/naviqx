@@ -228,7 +228,7 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
               <ScrollArea className="flex-1 px-lg py-md">
                 <div className="space-y-lg">
                   {/* Landing Page */}
-                  <Card className="p-md bg-card border-border">
+<Card className="p-md bg-card border-border">
                     <Label className="text-metadata text-muted-foreground">Landing Page</Label>
                     {isEditing ? (
                       <Input
@@ -238,42 +238,35 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
                         className="mt-sm bg-background"
                       />
                     ) : campaign.landing_page ? (
-                      (() => {
-                        // Validate URL before rendering link
-                        let isValidUrl = false;
-                        try {
-                          const url = new URL(campaign.landing_page);
-                          isValidUrl = ['http:', 'https:'].includes(url.protocol);
-                        } catch {
-                          isValidUrl = false;
-                        }
+                      <div className="flex items-center gap-sm mt-sm flex-wrap">
+                        {/* Prominent View LP Button */}
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => {
+                            const url = campaign.landing_page.startsWith('http') 
+                              ? campaign.landing_page 
+                              : `https://${campaign.landing_page}`;
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View LP
+                        </Button>
                         
-                        return isValidUrl ? (
-                          <div className="flex items-center gap-sm mt-sm">
-                            <a 
-                              href={campaign.landing_page} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-primary hover:underline flex items-center gap-1 text-body-sm break-all flex-1"
-                            >
-                              {campaign.landing_page}
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                            </a>
-                            <Button 
-                              variant="ghost" 
-                              size="icon-sm" 
-                              onClick={handleCopyLandingPage}
-                              className="flex-shrink-0"
-                            >
-                              {copied ? <Check className="text-success" /> : <Copy />}
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="text-warning-text mt-sm text-body-sm">
-                            Invalid URL: {campaign.landing_page}
-                          </p>
-                        );
-                      })()
+                        {/* URL text + copy button */}
+                        <span className="text-body-sm text-muted-foreground break-all flex-1">
+                          {campaign.landing_page}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm" 
+                          onClick={handleCopyLandingPage}
+                          className="flex-shrink-0"
+                        >
+                          {copied ? <Check className="text-success" /> : <Copy />}
+                        </Button>
+                      </div>
                     ) : (
                       <p className="text-muted-foreground mt-sm text-body-sm">Not set</p>
                     )}
