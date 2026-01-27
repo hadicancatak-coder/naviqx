@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ExternalLink, Image, FileText, MessageSquare, ChevronDown, ChevronUp, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useLpMapByToken, LpMapSection } from "@/hooks/useLpMaps";
 import { useLpExternalComments, useAddLpComment, LpExternalComment } from "@/hooks/useLpComments";
+import { useReviewerSession } from "@/hooks/useReviewerSession";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
@@ -224,23 +225,34 @@ const SectionCard = ({
 
 const LpMapPublic = () => {
   const { token } = useParams<{ token: string }>();
-  const [reviewerName, setReviewerName] = useState("");
-  const [reviewerEmail, setReviewerEmail] = useState("");
-  const [hasIdentified, setHasIdentified] = useState(false);
   const [overallComment, setOverallComment] = useState("");
+
+  // Use the reviewer session hook for IP-based persistence
+  const { 
+    session: storedSession, 
+    loading: sessionLoading, 
+    saveSession, 
+    hasSession,
+    reviewerName,
+    reviewerEmail 
+  } = useReviewerSession('lp_map', token);
+  
+  // Local state for the identification form
+  const [tempName, setTempName] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
 
   const { data: map, isLoading, error } = useLpMapByToken(token || null);
   const { data: comments = [] } = useLpExternalComments(map?.id || null);
   const addComment = useAddLpComment();
 
-  const handleIdentify = () => {
-    if (reviewerName.trim() && reviewerEmail.trim()) {
-      setHasIdentified(true);
+  const handleIdentify = async () => {
+    if (tempName.trim() && tempEmail.trim()) {
+      await saveSession(tempName.trim(), tempEmail.trim());
     }
   };
 
   const handleAddComment = (sectionId: string | null, text: string) => {
-    if (!map || !token) return;
+    if (!map || !token || !hasSession) return;
     addComment.mutate({
       mapId: map.id,
       sectionId: sectionId || undefined,
@@ -257,7 +269,7 @@ const LpMapPublic = () => {
     setOverallComment("");
   };
 
-  if (isLoading) {
+  if (isLoading || sessionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -311,44 +323,41 @@ const LpMapPublic = () => {
           {map.description && (
             <p className="text-muted-foreground mt-2">{map.description}</p>
           )}
+          {hasSession && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Reviewing as {reviewerName}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Reviewer Identification */}
-        {!hasIdentified && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-lg">Identify Yourself</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Please enter your details to leave comments on this LP map.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={reviewerName}
-                    onChange={(e) => setReviewerName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={reviewerEmail}
-                    onChange={(e) => setReviewerEmail(e.target.value)}
-                    placeholder="your@email.com"
-                  />
-                </div>
+        {/* Inline Identification Bar - shown when not identified */}
+        {!hasSession && (
+          <Card className="mb-md border-primary/30">
+            <CardContent className="py-sm px-md">
+              <div className="flex items-center gap-md flex-wrap">
+                <span className="text-body-sm text-muted-foreground">To leave comments:</span>
+                <Input
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-40 h-8"
+                />
+                <Input
+                  value={tempEmail}
+                  onChange={(e) => setTempEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-48 h-8"
+                />
+                <Button 
+                  size="sm" 
+                  onClick={handleIdentify} 
+                  disabled={!tempName.trim() || !tempEmail.trim()}
+                >
+                  Continue
+                </Button>
               </div>
-              <Button onClick={handleIdentify} disabled={!reviewerName.trim() || !reviewerEmail.trim()}>
-                Continue
-              </Button>
             </CardContent>
           </Card>
         )}
@@ -378,7 +387,7 @@ const LpMapPublic = () => {
         </div>
 
         {/* Overall Comments */}
-        {hasIdentified && (
+        {hasSession && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Overall Feedback</CardTitle>
