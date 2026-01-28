@@ -3,12 +3,14 @@
  * Input:  https://campaigns.cfifinancial.com/ar/jo/shine-with-gold-4
  * Output: https://campaigns.cfifinancial.com/shine-with-gold-4
  */
+import { normalizeUrl } from '@/lib/urlHelpers';
+
 export const normalizeLpUrl = (url: string): string => {
   const languageCodes = ['en', 'ar', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'zh', 'ja', 'ko', 'vi', 'th'];
   const countryCodes = ['jo', 'lb', 'mu', 'ae', 'uae', 'kw', 'sa', 'bh', 'om', 'qa', 'eg', 'iq', 'uk', 'cy', 'vu', 'ps', 'za', 'vn', 'az'];
   
   try {
-    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const urlObj = new URL(normalizeUrl(url));
     const pathParts = urlObj.pathname.split('/').filter(Boolean);
     
     // Remove language and country segments
@@ -116,8 +118,7 @@ export const generateUtmContent = (
   // Strip query parameters and hash from URL before processing
   let cleanUrl = lpUrl;
   try {
-    const urlWithProtocol = lpUrl.startsWith('http') ? lpUrl : `https://${lpUrl}`;
-    const urlObj = new URL(urlWithProtocol);
+    const urlObj = new URL(normalizeUrl(lpUrl));
     cleanUrl = urlObj.pathname; // Use only the pathname (no query or hash)
   } catch (e) {
     // If URL parsing fails, try to remove query string manually
@@ -218,9 +219,7 @@ export const buildUtmUrl = (params: {
       throw new Error('Invalid base URL');
     }
     
-    const cleanUrl = params.baseUrl.trim();
-    const urlWithProtocol = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-    const url = new URL(urlWithProtocol);
+    const url = new URL(normalizeUrl(params.baseUrl));
     
     // Remove any existing UTM parameters before adding new ones
     url.searchParams.delete('utm_source');

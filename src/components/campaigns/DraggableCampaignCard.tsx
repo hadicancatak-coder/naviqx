@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normalizeUrl } from "@/lib/urlHelpers";
 
 interface Campaign {
   id: string;
@@ -76,7 +77,7 @@ export function DraggableCampaignCard({ campaign, isDragging, onClick }: Draggab
           {/* Landing Page */}
           {campaign.landing_page && (
             <a
-              href={campaign.landing_page.startsWith('http') ? campaign.landing_page : `https://${campaign.landing_page}`}
+              href={normalizeUrl(campaign.landing_page)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-metadata text-primary hover:underline font-medium"

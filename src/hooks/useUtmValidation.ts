@@ -1,3 +1,5 @@
+import { normalizeUrl } from '@/lib/urlHelpers';
+
 export interface ValidationResult {
   isValid: boolean;
   warnings: string[];
@@ -32,9 +34,7 @@ export const validateUtmParameters = (params: {
   // Validate URL format
   if (params.base_url) {
     try {
-      const cleanUrl = params.base_url.trim();
-      const urlWithProtocol = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-      new URL(urlWithProtocol);
+      new URL(normalizeUrl(params.base_url));
     } catch {
       errors.push("Base URL is not a valid URL format");
     }
@@ -108,9 +108,7 @@ export const buildUtmUrl = (params: {
       throw new Error('Invalid base URL');
     }
     
-    const cleanUrl = params.base_url.trim();
-    const urlWithProtocol = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-    const url = new URL(urlWithProtocol);
+    const url = new URL(normalizeUrl(params.base_url));
     
     // Remove any existing UTM parameters before adding new ones
     url.searchParams.delete('utm_source');

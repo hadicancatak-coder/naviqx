@@ -1,4 +1,9 @@
 /**
+ * Comment utilities - URL helpers are centralized in @/lib/urlHelpers
+ * This file only contains comment-specific utilities
+ */
+
+/**
  * Check if a URL or filename represents an image file
  */
 export function isImageUrl(urlOrName: string): boolean {
@@ -30,3 +35,6 @@ export function formatFileSize(bytes?: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+// Re-export normalizeUrl from centralized location for backwards compatibility
+export { normalizeUrl } from '@/lib/urlHelpers';
