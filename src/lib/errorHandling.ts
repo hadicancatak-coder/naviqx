@@ -36,11 +36,14 @@ export const safeAsync = async <T>(
 
 /**
  * Safe URL constructor that validates and handles errors
+ * Note: Uses normalizeUrl from urlHelpers for consistent URL handling
  */
 export const safeURL = (url: string, base?: string): URL | null => {
   try {
-    // Ensure URL has protocol
-    const urlWithProtocol = url.trim().startsWith('http') ? url : `https://${url}`;
+    // Import normalizeUrl inline to avoid circular dependency
+    const trimmed = url.trim();
+    const urlWithProtocol = trimmed.match(/^https?:\/\//i) ? trimmed : 
+      (trimmed.includes('://') || trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) ? trimmed : `https://${trimmed}`;
     return new URL(urlWithProtocol, base);
   } catch (error: any) {
     logger.error("Invalid URL:", { url, error });

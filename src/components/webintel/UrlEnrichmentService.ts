@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger";
+import { normalizeUrl } from "@/lib/urlHelpers";
 
 export interface EnrichmentResult {
   category: string;
@@ -82,9 +83,7 @@ export const enrichUrl = async (url: string): Promise<EnrichmentResult> => {
       throw new Error('Invalid URL: URL cannot be empty');
     }
     
-    const cleanUrl = url.trim();
-    const urlWithProtocol = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-    const urlObj = new URL(urlWithProtocol);
+    const urlObj = new URL(normalizeUrl(url));
     const domain = urlObj.hostname;
     
     const category = detectCategory(domain, url);

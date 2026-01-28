@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Sparkles } from "lucide-react";
+import { normalizeUrl } from "@/lib/urlHelpers";
 import { AlertBanner } from "@/components/layout/AlertBanner";
 import { EnhancedMultiSelect } from "./EnhancedMultiSelect";
 import { GeneratedLinksPreview } from "./GeneratedLinksPreview";
@@ -59,8 +60,7 @@ export function UtmBuilder() {
     if (!url.trim()) return url;
     
     try {
-      const urlWithProtocol = url.startsWith('http') ? url : `https://${url}`;
-      const urlObj = new URL(urlWithProtocol);
+      const urlObj = new URL(normalizeUrl(url));
       
       // Remove all UTM parameters
       urlObj.searchParams.delete('utm_source');

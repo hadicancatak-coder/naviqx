@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { normalizeUrl } from '@/lib/urlHelpers';
 
 export interface LPDetectionResult {
   country: string | null;
@@ -83,9 +84,7 @@ export function detectLPMetadata(url: string): LPDetectionResult {
       throw new Error('Invalid URL: URL cannot be empty');
     }
     
-    const cleanUrl = url.trim();
-    const urlWithProtocol = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-    const urlObj = new URL(urlWithProtocol);
+    const urlObj = new URL(normalizeUrl(url));
     domain = urlObj.hostname;
     path = urlObj.pathname;
   } catch (e) {
