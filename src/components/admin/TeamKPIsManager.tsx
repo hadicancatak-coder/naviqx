@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Target, Edit, Search, TrendingUp, Plus, Trash2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CardSkeleton } from "@/components/skeletons";
 import {
   Dialog,
   DialogContent,
@@ -151,9 +151,7 @@ export function TeamKPIsManager() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-20 w-full" />
-          ))}
+          <CardSkeleton count={3} />
         </CardContent>
       </Card>
     );

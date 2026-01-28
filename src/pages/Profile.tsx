@@ -22,6 +22,7 @@ import { useKPIs } from "@/hooks/useKPIs";
 import { Progress } from "@/components/ui/progress";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { LoadingState } from "@/components/layout/LoadingState";
 import { useProfile, useTeamMembers, useUserTasks } from "@/hooks/useProfileData";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -170,34 +171,24 @@ export default function Profile() {
   
   // Guard 1: Auth still loading
   if (authLoading) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </PageContainer>
-    );
+    return <LoadingState variant="section" withContainer />;
   }
 
   // Guard 2: Need current user but don't have it yet (visiting /profile without userId param)
   if (!userId && !user) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </PageContainer>
-    );
+    return <LoadingState variant="section" withContainer />;
   }
 
   // Guard 3: No target user ID (truly not logged in on /profile route)
   if (!targetUserId) {
     return (
       <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">Please log in to view profiles.</p>
-          <Button onClick={() => navigate("/auth")} variant="outline">Log In</Button>
-        </div>
+        <LoadingState
+          variant="section"
+          isError
+          errorMessage="Please log in to view profiles."
+          onBack={() => navigate("/auth")}
+        />
       </PageContainer>
     );
   }
@@ -208,36 +199,32 @@ export default function Profile() {
   const isActuallyFetching = fetchStatus === 'fetching';
   
   if (isActuallyFetching && !profile) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </PageContainer>
-    );
+    return <LoadingState variant="section" withContainer />;
   }
 
   // Guard 5: Query completed with error
   if (profileError) {
     return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">Could not load profile.</p>
-          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
-        </div>
-      </PageContainer>
+      <LoadingState
+        variant="section"
+        withContainer
+        isError
+        errorMessage="Could not load profile."
+        onBack={() => navigate(-1)}
+      />
     );
   }
 
   // Guard 6: Query completed but no profile found
   if (!profile) {
     return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">Profile not found.</p>
-          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
-        </div>
-      </PageContainer>
+      <LoadingState
+        variant="section"
+        withContainer
+        isError
+        errorMessage="Profile not found."
+        onBack={() => navigate(-1)}
+      />
     );
   }
   
