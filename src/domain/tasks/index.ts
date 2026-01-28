@@ -7,6 +7,21 @@
 import { z } from 'zod';
 
 // =============================================================================
+// IMPORT FROM CONSTANTS - For local use in this file
+// =============================================================================
+
+import {
+  TaskStatusDB,
+  TaskStatusUI,
+  STATUS_UI_TO_DB,
+  STATUS_DB_TO_UI,
+  mapStatusToDb,
+  mapStatusToUi,
+  type TaskStatusDBType,
+  type TaskStatusUIType,
+} from './constants';
+
+// =============================================================================
 // RE-EXPORT FROM CONSTANTS - Single source of truth for status enums/mapping
 // =============================================================================
 
