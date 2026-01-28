@@ -41,9 +41,10 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // SECURITY: If MFA is not enabled but enrollment is required, force setup
-    if (!mfaEnabled && mfaEnrollmentRequired !== false) {
-      logger.debug('MFA not enabled but required, redirecting to setup');
+    // SECURITY: If MFA is explicitly disabled but enrollment is required, force setup
+    // Use === false to avoid redirecting when mfaEnabled is null (still loading)
+    if (mfaEnabled === false && mfaEnrollmentRequired !== false) {
+      logger.debug('MFA explicitly disabled but required, redirecting to setup');
       navigate("/mfa-setup");
       return;
     }
