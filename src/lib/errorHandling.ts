@@ -11,14 +11,15 @@ export const safeAsync = async <T>(
 ): Promise<T | null> => {
   try {
     return await fn();
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     logger.error("Safe async error:", error);
     
     errorLogger.logError({
       severity: 'warning',
       type: 'frontend',
-      message: errorMessage || error.message || 'An unexpected error occurred',
-      stack: error.stack,
+      message: errorMessage || err?.message || 'An unexpected error occurred',
+      stack: err?.stack,
       metadata: { error }
     });
 
@@ -45,13 +46,14 @@ export const safeURL = (url: string, base?: string): URL | null => {
     const urlWithProtocol = trimmed.match(/^https?:\/\//i) ? trimmed : 
       (trimmed.includes('://') || trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) ? trimmed : `https://${trimmed}`;
     return new URL(urlWithProtocol, base);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     logger.error("Invalid URL:", { url, error });
     errorLogger.logError({
       severity: 'warning',
       type: 'frontend',
       message: `Failed to construct URL: ${url}`,
-      stack: error.stack,
+      stack: err?.stack,
       metadata: { url, base }
     });
     return null;
@@ -68,9 +70,9 @@ export const safeMutate = async <T, V>(
     successMessage?: string;
     errorMessage?: string;
     onSuccess?: (data: T) => void;
-    onError?: (error: any) => void;
+    onError?: (error: unknown) => void;
   }
-): Promise<{ data: T | null; error: any | null }> => {
+): Promise<{ data: T | null; error: unknown | null }> => {
   try {
     const data = await mutateFn(variables);
     
@@ -84,18 +86,19 @@ export const safeMutate = async <T, V>(
     options?.onSuccess?.(data);
     
     return { data, error: null };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     logger.error("Mutation error:", error);
     
     errorLogger.logError({
       severity: 'warning',
       type: 'frontend',
-      message: options?.errorMessage || error.message || 'Mutation failed',
-      stack: error.stack,
+      message: options?.errorMessage || err?.message || 'Mutation failed',
+      stack: err?.stack,
       metadata: { variables, error }
     });
 
-    const errorMessage = options?.errorMessage || error.message || 'An unexpected error occurred';
+    const errorMessage = options?.errorMessage || err?.message || 'An unexpected error occurred';
     toast({
       title: "Error",
       description: errorMessage,
@@ -115,14 +118,15 @@ export const safePromise = <T>(
   promise: Promise<T>,
   errorMessage?: string
 ): Promise<T | null> => {
-  return promise.catch((error: any) => {
+  return promise.catch((error: unknown) => {
+    const err = error as Error;
     logger.error("Promise rejection:", error);
     
     errorLogger.logError({
       severity: 'warning',
       type: 'frontend',
-      message: errorMessage || error.message || 'Promise rejected',
-      stack: error.stack,
+      message: errorMessage || err?.message || 'Promise rejected',
+      stack: err?.stack,
       metadata: { error }
     });
 
@@ -133,6 +137,7 @@ export const safePromise = <T>(
 /**
  * Wrap a function with error boundary
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const withErrorBoundary = <T extends (...args: any[]) => any>(
   fn: T,
   errorMessage?: string
@@ -143,14 +148,15 @@ export const withErrorBoundary = <T extends (...args: any[]) => any>(
       
       // If result is a promise, wrap it
       if (result instanceof Promise) {
-        return result.catch((error: any) => {
+        return result.catch((error: unknown) => {
+          const err = error as Error;
           logger.error("Function error:", error);
           
           errorLogger.logError({
             severity: 'warning',
             type: 'frontend',
-            message: errorMessage || error.message || 'Function execution failed',
-            stack: error.stack,
+            message: errorMessage || err?.message || 'Function execution failed',
+            stack: err?.stack,
             metadata: { args, error }
           });
 
@@ -167,14 +173,15 @@ export const withErrorBoundary = <T extends (...args: any[]) => any>(
       }
       
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       logger.error("Function error:", error);
       
       errorLogger.logError({
         severity: 'critical',
         type: 'frontend',
-        message: errorMessage || error.message || 'Function execution failed',
-        stack: error.stack,
+        message: errorMessage || err?.message || 'Function execution failed',
+        stack: err?.stack,
         metadata: { args, error }
       });
 
@@ -194,9 +201,10 @@ export const withErrorBoundary = <T extends (...args: any[]) => any>(
 /**
  * Database error handler - provides user-friendly messages for common DB errors
  */
-export const handleDatabaseError = (error: any): string => {
-  const code = error?.code;
-  const message = error?.message || '';
+export const handleDatabaseError = (error: unknown): string => {
+  const err = error as { code?: string; message?: string };
+  const code = err?.code;
+  const message = err?.message || '';
 
   // PostgreSQL error codes
   const errorMessages: Record<string, string> = {
