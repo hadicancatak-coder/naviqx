@@ -57,7 +57,7 @@ export const LpMapSectionItem = ({
     >
       <div
         className={cn(
-          "flex items-center gap-3 p-4 cursor-pointer",
+          "flex items-center gap-3 p-md cursor-pointer",
           "hover:bg-card-hover transition-colors"
         )}
         onClick={onClick}
@@ -74,12 +74,12 @@ export const LpMapSectionItem = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium truncate">{section.name}</span>
-            <Badge variant="outline" className={cn("text-xs", typeColor)}>
+            <Badge variant="outline" className={cn("text-metadata", typeColor)}>
               {section.section_type}
             </Badge>
           </div>
 
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-md text-metadata text-muted-foreground">
             {section.sample_images.length > 0 && (
               <span className="flex items-center gap-1">
                 <Image className="h-3 w-3" />
@@ -161,10 +161,10 @@ export const LpMapSectionItem = ({
             {/* Brief */}
             {section.brief_content && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                <h4 className="text-metadata font-medium text-muted-foreground mb-2">
                   Brief / Instructions
                 </h4>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
+                <p className="text-body-sm text-foreground whitespace-pre-wrap">
                   {section.brief_content}
                 </p>
               </div>

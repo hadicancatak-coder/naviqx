@@ -142,8 +142,8 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+        <div className="space-y-md">
+          <div className="flex items-center justify-between p-md rounded-lg bg-muted/50">
             <div>
               <p className="font-medium">Multi-Factor Authentication</p>
               <p className="text-body-sm text-muted-foreground">
@@ -156,7 +156,7 @@ export default function Settings() {
             </Badge>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+          <div className="flex items-center justify-between p-md rounded-lg bg-muted/50">
             <div>
               <p className="font-medium">Email Domain Restriction</p>
               <p className="text-body-sm text-muted-foreground">

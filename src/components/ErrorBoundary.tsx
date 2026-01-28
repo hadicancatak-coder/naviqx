@@ -49,12 +49,12 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             </CardHeader>
             <CardContent className="space-y-md">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 An unexpected error occurred. This has been logged and will be reviewed.
               </p>
               {this.state.error && (
-                <div className="p-3 bg-muted rounded-md">
-                  <p className="text-xs font-mono text-muted-foreground">
+                <div className="p-sm bg-muted rounded-md">
+                  <p className="text-metadata font-mono text-muted-foreground">
                     {this.state.error.message}
                   </p>
                 </div>

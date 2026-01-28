@@ -89,10 +89,10 @@ export const LpSectionLibrary = ({
 
   return (
     <div className="h-full flex flex-col bg-card border-r border-border">
-      <div className="p-4 border-b border-border space-y-3">
+      <div className="p-md border-b border-border space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm">Section Library</h3>
-          <Button size="sm" onClick={onCreateSection} className="h-7 text-xs">
+          <h3 className="font-semibold text-body-sm">Section Library</h3>
+          <Button size="sm" onClick={onCreateSection} className="h-7 text-metadata">
             <Plus className="h-3 w-3 mr-1" />
             New
           </Button>

@@ -78,7 +78,7 @@ export function SearchAdPreview(props: SearchAdPreviewProps) {
             </div>
             
             {/* Headline (3 headlines joined with " | ") */}
-            <h3 className="text-xl text-primary hover:underline cursor-pointer font-normal">
+            <h3 className="text-heading-md text-primary hover:underline cursor-pointer font-normal">
               {activeHeadlines.length > 0 
                 ? activeHeadlines.join(' | ')
                 : 'Headline 1 | Headline 2 | Headline 3'}

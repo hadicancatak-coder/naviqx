@@ -191,7 +191,7 @@ export default function Knowledge() {
   if (isError) {
     return (
       <PageContainer>
-        <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <div className="flex flex-col items-center justify-center h-96 gap-md">
           <p className="text-muted-foreground">Could not load knowledge base.</p>
         </div>
       </PageContainer>

@@ -624,9 +624,9 @@ export default function UsersManagement() {
                 {resetLink ? (
                   <div className="space-y-3">
                     <p className="text-success font-medium">Password reset link generated!</p>
-                    <p className="text-sm">Share this link with the user. It will expire in 24 hours.</p>
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                      <code className="flex-1 text-xs break-all">{resetLink}</code>
+                    <p className="text-body-sm">Share this link with the user. It will expire in 24 hours.</p>
+                    <div className="flex items-center gap-2 p-sm bg-muted rounded-md">
+                      <code className="flex-1 text-metadata break-all">{resetLink}</code>
                       <Button 
                         variant="ghost" 
                         size="icon" 

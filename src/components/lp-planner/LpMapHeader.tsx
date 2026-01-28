@@ -51,15 +51,15 @@ export const LpMapHeader = ({ map, onRefresh }: LpMapHeaderProps) => {
   };
 
   return (
-    <div className="p-4 border-b border-border bg-card">
-      <div className="flex items-center justify-between gap-4">
+    <div className="p-md border-b border-border bg-card">
+      <div className="flex items-center justify-between gap-md">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {isEditing ? (
             <div className="flex items-center gap-2 flex-1">
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-9 text-lg font-semibold"
+                className="h-9 text-heading-sm font-semibold"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSave();
@@ -75,7 +75,7 @@ export const LpMapHeader = ({ map, onRefresh }: LpMapHeaderProps) => {
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-semibold truncate">{map.name}</h2>
+              <h2 className="text-heading-sm font-semibold truncate">{map.name}</h2>
               <Button
                 size="icon"
                 variant="ghost"
@@ -102,7 +102,7 @@ export const LpMapHeader = ({ map, onRefresh }: LpMapHeaderProps) => {
           </Select>
 
           {map.entity && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-metadata">
               {map.entity.name}
             </Badge>
           )}
@@ -119,7 +119,7 @@ export const LpMapHeader = ({ map, onRefresh }: LpMapHeaderProps) => {
       </div>
 
       {map.description && (
-        <p className="mt-2 text-sm text-muted-foreground">{map.description}</p>
+        <p className="mt-2 text-body-sm text-muted-foreground">{map.description}</p>
       )}
 
       <LpShareDialog

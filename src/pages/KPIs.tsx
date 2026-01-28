@@ -59,7 +59,7 @@ export default function KPIs() {
           title="My KPIs"
           description="Track your key performance indicators and goals"
         />
-        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-md">
           <p className="text-muted-foreground">Could not load KPIs.</p>
         </div>
       </PageContainer>

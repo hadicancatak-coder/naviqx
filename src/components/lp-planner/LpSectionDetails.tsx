@@ -44,16 +44,16 @@ export const LpSectionDetails = ({ section, onEdit }: LpSectionDetailsProps) => 
 
   return (
     <div className="h-full flex flex-col bg-card border-l border-border">
-      <div className="p-4 border-b border-border">
+      <div className="p-md border-b border-border">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="font-semibold truncate">{section.name}</h3>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className={cn("text-xs", typeColor)}>
+              <Badge variant="outline" className={cn("text-metadata", typeColor)}>
                 {section.section_type}
               </Badge>
               {section.entity && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-metadata">
                   {section.entity.name}
                 </Badge>
               )}
@@ -102,13 +102,13 @@ export const LpSectionDetails = ({ section, onEdit }: LpSectionDetailsProps) => 
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-6">
+        <div className="p-md space-y-lg">
           {section.description && (
             <div>
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+              <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-2">
                 Description
               </h4>
-              <p className="text-sm">{section.description}</p>
+              <p className="text-body-sm">{section.description}</p>
             </div>
           )}
 
