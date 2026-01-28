@@ -11,7 +11,7 @@ export function TaskDrawer() {
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeTaskDrawer()}>
       <SheetContent 
         side="right" 
-        className="w-full sm:max-w-xl p-0 overflow-hidden"
+        className="w-full sm:max-w-xl !p-0 overflow-hidden"
         hideCloseButton
       >
         <TaskDetail 
