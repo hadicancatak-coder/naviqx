@@ -28,7 +28,7 @@ import {
   useUploadSectionImage,
   useDeleteSectionImage,
 } from "@/hooks/useLpSections";
-import { useEntities } from "@/hooks/useEntities";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 
 import { LP_SECTION_TYPES } from "@/domain/lp-sections";
 
@@ -52,7 +52,7 @@ export const LpSectionDialog = ({
   const [links, setLinks] = useState<WebsiteLink[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: entities = [] } = useEntities();
+  const { data: entities = [] } = useSystemEntities();
   const createSection = useCreateLpSection();
   const updateSection = useUpdateLpSection();
   const uploadImage = useUploadSectionImage();

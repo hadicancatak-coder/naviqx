@@ -78,8 +78,7 @@ export function AdVariationGeneratorDialog({
         } else {
           toast.success(`Generated ${results.length} variations!`);
         }
-      } catch (error) {
-        console.error("Error generating variations:", error);
+      } catch {
         toast.error("Failed to generate variations");
       } finally {
         setIsGenerating(false);

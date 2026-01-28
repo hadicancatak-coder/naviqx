@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { errorLogger } from './errorLogger';
 import { toast } from '@/hooks/use-toast';
 import { handleDatabaseError } from './errorHandling';
+import { logger } from './logger';
 
 /**
  * React Query client configuration for caching and data management
@@ -25,7 +26,7 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error: any) => {
-        console.error('Mutation error:', error);
+        logger.error('Mutation error:', error);
         
         errorLogger.logError({
           severity: 'warning',

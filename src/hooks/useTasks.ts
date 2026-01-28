@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { realtimeService } from "@/lib/realtimeService";
-import { mapStatusToUi } from "@/lib/taskStatusMapper";
+import { mapStatusToUi } from '@/domain';
 import { TASK_QUERY_KEY, TASK_WITH_TEMPLATES_KEY } from "@/lib/queryKeys";
 
 export interface TaskFilters {

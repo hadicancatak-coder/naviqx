@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { mapStatusToDb } from '@/lib/taskStatusMapper';
-import { completeTask as completeTaskAction } from '@/domain';
+import { mapStatusToDb, completeTask as completeTaskAction } from '@/domain';
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from '@/lib/queryKeys';
 
 /**

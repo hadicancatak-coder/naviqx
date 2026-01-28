@@ -8,9 +8,7 @@ import { Home } from "lucide-react";
 const NotFound = () => {
   const location = useLocation();
 
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
+  // 404 errors are tracked by analytics - no console logging needed
 
   return (
     <GlassBackground variant="centered">

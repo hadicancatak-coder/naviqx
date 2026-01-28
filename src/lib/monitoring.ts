@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 /**
  * Performance monitoring utilities
  * Logs query performance in development mode
@@ -5,7 +7,7 @@
 export const logQuery = (operation: string, startTime: number) => {
   if (import.meta.env.DEV) {
     const duration = Date.now() - startTime;
-    console.log(`[Query] ${operation}: ${duration}ms`);
+    logger.debug(`[Query] ${operation}: ${duration}ms`);
   }
 };
 
