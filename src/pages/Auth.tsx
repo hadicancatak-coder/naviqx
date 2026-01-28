@@ -149,7 +149,7 @@ export default function Auth() {
         
         setIsLogin(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation Error",
@@ -157,9 +157,10 @@ export default function Auth() {
           variant: "destructive",
         });
       } else {
+        const errorMessage = error instanceof Error ? error.message : "An error occurred";
         toast({
           title: "Error",
-          description: error.message || "An error occurred",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -177,7 +178,7 @@ export default function Auth() {
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-heading-lg font-bold text-foreground">Naviqx</h1>
-          <p className="text-body-sm text-muted-foreground mt-1">
+          <p className="text-body-sm text-muted-foreground">
             {isLogin ? "Welcome back to CFI PerMar" : "Create your CFI account"}
           </p>
         </div>
@@ -192,7 +193,7 @@ export default function Auth() {
 
         <form onSubmit={handleSubmit} className="space-y-md">
           {!isLogin && (
-            <div className="space-y-1">
+            <div className="flex flex-col gap-xs">
               <label htmlFor="name" className="text-body-sm font-medium text-foreground">
                 Your Name
               </label>
@@ -207,7 +208,7 @@ export default function Auth() {
             </div>
           )}
           
-          <div className="space-y-1">
+          <div className="flex flex-col gap-xs">
             <label htmlFor="email" className="text-body-sm font-medium text-foreground">
               CFI Email
             </label>
@@ -224,7 +225,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <div className="space-y-1">
+          <div className="flex flex-col gap-xs">
             <label htmlFor="password" className="text-body-sm font-medium text-foreground">
               Password
             </label>
@@ -246,7 +247,7 @@ export default function Auth() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Please wait...
               </>
             ) : isLogin ? (
