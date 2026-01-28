@@ -9,6 +9,44 @@ import { mapStatusToUi } from '@/domain';
 import { TASK_QUERY_KEY } from '@/lib/queryKeys';
 import { logger } from '@/lib/logger';
 
+// Task type from query result
+interface TaskQueryResult {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string | null;
+  due_at: string | null;
+  created_at: string;
+  updated_at: string;
+  labels: string[] | null;
+  sprint: string | null;
+  project_id: string | null;
+  task_type: string | null;
+  is_recurrence_template: boolean | null;
+  parent_id: string | null;
+  pending_approval: boolean | null;
+  blocker_reason: string | null;
+  external_dependency_reason: string | null;
+  recurrence_rrule: string | null;
+  failure_reason: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  entity: string[] | null;
+  task_assignees: Array<{
+    user_id: string;
+    profiles: {
+      id: string;
+      user_id: string;
+      name: string | null;
+      avatar_url: string | null;
+      teams: string[] | null;
+      working_days: string | null;
+    } | null;
+  }> | null;
+  task_comment_counts: Array<{ comment_count: number }> | null;
+}
+
 // Track if prefetch is in progress to avoid duplicate requests
 let prefetchInProgress = false;
 
@@ -51,10 +89,10 @@ export async function prefetchTasksData(): Promise<void> {
 
         if (error) throw error;
 
-        return (data || []).map((task: any) => ({
+        return ((data || []) as TaskQueryResult[]).map((task) => ({
           ...task,
           status: mapStatusToUi(task.status),
-          assignees: task.task_assignees?.map((ta: any) => ta.profiles).filter(Boolean) || [],
+          assignees: task.task_assignees?.map((ta) => ta.profiles).filter(Boolean) || [],
           comments_count: task.task_comment_counts?.[0]?.comment_count || 0
         }));
       },

@@ -91,19 +91,22 @@ export function AppSidebar() {
     }
   }, [user]);
 
+  // eslint-disable-next-line no-restricted-syntax -- Sidebar nav requires conditional layout classes
   const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive
-      ? `flex items-center ${open ? 'gap-3 px-3 border-l-4 border-primary ml-[-4px]' : 'justify-center px-0 border-l-4 border-primary ml-[-4px]'} py-3 text-primary font-medium transition-smooth`
-      : `flex items-center ${open ? 'gap-3 px-3 border-l-4 border-transparent ml-[-4px]' : 'justify-center px-0'} py-3 text-sidebar-foreground hover:text-primary hover:border-l-primary/20 transition-smooth`;
+      ? `flex items-center ${open ? 'gap-sm px-sm border-l-4 border-primary ml-[-4px]' : 'justify-center px-0 border-l-4 border-primary ml-[-4px]'} py-sm text-primary font-medium transition-smooth`
+      : `flex items-center ${open ? 'gap-sm px-sm border-l-4 border-transparent ml-[-4px]' : 'justify-center px-0'} py-sm text-sidebar-foreground hover:text-primary hover:border-l-primary/20 transition-smooth`;
 
   return (
     <TooltipProvider delayDuration={0}>
       <Sidebar collapsible="icon" className="border-r-0">
-        <SidebarContent className={`overflow-y-auto sidebar-scroll ${open ? 'px-4 py-8 space-y-8' : 'px-2 py-6 space-y-6'}`}>
+        {/* eslint-disable-next-line no-restricted-syntax -- Sidebar requires dynamic layout spacing */}
+        <SidebarContent className={`overflow-y-auto sidebar-scroll ${open ? 'px-md py-xl space-y-xl' : 'px-xs py-lg space-y-lg'}`}>
           {/* Logo and User Section - Clickable to navigate to Dashboard */}
+          {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
           <div 
             onClick={() => navigate('/')}
-            className={`flex ${open ? 'items-center gap-3 px-3 pb-6 border-b border-sidebar-border' : 'flex-col items-center justify-center pb-4 border-b border-sidebar-border'} transition-smooth cursor-pointer hover:opacity-80`}
+            className={`flex ${open ? 'items-center gap-sm px-sm pb-lg border-b border-sidebar-border' : 'flex-col items-center justify-center pb-md border-b border-sidebar-border'} transition-smooth cursor-pointer hover:opacity-80`}
           >
             <img 
               src={logoImage} 
@@ -124,8 +127,9 @@ export function AppSidebar() {
 
           {/* Core Features */}
           <SidebarGroup>
-            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-3 mb-3">Core</SidebarGroupLabel>}
-            <SidebarMenu className="space-y-1">
+            {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
+            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-sm mb-sm">Core</SidebarGroupLabel>}
+            <SidebarMenu className="space-y-xs">
               {coreItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
@@ -158,8 +162,9 @@ export function AppSidebar() {
 
           {/* Ads */}
           <SidebarGroup>
-            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-3 mb-3">Ads</SidebarGroupLabel>}
-            <SidebarMenu className="space-y-1">
+            {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
+            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-sm mb-sm">Ads</SidebarGroupLabel>}
+            <SidebarMenu className="space-y-xs">
               {adsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
@@ -180,8 +185,9 @@ export function AppSidebar() {
 
           {/* Intelligence */}
           <SidebarGroup>
-            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-3 mb-3">Intelligence</SidebarGroupLabel>}
-            <SidebarMenu className="space-y-1">
+            {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
+            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-sm mb-sm">Intelligence</SidebarGroupLabel>}
+            <SidebarMenu className="space-y-xs">
               {mediaItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
@@ -202,8 +208,9 @@ export function AppSidebar() {
 
           {/* Operations */}
           <SidebarGroup>
-            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-3 mb-3">Operations</SidebarGroupLabel>}
-            <SidebarMenu className="space-y-1">
+            {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
+            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-sm mb-sm">Operations</SidebarGroupLabel>}
+            <SidebarMenu className="space-y-xs">
               {operationsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
@@ -232,8 +239,9 @@ export function AppSidebar() {
 
           {/* Resources */}
           <SidebarGroup>
-            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-3 mb-3">Resources</SidebarGroupLabel>}
-            <SidebarMenu className="space-y-1">
+            {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
+            {open && <SidebarGroupLabel className="text-metadata text-muted-foreground uppercase tracking-wider px-sm mb-sm">Resources</SidebarGroupLabel>}
+            <SidebarMenu className="space-y-xs">
               {resourcesItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
@@ -264,20 +272,21 @@ export function AppSidebar() {
           </SidebarGroup>
 
           {/* Sign Out */}
-          <SidebarMenu className={`${open ? 'mt-auto pt-6 border-t border-sidebar-border' : 'mt-auto pt-4 border-t border-sidebar-border flex justify-center'}`}>
+          {/* eslint-disable-next-line no-restricted-syntax -- Sidebar section layout */}
+          <SidebarMenu className={`${open ? 'mt-auto pt-lg border-t border-sidebar-border' : 'mt-auto pt-md border-t border-sidebar-border flex justify-center'}`}>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 {!open ? (
                   <button
                     onClick={signOut}
-                    className="flex items-center justify-center py-3 text-sidebar-foreground hover:text-destructive transition-smooth border-l-4 border-transparent hover:border-destructive ml-[-4px]"
+                    className="flex items-center justify-center py-sm text-sidebar-foreground hover:text-destructive transition-smooth border-l-4 border-transparent hover:border-destructive ml-[-4px]"
                   >
                     <LogOut className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                   </button>
                 ) : (
                   <button
                     onClick={signOut}
-                    className="flex items-center gap-3 px-3 py-3 text-sidebar-foreground hover:text-destructive transition-smooth w-full border-l-4 border-transparent hover:border-destructive ml-[-4px]"
+                    className="flex items-center gap-sm px-sm py-sm text-sidebar-foreground hover:text-destructive transition-smooth w-full border-l-4 border-transparent hover:border-destructive ml-[-4px]"
                   >
                     <LogOut className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                     <span className="text-body">Sign Out</span>

@@ -73,7 +73,7 @@ export function TopHeader() {
       </div>
       <div className="flex items-center justify-between gap-md px-md lg:px-lg py-sm">
         {/* Left Side - Sidebar trigger & Breadcrumb */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-sm">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all h-9 w-9" />
           <div className="hidden sm:flex items-center gap-xs text-body-sm">
             <span className="font-semibold text-foreground">Naviqx</span>

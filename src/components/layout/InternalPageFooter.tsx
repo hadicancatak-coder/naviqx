@@ -10,7 +10,7 @@ interface InternalPageFooterProps {
  */
 export function InternalPageFooter({ className }: InternalPageFooterProps) {
   return (
-    <footer className={cn("py-6 text-center", className)}>
+    <footer className={cn("py-lg text-center", className)}>
       <p className="text-metadata text-muted-foreground">
         © 2026 Naviqx • CFI Performance Marketing • Internal Use Only
       </p>

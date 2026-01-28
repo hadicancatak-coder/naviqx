@@ -126,7 +126,7 @@ export default function KPIs() {
                     <Badge variant="outline" className="text-metadata">{kpi.metric_type}</Badge>
                     <Badge variant="outline" className="text-metadata">Target: {kpi.target}</Badge>
                     {kpi.deadline && (
-                      <Badge variant="outline" className="text-metadata flex items-center gap-1">
+                      <Badge variant="outline" className="text-metadata flex items-center gap-xs">
                         <Calendar className="h-3 w-3" />
                         {format(new Date(kpi.deadline), 'MMM d, yyyy')}
                       </Badge>
