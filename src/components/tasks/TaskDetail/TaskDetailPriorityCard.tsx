@@ -1,14 +1,18 @@
+import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CalendarIcon, Flag, AlertTriangle, Clock, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isPast, isTomorrow } from "date-fns";
 import { TASK_STATUSES, getStatusColor } from "@/lib/constants";
+import { validateDateForUsers, getDayName, formatWorkingDays } from "@/lib/workingDaysHelper";
 import { useTaskDetailContext } from "./TaskDetailContext";
 
 export function TaskDetailPriorityCard() {
   const {
+    task,
     status,
     setStatus,
     priority,
@@ -17,7 +21,31 @@ export function TaskDetailPriorityCard() {
     setDueDate,
     saveField,
     isCompleted,
+    realtimeAssignees,
   } = useTaskDetailContext();
+
+  // Working days validation state
+  const [workingDaysWarning, setWorkingDaysWarning] = useState<string | null>(null);
+
+  // Validate due date against assignees' working days
+  useEffect(() => {
+    // Use realtimeAssignees which includes working_days
+    const assigneesWithWorkingDays = realtimeAssignees || task?.assignees || [];
+    
+    if (dueDate && assigneesWithWorkingDays.length > 0) {
+      const validation = validateDateForUsers(dueDate, assigneesWithWorkingDays);
+      if (!validation.isValid) {
+        const list = validation.invalidUsers
+          .map(u => `${u.name} (${formatWorkingDays(u.workingDays)})`)
+          .join(', ');
+        setWorkingDaysWarning(`${getDayName(dueDate)} is outside working days for: ${list}`);
+      } else {
+        setWorkingDaysWarning(null);
+      }
+    } else {
+      setWorkingDaysWarning(null);
+    }
+  }, [dueDate, realtimeAssignees, task?.assignees]);
 
   const isOverdue = dueDate && isPast(dueDate) && !isToday(dueDate) && !isCompleted;
   const isDueToday = dueDate && isToday(dueDate);
@@ -51,96 +79,108 @@ export function TaskDetailPriorityCard() {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
-      {/* Priority */}
-      <div className="flex flex-col gap-xs min-w-0">
-        <span className="text-metadata text-muted-foreground">Priority</span>
-        <Select 
-          value={priority} 
-          onValueChange={(v: any) => {
-            setPriority(v);
-            saveField('priority', v);
-          }}
-        >
-          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
-            <div className={cn(
-              "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
-              getPriorityStyles()
-            )}>
-              <Flag className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate flex-1 text-left">{priority}</span>
-              <ChevronDown className="h-3 w-3 flex-shrink-0 opacity-50" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Low">Low</SelectItem>
-            <SelectItem value="Medium">Medium</SelectItem>
-            <SelectItem value="High">High</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
+        {/* Priority */}
+        <div className="flex flex-col gap-xs min-w-0">
+          <span className="text-metadata text-muted-foreground">Priority</span>
+          <Select 
+            value={priority} 
+            onValueChange={(v: any) => {
+              setPriority(v);
+              saveField('priority', v);
+            }}
+          >
+            <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
+              <div className={cn(
+                "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
+                getPriorityStyles()
+              )}>
+                <Flag className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate flex-1 text-left">{priority}</span>
+                <ChevronDown className="h-3 w-3 flex-shrink-0 opacity-50" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Due Date */}
+        <div className="flex flex-col gap-xs min-w-0">
+          <span className="text-metadata text-muted-foreground">Due</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button 
+                type="button"
+                className={cn(
+                  "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0 text-left transition-colors",
+                  getDueDateStyles()
+                )}
+              >
+                {isOverdue ? (
+                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                ) : (
+                  <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                )}
+                <span className="truncate flex-1">{getDueDateLabel()}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dueDate}
+                onSelect={(date) => {
+                  setDueDate(date);
+                  saveField('due_at', date);
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Status */}
+        <div className="flex flex-col gap-xs min-w-0">
+          <span className="text-metadata text-muted-foreground">Status</span>
+          <Select 
+            value={status} 
+            onValueChange={(v) => {
+              setStatus(v);
+              saveField('status', v);
+            }}
+          >
+            <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
+              <div className={cn(
+                "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
+                getStatusColor(status)
+              )}>
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate flex-1 text-left">{status}</span>
+                <ChevronDown className="h-3 w-3 flex-shrink-0 opacity-50" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {TASK_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Due Date */}
-      <div className="flex flex-col gap-xs min-w-0">
-        <span className="text-metadata text-muted-foreground">Due</span>
-        <Popover>
-          <PopoverTrigger asChild>
-            <button 
-              type="button"
-              className={cn(
-                "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0 text-left transition-colors",
-                getDueDateStyles()
-              )}
-            >
-              {isOverdue ? (
-                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-              ) : (
-                <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
-              )}
-              <span className="truncate flex-1">{getDueDateLabel()}</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={dueDate}
-              onSelect={(date) => {
-                setDueDate(date);
-                saveField('due_at', date);
-              }}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Status */}
-      <div className="flex flex-col gap-xs min-w-0">
-        <span className="text-metadata text-muted-foreground">Status</span>
-        <Select 
-          value={status} 
-          onValueChange={(v) => {
-            setStatus(v);
-            saveField('status', v);
-          }}
-        >
-          <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
-            <div className={cn(
-              "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
-              getStatusColor(status)
-            )}>
-              <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate flex-1 text-left">{status}</span>
-              <ChevronDown className="h-3 w-3 flex-shrink-0 opacity-50" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {TASK_STATUSES.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Working Days Warning */}
+      {workingDaysWarning && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="text-metadata">
+            {workingDaysWarning}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@
 // Task keys
 export const TASK_QUERY_KEY = ['tasks', false] as const;
 export const TASK_WITH_TEMPLATES_KEY = ['tasks', true] as const;
+export const TASK_DETAIL_KEY = (taskId: string) => ['task', taskId] as const;
 
 // Resource keys (Knowledge, Projects, Tech Stack)
 export const KNOWLEDGE_QUERY_KEY = ['knowledge-pages'] as const;

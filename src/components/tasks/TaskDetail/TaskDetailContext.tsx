@@ -6,7 +6,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { mapStatusToDb, mapStatusToUi } from "@/lib/taskStatusMapper";
 import { useRealtimeAssignees } from "@/hooks/useRealtimeAssignees";
 import { useTaskChangeLogs } from "@/hooks/useTaskChangeLogs";
+import { useTask } from "@/hooks/useTask";
+import { useTaskMutations } from "@/hooks/useTaskMutations";
 import { completeTask as completeTaskAction, setTaskCollaborative, getCollaborativeStatus } from "@/domain/tasks/actions";
+import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from "@/lib/queryKeys";
 
 interface PendingAttachment {
   type: 'file' | 'link';
@@ -79,6 +82,8 @@ interface TaskDetailContextValue {
   
   // Actions
   saveField: (field: string, value: any) => Promise<void>;
+  saveDescription: (value: string) => void;
+  saveTitle: (value: string) => void;
   markComplete: () => Promise<void>;
   deleteTask: () => Promise<void>;
   
@@ -118,14 +123,12 @@ export function TaskDetailProvider({
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const mutations = useTaskMutations();
   
-  // Core state
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [task, setTask] = useState<any>(null);
-  const [parentTask, setParentTask] = useState<{ id: string; title: string } | null>(null);
+  // Use React Query for task data
+  const { data: taskData, isLoading: taskLoading, isFetching } = useTask(taskId, cachedTask);
   
-  // Editable fields
+  // Local form state for controlled inputs
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low">("Medium");
@@ -136,19 +139,11 @@ export function TaskDetailProvider({
   const [projectId, setProjectId] = useState<string | null>(null);
   const [phaseId, setPhaseId] = useState<string | null>(null);
   
-  // Track if description was locally edited (prevents fetch from overwriting)
-  const descriptionEditedRef = useRef(false);
+  // Saving state for UI feedback
+  const [saving, setSaving] = useState(false);
   
-  // Wrapper to track description edits
-  const setDescriptionWithTracking = useCallback((v: string) => {
-    console.log('[TaskDetailContext] setDescriptionWithTracking called', {
-      newValueLength: v.length,
-      preview: v.substring(0, 100),
-      wasEdited: descriptionEditedRef.current
-    });
-    descriptionEditedRef.current = true;
-    setDescription(v);
-  }, []);
+  // Parent task for subtasks
+  const [parentTask, setParentTask] = useState<{ id: string; title: string } | null>(null);
   
   // Collaborative state
   const [isCollaborative, setIsCollaborativeState] = useState(false);
@@ -157,7 +152,7 @@ export function TaskDetailProvider({
     allCompleted: boolean;
   } | null>(null);
   
-  // Users
+  // Users for mentions
   const [users, setUsers] = useState<any[]>([]);
   
   // Comments
@@ -176,56 +171,42 @@ export function TaskDetailProvider({
   const { assignees: realtimeAssignees, refetch: refetchAssignees } = useRealtimeAssignees("task", taskId);
   const { data: changeLogs = [] } = useTaskChangeLogs(taskId);
 
-  // Fetch task
-  const fetchTask = useCallback(async () => {
-    if (!taskId) return;
-    
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("id", taskId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching task:", error);
-      toast({ title: "Error", description: "Failed to load task", variant: "destructive" });
-      setLoading(false);
-      return;
+  // Sync form state when task data loads or changes
+  useEffect(() => {
+    if (taskData) {
+      setTitle(taskData.title || "");
+      setDescription(taskData.description || "");
+      setPriority(taskData.priority || "Medium");
+      setStatus(taskData.status || "Ongoing");
+      setDueDate(taskData.due_at ? new Date(taskData.due_at) : undefined);
+      setTags(Array.isArray(taskData.labels) ? taskData.labels : []);
+      setProjectId(taskData.project_id || null);
+      setPhaseId(taskData.phase_id || null);
+      setIsCollaborativeState(taskData.is_collaborative || false);
+      
+      // Sync assignees from task data
+      if (taskData.assignees && taskData.assignees.length > 0) {
+        setSelectedAssignees(taskData.assignees.map((a: any) => a.id));
+      }
+      
+      // Fetch collaborative status if needed
+      if (taskData.is_collaborative) {
+        getCollaborativeStatus(taskId).then(collabStatus => {
+          setCollaborativeStatus({
+            assignees: collabStatus.assignees,
+            allCompleted: collabStatus.allCompleted
+          });
+        });
+      }
+      
+      // Fetch parent task if subtask
+      if (taskData.parent_id && !parentTask) {
+        fetchParentTask(taskData.parent_id);
+      }
     }
+  }, [taskData?.id, taskData?.updated_at]);
 
-    setTask(data);
-    setTitle(data.title || "");
-    // Only update description from database if not locally edited
-    console.log('[TaskDetailContext] fetchTask - checking if should update description', {
-      descriptionEditedRef: descriptionEditedRef.current,
-      dbDescription: (data.description || '').substring(0, 100)
-    });
-    if (!descriptionEditedRef.current) {
-      console.log('[TaskDetailContext] fetchTask - UPDATING description from DB');
-      setDescription(data.description || "");
-    } else {
-      console.log('[TaskDetailContext] fetchTask - SKIPPING description update (user edited)');
-    }
-    setPriority(data.priority || "Medium");
-    setStatus(mapStatusToUi(data.status));
-    setDueDate(data.due_at ? new Date(data.due_at) : undefined);
-    setTags(Array.isArray(data.labels) ? data.labels : []);
-    setProjectId(data.project_id || null);
-    setPhaseId(data.phase_id || null);
-    setIsCollaborativeState(data.is_collaborative || false);
-    setLoading(false);
-    
-    // Fetch collaborative status if collaborative
-    if (data.is_collaborative) {
-      const collabStatus = await getCollaborativeStatus(taskId);
-      setCollaborativeStatus({
-        assignees: collabStatus.assignees,
-        allCompleted: collabStatus.allCompleted
-      });
-    }
-  }, [taskId, toast]);
-
-  // Fetch comments (including attachments)
+  // Fetch comments
   const fetchComments = useCallback(async () => {
     if (!taskId) return;
     
@@ -259,9 +240,9 @@ export function TaskDetailProvider({
     }
   }, [taskId]);
 
-  // Fetch users
+  // Fetch users for mentions
   const fetchUsers = useCallback(async () => {
-    const { data } = await supabase.from("profiles").select("id, user_id, name, username");
+    const { data } = await supabase.from("profiles").select("id, user_id, name, username, working_days");
     setUsers(data || []);
   }, []);
 
@@ -279,7 +260,7 @@ export function TaskDetailProvider({
     setBlocker(data);
   }, [taskId]);
 
-  // Fetch parent task if this is a subtask
+  // Fetch parent task
   const fetchParentTask = useCallback(async (parentId: string) => {
     const { data } = await supabase
       .from("tasks")
@@ -290,76 +271,36 @@ export function TaskDetailProvider({
     setParentTask(data);
   }, []);
 
-  // Initial load
+  // Initial data fetch (comments, users, blocker)
   useEffect(() => {
-    // CRITICAL: Reset the edit tracking ref when switching to a new task
-    descriptionEditedRef.current = false;
-    
-    setLoading(true);
     setParentTask(null);
-    
-    // Populate from cached task if available (including assignees)
-    if (cachedTask) {
-      setTask(cachedTask);
-      setTitle(cachedTask.title || "");
-      // Only update description from cache if user hasn't started editing
-      if (!descriptionEditedRef.current) {
-        setDescription(cachedTask.description || "");
-      }
-      setPriority(cachedTask.priority || "Medium");
-      setStatus(mapStatusToUi(cachedTask.status));
-      setDueDate(cachedTask.due_at ? new Date(cachedTask.due_at) : undefined);
-      setTags(Array.isArray(cachedTask.labels) ? cachedTask.labels : []);
-      setProjectId(cachedTask.project_id || null);
-      setPhaseId(cachedTask.phase_id || null);
-      
-      // Use cached assignees immediately if available
-      if (cachedTask.assignees && cachedTask.assignees.length > 0) {
-        setSelectedAssignees(cachedTask.assignees.map((a: any) => a.id));
-      }
-      
-      setLoading(false);
-      
-      // Fetch parent if subtask
-      if (cachedTask.parent_id) {
-        fetchParentTask(cachedTask.parent_id);
-      }
-    }
-    
-    // Fetch fresh data in parallel
-    Promise.all([fetchTask(), fetchComments(), fetchUsers(), fetchBlocker()]);
-  }, [taskId, cachedTask, fetchTask, fetchComments, fetchUsers, fetchBlocker, fetchParentTask]);
+    Promise.all([fetchComments(), fetchUsers(), fetchBlocker()]);
+  }, [taskId, fetchComments, fetchUsers, fetchBlocker]);
 
-  // Fetch parent task when task loads
-  useEffect(() => {
-    if (task?.parent_id && !parentTask) {
-      fetchParentTask(task.parent_id);
-    }
-  }, [task?.parent_id, parentTask, fetchParentTask]);
-
-  // Sync realtime assignees - only update if different from current state
+  // Sync realtime assignees
   useEffect(() => {
     const realtimeIds = realtimeAssignees.map(a => a.id).sort();
     const currentIds = [...selectedAssignees].sort();
-    // Only update if realtime data differs (avoids overwriting cached data)
     if (realtimeIds.length > 0 && JSON.stringify(realtimeIds) !== JSON.stringify(currentIds)) {
       setSelectedAssignees(realtimeIds);
     }
   }, [realtimeAssignees]);
 
-  // Save field
+  // Save description using mutation (called from TaskDetailDescription with debounce)
+  const saveDescription = useCallback((value: string) => {
+    if (!taskId) return;
+    mutations.updateDescription.mutate({ id: taskId, description: value });
+  }, [taskId, mutations.updateDescription]);
+
+  // Save title using mutation
+  const saveTitle = useCallback((value: string) => {
+    if (!taskId) return;
+    mutations.updateTitle.mutate({ id: taskId, title: value });
+  }, [taskId, mutations.updateTitle]);
+
+  // Legacy saveField for other fields (priority, status, due_at, etc.)
   const saveField = useCallback(async (field: string, value: any) => {
-    console.log('[saveField] Called with:', { 
-      field, 
-      valuePreview: String(value).substring(0, 80), 
-      valueLength: String(value).length,
-      taskId 
-    });
-    
-    if (!taskId) {
-      console.log('[saveField] ABORT - no taskId');
-      return;
-    }
+    if (!taskId) return;
     
     setSaving(true);
     
@@ -374,29 +315,24 @@ export function TaskDetailProvider({
     if (field === 'project_id') updateData.project_id = value;
     if (field === 'phase_id') updateData.phase_id = value;
     
-    console.log('[saveField] Sending PATCH to Supabase:', { field, updateData, taskId });
-    
-    const { error, data } = await supabase
+    const { error } = await supabase
       .from("tasks")
       .update(updateData)
       .eq("id", taskId)
       .select();
     
-    console.log('[saveField] Supabase response:', { error, data, success: !error });
-    
     if (error) {
       toast({ title: "Error", description: "Failed to save", variant: "destructive" });
     } else {
-      // Don't invalidate queries for description saves - prevents race condition
-      if (field !== 'description') {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      }
+      // Invalidate both caches
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
     }
     
     setSaving(false);
   }, [taskId, queryClient, toast]);
 
-  // Add comment (with attachments support)
+  // Add comment
   const addComment = useCallback(async () => {
     if ((!newComment.trim() && pendingAttachments.length === 0) || !taskId || isSubmittingComment || !user) return;
 
@@ -404,7 +340,6 @@ export function TaskDetailProvider({
     const commentText = newComment.trim();
     
     try {
-      // Upload files first
       const uploadedAttachments: Array<{type: string; name: string; url: string; size_bytes?: number}> = [];
       
       for (const attachment of pendingAttachments) {
@@ -488,10 +423,9 @@ export function TaskDetailProvider({
     }
   }, [newComment, pendingAttachments, taskId, isSubmittingComment, user, users, toast, fetchComments]);
 
-  // Mark complete (with collaborative support)
+  // Mark complete
   const markComplete = useCallback(async () => {
     if (isCollaborative && user) {
-      // For collaborative tasks, use the action that tracks individual completion
       const result = await completeTaskAction(taskId, user.id);
       if (result.success) {
         if (result.data?.partialComplete) {
@@ -499,17 +433,17 @@ export function TaskDetailProvider({
             title: "Marked as complete", 
             description: result.data.message 
           });
-        // Refresh collaborative status
-        const collabStatus = await getCollaborativeStatus(taskId);
-        setCollaborativeStatus({
-          assignees: collabStatus.assignees,
-          allCompleted: collabStatus.allCompleted
-        });
+          const collabStatus = await getCollaborativeStatus(taskId);
+          setCollaborativeStatus({
+            assignees: collabStatus.assignees,
+            allCompleted: collabStatus.allCompleted
+          });
         } else {
           setStatus("Completed");
           toast({ title: "Task completed", description: "All assignees have completed" });
         }
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
       } else {
         toast({ title: "Error", description: result.error, variant: "destructive" });
       }
@@ -525,15 +459,16 @@ export function TaskDetailProvider({
     if (result.success) {
       setIsCollaborativeState(value);
       if (value) {
-      const collabStatus = await getCollaborativeStatus(taskId);
-      setCollaborativeStatus({
-        assignees: collabStatus.assignees,
-        allCompleted: collabStatus.allCompleted
-      });
+        const collabStatus = await getCollaborativeStatus(taskId);
+        setCollaborativeStatus({
+          assignees: collabStatus.assignees,
+          allCompleted: collabStatus.allCompleted
+        });
       } else {
         setCollaborativeStatus(null);
       }
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
       toast({ 
         title: value ? "Collaborative mode enabled" : "Collaborative mode disabled",
         description: value ? "All assignees must complete this task" : "Any assignee can complete this task"
@@ -543,7 +478,7 @@ export function TaskDetailProvider({
     }
   }, [taskId, queryClient, toast]);
 
-  // Get current user's profile ID to check if they've completed
+  // Get current user's profile ID
   const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
   
   useEffect(() => {
@@ -571,25 +506,27 @@ export function TaskDetailProvider({
       toast({ title: "Error", description: "Failed to delete task", variant: "destructive" });
     } else {
       toast({ title: "Task deleted" });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
       onTaskDeleted?.();
       onClose?.();
     }
   }, [taskId, toast, queryClient, onTaskDeleted, onClose]);
 
+  // Derived state
+  const loading = taskLoading && !taskData;
   const isCompleted = status === 'Completed';
-  const isSubtask = !!task?.parent_id;
+  const isSubtask = !!taskData?.parent_id;
 
   const value: TaskDetailContextValue = {
     taskId,
-    task,
+    task: taskData,
     parentTask,
     loading,
-    saving,
+    saving: saving || mutations.updateDescription.isPending || mutations.updateTitle.isPending,
     title,
     setTitle,
     description,
-    setDescription: setDescriptionWithTracking,
+    setDescription,
     status,
     setStatus,
     priority,
@@ -621,6 +558,8 @@ export function TaskDetailProvider({
     fetchBlocker,
     changeLogs,
     saveField,
+    saveDescription,
+    saveTitle,
     markComplete,
     deleteTask,
     isCompleted,
