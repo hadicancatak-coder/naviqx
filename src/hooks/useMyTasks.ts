@@ -67,7 +67,8 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
       return data as AgendaItem[];
     },
     enabled: !!effectiveUserId,
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 
@@ -178,12 +179,16 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
     }
   }, [effectiveUserId, agendaDate, allTasks, agendaItems, date, profileId, isUserAssigned, taskOccursOnDate, refetch]);
 
-  // Run auto-populate when dependencies change
+  // Run auto-populate when dependencies change - debounced to prevent excessive calls
   useEffect(() => {
     if (effectiveUserId && allTasks?.length > 0 && profileId) {
-      autoPopulateAgenda();
+      // Debounce auto-populate to prevent rapid successive calls
+      const timeoutId = setTimeout(() => {
+        autoPopulateAgenda();
+      }, 500);
+      return () => clearTimeout(timeoutId);
     }
-  }, [effectiveUserId, agendaDate, allTasks?.length, profileId]);
+  }, [effectiveUserId, agendaDate, profileId]); // Removed allTasks?.length - only run on date/user change
 
   // Get user display name for activity logging
   const getUserDisplayName = useCallback(async (userId: string) => {

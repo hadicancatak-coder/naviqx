@@ -30,7 +30,8 @@ export const useCampaignEntityTracking = () => {
       if (error) throw error;
       return data as CampaignEntityTracking[];
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes - realtime updates handle changes
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 

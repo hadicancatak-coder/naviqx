@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -55,12 +55,8 @@ export const TasksTable = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [processingAction, setProcessingAction] = useState<{ taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null>(null);
-  const [localTasks, setLocalTasks] = useState<any[]>(tasks);
-  
-  // Keep local tasks in sync with prop
-  useMemo(() => {
-    setLocalTasks(tasks);
-  }, [tasks]);
+  // Use tasks directly instead of local state copy (prevents extra render cycle)
+  const localTasks = tasks;
 
   const deleteMutation = useMutation({
     mutationFn: async (taskId: string) => {
@@ -288,9 +284,9 @@ export const TasksTable = ({
     return tasks.findIndex(t => t.id === taskId);
   };
 
-  // Handle drag-drop order change
-  const handleOrderChange = useCallback((newOrder: any[]) => {
-    setLocalTasks(newOrder);
+  // Handle drag-drop order change - no-op since we use parent's tasks directly
+  const handleOrderChange = useCallback((_newOrder: any[]) => {
+    // Order changes are handled by parent via onTaskUpdate
   }, []);
 
   // Use SortableTaskList for flat view with drag-drop

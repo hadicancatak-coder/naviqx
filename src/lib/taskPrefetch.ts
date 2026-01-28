@@ -21,8 +21,8 @@ export async function prefetchTasksData(): Promise<void> {
   const queryState = queryClient.getQueryState(TASK_QUERY_KEY);
   
   if (prefetchInProgress) return;
-  if (existingData && queryState?.dataUpdatedAt && Date.now() - queryState.dataUpdatedAt < 30000) {
-    return; // Data is fresh (less than 30s old)
+  if (existingData && queryState?.dataUpdatedAt && Date.now() - queryState.dataUpdatedAt < 2 * 60 * 1000) {
+    return; // Data is fresh (less than 2 min old)
   }
   
   prefetchInProgress = true;
@@ -57,7 +57,7 @@ export async function prefetchTasksData(): Promise<void> {
           comments_count: task.task_comment_counts?.[0]?.comment_count || 0
         }));
       },
-      staleTime: 30000,
+      staleTime: 2 * 60 * 1000, // 2 minutes - match useTasks
     });
   } catch (err) {
     console.error('Task prefetch failed:', err);

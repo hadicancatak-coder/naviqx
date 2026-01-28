@@ -24,8 +24,8 @@ const prefetchInProgress = {
   kpis: false,
 };
 
-// Cache freshness threshold (30 seconds)
-const CACHE_FRESH_MS = 30000;
+// Cache freshness threshold (2 minutes - aligned with query staleTime)
+const CACHE_FRESH_MS = 2 * 60 * 1000;
 
 /**
  * Check if cached data is fresh

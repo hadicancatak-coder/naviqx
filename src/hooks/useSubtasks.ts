@@ -59,7 +59,8 @@ export function useSubtasks(parentId: string | null) {
       }));
     },
     enabled: !!parentId,
-    staleTime: 30 * 1000, // 30 seconds cache
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 
