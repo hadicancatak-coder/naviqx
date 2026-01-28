@@ -5,6 +5,7 @@ import { Users, CheckSquare, AlertTriangle, ArrowRight, Target, FileText } from 
 import { adminService } from "@/lib/adminService";
 import { CardSkeleton } from "@/components/skeletons";
 import { useNavigate } from "react-router-dom";
+import { logger } from "@/lib/logger";
 interface SystemHealth {
   users: number;
   tasks: number;
@@ -22,7 +23,7 @@ export default function Overview() {
         const data = await adminService.getSystemHealth();
         setHealth(data);
       } catch (error) {
-        console.error('Error fetching system health:', error);
+        logger.error('Error fetching system health:', error);
       } finally {
         setLoading(false);
       }

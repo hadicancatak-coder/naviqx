@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { MfaSetupGuide } from "@/components/MfaSetupGuide";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
+import { logger } from "@/lib/logger";
 
 export default function MfaSetup() {
   const [loading, setLoading] = useState(true);
@@ -49,7 +50,7 @@ export default function MfaSetup() {
       setSecret(data.secret);
       setLoading(false);
     } catch (error: any) {
-      console.error('Error setting up MFA:', error);
+      logger.error('Error setting up MFA:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to set up MFA",
@@ -96,7 +97,7 @@ export default function MfaSetup() {
         description: "Two-factor authentication has been enabled for your account",
       });
     } catch (error: any) {
-      console.error('Error verifying OTP:', error);
+      logger.error('Error verifying OTP:', error);
       toast({
         title: "Verification failed",
         description: error.message || "Invalid code. Please try again.",

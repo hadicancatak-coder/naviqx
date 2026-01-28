@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 export const getDashboardStats = async (userId: string) => {
   const today = new Date();
@@ -74,7 +75,7 @@ export const getRecentActivity = async (limit = 10) => {
     .limit(limit);
 
   if (error) {
-    console.error("Error fetching activity:", error);
+    logger.error("Error fetching activity:", error);
     return [];
   }
 

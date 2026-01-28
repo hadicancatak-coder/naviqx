@@ -15,6 +15,7 @@ import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { checkCityDependencies, formatDependencyMessage } from "@/lib/selectorDependencyCheck";
+import { logger } from "@/lib/logger";
 
 function SortableRow({ id, children }: { id: string; children: React.ReactNode }) {
   const {
@@ -49,11 +50,11 @@ export default function SelectorsManagement() {
       try {
         const { error } = await supabase.auth.refreshSession();
         if (error) {
-          console.error('Session refresh failed:', error);
+          logger.error('Session refresh failed:', error);
           toast.error('Session expired. Please log out and log back in.');
         }
       } catch (err) {
-        console.error('Session refresh error:', err);
+        logger.error('Session refresh error:', err);
       }
     };
 

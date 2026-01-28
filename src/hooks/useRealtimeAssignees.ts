@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { realtimeService } from "@/lib/realtimeService";
+import { logger } from "@/lib/logger";
 
 interface User {
   id: string;
@@ -61,7 +62,7 @@ export function useRealtimeAssignees(entityType: EntityType, entityId: string) {
         setAssignees([]);
       }
     } catch (err) {
-      console.error(`Error fetching ${entityType} assignees:`, err);
+      logger.error(`Error fetching ${entityType} assignees:`, err);
     } finally {
       setLoading(false);
     }

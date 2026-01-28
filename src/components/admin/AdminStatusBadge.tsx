@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Shield, AlertTriangle, Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 export function AdminStatusBadge() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -28,7 +29,7 @@ export function AdminStatusBadge() {
         setIsAdmin(data?.role === 'admin');
         setLoading(false);
       } catch (err) {
-        console.error('Admin check failed:', err);
+        logger.error('Admin check failed:', err);
         setIsAdmin(false);
         setLoading(false);
       }

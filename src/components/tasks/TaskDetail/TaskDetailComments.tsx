@@ -10,7 +10,8 @@ import { CommentText } from "@/components/CommentText";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useTaskDetailContext } from "./TaskDetailContext";
-import { isImageUrl, normalizeUrl } from "@/components/comments/utils";
+import { isImageUrl } from "@/components/comments/utils";
+import { normalizeUrl } from "@/lib/urlHelpers";
 import type { CommentAttachment } from "@/components/comments/types";
 
 export function TaskDetailComments() {

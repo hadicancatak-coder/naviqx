@@ -2,6 +2,7 @@
  * Entity URL Transformer
  * Handles URL transformations between entities and languages
  */
+import { logger } from '@/lib/logger';
 
 export interface EntityMapping {
   code: string;
@@ -81,7 +82,7 @@ export function detectUrlPattern(url: string): UrlPattern {
       pattern: 'none',
     };
   } catch (error) {
-    console.error('Error detecting URL pattern:', error);
+    logger.error('Error detecting URL pattern:', error);
     return {
       language: null,
       entity: null,
@@ -103,7 +104,7 @@ export function transformEntityUrl(
     const pattern = detectUrlPattern(url);
     
     if (pattern.pattern === 'none') {
-      console.warn('URL pattern not recognized, returning original URL');
+      logger.warn('URL pattern not recognized, returning original URL');
       return url;
     }
     
@@ -112,7 +113,7 @@ export function transformEntityUrl(
     const targetEntityData = entities.find(e => e.code === options.targetEntity);
     
     if (!sourceEntityData || !targetEntityData) {
-      console.warn('Source or target entity not found');
+      logger.warn('Source or target entity not found');
       return url;
     }
     
@@ -152,7 +153,7 @@ export function transformEntityUrl(
     urlObj.pathname = newPathname;
     return urlObj.toString();
   } catch (error) {
-    console.error('Error transforming URL:', error);
+    logger.error('Error transforming URL:', error);
     return url;
   }
 }

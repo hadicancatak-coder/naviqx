@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 export interface LPDetectionResult {
   country: string | null;
   language: 'en' | 'ar' | null;
@@ -87,7 +89,7 @@ export function detectLPMetadata(url: string): LPDetectionResult {
     domain = urlObj.hostname;
     path = urlObj.pathname;
   } catch (e) {
-    console.error('URL parsing error in detectLPMetadata:', e);
+    logger.error('URL parsing error in detectLPMetadata:', e);
     // Invalid URL
     return {
       country: null,

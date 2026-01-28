@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 /**
  * Hook to track user site visits.
@@ -25,12 +26,12 @@ export function useVisitTracker(userId: string | null | undefined) {
 
         // Ignore duplicate key errors (expected behavior)
         if (error && !error.message.includes("duplicate key")) {
-          console.error("Failed to track visit:", error.message);
+          logger.error("Failed to track visit:", error.message);
         }
 
         hasTracked.current = true;
       } catch (err) {
-        console.error("Visit tracking error:", err);
+        logger.error("Visit tracking error:", err);
       }
     };
 
