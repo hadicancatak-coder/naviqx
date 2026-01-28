@@ -284,8 +284,8 @@ const LpMapPublic = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-4">
-          <h1 className="text-2xl font-bold mb-2">Link Not Found</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-heading-lg font-bold mb-sm">Link Not Found</h1>
+          <p className="text-muted-foreground text-body">
             This link may have expired or been deactivated. Please contact the person who shared it with you.
           </p>
         </div>
@@ -319,12 +319,12 @@ const LpMapPublic = () => {
             )}
             <Badge variant="outline" className="capitalize">{map.status}</Badge>
           </div>
-          <h1 className="text-2xl font-bold">{map.name}</h1>
+          <h1 className="text-heading-lg font-bold">{map.name}</h1>
           {map.description && (
             <p className="text-muted-foreground mt-2">{map.description}</p>
           )}
           {hasSession && (
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-body-sm text-muted-foreground mt-sm">
               Reviewing as {reviewerName}
             </p>
           )}
@@ -363,8 +363,8 @@ const LpMapPublic = () => {
         )}
 
         {/* Sections */}
-        <div className="space-y-4 mb-8">
-          <h2 className="text-lg font-semibold">LP Sections ({sections.length})</h2>
+        <div className="space-y-md mb-8">
+          <h2 className="text-heading-sm font-semibold">LP Sections ({sections.length})</h2>
           {sections.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
@@ -390,7 +390,7 @@ const LpMapPublic = () => {
         {hasSession && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Overall Feedback</CardTitle>
+              <CardTitle className="text-heading-sm">Overall Feedback</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {overallComments.length > 0 && (

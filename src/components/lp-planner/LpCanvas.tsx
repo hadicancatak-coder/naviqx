@@ -171,14 +171,14 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
         onDragEnd={handleDragEnd}
       >
         <ScrollArea className="flex-1">
-          <div className="p-6 max-w-4xl mx-auto">
+          <div className="p-lg max-w-4xl mx-auto">
             {sections.length === 0 ? (
-              <div className="border-2 border-dashed border-border rounded-2xl p-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <div className="border-2 border-dashed border-border rounded-2xl p-2xl text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-md">
                   <Layers className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium text-lg mb-2">Start building your LP</h3>
-                <p className="text-sm text-muted-foreground mb-6">
+                <h3 className="font-medium text-heading-sm mb-sm">Start building your LP</h3>
+                <p className="text-body-sm text-muted-foreground mb-lg">
                   Add sections to create your landing page structure
                 </p>
                 <Button onClick={() => setShowSectionDrawer(true)}>
@@ -207,10 +207,10 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
                   {/* Add Section Button */}
                   <button
                     onClick={() => setShowSectionDrawer(true)}
-                    className="w-full py-3 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-card transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-card transition-all flex items-center justify-center gap-sm"
                   >
                     <Plus className="h-4 w-4" />
-                    <span className="text-sm font-medium">Add Section</span>
+                    <span className="text-body-sm font-medium">Add Section</span>
                   </button>
                 </div>
               </SortableContext>

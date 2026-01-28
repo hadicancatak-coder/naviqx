@@ -20,15 +20,7 @@ interface LpSectionDrawerProps {
   onCreateSection: () => void;
 }
 
-const sectionTypeBadgeColors: Record<string, string> = {
-  hero: "bg-purple-500/15 text-purple-400",
-  features: "bg-blue-500/15 text-blue-400",
-  testimonials: "bg-green-500/15 text-green-400",
-  pricing: "bg-amber-500/15 text-amber-400",
-  cta: "bg-red-500/15 text-red-400",
-  footer: "bg-gray-500/15 text-gray-400",
-  custom: "bg-cyan-500/15 text-cyan-400",
-};
+import { sectionTypeBadgeColors } from "@/domain/lp-sections";
 
 export const LpSectionDrawer = ({
   open,
@@ -88,22 +80,22 @@ export const LpSectionDrawer = ({
         </div>
 
         <ScrollArea className="h-[calc(100vh-160px)]">
-          <div className="p-4 space-y-6">
+          <div className="p-md space-y-lg">
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="text-center py-8 text-muted-foreground text-body-sm">
                 Loading sections...
               </div>
             ) : Object.keys(groupedSections).length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="text-center py-8 text-muted-foreground text-body-sm">
                 No sections found
               </div>
             ) : (
               Object.entries(groupedSections).map(([type, typeSections]) => (
                 <div key={type}>
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-sm">
                     {type}
                   </h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-sm">
                     {typeSections.map((section) => {
                       const firstImage = section.sample_images[0];
                       const badgeColor = sectionTypeBadgeColors[section.section_type] || sectionTypeBadgeColors.custom;
@@ -129,12 +121,12 @@ export const LpSectionDrawer = ({
                             </div>
                           )}
 
-                          <span className="font-medium text-sm truncate w-full">
+                          <span className="font-medium text-body-sm truncate w-full">
                             {section.name}
                           </span>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-sm mt-1">
                             {section.entity && (
-                              <span className="text-xs text-muted-foreground truncate">
+                              <span className="text-metadata text-muted-foreground truncate">
                                 {section.entity.name}
                               </span>
                             )}

@@ -73,7 +73,7 @@ export function StatusMultiSelect({ value, onChange }: StatusMultiSelectProps) {
               e.preventDefault();
               handleToggle(status.value);
             }}
-            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded text-sm"
+            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded text-body-sm"
           >
             <div className={cn(
               "flex items-center justify-center h-4 w-4 rounded border transition-smooth",

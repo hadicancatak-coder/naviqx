@@ -140,8 +140,8 @@ export function ExternalVersionGallery({
                     expanded ? "max-h-[550px]" : "max-h-[400px]"
                   )}
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <span className="text-white bg-black/50 px-4 py-2 rounded-full text-body-sm font-medium">
+                <div className="absolute inset-0 bg-background/0 group-hover:bg-background/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <span className="text-foreground bg-background/50 px-md py-2 rounded-full text-body-sm font-medium">
                     Click to expand
                   </span>
                 </div>
