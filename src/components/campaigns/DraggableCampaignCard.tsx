@@ -87,12 +87,6 @@ export function DraggableCampaignCard({ campaign, isDragging, onClick }: Draggab
             </a>
           )}
 
-          {/* Status */}
-          {!campaign.is_active && (
-            <Badge variant="secondary" className="text-metadata w-fit">
-              Inactive
-            </Badge>
-          )}
         </div>
       </CardContent>
     </Card>
