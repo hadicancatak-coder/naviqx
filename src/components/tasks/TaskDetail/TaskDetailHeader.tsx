@@ -35,8 +35,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   const { 
     taskId,
     task,
-    title, 
-    saving, 
+    mutations,
     isCompleted, 
     isSubtask,
     parentTask,
@@ -48,6 +47,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const isRecurring = task?.task_type === 'recurring';
+  const isSaving = mutations.updateTitle.isPending || mutations.updateDescription.isPending;
 
   const handleDelete = async () => {
     await deleteTask();
@@ -100,7 +100,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
             
             <TaskWatchButton taskId={taskId} showWatchers={false} />
             
-            {saving && (
+            {isSaving && (
               <Badge variant="secondary" className="text-metadata">Saving...</Badge>
             )}
           </div>
@@ -143,7 +143,7 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Task</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{title}"? This action cannot be undone.
+              Are you sure you want to delete "{task?.title}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

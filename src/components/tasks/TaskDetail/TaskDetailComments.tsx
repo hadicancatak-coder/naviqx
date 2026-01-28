@@ -15,7 +15,9 @@ import type { CommentAttachment } from "@/components/comments/types";
 
 export function TaskDetailComments() {
   const { user } = useAuth();
-  const { comments, users, messagesEndRef } = useTaskDetailContext();
+  const { comments: commentsHook } = useTaskDetailContext();
+  const { comments, users, messagesEndRef } = commentsHook;
+  
   const [commentsExpanded, setCommentsExpanded] = useState(true);
   
   // Lightbox state

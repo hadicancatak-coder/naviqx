@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -9,28 +9,27 @@ import { useTaskDetailContext } from "./TaskDetailContext";
 import { TaskDetailPriorityCard } from "./TaskDetailPriorityCard";
 
 export function TaskDetailFields() {
-  const {
-    taskId,
-    task,
-    title,
-    setTitle,
-    selectedAssignees,
-    setSelectedAssignees,
-    refetchAssignees,
-    users,
-    saveField,
-    isCompleted,
-  } = useTaskDetailContext();
+  const { taskId, task, mutations, realtimeAssignees, refetchAssignees, isCompleted, comments } = useTaskDetailContext();
 
+  // Local state only for title editing
+  const [localTitle, setLocalTitle] = useState(task?.title || "");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync local title when task changes (switching tasks)
+  useEffect(() => {
+    setLocalTitle(task?.title || "");
+  }, [task?.id, task?.title]);
+
   const handleTitleSave = () => {
-    if (title.trim() && title !== task?.title) {
-      saveField('title', title.trim());
+    if (localTitle.trim() && localTitle !== task?.title && task?.id) {
+      mutations.updateTitle.mutate({ id: task.id, title: localTitle.trim() });
     }
     setIsEditingTitle(false);
   };
+
+  // Get assignee IDs from realtime data
+  const selectedAssignees = realtimeAssignees.map(a => a.id);
 
   const isSubtask = !!task?.parent_id;
   const isRecurring = task?.task_type === 'recurring';
@@ -57,13 +56,13 @@ export function TaskDetailFields() {
         {isEditingTitle ? (
           <Input
             ref={titleInputRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={localTitle}
+            onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={handleTitleSave}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleTitleSave();
               if (e.key === 'Escape') {
-                setTitle(task?.title || "");
+                setLocalTitle(task?.title || "");
                 setIsEditingTitle(false);
               }
             }}
@@ -78,7 +77,7 @@ export function TaskDetailFields() {
             )}
             onClick={() => setIsEditingTitle(true)}
           >
-            {title}
+            {task?.title || localTitle}
           </h2>
         )}
       </div>
@@ -93,11 +92,10 @@ export function TaskDetailFields() {
           mode="edit"
           taskId={taskId}
           selectedIds={selectedAssignees}
-          onSelectionChange={(ids) => {
-            setSelectedAssignees(ids);
+          onSelectionChange={() => {
             refetchAssignees();
           }}
-          users={users}
+          users={comments.users}
         />
       </div>
     </div>

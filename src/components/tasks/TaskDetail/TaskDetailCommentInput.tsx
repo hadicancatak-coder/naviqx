@@ -19,23 +19,20 @@ interface PendingAttachment {
 }
 
 export function TaskDetailCommentInput() {
+  const { comments: commentsHook, realtimeAssignees } = useTaskDetailContext();
   const { 
     newComment, 
     setNewComment, 
-    isSubmittingComment, 
+    isSubmitting, 
     addComment, 
     users,
-    realtimeAssignees,
     pendingAttachments,
     setPendingAttachments
-  } = useTaskDetailContext();
+  } = commentsHook;
 
   // Map realtime assignees to their auth user_ids for @all functionality
-  // realtimeAssignees structure: { id (profile.id), user_id, profiles?: { user_id } }
-  // We need the auth user_id which matches what users array contains
   const assigneeUserIds = realtimeAssignees
     .map(a => {
-      // Try nested profiles.user_id first (if joined), then direct user_id
       const authUserId = a.profiles?.user_id || a.user_id;
       return authUserId;
     })
@@ -77,7 +74,6 @@ export function TaskDetailCommentInput() {
   const handleAddLink = () => {
     if (!linkUrl.trim()) return;
 
-    // Normalize URL to ensure https:// prefix for security
     const normalizedUrl = normalizeUrl(linkUrl.trim());
 
     setPendingAttachments((prev: PendingAttachment[]) => [...prev, {
@@ -226,7 +222,7 @@ export function TaskDetailCommentInput() {
             <Button 
               size="sm" 
               onClick={handleSubmit}
-              disabled={(!newComment.trim() && pendingAttachments.length === 0) || isSubmittingComment}
+              disabled={(!newComment.trim() && pendingAttachments.length === 0) || isSubmitting}
               className="gap-xs"
             >
               <Send className="h-3.5 w-3.5" />

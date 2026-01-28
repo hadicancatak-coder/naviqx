@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Settings2, FolderKanban, Clock, Users, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -17,23 +16,23 @@ import { cn } from "@/lib/utils";
 export function TaskDetailDetails() {
   const {
     task,
-    tags,
-    setTags,
-    saveField,
-    projectId,
-    setProjectId,
+    mutations,
     isCollaborative,
     setIsCollaborative,
     collaborativeStatus,
     isCompleted,
-    phaseId,
-    setPhaseId,
-    selectedAssignees,
+    realtimeAssignees,
   } = useTaskDetailContext();
   
   const { projects } = useProjects();
   // Collapsed by default to reduce clutter
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+
+  // Derive values from task (single source of truth)
+  const tags = Array.isArray(task?.labels) ? task.labels : [];
+  const projectId = task?.project_id || null;
+  const phaseId = task?.phase_id || null;
+  const selectedAssignees = realtimeAssignees.map(a => a.id);
 
   const getAgeText = (createdAt: string | null) => {
     if (!createdAt) return '—';
@@ -41,6 +40,39 @@ export function TaskDetailDetails() {
     if (days === 0) return 'Today';
     if (days === 1) return '1 day';
     return `${days} days`;
+  };
+
+  // Direct mutation handlers
+  const handleTagsChange = (newTags: string[]) => {
+    if (task?.id) {
+      mutations.updateTask.mutate({ id: task.id, updates: { labels: newTags } });
+    }
+  };
+
+  const handleProjectChange = (value: string) => {
+    if (task?.id) {
+      const newProjectId = value === "none" ? null : value;
+      mutations.updateTask.mutate({ 
+        id: task.id, 
+        updates: { 
+          project_id: newProjectId,
+          // Reset phase when project changes
+          ...(newProjectId !== projectId ? { phase_id: null } : {})
+        } 
+      });
+    }
+  };
+
+  const handlePhaseChange = (newPhaseId: string | null) => {
+    if (task?.id) {
+      mutations.updateTask.mutate({ id: task.id, updates: { phase_id: newPhaseId } });
+    }
+  };
+
+  const handleSprintChange = (sprintId: string | null) => {
+    if (task?.id) {
+      mutations.updateTask.mutate({ id: task.id, updates: { sprint: sprintId } });
+    }
   };
 
   return (
@@ -111,10 +143,7 @@ export function TaskDetailDetails() {
           <Label className="text-metadata text-muted-foreground">Tags</Label>
           <TagsMultiSelect
             value={tags}
-            onChange={(newTags) => {
-              setTags(newTags);
-              saveField('labels', newTags);
-            }}
+            onChange={handleTagsChange}
           />
         </div>
 
@@ -123,16 +152,7 @@ export function TaskDetailDetails() {
           <Label className="text-metadata text-muted-foreground">Project</Label>
           <Select 
             value={projectId || "none"} 
-            onValueChange={(v) => {
-              const newValue = v === "none" ? null : v;
-              setProjectId(newValue);
-              saveField('project_id', newValue);
-              // Reset phase when project changes
-              if (newValue !== projectId) {
-                setPhaseId(null);
-                saveField('phase_id', null);
-              }
-            }}
+            onValueChange={handleProjectChange}
           >
             <SelectTrigger className="w-full">
               <FolderKanban className="h-4 w-4 mr-2" />
@@ -151,10 +171,7 @@ export function TaskDetailDetails() {
         <PhaseSelector
           projectId={projectId}
           value={phaseId}
-          onChange={(newPhaseId) => {
-            setPhaseId(newPhaseId);
-            saveField('phase_id', newPhaseId);
-          }}
+          onChange={handlePhaseChange}
         />
 
         {/* Sprint */}
@@ -162,7 +179,7 @@ export function TaskDetailDetails() {
           <Label className="text-metadata text-muted-foreground">Sprint</Label>
           <SprintSelector
             value={task?.sprint || null}
-            onChange={(v) => saveField('sprint', v)}
+            onChange={handleSprintChange}
           />
         </div>
 
