@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { logger } from "./logger";
 
 type ErrorSeverity = 'critical' | 'warning' | 'info';
@@ -9,7 +10,7 @@ interface LogErrorParams {
   type: ErrorType;
   message: string;
   stack?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface ErrorFilters {
@@ -28,14 +29,14 @@ class ErrorLogger {
       
       const { error } = await supabase
         .from('error_logs')
-        .insert({
+        .insert([{
           severity,
           error_type: type,
           error_message: message,
           stack_trace: stack,
           user_id: user?.id,
-          metadata,
-        });
+          metadata: metadata as Json,
+        }]);
 
       if (error) {
         logger.error('Failed to log error to database', error);
@@ -86,7 +87,7 @@ class ErrorLogger {
         .select('user_id, name, email, avatar_url')
         .in('user_id', userIds);
 
-      const profilesMap: Record<string, any> = {};
+      const profilesMap: Record<string, unknown> = {};
       profiles?.forEach(p => profilesMap[p.user_id] = p);
 
       const enrichedErrors = errors?.map(error => ({
