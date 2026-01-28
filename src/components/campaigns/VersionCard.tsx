@@ -17,7 +17,7 @@ interface VersionCardProps {
   version: CampaignVersion;
   campaignId: string;
   onDelete: (versionId: string) => void;
-  onEdit?: (versionId: string, data: { versionNotes?: string; assetLink?: string }) => void;
+  onEdit?: (versionId: string, data: { versionNotes?: string; assetLink?: string; imageFile?: File }) => void;
   isDeleting?: boolean;
   isEditing?: boolean;
 }
@@ -28,10 +28,27 @@ export function VersionCard({ version, campaignId, onDelete, onEdit, isDeleting,
   const [editing, setEditing] = useState(false);
   const [editNotes, setEditNotes] = useState(version.version_notes || "");
   const [editAssetLink, setEditAssetLink] = useState(version.asset_link || "");
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   
   const { comments } = useVersionComments(version.id);
   const commentCount = comments.length;
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        return; // Could add toast here
+      }
+      setEditImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async () => {
     if (!onEdit) return;
@@ -39,9 +56,12 @@ export function VersionCard({ version, campaignId, onDelete, onEdit, isDeleting,
     try {
       await onEdit(version.id, { 
         versionNotes: editNotes, 
-        assetLink: editAssetLink 
+        assetLink: editAssetLink,
+        imageFile: editImageFile || undefined
       });
       setEditing(false);
+      setEditImageFile(null);
+      setImagePreview(null);
     } finally {
       setSaving(false);
     }
@@ -50,6 +70,8 @@ export function VersionCard({ version, campaignId, onDelete, onEdit, isDeleting,
   const handleCancel = () => {
     setEditNotes(version.version_notes || "");
     setEditAssetLink(version.asset_link || "");
+    setEditImageFile(null);
+    setImagePreview(null);
     setEditing(false);
   };
 
@@ -139,6 +161,26 @@ export function VersionCard({ version, campaignId, onDelete, onEdit, isDeleting,
                     onChange={(e) => setEditAssetLink(e.target.value)}
                     placeholder="https://drive.google.com/..."
                   />
+                </div>
+                <div>
+                  <label className="text-metadata text-muted-foreground mb-1 block">
+                    Replace Image (max 2MB)
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="text-body-sm"
+                  />
+                  {imagePreview && (
+                    <div className="mt-2">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-20 h-15 object-cover rounded border border-border"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-sm">
                   <Button size="sm" onClick={handleSave} disabled={saving}>
