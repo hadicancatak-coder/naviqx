@@ -71,11 +71,23 @@ export function UtmCampaignDetailDialog({ open, onOpenChange, campaignId }: UtmC
   const { data: versions = [] } = useVersions(campaignId);
   const entities = getEntitiesForCampaign(campaignId);
 
-  const handleEditVersion = async (versionId: string, data: { versionNotes?: string; assetLink?: string }) => {
+  const handleEditVersion = async (versionId: string, data: { versionNotes?: string; assetLink?: string; imageFile?: File }) => {
+    let imageUrl: string | undefined;
+    let imageFileSize: number | undefined;
+
+    // Upload new image if provided
+    if (data.imageFile) {
+      const result = await uploadImage.mutateAsync({ campaignId, file: data.imageFile });
+      imageUrl = result.publicUrl;
+      imageFileSize = result.fileSize;
+    }
+
     await updateVersion.mutateAsync({
       versionId,
       versionNotes: data.versionNotes,
       assetLink: data.assetLink,
+      imageUrl,
+      imageFileSize,
     });
   };
 
