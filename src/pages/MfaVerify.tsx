@@ -21,7 +21,7 @@ export default function MfaVerify() {
   const [backupCode, setBackupCode] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setMfaVerifiedStatus } = useAuth();
+  const { setMfaVerifiedStatus, refreshMfaStatus } = useAuth();
 
   useEffect(() => {
     checkSession();
@@ -92,6 +92,9 @@ export default function MfaVerify() {
 
         // Mark MFA as verified with session token and expiry
         setMfaVerifiedStatus(true, sessionData.sessionToken, expiresAt);
+        
+        // Update mfaEnabled cache to prevent redirect loop
+        refreshMfaStatus();
         
         toast({
           title: "Verified!",
