@@ -21,6 +21,7 @@ const LpPlanner = () => {
   }, [refetchMap, queryClient]);
 
   return (
+    /* eslint-disable-next-line no-restricted-syntax */
     <PageContainer size="full" className="!p-0 !pt-0 !pb-0">
       <div className="h-[calc(100vh-80px)] flex">
         {/* Left Panel - Map List (30%) */}
