@@ -9,6 +9,7 @@ import { useCampaignMetadata } from "@/hooks/useCampaignMetadata";
 import { useCampaignVersions } from "@/hooks/useCampaignVersions";
 import { toast } from "sonner";
 import { Loader2, FileImage, X } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface CreateUtmCampaignDialogProps {
   open: boolean;
@@ -104,7 +105,7 @@ export function CreateUtmCampaignDialog({ open, onOpenChange }: CreateUtmCampaig
       setAssetLink("");
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to create campaign:", error);
+      logger.error("Failed to create campaign:", error);
       toast.error("Failed to create campaign");
     }
   };

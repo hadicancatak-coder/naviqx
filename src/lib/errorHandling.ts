@@ -1,5 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 import { errorLogger } from "./errorLogger";
+import { logger } from "./logger";
 
 /**
  * Safe async wrapper that catches and handles errors gracefully
@@ -11,7 +12,7 @@ export const safeAsync = async <T>(
   try {
     return await fn();
   } catch (error: any) {
-    console.error("Safe async error:", error);
+    logger.error("Safe async error:", error);
     
     errorLogger.logError({
       severity: 'warning',
@@ -42,7 +43,7 @@ export const safeURL = (url: string, base?: string): URL | null => {
     const urlWithProtocol = url.trim().startsWith('http') ? url : `https://${url}`;
     return new URL(urlWithProtocol, base);
   } catch (error: any) {
-    console.error("Invalid URL:", url, error);
+    logger.error("Invalid URL:", { url, error });
     errorLogger.logError({
       severity: 'warning',
       type: 'frontend',
@@ -81,7 +82,7 @@ export const safeMutate = async <T, V>(
     
     return { data, error: null };
   } catch (error: any) {
-    console.error("Mutation error:", error);
+    logger.error("Mutation error:", error);
     
     errorLogger.logError({
       severity: 'warning',
@@ -112,7 +113,7 @@ export const safePromise = <T>(
   errorMessage?: string
 ): Promise<T | null> => {
   return promise.catch((error: any) => {
-    console.error("Promise rejection:", error);
+    logger.error("Promise rejection:", error);
     
     errorLogger.logError({
       severity: 'warning',
@@ -140,7 +141,7 @@ export const withErrorBoundary = <T extends (...args: any[]) => any>(
       // If result is a promise, wrap it
       if (result instanceof Promise) {
         return result.catch((error: any) => {
-          console.error("Function error:", error);
+          logger.error("Function error:", error);
           
           errorLogger.logError({
             severity: 'warning',
@@ -164,7 +165,7 @@ export const withErrorBoundary = <T extends (...args: any[]) => any>(
       
       return result;
     } catch (error: any) {
-      console.error("Function error:", error);
+      logger.error("Function error:", error);
       
       errorLogger.logError({
         severity: 'critical',

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export interface LpExternalComment {
   id: string;
@@ -26,7 +27,7 @@ export const useLpExternalComments = (mapId: string | null) => {
         .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error fetching LP comments:", error);
+        logger.error("Error fetching LP comments:", error);
         throw error;
       }
 
@@ -79,7 +80,7 @@ export const useAddLpComment = () => {
       toast.success("Comment submitted successfully");
     },
     onError: (error) => {
-      console.error("Error adding comment:", error);
+      logger.error("Error adding comment:", error);
       toast.error("Failed to submit comment");
     },
   });

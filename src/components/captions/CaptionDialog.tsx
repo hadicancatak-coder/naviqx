@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { parseContentForEditing, serializeContent } from "@/lib/captionHelpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Copy, Trash2, X } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 const CAPTION_TYPES = [
   { value: "headline", label: "Headline", maxLength: 30 },
@@ -133,7 +134,7 @@ export function CaptionDialog({
       if (cancelled) return;
 
       if (error || !data) {
-        console.error("Failed to fetch caption:", error);
+        logger.error("Failed to fetch caption:", error);
         toast.error("Failed to load caption content");
         setIsLoading(false);
         setTimeout(() => setEditorReady(true), 50);

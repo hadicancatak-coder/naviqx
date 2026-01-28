@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, AlertTriangle, CheckCircle, XCircle, RefreshCw, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { logger } from "@/lib/logger";
 import {
   Table,
   TableBody,
@@ -73,7 +74,7 @@ export default function SecurityScans() {
       if (activitiesError) throw activitiesError;
       setSuspiciousActivities(activitiesData || []);
     } catch (error: any) {
-      console.error('Error fetching security data:', error);
+      logger.error('Error fetching security data:', error);
       toast({
         title: "Error",
         description: "Failed to load security data",
@@ -98,7 +99,7 @@ export default function SecurityScans() {
 
       fetchData();
     } catch (error: any) {
-      console.error('Error running manual scan:', error);
+      logger.error('Error running manual scan:', error);
       toast({
         title: "Scan failed",
         description: error.message,
@@ -128,7 +129,7 @@ export default function SecurityScans() {
 
       fetchData();
     } catch (error: any) {
-      console.error('Error resolving activity:', error);
+      logger.error('Error resolving activity:', error);
       toast({
         title: "Error",
         description: "Failed to resolve activity",

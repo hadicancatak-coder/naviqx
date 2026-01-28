@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface DeleteAdDialogProps {
@@ -21,7 +22,7 @@ export function DeleteAdDialog({ open, onOpenChange, ad, onSuccess }: DeleteAdDi
     // Defensive checks
     if (!ad || !ad.id) {
       toast.error("Invalid ad data. Cannot delete.");
-      console.error("DeleteAdDialog: Invalid ad object", ad);
+      logger.error("DeleteAdDialog: Invalid ad object", ad);
       return;
     }
 
@@ -33,7 +34,7 @@ export function DeleteAdDialog({ open, onOpenChange, ad, onSuccess }: DeleteAdDi
         .eq('id', ad.id);
 
       if (error) {
-        console.error("Delete error from Supabase:", error);
+        logger.error("Delete error from Supabase:", error);
         throw error;
       }
 
@@ -46,7 +47,7 @@ export function DeleteAdDialog({ open, onOpenChange, ad, onSuccess }: DeleteAdDi
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      console.error("Delete ad error:", error);
+      logger.error("Delete ad error:", error);
       const errorMessage = error.message || error.details || "Failed to delete ad. Please try again.";
       toast.error(errorMessage);
     } finally {

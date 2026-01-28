@@ -5,6 +5,7 @@
 
 import { queryClient } from './queryClient';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from './logger';
 
 // Query keys for consistency
 export const KNOWLEDGE_QUERY_KEY = ['knowledge-pages'] as const;
@@ -59,7 +60,7 @@ export async function prefetchKnowledgeData(): Promise<void> {
       staleTime: 60000,
     });
   } catch (err) {
-    console.error('Knowledge prefetch failed:', err);
+    logger.error('Knowledge prefetch failed:', err);
   } finally {
     prefetchInProgress.knowledge = false;
   }
@@ -88,7 +89,7 @@ export async function prefetchProjectsData(): Promise<void> {
       staleTime: 60000,
     });
   } catch (err) {
-    console.error('Projects prefetch failed:', err);
+    logger.error('Projects prefetch failed:', err);
   } finally {
     prefetchInProgress.projects = false;
   }
@@ -117,7 +118,7 @@ export async function prefetchTechStackData(): Promise<void> {
       staleTime: 60000,
     });
   } catch (err) {
-    console.error('Tech Stack prefetch failed:', err);
+    logger.error('Tech Stack prefetch failed:', err);
   } finally {
     prefetchInProgress.techStack = false;
   }
@@ -147,7 +148,7 @@ export async function prefetchCampaignTrackingData(): Promise<void> {
       staleTime: 2 * 60 * 1000, // 2 minutes - aligned with other hooks
     });
   } catch (err) {
-    console.error('Campaign tracking prefetch failed:', err);
+    logger.error('Campaign tracking prefetch failed:', err);
   } finally {
     prefetchInProgress.campaignTracking = false;
   }
@@ -176,7 +177,7 @@ export async function prefetchKPIsData(): Promise<void> {
       staleTime: 60000,
     });
   } catch (err) {
-    console.error('KPIs prefetch failed:', err);
+    logger.error('KPIs prefetch failed:', err);
   } finally {
     prefetchInProgress.kpis = false;
   }

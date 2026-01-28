@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export interface LpLink {
   id: string;
@@ -57,7 +58,7 @@ export const useLpLinks = (filters?: LpLinkFilters) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching LP links:", error);
+        logger.error("Error fetching LP links:", error);
         throw error;
       }
 
@@ -116,7 +117,7 @@ export const useCreateLpLink = () => {
       toast.success("LP Link created successfully");
     },
     onError: (error: Error) => {
-      console.error("Error creating LP link:", error);
+      logger.error("Error creating LP link:", error);
       toast.error("Failed to create LP Link: " + error.message);
     },
     onSettled: () => {
@@ -164,7 +165,7 @@ export const useUpdateLpLink = () => {
       if (context?.previousLinks) {
         queryClient.setQueryData(["lp-links"], context.previousLinks);
       }
-      console.error("Error updating LP link:", error);
+      logger.error("Error updating LP link:", error);
       toast.error("Failed to update LP Link: " + error.message);
     },
     onSettled: () => {
@@ -203,7 +204,7 @@ export const useDeleteLpLink = () => {
       if (context?.previousLinks) {
         queryClient.setQueryData(["lp-links"], context.previousLinks);
       }
-      console.error("Error deleting LP link:", error);
+      logger.error("Error deleting LP link:", error);
       toast.error("Failed to delete LP Link: " + error.message);
     },
     onSettled: () => {
