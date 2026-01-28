@@ -15,9 +15,10 @@ export const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // 10 minutes - cache time (formerly cacheTime)
       refetchOnWindowFocus: false, // Don't refetch on tab switch
       refetchOnReconnect: true, // Refetch on internet reconnect
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error: unknown) => {
         // Don't retry on 4xx errors (client errors)
-        if (error?.status >= 400 && error?.status < 500) {
+        const status = (error as { status?: number })?.status;
+        if (status && status >= 400 && status < 500) {
           return false;
         }
         // Only retry once on other failures
@@ -25,14 +26,15 @@ export const queryClient = new QueryClient({
       },
     },
     mutations: {
-      onError: (error: any) => {
+      onError: (error: unknown) => {
+        const err = error as Error;
         logger.error('Mutation error:', error);
         
         errorLogger.logError({
           severity: 'warning',
           type: 'frontend',
-          message: error.message || 'Mutation failed',
-          stack: error.stack,
+          message: err?.message || 'Mutation failed',
+          stack: err?.stack,
           metadata: { error }
         });
 
