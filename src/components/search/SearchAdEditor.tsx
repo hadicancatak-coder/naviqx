@@ -553,7 +553,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
         <div className="p-md lg:p-lg space-y-lg">
           <div>
             <div className="flex items-center justify-between mb-md">
-              <h2 className="text-2xl font-semibold">
+              <h2 className="text-heading-lg font-semibold">
                 {ad?.id ? "Edit Search Ad" : "Create Search Ad"}
               </h2>
               <div className="flex gap-2">
@@ -617,7 +617,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                   onChange={(e) => setName(e.target.value)}
                 />
               ) : (
-                <div className="text-xl font-semibold">{name || "Untitled Ad"}</div>
+                <div className="text-heading-md font-semibold">{name || "Untitled Ad"}</div>
               )}
             </div>
 
@@ -888,7 +888,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
           <div className="p-md lg:p-lg space-y-lg">
             <div>
             <div className="flex items-center justify-between mb-md">
-              <h2 className="text-2xl font-semibold">
+              <h2 className="text-heading-lg font-semibold">
                 {ad?.id ? "Edit Search Ad" : "Create Search Ad"}
               </h2>
               <div className="flex gap-2">
@@ -952,7 +952,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                   onChange={(e) => setName(e.target.value)}
                 />
               ) : (
-                <div className="text-xl font-semibold">{name || "Untitled Ad"}</div>
+                <div className="text-heading-md font-semibold">{name || "Untitled Ad"}</div>
               )}
             </div>
 

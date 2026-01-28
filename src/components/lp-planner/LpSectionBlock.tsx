@@ -219,10 +219,10 @@ export const LpSectionBlock = ({
             {/* Brief */}
             {section.brief_content && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                <h4 className="text-metadata font-medium text-muted-foreground mb-2">
                   Brief / Instructions
                 </h4>
-                <p className="text-sm text-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3 line-clamp-4">
+                <p className="text-body-sm text-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-sm line-clamp-4">
                   {section.brief_content}
                 </p>
               </div>
@@ -231,8 +231,8 @@ export const LpSectionBlock = ({
             {/* Links */}
             {section.website_links.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-2">
-                  Reference Links ({section.website_links.length})
+              <h4 className="text-metadata font-medium text-muted-foreground mb-2">
+                Reference Links ({section.website_links.length})
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {section.website_links.map((link) => (

@@ -220,7 +220,7 @@ export const LpCanvas = ({ map, onRefresh }: LpCanvasProps) => {
 
         <DragOverlay>
           {activeSection && (
-            <div className="opacity-90 bg-card rounded-xl border shadow-xl p-4">
+            <div className="opacity-90 bg-card rounded-xl border shadow-xl p-md">
               <span className="font-medium">{activeSection.name}</span>
             </div>
           )}

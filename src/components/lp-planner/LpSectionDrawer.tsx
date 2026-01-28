@@ -56,18 +56,18 @@ export const LpSectionDrawer = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[450px] p-0">
-        <SheetHeader className="p-4 pb-0">
+      <SheetContent className="w-[400px] sm:w-[450px] !p-0">
+        <SheetHeader className="p-md pb-0">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-base">Add Section</SheetTitle>
-            <Button size="sm" variant="outline" onClick={onCreateSection} className="h-8 text-xs">
+            <SheetTitle className="text-body">Add Section</SheetTitle>
+            <Button size="sm" variant="outline" onClick={onCreateSection} className="h-8 text-metadata">
               <Plus className="h-3 w-3 mr-1" />
               New Section
             </Button>
           </div>
         </SheetHeader>
 
-        <div className="p-4 border-b border-border">
+        <div className="p-md border-b border-border">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input

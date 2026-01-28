@@ -141,10 +141,10 @@ const SectionCard = ({
             {/* Brief */}
             {section.brief_content && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-2">
                   Brief / Instructions
                 </h4>
-                <div className="text-sm whitespace-pre-wrap bg-muted/50 rounded-lg p-4">
+                <div className="text-body-sm whitespace-pre-wrap bg-muted/50 rounded-lg p-md">
                   {section.brief_content}
                 </div>
               </div>

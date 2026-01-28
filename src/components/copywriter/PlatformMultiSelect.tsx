@@ -41,7 +41,7 @@ export function PlatformMultiSelect({ value, onChange, disabled }: PlatformMulti
             <span className="text-muted-foreground">Select platforms</span>
           ) : (
             value.map((platform) => (
-              <Badge key={platform} variant="secondary" className="text-xs">
+              <Badge key={platform} variant="secondary" className="text-metadata">
                 {PLATFORMS.find(p => p.value === platform)?.label || platform}
               </Badge>
             ))
@@ -60,7 +60,7 @@ export function PlatformMultiSelect({ value, onChange, disabled }: PlatformMulti
               />
               <label
                 htmlFor={`platform-${platform.value}`}
-                className="text-sm cursor-pointer flex-1"
+                className="text-body-sm cursor-pointer flex-1"
               >
                 {platform.label}
               </label>
