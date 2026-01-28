@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -27,11 +27,7 @@ export default function MfaSetup() {
   const { toast } = useToast();
   const { setMfaVerifiedStatus, refreshMfaStatus } = useAuth();
 
-  useEffect(() => {
-    setupMfa();
-  }, []);
-
-  const setupMfa = async () => {
+  const setupMfa = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -49,15 +45,20 @@ export default function MfaSetup() {
       setQrCode(qrCodeDataUrl);
       setSecret(data.secret);
       setLoading(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to set up MFA";
       logger.error('Error setting up MFA:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to set up MFA",
+        description: errorMessage,
         variant: "destructive",
       });
     }
-  };
+  }, [navigate, toast]);
+
+  useEffect(() => {
+    setupMfa();
+  }, [setupMfa]);
 
   const verifyAndEnable = async () => {
     if (otp.length !== 6) {
@@ -96,11 +97,12 @@ export default function MfaSetup() {
         title: "MFA Enabled!",
         description: "Two-factor authentication has been enabled for your account",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Invalid code. Please try again.";
       logger.error('Error verifying OTP:', error);
       toast({
         title: "Verification failed",
-        description: error.message || "Invalid code. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -137,7 +139,7 @@ export default function MfaSetup() {
         <Card className="w-full max-w-md p-lg glass-elevated">
           <div className="text-center mb-lg">
             <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
-            <h1 className="text-heading-lg font-bold text-foreground mb-2">Save Your Backup Codes</h1>
+            <h1 className="text-heading-lg font-bold text-foreground mb-xs">Save Your Backup Codes</h1>
             <p className="text-body-sm text-muted-foreground">
               Store these codes in a safe place. You can use them to access your account if you lose your authenticator.
             </p>
@@ -146,7 +148,7 @@ export default function MfaSetup() {
           <div className="bg-muted rounded-lg p-md mb-md">
             <div className="grid grid-cols-2 gap-sm font-mono text-body-sm">
               {backupCodes.map((code, index) => (
-                <div key={index} className="text-center p-2 bg-background rounded">
+                <div key={index} className="text-center p-sm bg-background rounded">
                   {code}
                 </div>
               ))}
@@ -159,15 +161,15 @@ export default function MfaSetup() {
             className="w-full mb-md"
           >
             {copiedCodes ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
+              <span className="flex items-center gap-xs">
+                <Check className="h-4 w-4" />
                 Copied!
-              </>
+              </span>
             ) : (
-              <>
-                <Copy className="h-4 w-4 mr-2" />
+              <span className="flex items-center gap-xs">
+                <Copy className="h-4 w-4" />
                 Copy All Codes
-              </>
+              </span>
             )}
           </Button>
 
@@ -186,7 +188,7 @@ export default function MfaSetup() {
       <Card className="w-full max-w-md p-lg glass-elevated">
         <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
-          <h1 className="text-heading-lg font-bold text-foreground mb-2">Set Up Two-Factor Authentication</h1>
+          <h1 className="text-heading-lg font-bold text-foreground mb-xs">Set Up Two-Factor Authentication</h1>
           <p className="text-body-sm text-muted-foreground">
             Naviqx requires 2FA for all accounts to protect your data
           </p>
@@ -194,7 +196,7 @@ export default function MfaSetup() {
 
         <Alert className="mb-lg border-amber-500/50 bg-amber-500/10">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
-          <AlertDescription className="text-body-sm text-muted-foreground ml-2">
+          <AlertDescription className="text-body-sm text-muted-foreground ml-xs">
             <strong>Required:</strong> Scan the QR code with an authenticator app like 
             Google Authenticator, Authy, or Microsoft Authenticator.
           </AlertDescription>
@@ -205,17 +207,17 @@ export default function MfaSetup() {
         </div>
 
         <div className="mb-lg">
-          <p className="text-metadata text-muted-foreground text-center mb-2">
+          <p className="text-metadata text-muted-foreground text-center mb-xs">
             Can't scan? Enter this code manually:
           </p>
-          <div className="bg-muted p-3 rounded text-center font-mono text-body-sm break-all">
+          <div className="bg-muted p-sm rounded text-center font-mono text-body-sm break-all">
             {secret}
           </div>
         </div>
 
         <div className="space-y-md">
           <div>
-            <label className="text-body-sm font-medium text-foreground block mb-2">
+            <label className="text-body-sm font-medium text-foreground block mb-xs">
               Enter the 6-digit code from your app
             </label>
             <div className="flex justify-center">
@@ -246,10 +248,10 @@ export default function MfaSetup() {
             className="w-full"
           >
             {verifying ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <span className="flex items-center gap-xs">
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Verifying...
-              </>
+              </span>
             ) : (
               "Verify and Enable MFA"
             )}
