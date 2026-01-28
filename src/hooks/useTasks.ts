@@ -63,8 +63,10 @@ export function useTasks(filters?: TaskFilters) {
     queryKey: filters?.includeTemplates ? TASK_WITH_TEMPLATES_KEY : TASK_QUERY_KEY,
     queryFn: fetchTasks,
     enabled: !!user, // Only run when user is authenticated
-    staleTime: 30000, // 30 seconds - reduce refetches
+    staleTime: 2 * 60 * 1000, // 2 minutes - significantly reduce refetches
+    gcTime: 5 * 60 * 1000, // 5 minutes garbage collection
     refetchOnWindowFocus: false, // Don't refetch on tab focus
+    refetchOnReconnect: false, // Don't refetch on reconnect - rely on realtime
     placeholderData: (previousData) => previousData, // Show stale data instantly while refetching
   });
 

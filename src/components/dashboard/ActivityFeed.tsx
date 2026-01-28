@@ -13,7 +13,8 @@ export function ActivityFeed() {
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["activity-feed"],
     queryFn: () => getRecentActivity(10),
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes - realtime handles updates
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOverlay, useDroppable } from "@dnd-kit/core";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -178,7 +178,8 @@ export default function CampaignsLog() {
     }
   };
 
-  const transformedCampaigns = campaigns.map((c) => ({ 
+  // Memoize transformedCampaigns to prevent recalculation on every render
+  const transformedCampaigns = useMemo(() => campaigns.map((c) => ({ 
     id: c.id, 
     name: c.name, 
     campaign_type: c.campaign_type, 
@@ -186,14 +187,15 @@ export default function CampaignsLog() {
     landing_page: c.landing_page, 
     is_active: c.is_active, 
     notes: null 
-  }));
+  })), [campaigns]);
 
-  const filteredCampaigns = transformedCampaigns.filter((c) => {
+  // Memoize filtered campaigns to prevent recalculation
+  const filteredCampaigns = useMemo(() => transformedCampaigns.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
     if (libraryEntityFilter === "all") return true;
     return getEntitiesForCampaign(c.id).some(t => t.entity === libraryEntityFilter);
-  });
+  }), [transformedCampaigns, searchTerm, libraryEntityFilter, getEntitiesForCampaign]);
 
   const handleBulkAssignMultiple = async (entityNames: string[], status: EntityTrackingStatus) => {
     if (entityNames.length === 0 || selectedCampaigns.length === 0) return;

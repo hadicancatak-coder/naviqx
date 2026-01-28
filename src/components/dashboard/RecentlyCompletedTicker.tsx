@@ -42,7 +42,8 @@ export function RecentlyCompletedTicker() {
         completed_by: (task.task_assignees as any)?.[0]?.profiles?.name || null,
       })) as CompletedTask[];
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes - reduces dashboard load
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 

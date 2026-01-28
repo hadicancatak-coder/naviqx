@@ -126,7 +126,8 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
       };
     },
     enabled: !!userId,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 };
