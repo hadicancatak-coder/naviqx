@@ -78,7 +78,8 @@ export const useLpSections = (filters?: LpSectionFilters) => {
         website_links: (section.website_links as unknown as WebsiteLink[]) || [],
       })) as LpSection[];
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 };

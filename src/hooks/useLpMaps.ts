@@ -55,7 +55,8 @@ export const useLpMaps = (filters?: LpMapFilters) => {
       if (error) throw error;
       return (data || []) as LpMap[];
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 };
@@ -102,7 +103,8 @@ export const useLpMapWithSections = (mapId: string | null) => {
       return { ...map, sections: transformedSections } as LpMap;
     },
     enabled: !!mapId,
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 };

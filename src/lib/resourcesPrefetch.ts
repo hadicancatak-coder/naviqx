@@ -144,7 +144,7 @@ export async function prefetchCampaignTrackingData(): Promise<void> {
         if (error) throw error;
         return data;
       },
-      staleTime: 30000,
+      staleTime: 2 * 60 * 1000, // 2 minutes - aligned with other hooks
     });
   } catch (err) {
     console.error('Campaign tracking prefetch failed:', err);

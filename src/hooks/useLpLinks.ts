@@ -63,8 +63,9 @@ export const useLpLinks = (filters?: LpLinkFilters) => {
 
       return data as LpLink[];
     },
-    staleTime: 30 * 1000, // 30 seconds - prevents excessive refetches
-    refetchOnWindowFocus: false, // Don't refetch on every window focus
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
 };

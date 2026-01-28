@@ -98,7 +98,8 @@ export const useUtmLinks = (filters?: UtmLinkFilters) => {
         creator: link.created_by ? profilesMap[link.created_by] || null : null,
       })) as UtmLink[];
     },
-    staleTime: 30 * 1000, // 30 seconds - prevents excessive refetches
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
