@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import type { AdVariation } from "@/lib/adVariationGenerator";
 
 interface AdEditorPanelProps {
@@ -160,7 +161,7 @@ export default function AdEditorPanel({ ad, onSave, onCancel, isCreating }: AdEd
       setHasChanges(false);
       toast.success(isCreating ? "Ad created successfully" : "Ad updated successfully");
     } catch (error) {
-      console.error("Error saving ad:", error);
+      logger.error("Error saving ad:", error);
       toast.error("Failed to save ad");
     } finally {
       setIsSaving(false);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { logger } from "@/lib/logger";
 
 interface EditorState {
   adId: string | null;
@@ -21,7 +22,7 @@ export function useAdEditorState(adId: string | null) {
           setDraftData(JSON.parse(stored));
           setHasUnsavedChanges(true);
         } catch (error) {
-          console.error("Failed to parse draft data:", error);
+          logger.error("Failed to parse draft data:", error);
         }
       }
     }

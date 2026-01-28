@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 export interface EnrichmentResult {
   category: string;
   estimatedTraffic: number | null;
@@ -95,7 +97,7 @@ export const enrichUrl = async (url: string): Promise<EnrichmentResult> => {
       estimatedTraffic,
     };
   } catch (error) {
-    console.error('URL enrichment failed:', error);
+    logger.error('URL enrichment failed:', error);
     return {
       category: 'Generic',
       detectedType: 'Website',

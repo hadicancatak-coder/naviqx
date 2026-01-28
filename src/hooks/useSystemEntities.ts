@@ -235,7 +235,7 @@ export const useEntityChangeLog = (entityId?: string) => {
         if (error) throw error;
         return data || [];
       } catch (error: any) {
-        console.error('Error fetching entity change log:', error);
+        logger.error('Error fetching entity change log:', error);
         // Return empty array on error to prevent crashes
         return [];
       }

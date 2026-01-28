@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GlassBackground } from "@/components/layout/GlassBackground";
+import { logger } from "@/lib/logger";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
 import { FilterBar, FilterPill } from "@/components/layout/FilterBar";
 import { ExternalCampaignGrid } from "@/components/campaigns/ExternalCampaignGrid";
@@ -117,7 +118,7 @@ export default function CampaignReview() {
         // Always load campaign data - don't block on identification
         await loadCampaignData(result.entity, result.campaign_id);
       } catch (error: any) {
-        console.error("Token verification failed:", error);
+        logger.error("Token verification failed:", error);
         setAccessData(null);
         const errorMessage = error.message?.includes("fetch") 
           ? "Network error - please check your connection and try again"
@@ -144,7 +145,7 @@ export default function CampaignReview() {
           .single();
 
         if (campError) {
-          console.error("Campaign query error:", campError);
+          logger.error("Campaign query error:", campError);
           toast.error("Campaign not found");
           throw campError;
         }
@@ -160,7 +161,7 @@ export default function CampaignReview() {
           .order("version_number", { ascending: false });
 
         if (versionError) {
-          console.error("Versions query error:", versionError);
+          logger.error("Versions query error:", versionError);
         }
         
         setVersions(versionData || []);
@@ -172,7 +173,7 @@ export default function CampaignReview() {
           .eq("entity", entity);
 
         if (trackError) {
-          console.error("Tracking query error:", trackError);
+          logger.error("Tracking query error:", trackError);
           toast.error("Failed to load entity campaigns");
           throw trackError;
         }
@@ -180,7 +181,7 @@ export default function CampaignReview() {
         const campaigns = tracking.map((t: any) => t.utm_campaigns).filter(Boolean);
         
         if (!campaigns || campaigns.length === 0) {
-          console.log(`No campaigns found for ${entity}`);
+          logger.debug(`No campaigns found for ${entity}`);
         }
         
         setCampaignData(campaigns);
@@ -194,7 +195,7 @@ export default function CampaignReview() {
             .order("version_number", { ascending: false });
 
           if (versionError) {
-            console.error("Versions query error:", versionError);
+            logger.error("Versions query error:", versionError);
           }
 
           setVersions(versionData || []);

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { logger } from "@/lib/logger";
 
 type UtmCampaignRow = Database["public"]["Tables"]["utm_campaigns"]["Row"];
 type UtmCampaignInsert = Database["public"]["Tables"]["utm_campaigns"]["Insert"];
@@ -262,7 +263,7 @@ export const useUpsertUtmCampaigns = () => {
               });
 
             if (versionError) {
-              console.warn(`Failed to create version for campaign ${campaign.name}:`, versionError);
+              logger.warn(`Failed to create version for campaign ${campaign.name}:`, versionError);
             } else {
               versionsCreated++;
             }

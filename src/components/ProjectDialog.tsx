@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const projectSchema = z.object({
@@ -90,7 +91,7 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
           .in("id", relatedTasks);
 
         if (taskError) {
-          console.error("Error updating tasks:", taskError);
+          logger.error("Error updating tasks:", taskError);
         }
       }
 

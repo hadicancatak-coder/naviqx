@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/lib/logger";
 
 interface LpOrderPreference {
   id: string;
@@ -27,7 +28,7 @@ export const useLpOrderPreferences = (entityId: string | null) => {
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching LP order preferences:", error);
+        logger.error("Error fetching LP order preferences:", error);
         return null;
       }
 

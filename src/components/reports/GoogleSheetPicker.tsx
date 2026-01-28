@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const getAPIKey = () => localStorage.getItem("GOOGLE_API_KEY") || import.meta.env.VITE_GOOGLE_API_KEY;
 const getClientId = () => localStorage.getItem("GOOGLE_CLIENT_ID") || import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -20,7 +21,7 @@ export function GoogleSheetPicker({ accessToken, onSheetSelected }: GoogleSheetP
     script.src = 'https://apis.google.com/js/api.js';
     script.onload = () => {
       window.gapi.load('picker', () => {
-        console.log('Google Picker API loaded');
+        logger.debug('Google Picker API loaded');
       });
     };
     document.body.appendChild(script);
@@ -28,7 +29,7 @@ export function GoogleSheetPicker({ accessToken, onSheetSelected }: GoogleSheetP
 
   const openPicker = () => {
     if (!window.gapi?.picker || !window.google?.picker) {
-      console.error('Google Picker not loaded');
+      logger.error('Google Picker not loaded');
       return;
     }
 
@@ -36,7 +37,7 @@ export function GoogleSheetPicker({ accessToken, onSheetSelected }: GoogleSheetP
     const clientId = getClientId();
     
     if (!apiKey || !clientId) {
-      console.error('Google API credentials not configured');
+      logger.error('Google API credentials not configured');
       return;
     }
 

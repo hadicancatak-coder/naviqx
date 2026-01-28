@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 import { CheckSquare, Plus, Trash2 } from "lucide-react";
 
 interface ChecklistItem {
@@ -39,7 +40,7 @@ export function TaskChecklistSection({ taskId, onUpdate, readOnly = false }: Tas
         .single();
 
       if (error) {
-        console.error("Failed to fetch checklist:", error);
+        logger.error("Failed to fetch checklist:", error);
         setIsLoading(false);
         return;
       }
