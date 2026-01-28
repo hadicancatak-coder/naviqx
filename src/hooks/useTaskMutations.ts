@@ -1,16 +1,19 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { mapStatusToDb } from '@/lib/taskStatusMapper';
-import { completeTask as completeTaskAction, setTaskStatus } from '@/domain';
+import { completeTask as completeTaskAction } from '@/domain';
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from '@/lib/queryKeys';
 
-// Task mutation hooks with optimistic updates for instant UI feedback
+/**
+ * Task mutation hooks with optimistic updates for instant UI feedback.
+ * All mutations update both the task list and task detail caches.
+ */
 
 interface UpdateTaskParams {
   id: string;
   updates: Partial<{
-    status: 'Pending' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked'; // DB values
+    status: 'Pending' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked';
     priority: 'Low' | 'Medium' | 'High';
     due_at: string | null;
     title: string;
@@ -19,10 +22,63 @@ interface UpdateTaskParams {
   }>;
 }
 
+// =============================================================================
+// Helper: Optimistic update for both list and detail caches
+// =============================================================================
+function optimisticUpdate(
+  queryClient: QueryClient,
+  taskId: string,
+  updates: Record<string, any>
+) {
+  const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
+  const previousTask = queryClient.getQueryData(TASK_DETAIL_KEY(taskId));
+  
+  const patchedData = { ...updates, updated_at: new Date().toISOString() };
+  
+  // Update list cache
+  queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
+    if (!old) return old;
+    return old.map((task: any) =>
+      task.id === taskId ? { ...task, ...patchedData } : task
+    );
+  });
+  
+  // Update detail cache
+  queryClient.setQueryData(TASK_DETAIL_KEY(taskId), (old: any) => {
+    if (!old) return old;
+    return { ...old, ...patchedData };
+  });
+  
+  return { previousTasks, previousTask };
+}
+
+function rollback(
+  queryClient: QueryClient,
+  taskId: string,
+  context: { previousTasks?: any; previousTask?: any } | undefined
+) {
+  if (context?.previousTasks) {
+    queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
+  }
+  if (context?.previousTask) {
+    queryClient.setQueryData(TASK_DETAIL_KEY(taskId), context.previousTask);
+  }
+}
+
+function invalidateBothCaches(queryClient: QueryClient, taskId?: string) {
+  queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+  if (taskId) {
+    queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
+  }
+}
+
+// =============================================================================
+// Main Hook
+// =============================================================================
 export const useTaskMutations = () => {
   const queryClient = useQueryClient();
 
-  // Main update mutation with optimistic updates
+  // Generic update mutation
   const updateTask = useMutation({
     mutationFn: async ({ id, updates }: UpdateTaskParams) => {
       const { data, error } = await supabase
@@ -31,140 +87,73 @@ export const useTaskMutations = () => {
         .eq('id', id)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
     onMutate: async ({ id, updates }) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      
-      // Snapshot previous value
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      
-      // Optimistically update cache
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, ...updates, updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      return { previousTasks };
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, updates);
     },
-    onError: (err: any, variables, context) => {
-      // Rollback on error
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      toast({
-        title: "Update failed",
-        description: err.message || "Failed to update task",
-        variant: "destructive"
-      });
+    onError: (err: any, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
     },
-    onSuccess: (data, variables) => {
-      // Show success message for non-silent updates
-      const updateType = variables.updates.status ? 'Status' : 
-                        variables.updates.priority ? 'Priority' : 
-                        variables.updates.due_at ? 'Deadline' : 'Task';
-      
-      toast({ 
-        title: `${updateType} updated`,
-        duration: 2000
-      });
+    onSuccess: (_, { updates }) => {
+      const updateType = updates.status ? 'Status' : 
+                        updates.priority ? 'Priority' : 
+                        updates.due_at !== undefined ? 'Deadline' : 'Task';
+      toast({ title: `${updateType} updated`, duration: 2000 });
     },
-    onSettled: () => {
-      // Refetch to ensure sync with server
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    }
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
   });
 
-  // Helper mutation for completing tasks - uses shared action
+  // Complete task
   const completeTask = useMutation({
     mutationFn: async (id: string) => {
       const result = await completeTaskAction(id);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to complete task');
-      }
+      if (!result.success) throw new Error(result.error || 'Failed to complete task');
       return result.data;
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, status: 'Completed', updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      return { previousTasks };
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, { status: 'Completed' });
     },
-    onError: (err: any, variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      toast({
-        title: "Failed to complete task",
-        description: err.message,
-        variant: "destructive"
-      });
+    onError: (err: any, id, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to complete task", description: err.message, variant: "destructive" });
     },
-    onSuccess: () => {
-      toast({ title: "Task completed", duration: 2000 });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    }
+    onSuccess: () => toast({ title: "Task completed", duration: 2000 }),
+    onSettled: (_, __, id) => invalidateBothCaches(queryClient, id)
   });
 
-  // Helper mutation for updating deadline
+  // Update deadline
   const updateDeadline = useMutation({
-    mutationFn: async ({ id, due_at }: { id: string; due_at: string }) => {
+    mutationFn: async ({ id, due_at }: { id: string; due_at: string | null }) => {
       const { data, error } = await supabase
         .from('tasks')
         .update({ due_at })
         .eq('id', id)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
     onMutate: async ({ id, due_at }) => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, due_at, updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      return { previousTasks };
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, { due_at });
     },
-    onError: (err: any, variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      toast({
-        title: "Failed to update deadline",
-        description: err.message,
-        variant: "destructive"
-      });
+    onError: (err: any, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to update deadline", description: err.message, variant: "destructive" });
     },
-    onSuccess: () => {
-      toast({ title: "Deadline updated", duration: 2000 });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    }
+    onSuccess: () => toast({ title: "Deadline updated", duration: 2000 }),
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
   });
 
-  // Helper mutation for updating status
+  // Update status
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const dbStatus = mapStatusToDb(status) as 'Pending' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked';
@@ -174,94 +163,97 @@ export const useTaskMutations = () => {
         .eq('id', id)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, status, updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      return { previousTasks };
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, { status });
     },
-    onError: (err: any, variables, context) => {
-      console.error('Task status update failed:', {
-        error: err,
-        variables,
-        errorMessage: err.message,
-        errorDetails: err.details,
-        hint: err.hint
-      });
-      
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      toast({
-        title: "Failed to update status",
-        description: `${err.message}${err.hint ? ` - ${err.hint}` : ''}`,
-        variant: "destructive"
-      });
+    onError: (err: any, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to update status", description: err.message, variant: "destructive" });
     },
-    onSuccess: () => {
-      toast({ title: "Status updated", duration: 2000 });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    }
+    onSuccess: () => toast({ title: "Status updated", duration: 2000 }),
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
   });
 
-  // Helper mutation for updating priority
+  // Update priority
   const updatePriority = useMutation({
-    mutationFn: async ({ id, priority }: { id: string; priority: any }) => {
+    mutationFn: async ({ id, priority }: { id: string; priority: string }) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update({ priority })
+        .update({ priority: priority as 'Low' | 'Medium' | 'High' })
         .eq('id', id)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
     onMutate: async ({ id, priority }) => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, priority, updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      return { previousTasks };
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, { priority });
     },
-    onError: (err: any, variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      toast({
-        title: "Failed to update priority",
-        description: err.message,
-        variant: "destructive"
-      });
+    onError: (err: any, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to update priority", description: err.message, variant: "destructive" });
     },
-    onSuccess: () => {
-      toast({ title: "Priority updated", duration: 2000 });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    }
+    onSuccess: () => toast({ title: "Priority updated", duration: 2000 }),
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
   });
 
-  // Bulk mutation for setting sprint on multiple tasks
+  // Update description (silent - no success toast)
+  const updateDescription = useMutation({
+    mutationFn: async ({ id, description }: { id: string; description: string }) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ description })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ id, description }) => {
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, { description });
+    },
+    onError: (err: any, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to save description", description: err.message, variant: "destructive" });
+    },
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
+  });
+
+  // Update title
+  const updateTitle = useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ title })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ id, title }) => {
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      return optimisticUpdate(queryClient, id, { title });
+    },
+    onError: (err: any, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to save title", description: err.message, variant: "destructive" });
+    },
+    onSuccess: () => toast({ title: "Title updated", duration: 2000 }),
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
+  });
+
+  // Bulk sprint update
   const setSprintBulk = useMutation({
     mutationFn: async ({ taskIds, sprintId }: { taskIds: string[]; sprintId: string | null }) => {
       const { data, error } = await supabase
@@ -269,7 +261,6 @@ export const useTaskMutations = () => {
         .update({ sprint: sprintId })
         .in('id', taskIds)
         .select();
-      
       if (error) throw error;
       return data;
     },
@@ -288,141 +279,17 @@ export const useTaskMutations = () => {
       
       return { previousTasks };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: any, _, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
-      toast({
-        title: "Failed to update sprint",
-        description: err.message,
-        variant: "destructive"
-      });
+      toast({ title: "Failed to update sprint", description: err.message, variant: "destructive" });
     },
-    onSuccess: (data, variables) => {
-      const action = variables.sprintId ? 'added to sprint' : 'moved to backlog';
-      toast({ 
-        title: `${variables.taskIds.length} task${variables.taskIds.length > 1 ? 's' : ''} ${action}`, 
-        duration: 2000 
-      });
+    onSuccess: (_, { taskIds, sprintId }) => {
+      const action = sprintId ? 'added to sprint' : 'moved to backlog';
+      toast({ title: `${taskIds.length} task${taskIds.length > 1 ? 's' : ''} ${action}`, duration: 2000 });
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    }
-  });
-
-  // Helper function to call setSprintBulk mutation
-  const setSprintBulkFn = (taskIds: string[], sprintId: string | null) => {
-    setSprintBulk.mutate({ taskIds, sprintId });
-  };
-
-  // Description mutation with optimistic update to both caches (silent - no toast)
-  const updateDescription = useMutation({
-    mutationFn: async ({ id, description }: { id: string; description: string }) => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({ description })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onMutate: async ({ id, description }) => {
-      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
-      
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      const previousTask = queryClient.getQueryData(TASK_DETAIL_KEY(id));
-      
-      // Optimistically update list cache
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, description, updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      // Optimistically update detail cache
-      queryClient.setQueryData(TASK_DETAIL_KEY(id), (old: any) => {
-        if (!old) return old;
-        return { ...old, description, updated_at: new Date().toISOString() };
-      });
-      
-      return { previousTasks, previousTask };
-    },
-    onError: (err: any, { id }, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(TASK_DETAIL_KEY(id), context.previousTask);
-      }
-      toast({
-        title: "Failed to save description",
-        description: err.message,
-        variant: "destructive"
-      });
-    },
-    // Silent save - no toast on success
-    onSettled: (data, error, { id }) => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(id) });
-    }
-  });
-
-  // Title mutation with optimistic update to both caches
-  const updateTitle = useMutation({
-    mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({ title })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onMutate: async ({ id, title }) => {
-      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
-      
-      const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      const previousTask = queryClient.getQueryData(TASK_DETAIL_KEY(id));
-      
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-        if (!old) return old;
-        return old.map((task: any) =>
-          task.id === id ? { ...task, title, updated_at: new Date().toISOString() } : task
-        );
-      });
-      
-      queryClient.setQueryData(TASK_DETAIL_KEY(id), (old: any) => {
-        if (!old) return old;
-        return { ...old, title, updated_at: new Date().toISOString() };
-      });
-      
-      return { previousTasks, previousTask };
-    },
-    onError: (err: any, { id }, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(TASK_DETAIL_KEY(id), context.previousTask);
-      }
-      toast({
-        title: "Failed to save title",
-        description: err.message,
-        variant: "destructive"
-      });
-    },
-    onSuccess: () => {
-      toast({ title: "Title updated", duration: 2000 });
-    },
-    onSettled: (data, error, { id }) => {
-      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(id) });
-    }
+    onSettled: () => queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY })
   });
 
   return { 
@@ -433,7 +300,7 @@ export const useTaskMutations = () => {
     updatePriority,
     updateDescription,
     updateTitle,
-    setSprintBulk: setSprintBulkFn,
+    setSprintBulk: (taskIds: string[], sprintId: string | null) => setSprintBulk.mutate({ taskIds, sprintId }),
     isSettingSprintBulk: setSprintBulk.isPending,
   };
 };
