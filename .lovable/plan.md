@@ -1,356 +1,392 @@
 
-# Proper Task Detail Architecture Refactor
+# Clean Slate: Task Detail System Simplification
 
-## Problem Statement
+## Current State (Brutally Honest)
 
-The current `TaskDetailContext.tsx` is a **640-line monolithic provider** with 20+ manual `useState` hooks, causing:
+| Metric | Current | Problem |
+|--------|---------|---------|
+| **TaskDetailContext.tsx** | 579 lines | Monolithic, 20+ useState, manual sync |
+| **useTaskMutations.ts** | 306 lines | Already good, but duplicated in saveField |
+| **Total useState hooks** | 22 | Each creates sync bugs |
+| **State sync useEffects** | 4 | Race conditions, data loss |
 
-1. **Description not saving**: Cleanup clears timeout without flushing pending saves
-2. **No working days warnings**: `working_days` field missing from all queries
-3. **Complex data flow**: Manual state synchronization prone to race conditions
-4. **Inconsistent with codebase**: Rest of app uses `useTaskMutations` with optimistic updates
+**Root Cause:** Every field is stored in 3 places:
+1. React Query cache (`taskData.title`)
+2. Local useState (`title`)  
+3. useEffect syncs them (buggy)
 
-## Solution Architecture
+**What ACTUALLY needs local state:**
+- Title while typing (before blur save)
+- Description while typing (before debounce)
+- Comment text input
+- UI dialogs (delete confirm, blocker dialog)
 
-Replace the manual state management with React Query's proven patterns already used elsewhere in the app.
+Everything else can read directly from `task` object.
+
+---
+
+## New Architecture: Single Source of Truth
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    BEFORE (Current)                             │
-├─────────────────────────────────────────────────────────────────┤
-│  TaskDetailContext (640 lines)                                  │
-│  ├── 20+ useState hooks                                         │
-│  ├── Manual fetchTask() → setTask(), setTitle(), setStatus()...│
-│  ├── Custom saveField() → individual PATCH requests            │
-│  ├── descriptionEditedRef to prevent overwrites                │
-│  └── Manual query invalidation                                  │
-└─────────────────────────────────────────────────────────────────┘
+BEFORE:
+  React Query → useEffect sync → useState → child reads → child calls saveField → supabase
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     AFTER (Proposed)                            │
-├─────────────────────────────────────────────────────────────────┤
-│  useTask(taskId) hook                                           │
-│  ├── React Query with ["task", taskId] key                      │
-│  ├── initialData from list cache (instant display)             │
-│  ├── Background refetch for fresh data                          │
-│  └── Includes working_days in assignee select                   │
-│                                                                  │
-│  useTaskMutations (existing)                                    │
-│  ├── Optimistic updates to ["tasks"] cache                      │
-│  ├── Also updates ["task", taskId] cache                        │
-│  ├── Automatic rollback on error                                │
-│  └── Add updateDescription mutation                             │
-│                                                                  │
-│  TaskDetailContext (simplified ~200 lines)                      │
-│  ├── Uses useTask() for data                                    │
-│  ├── Uses useTaskMutations() for saves                          │
-│  ├── Local form state only for controlled inputs                │
-│  └── Working days validation built-in                           │
-└─────────────────────────────────────────────────────────────────┘
+AFTER:
+  React Query → child reads task.* directly → child calls mutations.* → cache updates instantly
 ```
 
-## Implementation Plan
+---
 
-### Phase 1: Create useTask Hook
+## Files to DELETE Completely
 
-**New file: `src/hooks/useTask.ts`**
+None. We rewrite in place.
 
-A dedicated hook for fetching a single task by ID with React Query:
+---
 
+## Files to CREATE
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `src/hooks/useTaskComments.ts` | ~80 | Extract all comment logic |
+
+---
+
+## Files to REWRITE
+
+### 1. TaskDetailContext.tsx: 579 → ~120 lines
+
+**DELETE these useState hooks (15 total):**
 ```typescript
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { TASK_QUERY_KEY } from '@/lib/queryKeys';
-import { mapStatusToUi } from '@/lib/taskStatusMapper';
+// DELETE ALL OF THESE:
+const [title, setTitle] = useState("");
+const [description, setDescription] = useState("");
+const [priority, setPriority] = useState<...>("Medium");
+const [status, setStatus] = useState<string>("Ongoing");
+const [dueDate, setDueDate] = useState<Date>();
+const [tags, setTags] = useState<string[]>([]);
+const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+const [projectId, setProjectId] = useState<string | null>(null);
+const [phaseId, setPhaseId] = useState<string | null>(null);
+const [saving, setSaving] = useState(false);
+const [isCollaborative, setIsCollaborativeState] = useState(false);
+const [collaborativeStatus, setCollaborativeStatus] = useState<...>(null);
+const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
+const [users, setUsers] = useState<any[]>([]);
+const [blocker, setBlocker] = useState<any>(null);
+```
 
-export const TASK_DETAIL_KEY = (taskId: string) => ['task', taskId] as const;
+**DELETE the sync useEffect (lines 174-207):**
+```typescript
+// DELETE THIS ENTIRE BLOCK - root cause of bugs
+useEffect(() => {
+  if (taskData) {
+    setTitle(taskData.title || "");
+    setDescription(taskData.description || "");
+    setPriority(taskData.priority || "Medium");
+    // ... 15 more lines of manual sync
+  }
+}, [taskData?.id, taskData?.updated_at]);
+```
 
-export function useTask(taskId: string, cachedTask?: any) {
+**DELETE saveField function (lines 302-333):**
+```typescript
+// DELETE - replaced by mutations.*
+const saveField = useCallback(async (field: string, value: any) => { ... });
+```
+
+**NEW simplified context (~120 lines):**
+```typescript
+interface TaskDetailContextValue {
+  // Core (from useTask)
+  taskId: string;
+  task: TaskWithAssignees | null;
+  loading: boolean;
+  
+  // Mutations (direct access)
+  mutations: ReturnType<typeof useTaskMutations>;
+  
+  // Comments (extracted hook)
+  comments: ReturnType<typeof useTaskComments>;
+  
+  // Assignees (existing hook)
+  realtimeAssignees: any[];
+  refetchAssignees: () => void;
+  
+  // Derived
+  isCompleted: boolean;
+  isSubtask: boolean;
+  parentTask: { id: string; title: string } | null;
+  
+  // Change logs (existing hook)
+  changeLogs: any[];
+  
+  // Actions
+  deleteTask: () => Promise<void>;
+  markComplete: () => Promise<void>;
+  
+  // UI state (only what's needed)
+  blockerDialogOpen: boolean;
+  setBlockerDialogOpen: (v: boolean) => void;
+}
+
+export function TaskDetailProvider({ taskId, cachedTask, children, onClose, onTaskDeleted }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  return useQuery({
-    queryKey: TASK_DETAIL_KEY(taskId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(`
-          *,
-          task_assignees(
-            user_id,
-            profiles!task_assignees_user_id_fkey(
-              id, user_id, name, username, avatar_url, working_days
-            )
-          )
-        `)
-        .eq('id', taskId)
-        .single();
-      
-      if (error) throw error;
-      
-      return {
-        ...data,
-        status: mapStatusToUi(data.status),
-        assignees: data.task_assignees?.map((ta: any) => ta.profiles).filter(Boolean) || []
-      };
-    },
-    enabled: !!taskId,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000,
-    // Use cached task from list as placeholder for instant display
-    placeholderData: () => {
-      if (cachedTask) return cachedTask;
-      // Try to find in list cache
-      const listData = queryClient.getQueryData(TASK_QUERY_KEY) as any[];
-      return listData?.find(t => t.id === taskId);
-    },
-  });
-}
-```
-
-### Phase 2: Extend useTaskMutations
-
-**File: `src/hooks/useTaskMutations.ts`**
-
-Add mutations for description and title with optimistic updates to both list and detail caches:
-
-```typescript
-// Add to existing useTaskMutations:
-
-// Description mutation with optimistic update
-const updateDescription = useMutation({
-  mutationFn: async ({ id, description }: { id: string; description: string }) => {
-    const { data, error } = await supabase
-      .from('tasks')
-      .update({ description })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  },
-  onMutate: async ({ id, description }) => {
-    // Cancel queries
-    await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
-    await queryClient.cancelQueries({ queryKey: ['task', id] });
-    
-    // Snapshot both caches
-    const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-    const previousTask = queryClient.getQueryData(['task', id]);
-    
-    // Optimistically update list cache
-    queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
-      if (!old) return old;
-      return old.map((task: any) =>
-        task.id === id ? { ...task, description } : task
-      );
-    });
-    
-    // Optimistically update detail cache
-    queryClient.setQueryData(['task', id], (old: any) => {
-      if (!old) return old;
-      return { ...old, description };
-    });
-    
-    return { previousTasks, previousTask };
-  },
-  onError: (err, { id }, context) => {
-    if (context?.previousTasks) {
-      queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
-    }
-    if (context?.previousTask) {
-      queryClient.setQueryData(['task', id], context.previousTask);
-    }
-  },
-  // No toast for description - silent save
-  onSettled: (data, error, { id }) => {
-    queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    queryClient.invalidateQueries({ queryKey: ['task', id] });
-  }
-});
-
-// Title mutation (similar pattern)
-const updateTitle = useMutation({...});
-```
-
-### Phase 3: Add Query Key for Single Tasks
-
-**File: `src/lib/queryKeys.ts`**
-
-```typescript
-// Add:
-export const TASK_DETAIL_KEY = (taskId: string) => ['task', taskId] as const;
-```
-
-### Phase 4: Simplify TaskDetailContext
-
-**File: `src/components/tasks/TaskDetail/TaskDetailContext.tsx`**
-
-Refactor from 640 lines to ~200 lines by:
-
-1. Replace manual `fetchTask()` with `useTask()` hook
-2. Replace `saveField()` with `useTaskMutations()` 
-3. Keep only local form state for controlled inputs (title, description while editing)
-4. Remove `descriptionEditedRef` complexity - mutations handle it
-5. Add working days validation since data now includes `working_days`
-
-```typescript
-// Simplified context structure:
-export function TaskDetailProvider({ taskId, cachedTask, ... }) {
+  // Single source of truth
   const { data: task, isLoading } = useTask(taskId, cachedTask);
   const mutations = useTaskMutations();
   
-  // Local form state only for active editing
-  const [localTitle, setLocalTitle] = useState('');
-  const [localDescription, setLocalDescription] = useState('');
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  // Extracted hooks
+  const comments = useTaskComments(taskId, user);
+  const { assignees: realtimeAssignees, refetch: refetchAssignees } = useRealtimeAssignees("task", taskId);
+  const { data: changeLogs = [] } = useTaskChangeLogs(taskId);
   
-  // Sync form state when task loads/changes
+  // Parent task (only state needed)
+  const [parentTask, setParentTask] = useState<{ id: string; title: string } | null>(null);
+  const [blockerDialogOpen, setBlockerDialogOpen] = useState(false);
+  
   useEffect(() => {
-    if (task && !isEditingTitle) setLocalTitle(task.title);
-    if (task && !isEditingDescription) setLocalDescription(task.description || '');
-  }, [task?.id, task?.title, task?.description]);
+    if (task?.parent_id) {
+      supabase.from("tasks").select("id, title").eq("id", task.parent_id).single()
+        .then(({ data }) => setParentTask(data));
+    } else {
+      setParentTask(null);
+    }
+  }, [task?.parent_id]);
   
-  // Save handlers use mutations
-  const saveTitle = useCallback(() => {
-    mutations.updateTask.mutate({ id: taskId, updates: { title: localTitle } });
-    setIsEditingTitle(false);
-  }, [taskId, localTitle, mutations]);
+  // Delete action
+  const deleteTask = useCallback(async () => {
+    await supabase.from("tasks").delete().eq("id", taskId);
+    queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+    toast({ title: "Task deleted" });
+    onTaskDeleted?.();
+    onClose?.();
+  }, [taskId, queryClient, toast, onTaskDeleted, onClose]);
   
-  const saveDescription = useCallback((value: string) => {
-    mutations.updateDescription.mutate({ id: taskId, description: value });
-  }, [taskId, mutations]);
-  
-  // ... rest of context
-}
-```
-
-### Phase 5: Fix Description Component
-
-**File: `src/components/tasks/TaskDetail/TaskDetailDescription.tsx`**
-
-Simplify to use mutations directly:
-
-```typescript
-export function TaskDetailDescription() {
-  const { task, saveDescription } = useTaskDetailContext();
-  const [value, setValue] = useState(task?.description || '');
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastSavedRef = useRef(task?.description || '');
-  
-  // Sync when task changes
-  useEffect(() => {
-    setValue(task?.description || '');
-    lastSavedRef.current = task?.description || '';
-  }, [task?.id]);
-  
-  const handleChange = useCallback((newValue: string) => {
-    setValue(newValue);
-    
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    
-    saveTimeoutRef.current = setTimeout(() => {
-      if (newValue !== lastSavedRef.current) {
-        saveDescription(newValue);
-        lastSavedRef.current = newValue;
-      }
-    }, 1000);
-  }, [saveDescription]);
-  
-  // CRITICAL: Flush on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-        // Use the ref value, not state (may be stale in cleanup)
-        const currentValue = document.querySelector('[data-description-editor]')?.textContent || '';
-        if (currentValue !== lastSavedRef.current) {
-          saveDescription(currentValue);
-        }
-      }
-    };
-  }, [saveDescription]);
-  
-  // ... render
-}
-```
-
-### Phase 6: Add Working Days Validation
-
-**File: `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx`**
-
-Since `useTask` now fetches assignees with `working_days`, validation is straightforward:
-
-```typescript
-import { useState, useEffect } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { validateDateForUsers, getDayName, formatWorkingDays } from "@/lib/workingDaysHelper";
-
-export function TaskDetailPriorityCard() {
-  const { task, dueDate, setDueDate, saveField } = useTaskDetailContext();
-  const [workingDaysWarning, setWorkingDaysWarning] = useState<string | null>(null);
-  
-  // Validate due date against assignees' working days
-  useEffect(() => {
-    if (dueDate && task?.assignees?.length > 0) {
-      const validation = validateDateForUsers(dueDate, task.assignees);
-      if (!validation.isValid) {
-        const list = validation.invalidUsers
-          .map(u => `${u.name} (${formatWorkingDays(u.workingDays)})`)
-          .join(', ');
-        setWorkingDaysWarning(`${getDayName(dueDate)} is outside working days for: ${list}`);
+  // Mark complete
+  const markComplete = useCallback(async () => {
+    if (task?.is_collaborative && user) {
+      const result = await completeTaskAction(taskId, user.id);
+      if (result.success) {
+        toast({ title: "Marked complete" });
+        queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
       } else {
-        setWorkingDaysWarning(null);
+        toast({ title: "Error", description: result.error, variant: "destructive" });
       }
     } else {
-      setWorkingDaysWarning(null);
+      mutations.updateStatus.mutate({ id: taskId, status: 'Completed' });
     }
-  }, [dueDate, task?.assignees]);
+  }, [task?.is_collaborative, user, taskId, mutations, queryClient, toast]);
   
   return (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm ...">
-        {/* Priority, Due Date, Status selectors */}
-      </div>
-      
-      {workingDaysWarning && (
-        <Alert variant="destructive" className="mt-sm">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-metadata">
-            {workingDaysWarning}
-          </AlertDescription>
-        </Alert>
-      )}
-    </>
+    <TaskDetailContext.Provider value={{
+      taskId,
+      task,
+      loading: isLoading && !task,
+      mutations,
+      comments,
+      realtimeAssignees,
+      refetchAssignees,
+      isCompleted: task?.status === 'Completed',
+      isSubtask: !!task?.parent_id,
+      parentTask,
+      changeLogs,
+      deleteTask,
+      markComplete,
+      blockerDialogOpen,
+      setBlockerDialogOpen,
+    }}>
+      {children}
+    </TaskDetailContext.Provider>
   );
 }
 ```
 
-## Files to Create/Modify
+---
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/hooks/useTask.ts` | Create | New hook for single task queries with React Query |
-| `src/lib/queryKeys.ts` | Modify | Add `TASK_DETAIL_KEY` |
-| `src/hooks/useTaskMutations.ts` | Modify | Add `updateDescription`, `updateTitle` mutations with dual-cache updates |
-| `src/components/tasks/TaskDetail/TaskDetailContext.tsx` | Refactor | Replace manual state with `useTask` + `useTaskMutations` (~440 lines removed) |
-| `src/components/tasks/TaskDetail/TaskDetailDescription.tsx` | Simplify | Use context's `saveDescription` with flush-on-unmount |
-| `src/components/tasks/TaskDetail/TaskDetailPriorityCard.tsx` | Modify | Add working days validation and warning UI |
-| `src/hooks/useRealtimeAssignees.ts` | Modify | Add `working_days` to interface and query |
+### 2. New useTaskComments.ts (~80 lines)
 
-## Benefits
+Extract all comment logic from context:
 
-1. **Instant UI Updates**: Optimistic mutations update cache immediately
-2. **Reliable Saves**: Mutations handle all persistence, no race conditions
-3. **Working Days Warnings**: Data includes `working_days` from the start
-4. **Simpler Code**: Context reduced from 640 to ~200 lines
-5. **Consistent Architecture**: Follows patterns used in rest of app
-6. **Automatic Rollback**: Failed saves restore previous state automatically
-7. **Cache Coherence**: Both list and detail views stay synchronized
+```typescript
+export function useTaskComments(taskId: string, user: User | null) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const fetchComments = useCallback(async () => { /* existing logic */ }, [taskId]);
+  const fetchUsers = useCallback(async () => { /* existing logic */ }, []);
+  const addComment = useCallback(async () => { /* existing logic */ }, [...]);
+  
+  useEffect(() => { fetchComments(); fetchUsers(); }, [taskId]);
+  
+  return {
+    comments,
+    newComment,
+    setNewComment,
+    isSubmitting,
+    addComment,
+    pendingAttachments,
+    setPendingAttachments,
+    users,
+    messagesEndRef,
+  };
+}
+```
 
-## Migration Safety
+---
 
-- No breaking changes to component interfaces
-- `useTaskDetailContext` API remains the same
-- Gradual refactor possible (can keep old saveField for non-critical fields initially)
-- All existing tests continue to work
+### 3. Update Child Components (read from task.*, call mutations.*)
+
+**TaskDetailPriorityCard.tsx:**
+```typescript
+// BEFORE:
+const { status, setStatus, priority, setPriority, dueDate, setDueDate, saveField } = useTaskDetailContext();
+
+// AFTER:
+const { task, mutations, realtimeAssignees } = useTaskDetailContext();
+
+// Direct mutation calls:
+const handlePriorityChange = (p: string) => {
+  mutations.updatePriority.mutate({ id: task.id, priority: p });
+};
+
+const handleStatusChange = (s: string) => {
+  mutations.updateStatus.mutate({ id: task.id, status: s });
+};
+
+const handleDateChange = (date: Date | undefined) => {
+  mutations.updateDeadline.mutate({ id: task.id, due_at: date?.toISOString() || null });
+};
+```
+
+**TaskDetailFields.tsx:**
+```typescript
+// BEFORE:
+const { title, setTitle, selectedAssignees, setSelectedAssignees, saveField } = useTaskDetailContext();
+
+// AFTER:
+const { task, mutations, realtimeAssignees, refetchAssignees } = useTaskDetailContext();
+
+// Local state only for editing title
+const [localTitle, setLocalTitle] = useState(task?.title || '');
+const [isEditing, setIsEditing] = useState(false);
+
+const handleTitleBlur = () => {
+  if (localTitle !== task?.title) {
+    mutations.updateTitle.mutate({ id: task.id, title: localTitle });
+  }
+  setIsEditing(false);
+};
+```
+
+**TaskDetailDetails.tsx:**
+```typescript
+// BEFORE:
+const { tags, setTags, projectId, phaseId, saveField, isCollaborative, setIsCollaborative } = useTaskDetailContext();
+
+// AFTER:
+const { task, mutations } = useTaskDetailContext();
+
+const handleTagsChange = (newTags: string[]) => {
+  mutations.updateTask.mutate({ id: task.id, updates: { labels: newTags } });
+};
+
+const handleProjectChange = (projectId: string | null) => {
+  mutations.updateTask.mutate({ id: task.id, updates: { project_id: projectId } });
+};
+```
+
+**TaskDetailDescription.tsx (already good, minor update):**
+```typescript
+// Already uses task and saveDescription - just update to use mutations directly
+const { task, mutations } = useTaskDetailContext();
+
+const saveDescription = (value: string) => {
+  mutations.updateDescription.mutate({ id: task.id, description: value });
+};
+```
+
+**TaskDetailComments.tsx:**
+```typescript
+// BEFORE:
+const { comments, users, messagesEndRef } = useTaskDetailContext();
+
+// AFTER:
+const { comments: { comments, users, messagesEndRef } } = useTaskDetailContext();
+```
+
+**TaskDetailCommentInput.tsx:**
+```typescript
+// BEFORE:
+const { newComment, setNewComment, isSubmittingComment, addComment, users, pendingAttachments, setPendingAttachments } = useTaskDetailContext();
+
+// AFTER:
+const { comments: { newComment, setNewComment, isSubmitting, addComment, users, pendingAttachments, setPendingAttachments }, realtimeAssignees } = useTaskDetailContext();
+```
+
+---
+
+## Line Count Comparison
+
+| File | Before | After | Reduction |
+|------|--------|-------|-----------|
+| TaskDetailContext.tsx | 579 | ~120 | **-459 lines** |
+| useTaskComments.ts | 0 | ~80 | +80 (extracted) |
+| TaskDetailPriorityCard.tsx | 186 | ~150 | -36 |
+| TaskDetailFields.tsx | (current) | ~similar | minimal |
+| TaskDetailDetails.tsx | (current) | ~similar | minimal |
+| **Net Total** | ~960 | ~500 | **-460 lines** |
+
+---
+
+## What Gets Fixed
+
+| Bug | Fix |
+|-----|-----|
+| Description not saving on close | useTaskComments cleanup flushes |
+| No working days warning | Already done, preserved |
+| Slow UI updates | Optimistic mutations already done |
+| State sync race conditions | Eliminated - no sync needed |
+| saveField duplicating mutations | Deleted, use mutations.* |
+
+---
+
+## Migration Risk
+
+**Low Risk:**
+- Context interface changes → TypeScript catches all call sites
+- No behavioral changes from user perspective  
+- useTask and useTaskMutations already tested
+
+**Testing Required:**
+1. Open task detail → fields load correctly
+2. Edit title → saves on blur
+3. Change priority/status/due date → instant update
+4. Add comment with attachments → works
+5. Close panel during description edit → saves
+6. Working days warning shows for wrong date
+
+---
+
+## Summary
+
+**Aggressive Deletions:**
+- 15 useState hooks
+- 4 state-sync useEffects  
+- saveField function
+- ~460 lines of redundant code
+
+**Architecture:**
+- React Query = single source of truth
+- Mutations = only way to write
+- Local state = only during active editing
+- Extracted useTaskComments for comment logic
+
+This is a real simplification, not adding more layers.
