@@ -4,7 +4,7 @@ import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { useTaskDetailContext } from "./TaskDetailContext";
 
 export function TaskDetailDescription() {
-  const { task, saveDescription } = useTaskDetailContext();
+  const { task, mutations } = useTaskDetailContext();
   
   // Local state for the editor
   const [value, setValue] = useState(task?.description || "");
@@ -27,6 +27,13 @@ export function TaskDetailDescription() {
     valueRef.current = newDescription;
     lastSavedRef.current = newDescription;
   }, [task?.id]);
+
+  // Save using mutation
+  const saveDescription = useCallback((descValue: string) => {
+    if (task?.id) {
+      mutations.updateDescription.mutate({ id: task.id, description: descValue });
+    }
+  }, [task?.id, mutations]);
 
   // Auto-save with debounce when content changes
   const handleChange = useCallback((newValue: string) => {

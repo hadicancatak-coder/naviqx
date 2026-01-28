@@ -14,12 +14,15 @@ import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 import { cn } from "@/lib/utils";
 
 export function TaskDetailSubtasks() {
-  const { taskId, status, blocker, setBlockerDialogOpen } = useTaskDetailContext();
+  const { taskId, task, blocker, setBlockerDialogOpen } = useTaskDetailContext();
   const { openTaskDrawer } = useTaskDrawer();
   const [subtasksExpanded, setSubtasksExpanded] = useState(true);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Derive status from task
+  const status = task?.status || 'Ongoing';
 
   const {
     subtasks,
@@ -48,7 +51,6 @@ export function TaskDetailSubtasks() {
       {
         onSuccess: () => {
           setNewSubtaskTitle("");
-          // Keep input open for rapid entry
         }
       }
     );

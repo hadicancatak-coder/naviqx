@@ -11,25 +11,18 @@ import { validateDateForUsers, getDayName, formatWorkingDays } from "@/lib/worki
 import { useTaskDetailContext } from "./TaskDetailContext";
 
 export function TaskDetailPriorityCard() {
-  const {
-    task,
-    status,
-    setStatus,
-    priority,
-    setPriority,
-    dueDate,
-    setDueDate,
-    saveField,
-    isCompleted,
-    realtimeAssignees,
-  } = useTaskDetailContext();
+  const { task, mutations, isCompleted, realtimeAssignees } = useTaskDetailContext();
 
   // Working days validation state
   const [workingDaysWarning, setWorkingDaysWarning] = useState<string | null>(null);
 
+  // Derive values directly from task (single source of truth)
+  const status = task?.status || 'Ongoing';
+  const priority = task?.priority || 'Medium';
+  const dueDate = task?.due_at ? new Date(task.due_at) : undefined;
+
   // Validate due date against assignees' working days
   useEffect(() => {
-    // Use realtimeAssignees which includes working_days
     const assigneesWithWorkingDays = realtimeAssignees || task?.assignees || [];
     
     if (dueDate && assigneesWithWorkingDays.length > 0) {
@@ -78,19 +71,26 @@ export function TaskDetailPriorityCard() {
     return 'bg-muted/50 text-muted-foreground border-border';
   };
 
+  // Direct mutation handlers
+  const handlePriorityChange = (p: string) => {
+    if (task?.id) mutations.updatePriority.mutate({ id: task.id, priority: p });
+  };
+
+  const handleStatusChange = (s: string) => {
+    if (task?.id) mutations.updateStatus.mutate({ id: task.id, status: s });
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (task?.id) mutations.updateDeadline.mutate({ id: task.id, due_at: date?.toISOString() || null });
+  };
+
   return (
     <div className="space-y-sm">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm p-sm rounded-lg bg-card border border-border">
         {/* Priority */}
         <div className="flex flex-col gap-xs min-w-0">
           <span className="text-metadata text-muted-foreground">Priority</span>
-          <Select 
-            value={priority} 
-            onValueChange={(v: any) => {
-              setPriority(v);
-              saveField('priority', v);
-            }}
-          >
+          <Select value={priority} onValueChange={handlePriorityChange}>
             <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
               <div className={cn(
                 "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
@@ -133,10 +133,7 @@ export function TaskDetailPriorityCard() {
               <Calendar
                 mode="single"
                 selected={dueDate}
-                onSelect={(date) => {
-                  setDueDate(date);
-                  saveField('due_at', date);
-                }}
+                onSelect={handleDateChange}
                 initialFocus
               />
             </PopoverContent>
@@ -146,13 +143,7 @@ export function TaskDetailPriorityCard() {
         {/* Status */}
         <div className="flex flex-col gap-xs min-w-0">
           <span className="text-metadata text-muted-foreground">Status</span>
-          <Select 
-            value={status} 
-            onValueChange={(v) => {
-              setStatus(v);
-              saveField('status', v);
-            }}
-          >
+          <Select value={status} onValueChange={handleStatusChange}>
             <SelectTrigger className="h-9 w-full border-0 p-0 focus:ring-0 shadow-none bg-transparent">
               <div className={cn(
                 "flex items-center gap-xs h-9 px-2.5 rounded-md border font-medium text-body-sm w-full min-w-0",
