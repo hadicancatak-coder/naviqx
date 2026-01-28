@@ -1,140 +1,116 @@
 
-# Clean Slate: Task Detail System Simplification
+# TaskDetailContext Final Simplification + Codebase Cleanup
 
-## Current State (Brutally Honest)
+## Current State (Honest Assessment)
 
-| Metric | Current | Problem |
-|--------|---------|---------|
-| **TaskDetailContext.tsx** | 579 lines | Monolithic, 20+ useState, manual sync |
-| **useTaskMutations.ts** | 306 lines | Already good, but duplicated in saveField |
-| **Total useState hooks** | 22 | Each creates sync bugs |
-| **State sync useEffects** | 4 | Race conditions, data loss |
+| Metric | Target | Actual | Gap |
+|--------|--------|--------|-----|
+| **TaskDetailContext.tsx** | ~120 lines | 287 lines | 167 lines over |
+| **useState hooks** | 3-4 | 5 | -1 |
+| **useEffect blocks** | 1-2 | 4 | -2 |
 
-**Root Cause:** Every field is stored in 3 places:
-1. React Query cache (`taskData.title`)
-2. Local useState (`title`)  
-3. useEffect syncs them (buggy)
+The previous refactor did improve the architecture (single source of truth), but **did not aggressively extract** the remaining logic as promised.
 
-**What ACTUALLY needs local state:**
-- Title while typing (before blur save)
-- Description while typing (before debounce)
-- Comment text input
-- UI dialogs (delete confirm, blocker dialog)
+## Remaining Extraction Targets
 
-Everything else can read directly from `task` object.
-
----
-
-## New Architecture: Single Source of Truth
-
-```text
-BEFORE:
-  React Query → useEffect sync → useState → child reads → child calls saveField → supabase
-
-AFTER:
-  React Query → child reads task.* directly → child calls mutations.* → cache updates instantly
+### State Still in Context (lines 103-110):
+```typescript
+const [parentTask, setParentTask] = useState(null);           // 1 state + 1 effect
+const [blockerDialogOpen, setBlockerDialogOpen] = useState(false); // UI state - KEEP
+const [blocker, setBlocker] = useState(null);                 // 1 state + 2 functions + 1 effect
+const [collaborativeStatus, setCollaborativeStatus] = useState(null); // 1 state + 1 effect + 1 action
+const [currentUserProfileId, setCurrentUserProfileId] = useState(null); // 1 state + 1 effect
 ```
 
----
+### Effects to Extract (lines 117-172):
+- Parent task fetch (12 lines)
+- Blocker fetch (25 lines)  
+- Collaborative status fetch (12 lines)
+- Current user profile ID (12 lines)
 
-## Files to DELETE Completely
+## Implementation Plan
 
-None. We rewrite in place.
+### Phase 1: Create 3 New Hooks
 
----
-
-## Files to CREATE
-
-| File | Lines | Purpose |
-|------|-------|---------|
-| `src/hooks/useTaskComments.ts` | ~80 | Extract all comment logic |
-
----
-
-## Files to REWRITE
-
-### 1. TaskDetailContext.tsx: 579 → ~120 lines
-
-**DELETE these useState hooks (15 total):**
+**1. useParentTask(parentId: string | null)**
 ```typescript
-// DELETE ALL OF THESE:
-const [title, setTitle] = useState("");
-const [description, setDescription] = useState("");
-const [priority, setPriority] = useState<...>("Medium");
-const [status, setStatus] = useState<string>("Ongoing");
-const [dueDate, setDueDate] = useState<Date>();
-const [tags, setTags] = useState<string[]>([]);
-const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-const [projectId, setProjectId] = useState<string | null>(null);
-const [phaseId, setPhaseId] = useState<string | null>(null);
-const [saving, setSaving] = useState(false);
-const [isCollaborative, setIsCollaborativeState] = useState(false);
-const [collaborativeStatus, setCollaborativeStatus] = useState<...>(null);
-const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
-const [users, setUsers] = useState<any[]>([]);
-const [blocker, setBlocker] = useState<any>(null);
-```
-
-**DELETE the sync useEffect (lines 174-207):**
-```typescript
-// DELETE THIS ENTIRE BLOCK - root cause of bugs
-useEffect(() => {
-  if (taskData) {
-    setTitle(taskData.title || "");
-    setDescription(taskData.description || "");
-    setPriority(taskData.priority || "Medium");
-    // ... 15 more lines of manual sync
-  }
-}, [taskData?.id, taskData?.updated_at]);
-```
-
-**DELETE saveField function (lines 302-333):**
-```typescript
-// DELETE - replaced by mutations.*
-const saveField = useCallback(async (field: string, value: any) => { ... });
-```
-
-**NEW simplified context (~120 lines):**
-```typescript
-interface TaskDetailContextValue {
-  // Core (from useTask)
-  taskId: string;
-  task: TaskWithAssignees | null;
-  loading: boolean;
+// ~15 lines - extracts parent task fetching
+export function useParentTask(parentId: string | null) {
+  const [parentTask, setParentTask] = useState<{ id: string; title: string } | null>(null);
   
-  // Mutations (direct access)
-  mutations: ReturnType<typeof useTaskMutations>;
+  useEffect(() => {
+    if (parentId) {
+      supabase.from("tasks").select("id, title").eq("id", parentId).single()
+        .then(({ data }) => setParentTask(data));
+    } else {
+      setParentTask(null);
+    }
+  }, [parentId]);
   
-  // Comments (extracted hook)
-  comments: ReturnType<typeof useTaskComments>;
-  
-  // Assignees (existing hook)
-  realtimeAssignees: any[];
-  refetchAssignees: () => void;
-  
-  // Derived
-  isCompleted: boolean;
-  isSubtask: boolean;
-  parentTask: { id: string; title: string } | null;
-  
-  // Change logs (existing hook)
-  changeLogs: any[];
-  
-  // Actions
-  deleteTask: () => Promise<void>;
-  markComplete: () => Promise<void>;
-  
-  // UI state (only what's needed)
-  blockerDialogOpen: boolean;
-  setBlockerDialogOpen: (v: boolean) => void;
+  return parentTask;
 }
+```
 
+**2. useTaskBlocker(taskId: string)**
+```typescript
+// ~25 lines - extracts blocker fetching + dialog state
+export function useTaskBlocker(taskId: string) {
+  const [blocker, setBlocker] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  
+  const fetchBlocker = useCallback(async () => {
+    if (!taskId) return;
+    const { data } = await supabase
+      .from("blockers")
+      .select("*")
+      .eq("task_id", taskId)
+      .eq("resolved", false)
+      .maybeSingle();
+    setBlocker(data);
+  }, [taskId]);
+  
+  useEffect(() => { fetchBlocker(); }, [fetchBlocker]);
+  
+  return { blocker, dialogOpen, setDialogOpen, fetchBlocker };
+}
+```
+
+**3. useCollaborativeTask(taskId: string, isCollaborative: boolean, userId: string | undefined)**
+```typescript
+// ~45 lines - extracts ALL collaborative logic
+export function useCollaborativeTask(taskId: string, isCollaborative: boolean, userId?: string) {
+  const [status, setStatus] = useState<CollaborativeStatus | null>(null);
+  const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Fetch status when collaborative
+  useEffect(() => { ... }, [isCollaborative, taskId]);
+  
+  // Fetch current user profile ID
+  useEffect(() => { ... }, [userId]);
+  
+  // Toggle collaborative mode
+  const setIsCollaborative = useCallback(async (value: boolean) => { ... }, [...]);
+  
+  // Check if current user completed
+  const currentUserCompleted = status?.assignees.find(a => a.id === currentUserProfileId)?.completed || false;
+  
+  return { status, setIsCollaborative, currentUserCompleted };
+}
+```
+
+### Phase 2: Rewrite TaskDetailContext
+
+After extraction, context reduces to:
+
+```typescript
 export function TaskDetailProvider({ taskId, cachedTask, children, onClose, onTaskDeleted }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Single source of truth
+  // React Query (single source of truth)
   const { data: task, isLoading } = useTask(taskId, cachedTask);
   const mutations = useTaskMutations();
   
@@ -142,62 +118,28 @@ export function TaskDetailProvider({ taskId, cachedTask, children, onClose, onTa
   const comments = useTaskComments(taskId, user);
   const { assignees: realtimeAssignees, refetch: refetchAssignees } = useRealtimeAssignees("task", taskId);
   const { data: changeLogs = [] } = useTaskChangeLogs(taskId);
+  const parentTask = useParentTask(task?.parent_id);
+  const blocker = useTaskBlocker(taskId);
+  const collaborative = useCollaborativeTask(taskId, task?.is_collaborative || false, user?.id);
   
-  // Parent task (only state needed)
-  const [parentTask, setParentTask] = useState<{ id: string; title: string } | null>(null);
-  const [blockerDialogOpen, setBlockerDialogOpen] = useState(false);
+  // Delete action (only remaining callback)
+  const deleteTask = useCallback(async () => { ... }, [...]);
   
-  useEffect(() => {
-    if (task?.parent_id) {
-      supabase.from("tasks").select("id, title").eq("id", task.parent_id).single()
-        .then(({ data }) => setParentTask(data));
-    } else {
-      setParentTask(null);
-    }
-  }, [task?.parent_id]);
+  // Mark complete (delegates to collaborative or mutations)
+  const markComplete = useCallback(async () => { ... }, [...]);
   
-  // Delete action
-  const deleteTask = useCallback(async () => {
-    await supabase.from("tasks").delete().eq("id", taskId);
-    queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-    toast({ title: "Task deleted" });
-    onTaskDeleted?.();
-    onClose?.();
-  }, [taskId, queryClient, toast, onTaskDeleted, onClose]);
-  
-  // Mark complete
-  const markComplete = useCallback(async () => {
-    if (task?.is_collaborative && user) {
-      const result = await completeTaskAction(taskId, user.id);
-      if (result.success) {
-        toast({ title: "Marked complete" });
-        queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
-        queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
-      } else {
-        toast({ title: "Error", description: result.error, variant: "destructive" });
-      }
-    } else {
-      mutations.updateStatus.mutate({ id: taskId, status: 'Completed' });
-    }
-  }, [task?.is_collaborative, user, taskId, mutations, queryClient, toast]);
+  // Derived state
+  const loading = isLoading && !task;
+  const isCompleted = task?.status === 'Completed';
+  const isSubtask = !!task?.parent_id;
   
   return (
     <TaskDetailContext.Provider value={{
-      taskId,
-      task,
-      loading: isLoading && !task,
-      mutations,
-      comments,
-      realtimeAssignees,
-      refetchAssignees,
-      isCompleted: task?.status === 'Completed',
-      isSubtask: !!task?.parent_id,
-      parentTask,
-      changeLogs,
-      deleteTask,
-      markComplete,
-      blockerDialogOpen,
-      setBlockerDialogOpen,
+      taskId, task, loading, mutations, comments,
+      realtimeAssignees, refetchAssignees,
+      isCompleted, isSubtask, parentTask,
+      ...collaborative, ...blocker,
+      changeLogs, markComplete, deleteTask,
     }}>
       {children}
     </TaskDetailContext.Provider>
@@ -205,188 +147,58 @@ export function TaskDetailProvider({ taskId, cachedTask, children, onClose, onTa
 }
 ```
 
----
+**Expected line count: ~90-110 lines** (interface + provider + context creation)
 
-### 2. New useTaskComments.ts (~80 lines)
+### Phase 3: Delete Unused Code
 
-Extract all comment logic from context:
+| File | Action | Reason |
+|------|--------|--------|
+| `TaskDetailPanel.tsx` | DELETE | Thin wrapper, `TaskDetail` used directly |
+| `PanelSkeleton` duplicate | Consolidate | Same component in two files |
+| `isRecurring` unused variable | Remove | Line 49 in TaskDetailHeader, never used |
 
-```typescript
-export function useTaskComments(taskId: string, user: User | null) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const fetchComments = useCallback(async () => { /* existing logic */ }, [taskId]);
-  const fetchUsers = useCallback(async () => { /* existing logic */ }, []);
-  const addComment = useCallback(async () => { /* existing logic */ }, [...]);
-  
-  useEffect(() => { fetchComments(); fetchUsers(); }, [taskId]);
-  
-  return {
-    comments,
-    newComment,
-    setNewComment,
-    isSubmitting,
-    addComment,
-    pendingAttachments,
-    setPendingAttachments,
-    users,
-    messagesEndRef,
-  };
-}
-```
+### Phase 4: Update Imports
 
----
+Update any call sites importing `TaskDetailPanel` to use `TaskDetail` directly:
+- Search codebase for `TaskDetailPanel` imports
+- Replace with `TaskDetail` from `./TaskDetail`
 
-### 3. Update Child Components (read from task.*, call mutations.*)
+## Files to Create/Modify
 
-**TaskDetailPriorityCard.tsx:**
-```typescript
-// BEFORE:
-const { status, setStatus, priority, setPriority, dueDate, setDueDate, saveField } = useTaskDetailContext();
+| File | Action | Lines |
+|------|--------|-------|
+| `src/hooks/useParentTask.ts` | Create | ~15 |
+| `src/hooks/useTaskBlocker.ts` | Create | ~25 |
+| `src/hooks/useCollaborativeTask.ts` | Create | ~45 |
+| `src/components/tasks/TaskDetail/TaskDetailContext.tsx` | Rewrite | 287 → ~100 |
+| `src/components/tasks/TaskDetailPanel.tsx` | DELETE | -36 |
+| `src/components/tasks/TaskDetail/TaskDetailHeader.tsx` | Fix | Remove unused var |
 
-// AFTER:
-const { task, mutations, realtimeAssignees } = useTaskDetailContext();
+## Expected Results
 
-// Direct mutation calls:
-const handlePriorityChange = (p: string) => {
-  mutations.updatePriority.mutate({ id: task.id, priority: p });
-};
+| Metric | Before | After |
+|--------|--------|-------|
+| TaskDetailContext.tsx | 287 lines | ~100 lines |
+| useState in context | 5 | 0 (moved to hooks) |
+| useEffect in context | 4 | 0 (moved to hooks) |
+| Total hook files | 4 | 7 (+3 small) |
+| Files deleted | 0 | 1 (TaskDetailPanel.tsx) |
 
-const handleStatusChange = (s: string) => {
-  mutations.updateStatus.mutate({ id: task.id, status: s });
-};
+## Verification Steps
 
-const handleDateChange = (date: Date | undefined) => {
-  mutations.updateDeadline.mutate({ id: task.id, due_at: date?.toISOString() || null });
-};
-```
+1. Open any task in the drawer
+2. Edit title → verify save on blur
+3. Edit description → verify 1s debounce save
+4. Close panel mid-edit → verify description saves
+5. Change priority/status/due date → verify instant update
+6. Set due date to weekend → verify working days warning appears for Mon-Fri users
+7. Verify no console errors
 
-**TaskDetailFields.tsx:**
-```typescript
-// BEFORE:
-const { title, setTitle, selectedAssignees, setSelectedAssignees, saveField } = useTaskDetailContext();
+## Unused Code Detected
 
-// AFTER:
-const { task, mutations, realtimeAssignees, refetchAssignees } = useTaskDetailContext();
+Beyond TaskDetailPanel, here are other cleanup opportunities:
 
-// Local state only for editing title
-const [localTitle, setLocalTitle] = useState(task?.title || '');
-const [isEditing, setIsEditing] = useState(false);
-
-const handleTitleBlur = () => {
-  if (localTitle !== task?.title) {
-    mutations.updateTitle.mutate({ id: task.id, title: localTitle });
-  }
-  setIsEditing(false);
-};
-```
-
-**TaskDetailDetails.tsx:**
-```typescript
-// BEFORE:
-const { tags, setTags, projectId, phaseId, saveField, isCollaborative, setIsCollaborative } = useTaskDetailContext();
-
-// AFTER:
-const { task, mutations } = useTaskDetailContext();
-
-const handleTagsChange = (newTags: string[]) => {
-  mutations.updateTask.mutate({ id: task.id, updates: { labels: newTags } });
-};
-
-const handleProjectChange = (projectId: string | null) => {
-  mutations.updateTask.mutate({ id: task.id, updates: { project_id: projectId } });
-};
-```
-
-**TaskDetailDescription.tsx (already good, minor update):**
-```typescript
-// Already uses task and saveDescription - just update to use mutations directly
-const { task, mutations } = useTaskDetailContext();
-
-const saveDescription = (value: string) => {
-  mutations.updateDescription.mutate({ id: task.id, description: value });
-};
-```
-
-**TaskDetailComments.tsx:**
-```typescript
-// BEFORE:
-const { comments, users, messagesEndRef } = useTaskDetailContext();
-
-// AFTER:
-const { comments: { comments, users, messagesEndRef } } = useTaskDetailContext();
-```
-
-**TaskDetailCommentInput.tsx:**
-```typescript
-// BEFORE:
-const { newComment, setNewComment, isSubmittingComment, addComment, users, pendingAttachments, setPendingAttachments } = useTaskDetailContext();
-
-// AFTER:
-const { comments: { newComment, setNewComment, isSubmitting, addComment, users, pendingAttachments, setPendingAttachments }, realtimeAssignees } = useTaskDetailContext();
-```
-
----
-
-## Line Count Comparison
-
-| File | Before | After | Reduction |
-|------|--------|-------|-----------|
-| TaskDetailContext.tsx | 579 | ~120 | **-459 lines** |
-| useTaskComments.ts | 0 | ~80 | +80 (extracted) |
-| TaskDetailPriorityCard.tsx | 186 | ~150 | -36 |
-| TaskDetailFields.tsx | (current) | ~similar | minimal |
-| TaskDetailDetails.tsx | (current) | ~similar | minimal |
-| **Net Total** | ~960 | ~500 | **-460 lines** |
-
----
-
-## What Gets Fixed
-
-| Bug | Fix |
-|-----|-----|
-| Description not saving on close | useTaskComments cleanup flushes |
-| No working days warning | Already done, preserved |
-| Slow UI updates | Optimistic mutations already done |
-| State sync race conditions | Eliminated - no sync needed |
-| saveField duplicating mutations | Deleted, use mutations.* |
-
----
-
-## Migration Risk
-
-**Low Risk:**
-- Context interface changes → TypeScript catches all call sites
-- No behavioral changes from user perspective  
-- useTask and useTaskMutations already tested
-
-**Testing Required:**
-1. Open task detail → fields load correctly
-2. Edit title → saves on blur
-3. Change priority/status/due date → instant update
-4. Add comment with attachments → works
-5. Close panel during description edit → saves
-6. Working days warning shows for wrong date
-
----
-
-## Summary
-
-**Aggressive Deletions:**
-- 15 useState hooks
-- 4 state-sync useEffects  
-- saveField function
-- ~460 lines of redundant code
-
-**Architecture:**
-- React Query = single source of truth
-- Mutations = only way to write
-- Local state = only during active editing
-- Extracted useTaskComments for comment logic
-
-This is a real simplification, not adding more layers.
+1. **`isRecurring` variable** (TaskDetailHeader.tsx:49) - declared but never rendered
+2. **Duplicate skeletons** - `PanelSkeleton` and `TaskDetailSkeleton` are identical
+3. **`selectedAssignees`** (TaskDetailDetails.tsx:35) - computed but only used for `length > 1` check, could be simplified
+4. **Console.error calls** - should use logger.debug per codebase standard
