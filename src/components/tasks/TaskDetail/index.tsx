@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { BlockerDialog } from "@/components/BlockerDialog";
+import { TaskDetailSkeleton } from "@/components/skeletons/TaskDetailSkeleton";
 import { TaskDetailProvider, useTaskDetailContext } from "./TaskDetailContext";
 import { TaskDetailHeader } from "./TaskDetailHeader";
 import { TaskDetailFields } from "./TaskDetailFields";
@@ -12,20 +12,6 @@ import { TaskDetailComments } from "./TaskDetailComments";
 import { TaskDetailActivityLog } from "./TaskDetailActivityLog";
 import { TaskDetailDetails } from "./TaskDetailDetails";
 import { TaskDetailCommentInput } from "./TaskDetailCommentInput";
-
-// Loading skeleton
-const TaskDetailSkeleton = () => (
-  <div className="p-md space-y-md">
-    <Skeleton className="h-8 w-3/4" />
-    <div className="flex gap-sm">
-      <Skeleton className="h-6 w-20" />
-      <Skeleton className="h-6 w-20" />
-      <Skeleton className="h-6 w-24" />
-    </div>
-    <Skeleton className="h-24 w-full" />
-    <Skeleton className="h-32 w-full" />
-  </div>
-);
 
 // Internal component that uses context
 function TaskDetailContent({ onClose }: { onClose?: () => void }) {

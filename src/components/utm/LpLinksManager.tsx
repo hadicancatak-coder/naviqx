@@ -42,7 +42,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Link, ExternalLink, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useLpLinks, useCreateLpLink, useUpdateLpLink, useDeleteLpLink, LpLink } from "@/hooks/useLpLinks";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/layout/LoadingState";
 
 type UrlStatus = "idle" | "checking" | "valid" | "invalid";
 
@@ -225,10 +225,10 @@ export function LpLinksManager() {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-8 w-48" />
+          <div className="h-8 w-48 bg-muted rounded animate-pulse" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-64 w-full" />
+          <LoadingState variant="section" minHeight="min-h-[200px]" />
         </CardContent>
       </Card>
     );

@@ -10,6 +10,7 @@ import { TaskListView } from "@/components/tasks/TaskListView";
 import { SprintCompleteDialog } from "@/components/sprints/SprintCompleteDialog";
 import { CreateSprintDialog } from "@/components/sprints/CreateSprintDialog";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { LoadingState } from "@/components/layout/LoadingState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,9 +120,7 @@ export default function Sprints() {
   if (authLoading) {
     return (
       <PageContainer size="wide">
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
+        <LoadingState variant="section" minHeight="h-96" />
       </PageContainer>
     );
   }
@@ -130,9 +129,12 @@ export default function Sprints() {
   if (tasksError) {
     return (
       <PageContainer size="wide">
-        <div className="flex flex-col items-center justify-center h-96 gap-4">
-          <p className="text-muted-foreground">Could not load sprints data.</p>
-        </div>
+        <LoadingState 
+          variant="section" 
+          isError 
+          errorMessage="Could not load sprints data."
+          minHeight="h-96"
+        />
       </PageContainer>
     );
   }

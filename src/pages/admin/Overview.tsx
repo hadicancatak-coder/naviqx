@@ -3,9 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, CheckSquare, AlertTriangle, ArrowRight, Target, FileText } from "lucide-react";
 import { adminService } from "@/lib/adminService";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CardSkeleton } from "@/components/skeletons";
 import { useNavigate } from "react-router-dom";
-
 interface SystemHealth {
   users: number;
   tasks: number;
@@ -79,9 +78,7 @@ export default function Overview() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))
+          <CardSkeleton count={4} />
         ) : (
           statCards.map((card) => (
             <Card

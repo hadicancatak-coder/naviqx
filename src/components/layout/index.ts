@@ -7,8 +7,9 @@ export { EmptyState } from './EmptyState';
 export { AlertBanner } from './AlertBanner';
 export { DataCard, DataCardHeader } from './DataCard';
 export { TopHeader } from './TopHeader';
+export { LoadingState } from './LoadingState';
+// Deprecated: Use LoadingState instead
 export { PageLoadingState } from './PageLoadingState';
-export { PageLoadingSpinner } from './PageLoadingSpinner';
 
 // Footer components
 export { ExternalPageFooter } from './ExternalPageFooter';

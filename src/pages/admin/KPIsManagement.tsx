@@ -8,10 +8,9 @@ import { useKPIs } from "@/hooks/useKPIs";
 import { CreateKPIDialog } from "@/components/admin/CreateKPIDialog";
 import { AssignKPIDialog } from "@/components/admin/AssignKPIDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/layout/LoadingState";
 import type { KPIWithRelations } from "@/types/kpi";
 import { format } from "date-fns";
-
 export default function KPIsManagement() {
   const { kpis, isLoading, deleteKPI } = useKPIs();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -45,12 +44,7 @@ export default function KPIsManagement() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-md">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <LoadingState variant="section" minHeight="min-h-[300px]" />;
   }
 
   return (
