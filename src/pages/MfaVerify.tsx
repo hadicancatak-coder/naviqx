@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,18 +23,18 @@ export default function MfaVerify() {
   const { toast } = useToast();
   const { setMfaVerifiedStatus, refreshMfaStatus } = useAuth();
 
-  useEffect(() => {
-    checkSession();
-  }, []);
-
-  const checkSession = async () => {
+  const checkSession = useCallback(async () => {
     // Use getUser() instead of getSession() - getSession() can return stale cached tokens
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
       logger.debug('No valid user session, redirecting to auth');
       navigate("/auth");
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
 
   const verifyOtp = async () => {
     const code = useBackupCode ? backupCode : otp;
@@ -105,18 +105,19 @@ export default function MfaVerify() {
         logger.debug('Navigating to home page');
         navigate("/", { replace: true });
       }
-    } catch (error: any) {
-      logger.error('Error verifying OTP', { error: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error('Error verifying OTP', { error: errorMessage });
       
       let description = "Invalid code. Please try again.";
-      if (error.message?.includes("Invalid code")) {
+      if (errorMessage?.includes("Invalid code")) {
         description = useBackupCode 
           ? "Invalid backup code. Please check and try again."
           : "Invalid code. TOTP codes expire every 30 seconds - try a fresh code from your authenticator app.";
-      } else if (error.message?.includes("Too many failed attempts")) {
+      } else if (errorMessage?.includes("Too many failed attempts")) {
         description = "Too many failed attempts. Please wait 15 minutes and try again.";
-      } else if (error.message?.includes("must be")) {
-        description = error.message; // Show validation errors directly
+      } else if (errorMessage?.includes("must be")) {
+        description = errorMessage; // Show validation errors directly
       }
       
       toast({
@@ -136,7 +137,7 @@ export default function MfaVerify() {
       <Card className="w-full max-w-md p-lg glass-elevated">
         <div className="text-center mb-lg">
           <Shield className="h-12 w-12 text-primary mx-auto mb-md" />
-          <h1 className="text-heading-lg font-bold text-foreground mb-2">Naviqx Security Check</h1>
+          <h1 className="text-heading-lg font-bold text-foreground mb-xs">Naviqx Security Check</h1>
           <p className="text-body-sm text-muted-foreground">
             {useBackupCode 
               ? "Enter one of your backup codes"
@@ -147,7 +148,7 @@ export default function MfaVerify() {
 
         <Alert className="mb-lg border-primary/50 bg-primary/10">
           <Shield className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-body-sm text-muted-foreground ml-2">
+          <AlertDescription className="text-body-sm text-muted-foreground ml-xs">
             Your session is secured. You'll stay logged in until you sign out, your IP changes, or 24 hours pass.
           </AlertDescription>
         </Alert>
@@ -155,7 +156,7 @@ export default function MfaVerify() {
         <div className="space-y-md">
           {useBackupCode ? (
             <div>
-              <label className="text-body-sm font-medium text-foreground block mb-2">
+              <label className="text-body-sm font-medium text-foreground block mb-xs">
                 Backup Code
               </label>
               <Input
@@ -174,7 +175,7 @@ export default function MfaVerify() {
             </div>
           ) : (
             <div>
-              <label className="text-body-sm font-medium text-foreground block mb-2">
+              <label className="text-body-sm font-medium text-foreground block mb-xs">
                 Verification Code
               </label>
               <div className="flex justify-center">
@@ -204,7 +205,7 @@ export default function MfaVerify() {
           >
             {verifying ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-xs animate-spin" />
                 Verifying...
               </>
             ) : (
@@ -212,7 +213,7 @@ export default function MfaVerify() {
             )}
           </Button>
 
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-xs">
             <Button
               variant="ghost"
               onClick={() => {
@@ -222,7 +223,7 @@ export default function MfaVerify() {
               }}
               className="flex-1"
             >
-              <KeyRound className="h-4 w-4 mr-2" />
+              <KeyRound className="h-4 w-4 mr-xs" />
               {useBackupCode ? "Use app instead" : "Use backup code"}
             </Button>
             <MfaSetupGuide />

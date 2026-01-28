@@ -29,7 +29,7 @@ const UtmPlanner = () => {
           href="https://docs.google.com/spreadsheets/d/1Desiq_cUDzdypT-Y54EUkKDWDj2ZJyQm0mHLpxhBFJs/edit?gid=1643442957#gid=1643442957"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 underline hover:no-underline"
+          className="inline-flex items-center gap-xs underline hover:no-underline"
         >
           Google Sheets
           <ExternalLink className="h-3 w-3" />
@@ -39,15 +39,15 @@ const UtmPlanner = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3 w-full lg:w-auto bg-muted/50">
-          <TabsTrigger value="builder" className="gap-2">
+          <TabsTrigger value="builder" className="gap-xs">
             <Wand2 className="h-4 w-4" />
             <span className="hidden sm:inline">Builder</span>
           </TabsTrigger>
-          <TabsTrigger value="archive" className="gap-2">
+          <TabsTrigger value="archive" className="gap-xs">
             <Archive className="h-4 w-4" />
             <span className="hidden sm:inline">Archive</span>
           </TabsTrigger>
-          <TabsTrigger value="config" className="gap-2">
+          <TabsTrigger value="config" className="gap-xs">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Config</span>
           </TabsTrigger>

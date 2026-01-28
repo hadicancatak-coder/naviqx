@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- Editor UI requires specific layout values */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';

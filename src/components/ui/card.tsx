@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- UI library component with layout defaults */
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
