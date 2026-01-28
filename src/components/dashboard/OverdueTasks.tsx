@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getDaysOverdue } from "@/lib/overdueHelpers";
+import { logger } from "@/lib/logger";
 
 export function OverdueTasks() {
   const { user } = useAuth();
@@ -65,7 +66,7 @@ export function OverdueTasks() {
 
       setOverdueTasks(tasks || []);
     } catch (err) {
-      console.error('Error fetching overdue tasks:', err);
+      logger.error('Error fetching overdue tasks:', err);
       setOverdueTasks([]);
     } finally {
       setLoading(false);

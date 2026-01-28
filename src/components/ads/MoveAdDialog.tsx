@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { useAuth } from "@/hooks/useAuth";
 
 interface MoveAdDialogProps {
@@ -100,7 +101,7 @@ export function MoveAdDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error('Error moving ad:', error);
+      logger.error('Error moving ad:', error);
       toast.error("Failed to move ad");
     } finally {
       setIsLoading(false);

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle2, Clock, AlertCircle, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface UserStats {
   userId: string;
@@ -157,7 +158,7 @@ export const TaskAnalyticsDashboard = () => {
       setUserStats(stats);
 
     } catch (error) {
-      console.error("Error fetching analytics:", error);
+      logger.error("Error fetching analytics:", error);
     } finally {
       setLoading(false);
     }

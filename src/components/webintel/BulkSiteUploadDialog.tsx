@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { WebIntelSite } from "@/hooks/useWebIntelSites";
 
 interface BulkSiteUploadDialogProps {
@@ -132,7 +133,7 @@ export function BulkSiteUploadDialog({
       }, 1000);
 
     } catch (error) {
-      console.error('CSV parsing error:', error);
+      logger.error('CSV parsing error:', error);
       toast.error("Failed to parse CSV file");
       setUploading(false);
     }

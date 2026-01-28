@@ -25,6 +25,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
 import { ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface EntityCommentsDialogProps {
   open: boolean;
@@ -134,7 +135,7 @@ export function EntityCommentsDialog({
       });
       setNewComment("");
     } catch (error) {
-      console.error("Failed to add comment:", error);
+      logger.error("Failed to add comment:", error);
     }
   };
 

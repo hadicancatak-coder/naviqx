@@ -1,4 +1,5 @@
 import type { ReportDocument, ReportElement, TableElementData, TextElementData, ChartElementData, ImageElementData } from "@/types/report";
+import { logger } from "@/lib/logger";
 
 export function generateElementId(type: string): string {
   return `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -77,7 +78,7 @@ export function importReportFromJSON(json: string): ReportDocument | null {
   try {
     return JSON.parse(json) as ReportDocument;
   } catch (error) {
-    console.error('Failed to parse report JSON:', error);
+    logger.error('Failed to parse report JSON:', error);
     return null;
   }
 }

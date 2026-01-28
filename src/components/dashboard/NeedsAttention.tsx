@@ -4,6 +4,7 @@ import { AlertTriangle, Lock, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getNeedsAttention } from "@/lib/dashboardQueries";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 
 export function NeedsAttention() {
   const { user } = useAuth();
@@ -27,7 +28,7 @@ export function NeedsAttention() {
       const result = await getNeedsAttention(user.id);
       setData(result);
     } catch (err) {
-      console.error('NeedsAttention: Error fetching data', err);
+      logger.error('NeedsAttention: Error fetching data', err);
       setError('Failed to load data');
     } finally {
       setLoading(false);
