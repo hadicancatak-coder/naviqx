@@ -7,6 +7,8 @@ interface User {
   user_id: string;
   name: string;
   username?: string;
+  avatar_url?: string;
+  working_days?: string | null;
 }
 
 type EntityType = "task" | "project" | "campaign" | "blocker";
@@ -51,7 +53,7 @@ export function useRealtimeAssignees(entityType: EntityType, entityId: string) {
         const userIds = data.map((d: any) => d.user_id);
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, user_id, name, username")
+          .select("id, user_id, name, username, avatar_url, working_days")
           .in("id", userIds);
 
         setAssignees((profiles as User[]) || []);

@@ -1,31 +1,37 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { useTaskDetailContext } from "./TaskDetailContext";
 
 export function TaskDetailDescription() {
-  const { task, description, setDescription, saveField } = useTaskDetailContext();
+  const { task, saveDescription } = useTaskDetailContext();
+  
+  // Local state for the editor
+  const [value, setValue] = useState(task?.description || "");
   
   // Track last saved value to compare against
-  const lastSavedRef = useRef<string>("");
+  const lastSavedRef = useRef<string>(task?.description || "");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Track current description in a ref for closure access
-  const descriptionRef = useRef<string>(description);
+  // Track current value in a ref for closure access in cleanup
+  const valueRef = useRef<string>(value);
   
-  // Keep descriptionRef in sync
+  // Keep valueRef in sync
   useEffect(() => {
-    descriptionRef.current = description;
-  }, [description]);
+    valueRef.current = value;
+  }, [value]);
   
-  // Only reset the ref when switching to a different task
+  // Sync when task changes (switching between tasks)
   useEffect(() => {
-    lastSavedRef.current = task?.description || "";
+    const newDescription = task?.description || "";
+    setValue(newDescription);
+    valueRef.current = newDescription;
+    lastSavedRef.current = newDescription;
   }, [task?.id]);
 
   // Auto-save with debounce when content changes
   const handleChange = useCallback((newValue: string) => {
-    setDescription(newValue);
-    descriptionRef.current = newValue;
+    setValue(newValue);
+    valueRef.current = newValue;
     
     // Clear any pending save
     if (saveTimeoutRef.current) {
@@ -33,45 +39,52 @@ export function TaskDetailDescription() {
     }
     
     // Debounced auto-save after 1 second of no changes
-    saveTimeoutRef.current = setTimeout(async () => {
-      const currentValue = descriptionRef.current;
+    saveTimeoutRef.current = setTimeout(() => {
+      const currentValue = valueRef.current;
       if (currentValue !== lastSavedRef.current) {
-        await saveField('description', currentValue);
+        saveDescription(currentValue);
         lastSavedRef.current = currentValue;
       }
     }, 1000);
-  }, [setDescription, saveField]);
+  }, [saveDescription]);
 
   // Save immediately on blur
-  const handleBlur = useCallback(async () => {
+  const handleBlur = useCallback(() => {
     // Clear any pending debounced save
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
     
-    const currentValue = descriptionRef.current;
+    const currentValue = valueRef.current;
     if (currentValue !== lastSavedRef.current) {
-      await saveField('description', currentValue);
+      saveDescription(currentValue);
       lastSavedRef.current = currentValue;
     }
-  }, [saveField]);
+  }, [saveDescription]);
 
-  // Cleanup timeout on unmount
+  // CRITICAL: Flush pending saves on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      // Use the ref value (state may be stale in cleanup)
+      const currentValue = valueRef.current;
+      if (currentValue !== lastSavedRef.current) {
+        // Fire and forget - component is unmounting
+        saveDescription(currentValue);
       }
     };
-  }, []);
+  }, [saveDescription]);
 
   return (
     <div className="space-y-xs">
       <Label className="text-metadata text-muted-foreground">Description</Label>
       <RichTextEditor
         key={task?.id}
-        value={description}
+        value={value}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder="Add a description..."
