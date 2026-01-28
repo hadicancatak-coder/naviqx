@@ -3,8 +3,8 @@ import { createContext, useContext, useState, ReactNode, useCallback, useRef } f
 interface TaskDrawerContextValue {
   isOpen: boolean;
   taskId: string | null;
-  task: any | null;
-  openTaskDrawer: (taskId: string, task?: any) => void;
+  task: unknown | null;
+  openTaskDrawer: (taskId: string, task?: unknown) => void;
   closeTaskDrawer: () => void;
 }
 
@@ -13,10 +13,10 @@ const TaskDrawerContext = createContext<TaskDrawerContextValue | undefined>(unde
 export function TaskDrawerProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [task, setTask] = useState<any | null>(null);
+  const [task, setTask] = useState<unknown | null>(null);
   const isOpeningRef = useRef(false);
 
-  const openTaskDrawer = useCallback((id: string, cachedTask?: any) => {
+  const openTaskDrawer = useCallback((id: string, cachedTask?: unknown) => {
     // Prevent race condition when clicking another task while drawer is open
     isOpeningRef.current = true;
     setTaskId(id);
@@ -47,6 +47,7 @@ export function TaskDrawerProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTaskDrawer() {
   const context = useContext(TaskDrawerContext);
   if (!context) {
