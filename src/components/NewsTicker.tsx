@@ -33,7 +33,8 @@ export function NewsTicker() {
         .limit(5);
       return (data || []) as Announcement[];
     },
-    staleTime: 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes - realtime handles updates
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 

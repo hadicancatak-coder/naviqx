@@ -32,7 +32,8 @@ export const useCampaignComments = () => {
       return data as CampaignComment[];
     },
     enabled: !!trackingId,
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 
@@ -50,7 +51,8 @@ export const useCampaignComments = () => {
       return data;
     },
     enabled: !!campaignId,
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 
