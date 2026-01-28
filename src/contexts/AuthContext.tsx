@@ -306,6 +306,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Periodic MFA validation (every 30 minutes) - reduced frequency for once-per-day MFA
@@ -317,6 +318,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, 30 * 60 * 1000); // 30 minutes
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, mfaVerified]);
 
   // Phase 6: Enhanced debug logging - State transition tracker
@@ -445,6 +447,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
