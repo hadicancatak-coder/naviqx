@@ -12,6 +12,7 @@ import { DuplicateAdDialog } from "./DuplicateAdDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import { TreeNode } from "@/hooks/useAccountStructure";
 
@@ -148,7 +149,7 @@ export function AccountStructureTree({
       .eq('id', deleteConfirmId);
     
     if (error) {
-      console.error('Delete ad error:', error);
+      logger.error('Delete ad error:', error);
       toast.error("Failed to delete ad: " + (error.message || "Unknown error"));
     } else {
       // Invalidate queries to refresh the UI

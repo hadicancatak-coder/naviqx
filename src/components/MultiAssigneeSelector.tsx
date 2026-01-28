@@ -12,6 +12,7 @@ import { UserPlus, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { logger } from "@/lib/logger";
 
 interface User {
   id: string;        // profiles.id
@@ -101,7 +102,7 @@ export function MultiAssigneeSelector({
     }
 
     if (error) {
-      console.error('Assignment error:', error);
+      logger.error('Assignment error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to assign user",
@@ -150,7 +151,7 @@ export function MultiAssigneeSelector({
     }
 
     if (error) {
-      console.error('Unassignment error:', error);
+      logger.error('Unassignment error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to unassign user",

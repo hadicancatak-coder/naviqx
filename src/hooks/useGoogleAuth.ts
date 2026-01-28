@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 const getClientId = () => localStorage.getItem("GOOGLE_CLIENT_ID") || import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -32,7 +33,7 @@ export function useGoogleAuth() {
   const initializeGoogleAuth = async () => {
     const clientId = getClientId();
     if (!clientId) {
-      console.error('Google Client ID not configured');
+      logger.error('Google Client ID not configured');
       setIsLoading(false);
       return;
     }
@@ -71,7 +72,7 @@ export function useGoogleAuth() {
           }
         },
         error_callback: (error: any) => {
-          console.error('Google OAuth error:', error);
+          logger.error('Google OAuth error:', error);
           // If popup is blocked, inform user to try from published URL
           if (error?.type === 'popup_closed' || error?.type === 'popup_failed_to_open') {
             alert('Popup was blocked. Please try accessing this feature from the published URL directly in your browser, not the preview iframe.');

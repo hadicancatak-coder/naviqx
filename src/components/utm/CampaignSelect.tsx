@@ -15,6 +15,7 @@ import {
   useDeleteUtmCampaign,
 } from "@/hooks/useUtmCampaigns";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +58,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
         onValueChange(result.id);
       }
     } catch (error) {
-      console.error("Failed to create campaign:", error);
+      logger.error("Failed to create campaign:", error);
     }
   }, [newName, createCampaign, onValueChange]);
 
@@ -68,7 +69,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
       setEditingId(null);
       setEditName("");
     } catch (error) {
-      console.error("Failed to update campaign:", error);
+      logger.error("Failed to update campaign:", error);
     }
   }, [editName, updateCampaign]);
 
@@ -81,7 +82,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
       }
       setDeleteId(null);
     } catch (error) {
-      console.error("Failed to delete campaign:", error);
+      logger.error("Failed to delete campaign:", error);
     }
   }, [deleteId, deleteCampaign, value, onValueChange]);
 

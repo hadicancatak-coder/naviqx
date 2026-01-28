@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Save, ChevronLeft, Copy, BookmarkPlus, Download, Edit } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { SearchAdPreview } from "@/components/ads/SearchAdPreview";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { calculateAdStrength, checkCompliance, detectHeadlinePattern, getHeadlinePositionRecommendation } from "@/lib/adQualityScore";
@@ -418,7 +419,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
           .eq("id", ad.id);
           
         if (error) {
-          console.error('Ad update error:', error);
+          logger.error('Ad update error:', error);
           throw error;
         }
         
@@ -471,7 +472,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
         onSave(data.id);
       }
     } catch (error: any) {
-      console.error('Save ad error:', error);
+      logger.error('Save ad error:', error);
       
       // Provide more specific error messages
       let errorMessage = "Failed to save ad";

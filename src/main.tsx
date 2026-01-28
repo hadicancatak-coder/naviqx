@@ -5,13 +5,14 @@ import App from "./App.tsx";
 import "./index.css";
 import { queryClient } from "./lib/queryClient";
 import { errorLogger } from "./lib/errorLogger";
+import { logger } from "./lib/logger";
 
 // Global error handlers with enhanced logging
 window.addEventListener('error', (event) => {
   // Prevent default error handling
   event.preventDefault();
   
-  console.error('Global error:', event.error);
+  logger.error('Global error:', event.error);
   
   errorLogger.logError({
     severity: 'critical',
@@ -31,7 +32,7 @@ window.addEventListener('unhandledrejection', (event) => {
   // Prevent default error handling
   event.preventDefault();
   
-  console.error('Unhandled promise rejection:', event.reason);
+  logger.error('Unhandled promise rejection:', event.reason);
   
   const reason = event.reason;
   const message = reason?.message || reason?.toString() || 'Unknown promise rejection';

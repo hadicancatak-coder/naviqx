@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
+import { logger } from "@/lib/logger";
 
 export default function WebIntel() {
   const {
@@ -67,7 +68,7 @@ export default function WebIntel() {
       }
       setEditingDeal(null);
     } catch (error) {
-      console.error("Error saving deal:", error);
+      logger.error("Error saving deal:", error);
       toast.error("Failed to save deal");
     }
   };
@@ -83,7 +84,7 @@ export default function WebIntel() {
       toast.success("Deal deleted successfully");
       setDeleteDealConfirmId(null);
     } catch (error) {
-      console.error("Error deleting deal:", error);
+      logger.error("Error deleting deal:", error);
       toast.error("Failed to delete deal");
     }
   };
@@ -105,7 +106,7 @@ export default function WebIntel() {
       setEditingList(null);
       setTargetListDialogOpen(false);
     } catch (error) {
-      console.error("Error saving list:", error);
+      logger.error("Error saving list:", error);
       toast.error("Failed to save list");
     }
   };
@@ -121,7 +122,7 @@ export default function WebIntel() {
       toast.success("Target list deleted");
       setDeleteListConfirmId(null);
     } catch (error) {
-      console.error("Error deleting list:", error);
+      logger.error("Error deleting list:", error);
       toast.error("Failed to delete list");
     }
   };

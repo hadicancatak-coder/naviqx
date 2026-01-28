@@ -33,6 +33,7 @@ import {
   getRecurrenceLabelNew,
   calculateFirstOccurrence 
 } from "@/lib/recurrenceUtils";
+import { logger } from "@/lib/logger";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -229,7 +230,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
       resetForm();
       onOpenChange(false);
     } catch (error: any) {
-      console.error("Error creating task:", error);
+      logger.error("Error creating task:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create task",
@@ -318,7 +319,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
         queryClient.invalidateQueries({ queryKey: ["tasks"] });
         resetForm();
       } catch (error) {
-        console.error("Auto-save failed:", error);
+        logger.error("Auto-save failed:", error);
       }
     }
     onOpenChange(isOpen);

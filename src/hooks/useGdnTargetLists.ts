@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export interface GdnTargetList {
   id: string;
@@ -83,7 +84,7 @@ export function useGdnTargetLists() {
     },
     onError: (error) => {
       toast.error("Failed to create target list");
-      console.error(error);
+      logger.error("Failed to create target list:", error);
     },
   });
 
@@ -103,7 +104,7 @@ export function useGdnTargetLists() {
     },
     onError: (error) => {
       toast.error("Failed to update target list");
-      console.error(error);
+      logger.error("Failed to update target list:", error);
     },
   });
 
@@ -123,7 +124,7 @@ export function useGdnTargetLists() {
     },
     onError: (error) => {
       toast.error("Failed to delete target list");
-      console.error(error);
+      logger.error("Failed to delete target list:", error);
     },
   });
 
@@ -162,7 +163,7 @@ export function useGdnTargetLists() {
     },
     onError: (error) => {
       toast.error("Failed to add items");
-      console.error(error);
+      logger.error("Failed to add items:", error);
     },
   });
 
@@ -181,7 +182,7 @@ export function useGdnTargetLists() {
     },
     onError: (error) => {
       toast.error("Failed to delete item");
-      console.error(error);
+      logger.error("Failed to delete item:", error);
     },
   });
 
@@ -204,7 +205,7 @@ export function useGdnTargetLists() {
       queryClient.invalidateQueries({ queryKey: ["gdn-target-items"] });
     },
     onError: (error) => {
-      console.error("Failed to update item:", error);
+      logger.error("Failed to update item:", error);
     },
   });
 
@@ -226,7 +227,7 @@ export function useGdnTargetLists() {
     },
     onError: (error) => {
       toast.error("Failed to check ads.txt");
-      console.error(error);
+      logger.error("Failed to check ads.txt:", error);
     },
   });
 

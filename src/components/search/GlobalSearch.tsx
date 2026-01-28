@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface SearchResult {
   id: string;
@@ -50,7 +51,7 @@ export function GlobalSearch() {
         });
 
         if (error) {
-          console.error('Search error:', error);
+          logger.error('Search error:', error);
           toast({
             title: "Search failed",
             description: "Unable to search content. Please try again.",
@@ -64,7 +65,7 @@ export function GlobalSearch() {
           setResults(data as SearchResult[]);
         }
       } catch (error) {
-        console.error('Search error:', error);
+        logger.error('Search error:', error);
         toast({
           title: "Search error",
           description: "An unexpected error occurred. Please try again.",

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
+import { logger } from "@/lib/logger";
 
 export interface SectionImage {
   id: string;
@@ -68,7 +69,7 @@ export const useLpSections = (filters?: LpSectionFilters) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching LP sections:", error);
+        logger.error("Error fetching LP sections:", error);
         throw error;
       }
 
@@ -123,7 +124,7 @@ export const useCreateLpSection = () => {
       toast.success("Section created successfully");
     },
     onError: (error) => {
-      console.error("Error creating section:", error);
+      logger.error("Error creating section:", error);
       toast.error("Failed to create section");
     },
   });
@@ -171,7 +172,7 @@ export const useUpdateLpSection = () => {
       toast.success("Section updated successfully");
     },
     onError: (error) => {
-      console.error("Error updating section:", error);
+      logger.error("Error updating section:", error);
       toast.error("Failed to update section");
     },
   });
@@ -194,7 +195,7 @@ export const useDeleteLpSection = () => {
       toast.success("Section deleted successfully");
     },
     onError: (error) => {
-      console.error("Error deleting section:", error);
+      logger.error("Error deleting section:", error);
       toast.error("Failed to delete section");
     },
   });
@@ -219,7 +220,7 @@ export const useUploadSectionImage = () => {
       return publicUrl;
     },
     onError: (error) => {
-      console.error("Error uploading image:", error);
+      logger.error("Error uploading image:", error);
       toast.error("Failed to upload image");
     },
   });
@@ -240,7 +241,7 @@ export const useDeleteSectionImage = () => {
       if (error) throw error;
     },
     onError: (error) => {
-      console.error("Error deleting image:", error);
+      logger.error("Error deleting image:", error);
       toast.error("Failed to delete image");
     },
   });
