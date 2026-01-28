@@ -9,9 +9,9 @@ export function TaskDrawer() {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeTaskDrawer()}>
-      {/* eslint-disable-next-line no-restricted-syntax */}
       <SheetContent 
         side="right" 
+        // eslint-disable-next-line no-restricted-syntax
         className="w-full sm:max-w-xl !p-0 overflow-hidden"
         hideCloseButton
       >
