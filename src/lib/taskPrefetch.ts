@@ -5,8 +5,9 @@
 
 import { queryClient } from './queryClient';
 import { supabase } from '@/integrations/supabase/client';
-import { mapStatusToUi } from '@/lib/taskStatusMapper';
+import { mapStatusToUi } from '@/domain';
 import { TASK_QUERY_KEY } from '@/lib/queryKeys';
+import { logger } from '@/lib/logger';
 
 // Track if prefetch is in progress to avoid duplicate requests
 let prefetchInProgress = false;
@@ -60,7 +61,7 @@ export async function prefetchTasksData(): Promise<void> {
       staleTime: 2 * 60 * 1000, // 2 minutes - match useTasks
     });
   } catch (err) {
-    console.error('Task prefetch failed:', err);
+    logger.error('Task prefetch failed:', err);
   } finally {
     prefetchInProgress = false;
   }

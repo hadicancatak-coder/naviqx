@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { LpSectionCard } from "./LpSectionCard";
 import { useLpSections, LpSection } from "@/hooks/useLpSections";
-import { useEntities } from "@/hooks/useEntities";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { DndContext, DragOverlay, useDraggable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
@@ -65,7 +65,7 @@ export const LpSectionLibrary = ({
   const [entityFilter, setEntityFilter] = useState("all");
 
   const { data: sections = [], isLoading } = useLpSections({ isActive: true });
-  const { data: entities = [] } = useEntities();
+  const { data: entities = [] } = useSystemEntities();
 
   const filteredSections = useMemo(() => {
     return sections.filter((section) => {

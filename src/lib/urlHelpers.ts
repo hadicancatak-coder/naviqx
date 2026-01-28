@@ -1,3 +1,36 @@
+/**
+ * URL Normalization and Helpers
+ * Single source of truth for URL manipulation across the app
+ */
+
+/**
+ * Normalize a URL by ensuring it has a protocol
+ * Works with http, https, mailto, tel, and other protocols
+ */
+export function normalizeUrl(url: string): string {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (trimmed.match(/^https?:\/\//i)) return trimmed;
+  if (trimmed.includes('://') || trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
+/**
+ * Safely parse a URL, returning null if invalid
+ */
+export function safeParseUrl(url: string): URL | null {
+  try {
+    return new URL(normalizeUrl(url));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get the production URL for the application
+ */
 export const getProductionUrl = (): string => {
   // Check for environment variable first
   if (import.meta.env.VITE_PUBLIC_URL) {
@@ -14,3 +47,11 @@ export const getProductionUrl = (): string => {
   
   return window.location.origin;
 };
+
+/**
+ * Extract hostname from a URL safely
+ */
+export function getHostname(url: string): string {
+  const parsed = safeParseUrl(url);
+  return parsed?.hostname.replace('www.', '') || url.split('/')[0] || '';
+}

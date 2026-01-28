@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export interface SystemEntity {
   id: string;
@@ -30,7 +31,7 @@ export const useSystemEntities = () => {
         if (error) throw error;
         return (data as SystemEntity[]) || [];
       } catch (error: any) {
-        console.error('Error fetching system entities:', error);
+        logger.error('Error fetching system entities:', error);
         throw error;
       }
     },
@@ -53,7 +54,7 @@ export const useAllEntities = () => {
         if (error) throw error;
         return (data as SystemEntity[]) || [];
       } catch (error: any) {
-        console.error('Error fetching all entities:', error);
+        logger.error('Error fetching all entities:', error);
         throw error;
       }
     },
@@ -79,7 +80,7 @@ export const useCreateEntity = () => {
         if (error) throw error;
         return data as SystemEntity;
       } catch (error: any) {
-        console.error('Error creating entity:', error);
+        logger.error('Error creating entity:', error);
         throw error;
       }
     },
@@ -100,7 +101,7 @@ export const useCreateEntity = () => {
       toast({ title: 'Entity created successfully' });
     },
     onError: (error: any) => {
-      console.error('Entity creation failed:', error);
+      logger.error('Entity creation failed:', error);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['system-entities'] });

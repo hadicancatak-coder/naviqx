@@ -236,7 +236,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         cachedAt: Date.now()
       }));
     } catch (err) {
-      console.error('Error fetching MFA status:', err);
+      logger.error('Error fetching MFA status:', err);
       setMfaEnabled(false);
       setMfaEnrollmentRequired(true);
     } finally {

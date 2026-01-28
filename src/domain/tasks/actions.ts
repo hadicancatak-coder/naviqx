@@ -5,30 +5,22 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-
-// Valid DB status values
-type TaskStatusDBType = 'Pending' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed';
-
-// Status mapping - UI to DB
-// This is a copy to avoid circular imports (domain/index imports from actions)
-const UI_TO_DB_STATUS: Record<string, TaskStatusDBType> = {
-  'Backlog': 'Pending',
-  'Ongoing': 'Ongoing', 
-  'Blocked': 'Blocked',
-  'Completed': 'Completed',
-  'Failed': 'Failed',
-  // Also accept DB values directly (no-op mapping)
-  'Pending': 'Pending',
-};
+import { logger } from '@/lib/logger';
+import { 
+  TaskStatusDBType, 
+  STATUS_UI_TO_DB, 
+  mapStatusToDb as mapStatusToDbFromConstants 
+} from './constants';
 
 /**
  * Maps any UI or DB status to a valid DB status value.
- * Throws if invalid status is passed for debugging.
+ * Logs warning if invalid status is passed.
  */
 const mapStatusToDbLocal = (status: string): TaskStatusDBType => {
-  const dbStatus = UI_TO_DB_STATUS[status];
+  const dbStatus = STATUS_UI_TO_DB[status as keyof typeof STATUS_UI_TO_DB] || 
+                   (status === 'Pending' ? 'Pending' : mapStatusToDbFromConstants(status));
   if (!dbStatus) {
-    console.error(`[Task Actions] Invalid status: "${status}". Valid values: ${Object.keys(UI_TO_DB_STATUS).join(', ')}`);
+    logger.error(`[Task Actions] Invalid status: "${status}". Valid values: ${Object.keys(STATUS_UI_TO_DB).join(', ')}`);
     // Default to Pending rather than throwing to prevent complete failure
     return 'Pending';
   }
@@ -61,7 +53,7 @@ export interface SetStatusOptions {
  * For collaborative tasks: marks current user's completion, only completes task when all assignees done
  */
 export async function completeTask(taskId: string, userId?: string): Promise<TaskActionResult> {
-  console.log('[Task Actions] completeTask called with:', taskId, userId);
+  logger.debug('[Task Actions] completeTask called with:', { taskId, userId });
   
   try {
     // Fetch task with assignee info
@@ -72,12 +64,12 @@ export async function completeTask(taskId: string, userId?: string): Promise<Tas
       .single();
 
     if (taskError) {
-      console.error('[Task Actions] Error fetching task:', taskError);
+      logger.error('[Task Actions] Error fetching task:', taskError);
       return { success: false, error: taskError.message };
     }
 
     if (task?.is_recurrence_template) {
-      console.warn('[Task Actions] Attempted to complete a recurrence template.');
+      logger.warn('[Task Actions] Attempted to complete a recurrence template.');
       return { 
         success: false, 
         error: 'Recurrence templates cannot be completed. Complete the generated task instances instead.' 
@@ -105,7 +97,7 @@ export async function completeTask(taskId: string, userId?: string): Promise<Tas
         .eq('user_id', profile.id);
 
       if (assigneeError) {
-        console.error('[Task Actions] Error marking assignee completion:', assigneeError);
+        logger.error('[Task Actions] Error marking assignee completion:', assigneeError);
         return { success: false, error: assigneeError.message };
       }
 
@@ -141,14 +133,14 @@ export async function completeTask(taskId: string, userId?: string): Promise<Tas
       .single();
 
     if (error) {
-      console.error('[Task Actions] completeTask error:', error);
+      logger.error('[Task Actions] completeTask error:', error);
       return { success: false, error: error.message };
     }
 
-    console.log('[Task Actions] completeTask success:', data);
+    logger.debug('[Task Actions] completeTask success:', data);
     return { success: true, data };
   } catch (err: any) {
-    console.error('[Task Actions] completeTask exception:', err);
+    logger.error('[Task Actions] completeTask exception:', err);
     return { success: false, error: err.message || 'Failed to complete task' };
   }
 }

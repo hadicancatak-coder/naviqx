@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { mapStatusToUi } from "@/lib/taskStatusMapper";
+import { mapStatusToUi } from '@/domain';
 
 export interface ProfileData {
   id: string;

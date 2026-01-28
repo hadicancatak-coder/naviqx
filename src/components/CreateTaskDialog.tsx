@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { format, addDays, addWeeks, addMonths } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ENTITIES, TASK_STATUSES } from "@/lib/constants";
-import { mapStatusToDb } from "@/lib/taskStatusMapper";
+import { mapStatusToDb } from '@/domain';
 import { validateDateForUsers, getDayName, formatWorkingDays } from "@/lib/workingDaysHelper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

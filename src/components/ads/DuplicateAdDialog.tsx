@@ -119,8 +119,7 @@ export function DuplicateAdDialog({
       toast.success("Ad duplicated successfully");
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
-      console.error('Error duplicating ad:', error);
+    } catch {
       toast.error("Failed to duplicate ad");
     } finally {
       setIsLoading(false);

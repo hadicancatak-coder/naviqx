@@ -38,7 +38,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLpMaps, useCreateLpMap, useDeleteLpMap, LpMap } from "@/hooks/useLpMaps";
-import { useEntities } from "@/hooks/useEntities";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { cn } from "@/lib/utils";
 
 interface LpMapListProps {
@@ -66,7 +66,7 @@ export const LpMapList = ({ selectedMapId, onSelectMap }: LpMapListProps) => {
   const [newEntityId, setNewEntityId] = useState<string | undefined>();
 
   const { data: maps = [], isLoading } = useLpMaps({ isActive: true });
-  const { data: entities = [] } = useEntities();
+  const { data: entities = [] } = useSystemEntities();
   const createMap = useCreateLpMap();
   const deleteMap = useDeleteLpMap();
 

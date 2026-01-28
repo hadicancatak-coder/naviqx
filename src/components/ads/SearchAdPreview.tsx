@@ -24,8 +24,8 @@ const parseUrlSafely = (url: string | null | undefined): { hostname: string; pat
       hostname: parsedUrl.hostname.replace('www.', ''),
       pathname: parsedUrl.pathname
     };
-  } catch (error) {
-    console.warn('Invalid URL provided:', url);
+  } catch {
+    // Invalid URL - fallback to simple parsing
     return { hostname: url.split('/')[0] || 'example.com', pathname: '' };
   }
 };

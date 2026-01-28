@@ -35,8 +35,7 @@ export const validateUtmParameters = (params: {
       const cleanUrl = params.base_url.trim();
       const urlWithProtocol = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
       new URL(urlWithProtocol);
-    } catch (error) {
-      console.error('URL validation error:', error);
+    } catch {
       errors.push("Base URL is not a valid URL format");
     }
   }
