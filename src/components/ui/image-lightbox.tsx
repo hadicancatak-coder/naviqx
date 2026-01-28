@@ -87,27 +87,27 @@ export const ImageLightbox = ({
     >
       {/* Backdrop - marked for document-level pointer capture */}
       <div 
-        className="absolute inset-0 bg-black/95 cursor-pointer z-10" 
+        className="absolute inset-0 bg-background/95 cursor-pointer z-10" 
         data-lightbox-backdrop="true"
       />
 
       {/* Top bar */}
       <div 
-        className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-30 pointer-events-auto"
+        className="absolute top-0 left-0 right-0 flex items-center justify-between p-md z-30 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-sm">
           <button
-            className="flex items-center gap-1 text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="flex items-center gap-xs text-foreground/80 hover:text-foreground px-3 py-2 rounded-lg hover:bg-foreground/10 transition-colors"
             onClick={() => setZoom((prev) => Math.max(prev - 0.5, 0.5))}
           >
             <ZoomOut className="h-4 w-4" />
           </button>
-          <span className="text-white/80 text-sm min-w-[50px] text-center">
+          <span className="text-foreground/80 text-body-sm min-w-[50px] text-center">
             {Math.round(zoom * 100)}%
           </span>
           <button
-            className="flex items-center gap-1 text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="flex items-center gap-xs text-foreground/80 hover:text-foreground px-3 py-2 rounded-lg hover:bg-foreground/10 transition-colors"
             onClick={() => setZoom((prev) => Math.min(prev + 0.5, 3))}
           >
             <ZoomIn className="h-4 w-4" />
@@ -115,7 +115,7 @@ export const ImageLightbox = ({
         </div>
         
         <button
-          className="text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+          className="text-foreground hover:bg-foreground/10 p-2 rounded-lg transition-colors"
           onClick={onClose}
         >
           <X className="h-6 w-6" />
@@ -125,7 +125,7 @@ export const ImageLightbox = ({
       {/* Navigation arrows - Left - z-20 */}
       {images.length > 1 && (
         <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors z-20"
+          className="absolute left-md top-1/2 -translate-y-1/2 text-foreground hover:bg-foreground/10 p-3 rounded-full transition-colors z-20"
           onClick={goToPrevious}
         >
           <ChevronLeft className="h-8 w-8" />
@@ -135,7 +135,7 @@ export const ImageLightbox = ({
       {/* Navigation arrows - Right */}
       {images.length > 1 && (
         <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 p-3 rounded-full transition-colors"
+          className="absolute right-md top-1/2 -translate-y-1/2 text-foreground hover:bg-foreground/10 p-3 rounded-full transition-colors"
           onClick={goToNext}
         >
           <ChevronRight className="h-8 w-8" />
@@ -155,16 +155,16 @@ export const ImageLightbox = ({
       </div>
 
       {/* Bottom bar */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-auto z-30">
+      <div className="absolute bottom-0 left-0 right-0 p-md pointer-events-auto z-30">
         {/* Caption and counter */}
-        <div className="text-center mb-3">
+        <div className="text-center mb-sm">
           {currentImage.caption && (
-            <p className="text-white text-sm mb-1 max-w-lg mx-auto">
+            <p className="text-foreground text-body-sm mb-1 max-w-lg mx-auto">
               {currentImage.caption}
             </p>
           )}
           {images.length > 1 && (
-            <p className="text-white/60 text-xs">
+            <p className="text-foreground/60 text-metadata">
               {currentIndex + 1} of {images.length}
             </p>
           )}
@@ -172,14 +172,14 @@ export const ImageLightbox = ({
 
         {/* Thumbnail strip */}
         {images.length > 1 && (
-          <div className="flex justify-center gap-2 max-w-[80vw] mx-auto overflow-x-auto py-2">
+          <div className="flex justify-center gap-sm max-w-[80vw] mx-auto overflow-x-auto py-2">
             {images.map((img, index) => (
               <button
                 key={index}
                 className={cn(
                   "flex-shrink-0 w-14 h-10 rounded overflow-hidden border-2 transition-all",
                   index === currentIndex
-                    ? "border-white opacity-100 ring-2 ring-white/30"
+                    ? "border-foreground opacity-100 ring-2 ring-foreground/30"
                     : "border-transparent opacity-40 hover:opacity-70"
                 )}
                 onClick={() => {

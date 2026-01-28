@@ -145,7 +145,7 @@ export function SearchAdPreview(props: SearchAdPreviewProps) {
             </div>
             
             {/* Headline - mobile shows shorter version */}
-            <h3 className="text-lg text-primary font-normal line-clamp-2">
+            <h3 className="text-heading-sm text-primary font-normal line-clamp-2">
               {activeHeadlines.length > 0 
                 ? activeHeadlines.slice(0, 2).join(' | ')
                 : 'Headline 1 | Headline 2'}

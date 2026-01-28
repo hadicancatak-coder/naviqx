@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     // Set failOnError: true to block build on ESLint errors
     eslint({
       failOnWarning: false,
-      failOnError: false, // Set to true to block build - disabled for now due to 1700+ legacy violations
+      failOnError: true, // Enforced - violations block build
       cache: true,
       include: ['src/**/*.ts', 'src/**/*.tsx'],
     }),

@@ -174,9 +174,9 @@ export const LpSectionDialog = ({
         </DialogHeader>
 
         <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-6 pb-4">
+          <div className="space-y-lg pb-md">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-md">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input

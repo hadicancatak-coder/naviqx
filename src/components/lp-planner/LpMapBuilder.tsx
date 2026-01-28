@@ -164,15 +164,15 @@ export const LpMapBuilder = ({
         onDragEnd={handleDragEnd}
       >
         <ScrollArea className="flex-1">
-          <div className="p-6">
+          <div className="p-lg">
             {sections.length === 0 ? (
               <div
                 id="map-drop-zone"
-                className="border-2 border-dashed border-border rounded-xl p-12 text-center"
+                className="border-2 border-dashed border-border rounded-xl p-2xl text-center"
               >
-                <LayoutTemplate className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-medium mb-2">Start building your LP</h3>
-                <p className="text-sm text-muted-foreground">
+                <LayoutTemplate className="h-12 w-12 mx-auto text-muted-foreground mb-md" />
+                <h3 className="font-medium mb-sm">Start building your LP</h3>
+                <p className="text-body-sm text-muted-foreground">
                   Drag sections from the library to add them here
                 </p>
               </div>

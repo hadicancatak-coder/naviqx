@@ -35,7 +35,7 @@ export function TaskWatchButton({
             disabled={isUpdating || isLoading}
             className={cn(
               "gap-xs",
-              isWatching && "bg-info hover:bg-info/90 text-white"
+              isWatching && "bg-info hover:bg-info/90 text-info-foreground"
             )}
           >
             {isUpdating ? (

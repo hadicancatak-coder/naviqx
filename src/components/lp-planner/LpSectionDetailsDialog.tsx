@@ -57,15 +57,15 @@ export const LpSectionDetailsDialog = ({
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <SheetTitle className="text-lg font-semibold truncate">
+                  <SheetTitle className="text-heading-sm font-semibold truncate">
                     {section.name}
                   </SheetTitle>
-                  <Badge variant="outline" className={cn("text-xs border-0", badgeColor)}>
+                  <Badge variant="outline" className={cn("text-metadata border-0", badgeColor)}>
                     {section.section_type}
                   </Badge>
                 </div>
                 {section.entity && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Entity: {section.entity.name}
                   </p>
                 )}
@@ -98,26 +98,26 @@ export const LpSectionDetailsDialog = ({
           </SheetHeader>
 
           <ScrollArea className="flex-1">
-            <div className="px-6 py-4 space-y-6">
+            <div className="px-lg py-md space-y-lg">
               {/* Description */}
               {section.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  <h3 className="text-body-sm font-medium text-muted-foreground mb-sm">
                     Description
                   </h3>
-                  <p className="text-sm text-foreground">{section.description}</p>
+                  <p className="text-body-sm text-foreground">{section.description}</p>
                 </div>
               )}
 
               {/* Sample Images - Clickable */}
               {section.sample_images.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                  <h3 className="text-body-sm font-medium text-muted-foreground mb-sm flex items-center gap-sm">
                     <Image className="h-4 w-4" />
                     Sample Images ({section.sample_images.length})
-                    <span className="text-xs text-muted-foreground/70 ml-1">(click to view)</span>
+                    <span className="text-metadata text-muted-foreground/70 ml-1">(click to view)</span>
                   </h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-sm">
                     {section.sample_images.map((image, index) => (
                       <button
                         key={image.id}
@@ -130,11 +130,11 @@ export const LpSectionDetailsDialog = ({
                           className="w-full h-32 object-cover"
                           loading="lazy"
                         />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                          <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-colors flex items-center justify-center">
+                          <ZoomIn className="h-6 w-6 text-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         {image.caption && (
-                          <p className="text-xs text-muted-foreground p-2 line-clamp-2 bg-card">
+                          <p className="text-metadata text-muted-foreground p-2 line-clamp-2 bg-card">
                             {image.caption}
                           </p>
                         )}
@@ -147,12 +147,12 @@ export const LpSectionDetailsDialog = ({
               {/* Brief Content */}
               {section.brief_content && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                  <h3 className="text-body-sm font-medium text-muted-foreground mb-sm flex items-center gap-sm">
                     <FileText className="h-4 w-4" />
                     Brief / Instructions
                   </h3>
-                  <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                  <div className="bg-muted/30 rounded-lg p-md border border-border/50">
+                    <p className="text-body-sm text-foreground whitespace-pre-wrap">
                       {section.brief_content}
                     </p>
                   </div>
@@ -162,21 +162,21 @@ export const LpSectionDetailsDialog = ({
               {/* Reference Links */}
               {section.website_links.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                  <h3 className="text-body-sm font-medium text-muted-foreground mb-sm flex items-center gap-sm">
                     <Link2 className="h-4 w-4" />
                     Reference Links ({section.website_links.length})
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-sm">
                     {section.website_links.map((link) => (
                       <a
                         key={link.id}
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group"
+                        className="flex items-center gap-sm p-sm rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group"
                       >
                         <ExternalLink className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="text-sm text-foreground truncate flex-1">
+                        <span className="text-body-sm text-foreground truncate flex-1">
                           {link.label || link.url}
                         </span>
                       </a>
@@ -187,39 +187,39 @@ export const LpSectionDetailsDialog = ({
 
               {/* Reviews/Comments Section */}
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-body-sm font-medium text-muted-foreground mb-sm flex items-center gap-sm">
                   <MessageSquare className="h-4 w-4" />
                   Reviews ({comments.length})
                 </h3>
                 {comments.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-sm">
                     {comments.map((comment) => (
                       <div
                         key={comment.id}
-                        className="bg-muted/30 rounded-lg p-4 border border-border/50"
+                        className="bg-muted/30 rounded-lg p-md border border-border/50"
                       >
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-sm mb-sm">
                           <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">
+                            <span className="text-metadata font-medium text-primary">
                               {comment.reviewer_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className="font-medium text-sm">{comment.reviewer_name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
+                            <span className="font-medium text-body-sm">{comment.reviewer_name}</span>
+                            <span className="text-metadata text-muted-foreground ml-2">
                               {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-foreground pl-9">{comment.comment_text}</p>
+                        <p className="text-body-sm text-foreground pl-9">{comment.comment_text}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No reviews yet</p>
-                    <p className="text-xs mt-1">Share the public link to collect reviews</p>
+                    <MessageSquare className="h-8 w-8 mx-auto mb-sm opacity-40" />
+                    <p className="text-body-sm">No reviews yet</p>
+                    <p className="text-metadata mt-1">Share the public link to collect reviews</p>
                   </div>
                 )}
               </div>
