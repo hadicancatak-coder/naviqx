@@ -8,8 +8,6 @@ export { AlertBanner } from './AlertBanner';
 export { DataCard, DataCardHeader } from './DataCard';
 export { TopHeader } from './TopHeader';
 export { LoadingState } from './LoadingState';
-// Deprecated: Use LoadingState instead
-export { PageLoadingState } from './PageLoadingState';
 
 // Footer components
 export { ExternalPageFooter } from './ExternalPageFooter';

@@ -484,7 +484,7 @@ export function SimpleUtmBuilder() {
           toast.success("Link copied & saved to archive!");
         } catch (error) {
           toast.success("Link copied!");
-          console.error("Failed to archive:", error);
+          // Silently fail on archive save - link was already copied
         }
       } else {
         toast.success("Link copied!");

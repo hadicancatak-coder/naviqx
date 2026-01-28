@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export async function insertSampleAds() {
   try {
@@ -112,7 +113,7 @@ export async function insertSampleAds() {
 
     return true;
   } catch (error) {
-    console.error('Error inserting sample ads:', error);
+    logger.error('Error inserting sample ads:', error);
     toast({
       title: 'Error',
       description: 'Failed to insert sample ads',

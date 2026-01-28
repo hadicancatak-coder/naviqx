@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { logger } from "@/lib/logger";
 
 interface ErrorLog {
   id: string;
@@ -50,7 +51,7 @@ export default function ErrorLogs() {
       const data = await errorLogger.getErrors(filters);
       setErrors(data as any);
     } catch (error) {
-      console.error('Error fetching error logs:', error);
+      logger.error('Error fetching error logs:', error);
       toast.error('Failed to fetch error logs');
     } finally {
       setLoading(false);

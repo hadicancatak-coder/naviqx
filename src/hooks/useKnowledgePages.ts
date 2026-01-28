@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 
 export interface KnowledgePage {
   id: string;
@@ -198,7 +199,7 @@ export function useKnowledgePages() {
       queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
     },
     onError: (error: any) => {
-      console.error("Failed to generate public token:", error);
+      logger.error("Failed to generate public token:", error);
     },
   });
 

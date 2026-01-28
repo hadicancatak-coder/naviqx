@@ -12,6 +12,7 @@ import { authPasswordSchema } from "@/lib/validationSchemas";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
+import { logger } from "@/lib/logger";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -43,7 +44,7 @@ export default function Auth() {
           }
         }
       } catch (err) {
-        console.error('Error fetching allowed domains:', err);
+        logger.error('Error fetching allowed domains:', err);
         // Fall back to default
       }
     };

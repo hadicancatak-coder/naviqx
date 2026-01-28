@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { MentionAutocomplete } from "@/components/MentionAutocomplete";
 import { useTaskDetailContext } from "./TaskDetailContext";
-import { normalizeUrl } from "@/components/comments/utils";
+import { normalizeUrl } from "@/lib/urlHelpers";
 
 interface PendingAttachment {
   type: 'file' | 'link';

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { TeamKPI, KPITarget, KPIAssignment, KPIWithRelations } from "@/types/kpi";
+import { logger } from "@/lib/logger";
 
 export function useKPIs() {
   const queryClient = useQueryClient();
@@ -104,7 +105,7 @@ export function useKPIs() {
           .single();
 
         if (assignerError) {
-          console.error("Error fetching assigner profile:", assignerError);
+          logger.error("Error fetching assigner profile:", assignerError);
           throw new Error("Could not find your profile. Please try logging out and back in.");
         }
 
@@ -126,7 +127,7 @@ export function useKPIs() {
             .single();
 
           if (userError) {
-            console.error("Error fetching assigned user profile:", userError);
+            logger.error("Error fetching assigned user profile:", userError);
             throw new Error("Could not find the user you're trying to assign to. Please try again.");
           }
 
@@ -148,7 +149,7 @@ export function useKPIs() {
           .insert(finalAssignment);
 
         if (insertError) {
-          console.error("Error inserting KPI assignment:", insertError);
+          logger.error("Error inserting KPI assignment:", insertError);
           
           // Provide more specific error messages based on common issues
           if (insertError.message.includes("violates row-level security")) {
@@ -162,9 +163,9 @@ export function useKPIs() {
           }
         }
 
-        console.log("KPI assignment created successfully");
+        logger.debug("KPI assignment created successfully");
       } catch (error) {
-        console.error("KPI assignment error:", error);
+        logger.error("KPI assignment error:", error);
         throw error;
       }
     },
@@ -176,7 +177,7 @@ export function useKPIs() {
       });
     },
     onError: (error: Error) => {
-      console.error("KPI assignment mutation error:", error);
+      logger.error("KPI assignment mutation error:", error);
       toast({ 
         title: "Assignment Failed", 
         description: error.message || "An unexpected error occurred. Please try again.",

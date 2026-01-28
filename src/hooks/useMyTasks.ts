@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format, startOfDay, isSameDay, isToday } from 'date-fns';
+import { logger } from '@/lib/logger';
 
 interface AgendaItem {
   id: string;
@@ -60,7 +61,7 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
         .eq('agenda_date', agendaDate);
       
       if (error) {
-        console.error('Error fetching agenda:', error);
+        logger.error('Error fetching agenda:', error);
         return [];
       }
       
@@ -172,7 +173,7 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
         );
       
       if (error) {
-        console.error('Error auto-populating agenda:', error.message, error.details);
+        logger.error('Error auto-populating agenda:', { message: error.message, details: error.details });
       } else {
         refetch();
       }
