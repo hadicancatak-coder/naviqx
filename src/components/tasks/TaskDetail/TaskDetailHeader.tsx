@@ -45,8 +45,6 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
   const { openTaskDrawer } = useTaskDrawer();
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  const isRecurring = task?.task_type === 'recurring';
   const isSaving = mutations.updateTitle.isPending || mutations.updateDescription.isPending;
 
   const handleDelete = async () => {
