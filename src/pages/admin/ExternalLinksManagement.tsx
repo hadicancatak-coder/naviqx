@@ -362,25 +362,25 @@ export default function ExternalLinksManagement() {
 
   const getStatusBadge = (link: UnifiedLink) => {
     if (!link.is_active) {
-      return <Badge variant="outline"><PowerOff className="h-3 w-3 mr-1" />Inactive</Badge>;
+      return <Badge variant="outline"><PowerOff className="h-3 w-3 mr-xs" />Inactive</Badge>;
     }
     if (link.expires_at && new Date(link.expires_at) < new Date()) {
-      return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Expired</Badge>;
+      return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-xs" />Expired</Badge>;
     }
     if (link.is_verified) {
-      return <Badge variant="default"><CheckCircle2 className="h-3 w-3 mr-1" />Verified</Badge>;
+      return <Badge variant="default"><CheckCircle2 className="h-3 w-3 mr-xs" />Verified</Badge>;
     }
-    return <Badge className="bg-success/15 text-success border-0"><Globe className="h-3 w-3 mr-1" />Active</Badge>;
+    return <Badge className="bg-success/15 text-success border-0"><Globe className="h-3 w-3 mr-xs" />Active</Badge>;
   };
 
   const getTypeBadge = (link: UnifiedLink) => {
     if (link.type === 'campaign') {
-      return <Badge variant="secondary"><Eye className="h-3 w-3 mr-1" />Campaign</Badge>;
+      return <Badge variant="secondary"><Eye className="h-3 w-3 mr-xs" />Campaign</Badge>;
     }
     if (link.type === 'knowledge') {
-      return <Badge variant="outline"><BookOpen className="h-3 w-3 mr-1" />Knowledge</Badge>;
+      return <Badge variant="outline"><BookOpen className="h-3 w-3 mr-xs" />Knowledge</Badge>;
     }
-    return <Badge variant="outline"><FolderKanban className="h-3 w-3 mr-1" />Project</Badge>;
+    return <Badge variant="outline"><FolderKanban className="h-3 w-3 mr-xs" />Project</Badge>;
   };
 
   const filteredLinks = unifiedLinks.filter((link) =>
@@ -453,7 +453,7 @@ export default function ExternalLinksManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-sm">
-            <CardTitle className="text-body-sm text-muted-foreground flex items-center gap-1">
+            <CardTitle className="text-body-sm text-muted-foreground flex items-center gap-xs">
               <MousePointerClick className="h-4 w-4" /> Total Clicks
             </CardTitle>
           </CardHeader>
@@ -475,7 +475,8 @@ export default function ExternalLinksManagement() {
 
       {/* Unified Links Table */}
       <Card>
-        <CardContent className="p-0">
+        {/* eslint-disable-next-line no-restricted-syntax -- reset internal padding */}
+        <CardContent className="!p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -493,7 +494,7 @@ export default function ExternalLinksManagement() {
             <TableBody>
               {filteredLinks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-xl text-muted-foreground">
                     No external links found
                   </TableCell>
                 </TableRow>
@@ -549,23 +550,23 @@ export default function ExternalLinksManagement() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => copyToClipboard(link)}>
-                            <Copy className="h-4 w-4 mr-2" />
+                            <Copy className="h-4 w-4 mr-sm" />
                             Copy Link
                           </DropdownMenuItem>
                           {link.is_active ? (
                             <DropdownMenuItem onClick={() => handleDeactivate(link)}>
-                              <PowerOff className="h-4 w-4 mr-2" />
+                              <PowerOff className="h-4 w-4 mr-sm" />
                               Deactivate
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem onClick={() => handleReactivate(link)}>
-                              <Power className="h-4 w-4 mr-2" />
+                              <Power className="h-4 w-4 mr-sm" />
                               Reactivate
                             </DropdownMenuItem>
                           )}
                           {link.type === 'campaign' && (
                             <DropdownMenuItem onClick={() => setExtendLinkId(link.id)}>
-                              <Calendar className="h-4 w-4 mr-2" />
+                              <Calendar className="h-4 w-4 mr-sm" />
                               Extend Expiration
                             </DropdownMenuItem>
                           )}
@@ -574,7 +575,7 @@ export default function ExternalLinksManagement() {
                             onClick={() => setDeleteLink({ id: link.id, type: link.type })}
                             className="text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                            <Trash2 className="h-4 w-4 mr-sm" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
