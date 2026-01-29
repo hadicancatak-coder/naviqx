@@ -6,7 +6,7 @@ export default function Logs() {
     <div className="space-y-lg">
       <div>
         <h2 className="text-section-title">System Logs</h2>
-        <p className="text-muted-foreground mt-1">Monitor application errors</p>
+        <p className="text-muted-foreground mt-xs">Monitor application errors</p>
       </div>
 
       <ErrorLogs />
