@@ -35,9 +35,9 @@ export function EntitiesMultiSelect({ value, onChange, disabled }: EntitiesMulti
     }
   };
 
-  const handleRemove = (entity: string, e: React.MouseEvent) => {
+  const handleRemove = (entity: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
-    onChange(value.filter((e) => e !== entity));
+    onChange(value.filter((v) => v !== entity));
   };
 
   return (
@@ -68,7 +68,7 @@ export function EntitiesMultiSelect({ value, onChange, disabled }: EntitiesMulti
                     className="ml-1 rounded-full outline-none hover:bg-muted cursor-pointer inline-flex"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        handleRemove(entity, e as any);
+                        handleRemove(entity, e);
                       }
                     }}
                     onMouseDown={(e) => {

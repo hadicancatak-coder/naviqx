@@ -31,14 +31,17 @@ export function TaskPresenceIndicator({ taskId, editMode }: TaskPresenceIndicato
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
-        Object.values(state).forEach((presences: any) => {
-          presences.forEach((presence: any) => {
+        Object.values(state).forEach((presences) => {
+          (presences as Array<Record<string, unknown>>).forEach((presence) => {
+            const presenceUser = presence.user as string | undefined;
+            const presenceTimestamp = presence.timestamp as number | undefined;
+            const presenceTaskId = presence.taskId as string | undefined;
             // Only show users editing the same task
-            if (presence.user && presence.timestamp && presence.taskId === taskId) {
+            if (presenceUser && presenceTimestamp && presenceTaskId === taskId) {
               users.push({ 
-                user: presence.user, 
-                timestamp: presence.timestamp,
-                taskId: presence.taskId
+                user: presenceUser, 
+                timestamp: presenceTimestamp,
+                taskId: presenceTaskId
               });
             }
           });

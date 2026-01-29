@@ -99,16 +99,28 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
       }
       interface TaskRow {
         id: string;
+        title: string;
+        description: string | null;
         status: string;
+        priority: string;
+        due_at: string | null;
+        entity: string[] | null;
+        recurrence_rrule: string | null;
         visibility?: string;
         teams?: string[] | string | null;
         task_assignees?: TaskAssigneeRow[];
         task_comment_counts?: Array<{ comment_count: number }>;
         [key: string]: unknown;
       }
-      interface MappedTask extends Record<string, unknown> {
+      interface MappedTask {
         id: string;
+        title: string;
+        description: string | null;
         status: string;
+        priority: string;
+        due_at: string | null;
+        entity: string | null;
+        recurrence_rrule: string | null;
         assignees: Array<{ id: string; user_id: string; name: string; avatar_url: string | null; teams: string[] | null }>;
         comments_count: number;
         visibility?: string;
@@ -116,7 +128,7 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
       }
 
       // Map tasks
-      const mappedTasks: MappedTask[] = (allTasksData as TaskRow[]).map((task) => {
+      const mappedTasks: MappedTask[] = (allTasksData as unknown as TaskRow[]).map((task) => {
         // Normalize teams to string[] | null
         const normalizedTeams = Array.isArray(task.teams) 
           ? task.teams 
@@ -126,6 +138,7 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
         
         return {
           ...task,
+          entity: Array.isArray(task.entity) ? task.entity[0] ?? null : task.entity,
           teams: normalizedTeams,
           status: mapStatusToUi(task.status),
           assignees: task.task_assignees?.map((ta) => ta.profiles).filter((p): p is NonNullable<typeof p> => p !== null) || [],

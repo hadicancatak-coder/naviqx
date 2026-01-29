@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOverlay, useDroppable } from "@dnd-kit/core";
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOverlay, useDroppable, DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -114,12 +114,9 @@ export default function CampaignsLog() {
   }, [entities, selectedEntity]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const handleDragStart = (event: DragStartEvent) => setActiveDragId(String(event.active.id));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDragStart = (event: any) => setActiveDragId(String(event.active.id));
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragId(null);
     if (!over) return;

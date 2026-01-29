@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import { useUtmMediums, useCreateMedium, useUpdateMedium, useDeleteMedium, useUpdateMediumOrder } from "@/hooks/useUtmMediums";
 import { checkMediumDependencies, formatDependencyMessage } from "@/lib/selectorDependencyCheck";
 import { toast } from "sonner";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -125,7 +125,7 @@ export function UtmMediumManager() {
     }
   };
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (active.id !== over.id && mediums) {
       const oldIndex = mediums.findIndex((m) => m.id === active.id);

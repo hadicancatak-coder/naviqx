@@ -468,7 +468,7 @@ export default function Profile() {
           {(["all", "ongoing", "completed", "pending", "blocked", "failed"] as const).map((status) => (
             <TabsContent key={status} value={status} className="mt-md space-y-sm">
               {tasks[status].length > 0 ? (
-                tasks[status].map((task: { id: string; title: string; description?: string; status: string; priority: string; due_at?: string; entity?: string; recurrence_rrule?: string }) => (
+                tasks[status].map((task) => (
                   <TaskCard
                     key={task.id}
                     task={{
