@@ -521,12 +521,12 @@ export default function CampaignReview() {
         <Card className="bg-muted/30 border-border/50">
           <CardContent className="py-md px-lg">
             <div className="flex items-start gap-md">
-              <div className="p-2 rounded-full bg-primary/10 flex-shrink-0">
+              <div className="p-xs rounded-full bg-primary/10 flex-shrink-0">
                 <Eye className="h-5 w-5 text-primary" />
               </div>
               <div className="space-y-sm">
                 <h3 className="text-body font-semibold text-foreground">How to Review</h3>
-                <ul className="text-body-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <ul className="text-body-sm text-muted-foreground space-y-xs list-disc list-inside">
                   <li>Click any campaign card below to view its creative versions</li>
                   <li>Each version shows the visual asset and version notes</li>
                   <li>Leave feedback on specific versions using the comment box</li>
@@ -550,7 +550,7 @@ export default function CampaignReview() {
               type="single" 
               value={viewMode} 
               onValueChange={(v) => v && setViewMode(v as ViewMode)}
-              className="bg-muted rounded-lg p-0.5"
+              className="bg-muted rounded-lg p-xs"
             >
               <ToggleGroupItem value="grid" size="sm" className="h-8 px-sm data-[state=on]:bg-background">
                 <LayoutGrid className="h-4 w-4" />

@@ -270,7 +270,7 @@ export default function CaptionLibrary() {
           <button
             key={type.value}
             onClick={() => setTypeFilter(type.value === typeFilter ? "all" : type.value)}
-            className={`px-sm py-1.5 rounded-full text-body-sm transition-smooth ${
+            className={`px-sm py-xs rounded-full text-body-sm transition-smooth ${
               type.value === typeFilter
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
