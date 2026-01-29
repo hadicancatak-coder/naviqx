@@ -99,9 +99,10 @@ export default tseslint.config(
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
       
-      // ERROR level for all files - violations block build
+      // WARN level temporarily - Phase 0 of semantic token migration
+      // Will revert to "error" after Phase 5 completion
       "no-restricted-syntax": [
-        "error",
+        "warn",
         // Typography
         {
           selector: "Literal[value=/\\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl)\\b/]",
