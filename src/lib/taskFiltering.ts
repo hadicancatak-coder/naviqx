@@ -24,6 +24,7 @@ export interface TaskWithAssignees {
   due_at?: string;
   assignees?: TaskAssignee[];
   task_assignees?: { user_id: string; profiles?: TaskAssignee }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
