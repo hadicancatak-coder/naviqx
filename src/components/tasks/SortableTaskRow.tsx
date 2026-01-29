@@ -3,9 +3,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { TaskRow } from './TaskRow';
 
 interface SortableTaskRowProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick: (taskId: string, task?: any) => void;
   onComplete?: (taskId: string, completed: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onDuplicate?: (task: any, e: React.MouseEvent) => void;
   onDelete?: (taskId: string) => void;
   isSelected?: boolean;

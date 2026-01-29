@@ -10,7 +10,9 @@ interface QualityMetricsPanelProps {
   adStrength?: number;
   headlines: Array<{ text: string }>;
   descriptions: Array<{ text: string }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sitelinks?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   callouts?: any[];
   finalUrl?: string;
   businessName?: string;

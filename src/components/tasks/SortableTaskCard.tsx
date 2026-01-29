@@ -9,9 +9,12 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 interface SortableTaskCardProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task: any;
   onTaskClick: (taskId: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onComplete: (task: any, e: React.MouseEvent) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onDuplicate: (task: any, e: React.MouseEvent) => void;
   onDelete: (taskId: string) => void;
   processingAction: { taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null;

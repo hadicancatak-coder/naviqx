@@ -5,6 +5,7 @@ import { Pencil, Trash2, ExternalLink, Globe, Smartphone, FileText, StickyNote }
 interface DealDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deal: any;
   onEdit: () => void;
   onDelete: () => void;

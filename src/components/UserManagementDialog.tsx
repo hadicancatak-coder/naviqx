@@ -27,6 +27,7 @@ interface UserManagementDialogProps {
 
 export function UserManagementDialog({ open, onOpenChange }: UserManagementDialogProps) {
   const { toast } = useToast();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);

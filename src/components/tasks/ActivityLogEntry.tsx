@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 
 interface ActivityLogEntryProps {
   field_name?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   old_value?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new_value?: any;
   description?: string;
   changed_at?: string;

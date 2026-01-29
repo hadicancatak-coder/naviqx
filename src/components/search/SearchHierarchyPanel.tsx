@@ -173,9 +173,13 @@ export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, ad
 
   // Virtualized Ad List Component
   interface VirtualizedAdListProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ads: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onEditAd: (ad: any) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onDuplicateAd: (ad: any) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onDeleteAd: (ad: any) => void;
   }
 

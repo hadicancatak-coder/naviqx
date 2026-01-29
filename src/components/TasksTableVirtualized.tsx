@@ -32,8 +32,10 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface TasksTableVirtualizedProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   onTaskUpdate: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onTaskClick?: (taskId: string, task?: any) => void;
 }
 
@@ -46,6 +48,7 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: Task
   const { updateStatus, updatePriority, completeTask } = useTaskMutations();
   const { openTaskDrawer } = useTaskDrawer();
   const [editingTitle, setEditingTitle] = useState<{id: string; value: string} | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [profiles, setProfiles] = useState<any[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);

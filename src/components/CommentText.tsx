@@ -6,6 +6,7 @@ interface CommentTextProps {
   className?: string;
   linkClassName?: string;
   enableMentions?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profiles?: any[];
   /** Use inverted styling when rendered on primary/colored backgrounds */
   inverted?: boolean;

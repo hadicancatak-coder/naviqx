@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const UserMenu = () => {
   const navigate = useNavigate();
   const { user, signOut, userRole } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {

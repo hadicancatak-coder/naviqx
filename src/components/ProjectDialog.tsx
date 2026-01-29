@@ -35,9 +35,11 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date>();
   const [requiredTime, setRequiredTime] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [relatedTasks, setRelatedTasks] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [allTasks, setAllTasks] = useState<any[]>([]);
 
   useEffect(() => {

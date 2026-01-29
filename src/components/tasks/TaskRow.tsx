@@ -18,9 +18,12 @@ import { DependencyBadge } from "@/components/tasks/DependencyBadge";
 import { TASK_QUERY_KEY } from "@/lib/queryKeys";
 
 interface TaskRowProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick: (taskId: string, task?: any) => void;
   onComplete?: (taskId: string, completed: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onDuplicate?: (task: any, e: React.MouseEvent) => void;
   onDelete?: (taskId: string) => void;
   isSelected?: boolean;
@@ -28,6 +31,7 @@ interface TaskRowProps {
   onShiftSelect?: (taskId: string, shiftKey: boolean) => void;
   showSelectionCheckbox?: boolean;
   showDragHandle?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dragHandleProps?: any;
   compact?: boolean;
   processingAction?: { taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null;

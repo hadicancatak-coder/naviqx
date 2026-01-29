@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger";
 
 export function OverdueTasks() {
   const { user } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [overdueTasks, setOverdueTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

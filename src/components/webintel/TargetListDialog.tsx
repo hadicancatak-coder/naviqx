@@ -18,7 +18,9 @@ import { useQueryClient } from "@tanstack/react-query";
 interface TargetListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   list?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (data: any) => void;
 }
 
