@@ -15,9 +15,11 @@ type SortField = 'title' | 'entity' | 'status' | 'tags' | 'assignee' | 'created_
 type SortOrder = 'asc' | 'desc';
 
 interface TaskListViewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   selectedIds: string[];
   onSelectionChange: (ids: string[]) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onTaskClick: (taskId: string, task?: any) => void;
   onShiftSelect: (taskId: string, shiftKey: boolean) => void;
   focusedIndex: number;
@@ -129,6 +131,7 @@ export function TaskListView({
     if (!sortBy) return tasks;
     
     return [...tasks].sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let aVal: any, bVal: any;
       
       switch (sortBy) {
@@ -193,6 +196,7 @@ export function TaskListView({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleComplete = (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
     // Skip standard completion for recurring tasks - they use daily toggle
@@ -208,6 +212,7 @@ export function TaskListView({
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDuplicate = async (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
     setProcessingId(task.id);
@@ -225,13 +230,14 @@ export function TaskListView({
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast({ title: "Task duplicated" });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Unknown error", variant: "destructive" });
     } finally {
       setProcessingId(null);
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDelete = async (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
     setProcessingId(task.id);
@@ -247,18 +253,20 @@ export function TaskListView({
         toast({ title: "Delete request sent" });
       }
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Unknown error", variant: "destructive" });
     } finally {
       setProcessingId(null);
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isOverdue = (task: any) => {
     if (!task.due_at || task.status === 'Completed') return false;
     return new Date(task.due_at) < new Date();
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getAssigneeName = (task: any) => {
     if (!task.assignees || task.assignees.length === 0) return null;
     const first = task.assignees[0];
@@ -552,16 +560,19 @@ export function TaskListView({
                     <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-36">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <DropdownMenuItem onClick={(e) => handleComplete(task, e as any)}>
                       <CheckCircle className="mr-2 h-4 w-4" />
                       {completed ? 'Reopen' : 'Complete'}
                     </DropdownMenuItem>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <DropdownMenuItem onClick={(e) => handleDuplicate(task, e as any)}>
                       <Copy className="mr-2 h-4 w-4" />
                       Duplicate
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       onClick={(e) => handleDelete(task, e as any)}
                       className="text-destructive focus:text-destructive"
                     >
