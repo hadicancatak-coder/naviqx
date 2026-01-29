@@ -5,8 +5,8 @@ import { PageContainer, PageHeader, DataCard, EmptyState } from "@/components/la
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { useWebIntelDeals } from "@/hooks/useWebIntelDeals";
-import { useGdnTargetLists } from "@/hooks/useGdnTargetLists";
+import { useWebIntelDeals, type WebIntelDeal } from "@/hooks/useWebIntelDeals";
+import { useGdnTargetLists, type GdnTargetList } from "@/hooks/useGdnTargetLists";
 import { DealsTableView } from "@/components/webintel/DealsTableView";
 import { DealFormDialog } from "@/components/webintel/DealFormDialog";
 import { DealDetailDialog } from "@/components/webintel/DealDetailDialog";
@@ -38,26 +38,26 @@ export default function WebIntel() {
   const [activeTab, setActiveTab] = useState("deals");
   const [dealFormDialogOpen, setDealFormDialogOpen] = useState(false);
   const [dealDetailDialogOpen, setDealDetailDialogOpen] = useState(false);
-  const [editingDeal, setEditingDeal] = useState<any>(null);
-  const [viewingDeal, setViewingDeal] = useState<any>(null);
+  const [editingDeal, setEditingDeal] = useState<WebIntelDeal | null>(null);
+  const [viewingDeal, setViewingDeal] = useState<WebIntelDeal | null>(null);
   const [deleteDealConfirmId, setDeleteDealConfirmId] = useState<string | null>(null);
 
   const [targetListDialogOpen, setTargetListDialogOpen] = useState(false);
-  const [editingList, setEditingList] = useState<any>(null);
+  const [editingList, setEditingList] = useState<GdnTargetList | null>(null);
   const [deleteListConfirmId, setDeleteListConfirmId] = useState<string | null>(null);
 
   // Deal handlers
-  const handleEditDeal = (deal: any) => {
+  const handleEditDeal = (deal: WebIntelDeal) => {
     setEditingDeal(deal);
     setDealFormDialogOpen(true);
   };
 
-  const handleViewDeal = (deal: any) => {
+  const handleViewDeal = (deal: WebIntelDeal) => {
     setViewingDeal(deal);
     setDealDetailDialogOpen(true);
   };
 
-  const handleSaveDeal = async (dealData: any) => {
+  const handleSaveDeal = async (dealData: { name: string; website: string; app_name: string; description: string; notes: string }) => {
     try {
       if (editingDeal) {
         await updateDeal.mutateAsync({ id: editingDeal.id, ...dealData });
@@ -90,12 +90,12 @@ export default function WebIntel() {
   };
 
   // Target List handlers
-  const handleEditList = (list: any) => {
+  const handleEditList = (list: GdnTargetList) => {
     setEditingList(list);
     setTargetListDialogOpen(true);
   };
 
-  const handleSaveList = async (data: any) => {
+  const handleSaveList = async (data: Partial<GdnTargetList>) => {
     try {
       if (editingList) {
         // Update existing list metadata only - dialog handles item creation
@@ -148,7 +148,7 @@ export default function WebIntel() {
             }}
             className="rounded-full"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-sm h-4 w-4" />
             {activeTab === "deals" ? "Add Deal" : "Create Target List"}
           </Button>
         }
@@ -156,18 +156,18 @@ export default function WebIntel() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-md">
         <TabsList>
-          <TabsTrigger value="deals" className="gap-2">
+          <TabsTrigger value="deals" className="gap-sm">
             <Handshake className="h-4 w-4" />
             Brand Deals
             {deals.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{deals.length}</Badge>
+              <Badge variant="secondary" className="ml-xs">{deals.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="targets" className="gap-2">
+          <TabsTrigger value="targets" className="gap-sm">
             <Target className="h-4 w-4" />
             Target Lists
             {lists.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{lists.length}</Badge>
+              <Badge variant="secondary" className="ml-xs">{lists.length}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -236,22 +236,22 @@ export default function WebIntel() {
                           <Badge variant="outline">{list.entity}</Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-sm">
+                          <div className="flex items-center gap-sm">
+                            <span className="flex items-center gap-xs text-body-sm">
                               <Globe className="h-3 w-3 text-muted-foreground" />
                               {counts.websites}
                             </span>
-                            <span className="flex items-center gap-1 text-sm">
+                            <span className="flex items-center gap-xs text-body-sm">
                               <Youtube className="h-3 w-3 text-muted-foreground" />
                               {counts.youtube}
                             </span>
-                            <span className="flex items-center gap-1 text-sm">
+                            <span className="flex items-center gap-xs text-body-sm">
                               <Smartphone className="h-3 w-3 text-muted-foreground" />
                               {counts.apps}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
+                        <TableCell className="text-muted-foreground text-body-sm">
                           {formatDistanceToNow(new Date(list.created_at), { addSuffix: true })}
                         </TableCell>
                         <TableCell>
