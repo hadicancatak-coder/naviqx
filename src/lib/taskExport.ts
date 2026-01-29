@@ -1,4 +1,6 @@
-export function exportTasksToCSV(tasks: any[], filename: string = "tasks.csv") {
+import type { UnsafeAny } from '@/types/unsafe';
+
+export function exportTasksToCSV(tasks: UnsafeAny[], filename: string = "tasks.csv") {
   // Define CSV headers
   const headers = [
     "Title",
@@ -17,7 +19,7 @@ export function exportTasksToCSV(tasks: any[], filename: string = "tasks.csv") {
     task.title || "",
     task.status || "",
     task.priority || "",
-    task.assignees?.map((a: any) => a.full_name || a.email).join("; ") || "",
+    task.assignees?.map((a: UnsafeAny) => a.full_name || a.email).join("; ") || "",
     Array.isArray(task.teams) ? task.teams.join("; ") : "",
     task.due_date ? new Date(task.due_date).toLocaleDateString() : "",
     task.created_at ? new Date(task.created_at).toLocaleDateString() : "",

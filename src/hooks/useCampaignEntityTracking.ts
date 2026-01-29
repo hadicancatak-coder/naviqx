@@ -61,8 +61,9 @@ export const useCampaignEntityTracking = () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-entity-tracking"] });
       toast.success("Campaign added to entity");
     },
-    onError: (error: any) => {
-      if (error.code === "23505") {
+    onError: (error: unknown) => {
+      const err = error as { code?: string };
+      if (err.code === "23505") {
         toast.error("Campaign already exists in this entity");
       } else {
         toast.error("Failed to add campaign to entity");

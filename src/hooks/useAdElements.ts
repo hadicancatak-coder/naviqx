@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { UnsafeAny } from '@/types/unsafe';
 
 export interface AdElement {
   id: string;
   created_by: string;
   element_type: 'headline' | 'description' | 'sitelink' | 'callout';
-  content: any;
+  content: UnsafeAny;
   entity: string[];
   google_status: 'pending' | 'approved' | 'limited' | 'rejected';
   google_status_date?: string;

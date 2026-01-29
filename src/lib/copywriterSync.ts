@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CopywriterCopy } from "@/hooks/useCopywriterCopies";
+import type { UnsafeAny } from '@/types/unsafe';
 
 interface SyncToPlannerParams {
   copy: CopywriterCopy;
@@ -80,8 +81,8 @@ export async function syncElementToCopywriter({
 
   // If exists and has the same content in this language, don't create duplicate
   if (existingCopies && existingCopies.length > 0) {
-    const matchingCopy = existingCopies.find((copy) => {
-      const copyContent = (copy as any)[langKey];
+  const matchingCopy = existingCopies.find((copy) => {
+      const copyContent = (copy as UnsafeAny)[langKey];
       return copyContent === content;
     });
 
@@ -91,7 +92,7 @@ export async function syncElementToCopywriter({
   }
 
   // Create new copy with this language content
-  const newCopy: any = {
+  const newCopy: UnsafeAny = {
     element_type: elementType,
     platform: [platform],
     entity,
