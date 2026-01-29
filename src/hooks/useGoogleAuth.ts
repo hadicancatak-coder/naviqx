@@ -6,11 +6,33 @@ const getClientId = () => localStorage.getItem("GOOGLE_CLIENT_ID") || import.met
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
-declare global {
-  interface Window {
-    google: any;
-  }
+interface GoogleOAuth2TokenClient {
+  requestAccessToken: () => void;
 }
+
+interface GoogleOAuth2 {
+  initTokenClient: (config: {
+    client_id: string;
+    scope: string;
+    ux_mode: string;
+    callback: (response: { access_token?: string }) => void;
+    error_callback: (error: { type?: string }) => void;
+  }) => GoogleOAuth2TokenClient;
+  revoke: (token: string, callback: () => void) => void;
+}
+
+interface GoogleAccounts {
+  oauth2: GoogleOAuth2;
+}
+
+interface GoogleAPI {
+  accounts?: GoogleAccounts;
+}
+
+// Access google API from window with type safety
+const getGoogleAPI = (): GoogleAPI | undefined => {
+  return (window as unknown as { google?: GoogleAPI }).google;
+};
 
 export function useGoogleAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -58,20 +80,21 @@ export function useGoogleAuth() {
       return;
     }
     
-    if (window.google?.accounts?.oauth2) {
-      const client = window.google.accounts.oauth2.initTokenClient({
+    const googleAPI = getGoogleAPI();
+    if (googleAPI?.accounts?.oauth2) {
+      const client = googleAPI.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: SCOPES,
         // Use 'popup' UX mode which works better with iframe restrictions
         ux_mode: 'popup',
-        callback: (response: any) => {
+        callback: (response) => {
           if (response.access_token) {
             setAccessToken(response.access_token);
             setIsAuthenticated(true);
             storeToken(response.access_token);
           }
         },
-        error_callback: (error: any) => {
+        error_callback: (error) => {
           logger.error('Google OAuth error:', error);
           // If popup is blocked, inform user to try from published URL
           if (error?.type === 'popup_closed' || error?.type === 'popup_failed_to_open') {
@@ -84,8 +107,9 @@ export function useGoogleAuth() {
   };
 
   const signOut = () => {
-    if (accessToken && window.google?.accounts?.oauth2) {
-      window.google.accounts.oauth2.revoke(accessToken, () => {
+    const googleAPI = getGoogleAPI();
+    if (accessToken && googleAPI?.accounts?.oauth2) {
+      googleAPI.accounts.oauth2.revoke(accessToken, () => {
         setAccessToken(null);
         setIsAuthenticated(false);
         removeStoredToken();

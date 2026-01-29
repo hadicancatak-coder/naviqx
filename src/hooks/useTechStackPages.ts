@@ -97,7 +97,7 @@ export function useTechStackPages() {
       queryClient.invalidateQueries({ queryKey: ["tech-stack-pages"] });
       toast({ title: "Tech stack item created" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to create item", description: error.message, variant: "destructive" });
     },
   });
@@ -113,7 +113,7 @@ export function useTechStackPages() {
       status?: string | null;
       owner_id?: string | null;
     }) => {
-      const updateData: any = { ...data };
+      const updateData: Record<string, unknown> = { ...data };
       if (data.title) {
         updateData.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       }
@@ -136,7 +136,7 @@ export function useTechStackPages() {
       queryClient.invalidateQueries({ queryKey: ["tech-stack-pages"] });
       toast({ title: "Tech stack item updated" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to update item", description: error.message, variant: "destructive" });
     },
   });
@@ -154,7 +154,7 @@ export function useTechStackPages() {
       queryClient.invalidateQueries({ queryKey: ["tech-stack-pages"] });
       toast({ title: "Tech stack item deleted" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to delete item", description: error.message, variant: "destructive" });
     },
   });
