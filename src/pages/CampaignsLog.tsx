@@ -279,7 +279,7 @@ export default function CampaignsLog() {
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <PageContainer size="wide" className="pb-0">
+      <PageContainer size="wide" className="pb-xs">
         <PageHeader
           icon={BookOpen}
           title="Campaign Log"
