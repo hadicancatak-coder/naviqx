@@ -136,7 +136,7 @@ export default function Profile() {
         title, 
         phone_number: phoneNumber, 
         tagline,
-        teams: selectedTeams as any
+        teams: selectedTeams as ("PPC" | "PerMar" | "SocialUA")[]
       })
       .eq("user_id", user?.id);
 
@@ -250,13 +250,13 @@ export default function Profile() {
           <div className="flex flex-col items-center gap-md">
             <Avatar className="h-28 w-28 border-2 border-border">
               <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="text-2xl bg-muted">{profile.name?.[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="text-heading-lg bg-muted">{profile.name?.[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
             {isOwnProfile && (
               <label>
-                <Button variant="outline" size="sm" disabled={uploading} asChild className="rounded-full h-9 px-4 text-body-sm">
-                  <span className="cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
+                <Button variant="outline" size="sm" disabled={uploading} asChild className="rounded-full h-9 px-md text-body-sm">
+                  <span className="cursor-pointer flex items-center gap-xs">
+                    <Upload className="h-4 w-4" />
                     {uploading ? "Uploading..." : "Upload Photo"}
                   </span>
                 </Button>
@@ -302,8 +302,8 @@ export default function Profile() {
                   </div>
                 </div>
                 <div className="flex gap-sm pt-sm">
-                  <Button onClick={handleSave} className="rounded-full h-10 px-6 text-body-sm">Save Changes</Button>
-                  <Button variant="outline" onClick={() => setEditing(false)} className="rounded-full h-10 px-6 text-body-sm">Cancel</Button>
+                  <Button onClick={handleSave} className="rounded-full h-10 px-lg text-body-sm">Save Changes</Button>
+                  <Button variant="outline" onClick={() => setEditing(false)} className="rounded-full h-10 px-lg text-body-sm">Cancel</Button>
                 </div>
               </>
             ) : (
@@ -338,7 +338,7 @@ export default function Profile() {
                 <div className="flex items-center justify-between">
                   <div className="text-left">
                     <h3 className="text-heading-sm font-medium text-foreground">Notification Preferences</h3>
-                    <p className="text-body-sm text-muted-foreground mt-1">Manage your notification settings</p>
+                    <p className="text-body-sm text-muted-foreground mt-xs">Manage your notification settings</p>
                   </div>
                   <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
                 </div>
@@ -356,7 +356,7 @@ export default function Profile() {
       {/* KPIs Section */}
       {profileKPIs.length > 0 && (
         <Card className="p-lg">
-          <h2 className="text-heading-md font-medium flex items-center gap-sm mb-5 text-foreground">
+          <h2 className="text-heading-md font-medium flex items-center gap-sm mb-md text-foreground">
             <Target className="h-5 w-5 text-primary" />
             Key Performance Indicators ({profileKPIs.length})
           </h2>
@@ -364,11 +364,11 @@ export default function Profile() {
             {profileKPIs.map((kpi) => {
               const assignment = kpi.assignments?.find(a => a.user_id === targetUserId);
               return (
-                <div key={kpi.id} className="bg-muted/30 rounded-xl p-5 border border-border">
+                <div key={kpi.id} className="bg-muted/30 rounded-xl p-md border border-border">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-medium text-body text-foreground">{kpi.title}</h3>
-                      {kpi.description && <p className="text-body-sm text-muted-foreground mt-1">{kpi.description}</p>}
+                      {kpi.description && <p className="text-body-sm text-muted-foreground mt-xs">{kpi.description}</p>}
                       <div className="flex items-center gap-sm mt-sm flex-wrap">
                         <Badge variant="outline" className="rounded-full text-metadata">Target: {kpi.target}</Badge>
                         <Badge variant="outline" className="rounded-full text-metadata">{kpi.metric_type}</Badge>
@@ -384,7 +384,7 @@ export default function Profile() {
                     </div>
                   </div>
                   {kpi.targets && kpi.targets.length > 0 && (
-                    <div className="space-y-sm mt-5">
+                    <div className="space-y-sm mt-md">
                       <h4 className="font-medium text-body-sm text-muted-foreground">Targets</h4>
                       {kpi.targets.map((target) => {
                         const progress = target.target_value > 0 ? (target.current_value / target.target_value) * 100 : 0;
@@ -403,7 +403,7 @@ export default function Profile() {
                   )}
                   {assignment?.notes && (
                     <div className="mt-md">
-                      <h4 className="font-medium text-body-sm text-muted-foreground mb-1">Assignment Notes</h4>
+                      <h4 className="font-medium text-body-sm text-muted-foreground mb-xs">Assignment Notes</h4>
                       <p className="text-body-sm text-foreground/80">{assignment.notes}</p>
                     </div>
                   )}
@@ -417,7 +417,7 @@ export default function Profile() {
       {/* Team Members */}
       {teamMembers.length > 0 && (
         <Card className="p-lg">
-          <h2 className="text-heading-md font-medium flex items-center gap-sm mb-5 text-foreground">
+          <h2 className="text-heading-md font-medium flex items-center gap-sm mb-md text-foreground">
             <Users className="h-5 w-5 text-primary" />
             Team Members ({teamMembers.length})
           </h2>
@@ -456,7 +456,7 @@ export default function Profile() {
       {/* Tasks Section */}
       <Card className="p-lg">
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-6 h-10 rounded-lg bg-muted/50 p-1">
+          <TabsList className="grid w-full max-w-3xl grid-cols-6 h-10 rounded-lg bg-muted/50 p-xs">
             <TabsTrigger value="all" className="rounded-md text-body-sm">All ({tasks.all.length})</TabsTrigger>
             <TabsTrigger value="ongoing" className="rounded-md text-body-sm">Ongoing ({tasks.ongoing.length})</TabsTrigger>
             <TabsTrigger value="completed" className="rounded-md text-body-sm">Completed ({tasks.completed.length})</TabsTrigger>
@@ -466,9 +466,9 @@ export default function Profile() {
           </TabsList>
 
           {(["all", "ongoing", "completed", "pending", "blocked", "failed"] as const).map((status) => (
-            <TabsContent key={status} value={status} className="mt-5 space-y-sm">
+            <TabsContent key={status} value={status} className="mt-md space-y-sm">
               {tasks[status].length > 0 ? (
-                tasks[status].map((task: any) => (
+                tasks[status].map((task: { id: string; title: string; description?: string; status: string; priority: string; due_at?: string; entity?: string; recurrence_rrule?: string }) => (
                   <TaskCard
                     key={task.id}
                     task={{
