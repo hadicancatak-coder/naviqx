@@ -507,7 +507,7 @@ function matchDictionary(
     if (!entry.enabled) continue;
     
     const aliasNorm = entry.alias.toLowerCase().trim();
-    const aliasAscii = aliasNorm.replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ').replace(/\s+/g, ' ').trim();
+    const aliasAscii = aliasNorm.replace(/[.,/;:_\-()[\]{}\"'`!@#$%^&*+=<>?\\|~]/g, ' ').replace(/\s+/g, ' ').trim();
     
     // Check boundary-aware matching
     // Create word boundary pattern
