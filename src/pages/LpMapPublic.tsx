@@ -92,7 +92,7 @@ const SectionCard = ({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <CardContent className="pt-0 space-y-lg">
+          <CardContent className="!pt-0 space-y-lg">
             {section.description && (
               <p className="text-body-sm text-muted-foreground">{section.description}</p>
             )}
