@@ -115,8 +115,10 @@ export default function CampaignsLog() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDragStart = (event: any) => setActiveDragId(String(event.active.id));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDragEnd = async (event: any) => {
     const { active, over } = event;
     setActiveDragId(null);
@@ -147,8 +149,9 @@ export default function CampaignsLog() {
           await deleteTracking.mutateAsync(trackingId);
           await createTracking.mutateAsync({ campaign_id: campaignId, entity: targetEntity, status: "Draft" });
           toast.success(`Campaign moved to ${targetEntity}`);
-        } catch (error: any) {
-          toast.error(error.message?.includes("duplicate") ? "Campaign already exists in this entity" : "Failed to move campaign");
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : '';
+          toast.error(errorMessage.includes("duplicate") ? "Campaign already exists in this entity" : "Failed to move campaign");
         }
         return;
       }
@@ -173,8 +176,9 @@ export default function CampaignsLog() {
     try {
       await createTracking.mutateAsync({ campaign_id: campaignId, entity: targetEntity, status: "Draft" });
       toast.success(`Campaign added to ${targetEntity}`);
-    } catch (error: any) {
-      toast.error(error.message?.includes("duplicate") ? "Campaign already exists in this entity" : "Failed to add campaign");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '';
+      toast.error(errorMessage.includes("duplicate") ? "Campaign already exists in this entity" : "Failed to add campaign");
     }
   };
 
@@ -385,7 +389,7 @@ export default function CampaignsLog() {
                         <Checkbox 
                           checked={selectedCampaigns.includes(c.id)} 
                           onCheckedChange={() => handleSelectCampaign(c.id)} 
-                          className="absolute top-sm right-sm z-10 bg-background/80 backdrop-blur-sm" 
+                        className="absolute top-sm right-sm z-10 bg-background/80 backdrop-blur-sm"
                         />
                         <DraggableCampaignCard 
                           campaign={c} 
