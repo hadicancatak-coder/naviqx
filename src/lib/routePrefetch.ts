@@ -1,3 +1,5 @@
+import type { UnsafeAny } from '@/types/unsafe';
+
 /**
  * Route-based prefetching for instant navigation
  * Preloads lazy-loaded page chunks on hover for zero-delay navigation
@@ -9,7 +11,7 @@
  */
 
 // Maps routes to their dynamic import functions (lazy-loaded pages only)
-const routeModules: Record<string, () => Promise<any>> = {
+const routeModules: Record<string, () => Promise<UnsafeAny>> = {
   // Ads - CaptionLibrary still lazy
   '/ads/captions': () => import('@/pages/CaptionLibrary'),
   

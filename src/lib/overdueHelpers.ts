@@ -1,3 +1,5 @@
+import type { UnsafeAny } from '@/types/unsafe';
+
 /**
  * Centralized utilities for overdue task logic
  * Ensures consistency across all components
@@ -7,7 +9,7 @@
  * Determine if a task is overdue
  * Excludes Backlog and Completed statuses
  */
-export function isTaskOverdue(task: any): boolean {
+export function isTaskOverdue(task: UnsafeAny): boolean {
   if (!task.due_at) return false;
   if (task.status === 'Completed') return false;
   if (task.status === 'Pending') return false;

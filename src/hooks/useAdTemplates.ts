@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { UnsafeAny } from '@/types/unsafe';
 
 export interface AdTemplate {
   id: string;
@@ -13,7 +14,7 @@ export interface AdTemplate {
   entity?: string;
   headlines: string[];
   descriptions: string[];
-  sitelinks: any[];
+  sitelinks: UnsafeAny[];
   callouts: string[];
   landing_page?: string;
   ad_type: 'search' | 'display';

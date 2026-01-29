@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { UnsafeAny } from '@/types/unsafe';
 
 /**
  * Centralized realtime service to reduce channel costs
@@ -8,9 +9,9 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
  */
 class RealtimeService {
   private channels: Map<string, RealtimeChannel> = new Map();
-  private listeners: Map<string, Set<(payload: any) => void>> = new Map();
+  private listeners: Map<string, Set<(payload: UnsafeAny) => void>> = new Map();
 
-  subscribe(table: string, callback: (payload: any) => void) {
+  subscribe(table: string, callback: (payload: UnsafeAny) => void) {
     if (!this.channels.has(table)) {
       // Create channel ONCE for the entire app
       const channel = supabase

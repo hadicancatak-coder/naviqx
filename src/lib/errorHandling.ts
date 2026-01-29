@@ -1,6 +1,7 @@
 import { toast } from "@/hooks/use-toast";
 import { errorLogger } from "./errorLogger";
 import { logger } from "./logger";
+import type { UnsafeAny } from '@/types/unsafe';
 
 /**
  * Safe async wrapper that catches and handles errors gracefully
@@ -137,8 +138,7 @@ export const safePromise = <T>(
 /**
  * Wrap a function with error boundary
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const withErrorBoundary = <T extends (...args: any[]) => any>(
+export const withErrorBoundary = <T extends (...args: UnsafeAny[]) => UnsafeAny>(
   fn: T,
   errorMessage?: string
 ): T => {
