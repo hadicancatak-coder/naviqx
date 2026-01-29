@@ -33,7 +33,6 @@ export default function KnowledgePublic() {
   });
 
   // Track page view (click count and last accessed)
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once per page.id, not on click_count changes
   useEffect(() => {
     if (page?.id) {
       supabase
@@ -47,6 +46,7 @@ export default function KnowledgePublic() {
           // Silent update, no need to handle response
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once per page.id, not on click_count changes
   }, [page?.id]);
 
   if (isLoading) {
@@ -72,7 +72,6 @@ export default function KnowledgePublic() {
   }
 
   const iconName = page.icon || 'file-text';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LucideIcons is a dynamic icon library with complex types
   const IconComponent = (LucideIcons as Record<string, unknown>)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] as React.ComponentType<{ className?: string }> || FileText;
 
   return (
