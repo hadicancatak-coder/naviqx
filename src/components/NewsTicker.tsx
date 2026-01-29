@@ -119,7 +119,7 @@ export function NewsTicker() {
             </button>
 
             {/* Header */}
-            <div className="flex items-center gap-sm mb-md pr-8">
+            <div className="flex items-center gap-sm mb-md pr-lg">
               <Megaphone className="h-5 w-5 text-primary" />
               <h2 className="text-heading-md font-semibold">{selectedAnnouncement.title}</h2>
             </div>
