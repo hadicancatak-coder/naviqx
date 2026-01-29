@@ -7,10 +7,38 @@ import { Search, FileText } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+interface AdData {
+  id?: string;
+  name: string;
+  ad_group_id?: string;
+  ad_group_name?: string;
+  campaign_name?: string;
+  entity?: string;
+  ad_type?: string;
+  headlines: string[];
+  descriptions: string[];
+  sitelinks: { description: string; link: string }[];
+  callouts: string[];
+  landing_page: string;
+  business_name: string;
+  language?: string;
+  approval_status?: string;
+}
+
+interface AdGroupData {
+  id: string;
+  name: string;
+}
+
+interface CampaignData {
+  id: string;
+  name: string;
+}
+
 interface EditorContext {
-  ad: any;
-  adGroup: any;
-  campaign: any;
+  ad: AdData;
+  adGroup: AdGroupData;
+  campaign: CampaignData;
   entity: string;
 }
 
@@ -39,7 +67,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     businessName: "",
   });
 
-  const handleEditAd = (ad: any, adGroup: any, campaign: any, entity: string) => {
+  const handleEditAd = (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setEditorContext({ ad, adGroup, campaign, entity });
     // Initialize live fields from ad data
     setLiveFields({
@@ -52,8 +80,8 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     });
   };
 
-  const handleCreateAd = (adGroup: any, campaign: any, entity: string) => {
-    const newAd = {
+  const handleCreateAd = (adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
+    const newAd: AdData = {
       name: `New ${adType === 'search' ? 'Search' : 'Display'} Ad`,
       ad_group_id: adGroup.id,
       ad_group_name: adGroup.name,
@@ -80,7 +108,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     });
   };
 
-  const handleCampaignClick = (campaign: any, entity: string) => {
+  const handleCampaignClick = (_campaign: CampaignData, _entity: string) => {
     setEditorContext(null);
   };
 
