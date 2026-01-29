@@ -21,7 +21,7 @@ function renderMarkdown(content: string) {
       const isNumbered = listItems[0].isNumbered;
       if (isNumbered) {
         elements.push(
-          <ol key={`list-${elements.length}`} className="space-y-1 list-decimal list-inside ml-md mb-md">
+          <ol key={`list-${elements.length}`} className="space-y-xs list-decimal list-inside ml-md mb-md">
             {listItems.map((item, i) => (
               <li key={i} className="text-body-sm text-muted-foreground">{item.text}</li>
             ))}
@@ -29,7 +29,7 @@ function renderMarkdown(content: string) {
         );
       } else {
         elements.push(
-          <ul key={`list-${elements.length}`} className="space-y-1 list-disc list-inside ml-md mb-md">
+          <ul key={`list-${elements.length}`} className="space-y-xs list-disc list-inside ml-md mb-md">
             {listItems.map((item, i) => (
               <li key={i} className="text-body-sm text-muted-foreground">{item.text}</li>
             ))}
@@ -67,19 +67,19 @@ function renderMarkdown(content: string) {
     } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
       flushList();
       elements.push(
-        <p key={index} className="text-body font-medium text-foreground mt-2">
+        <p key={index} className="text-body font-medium text-foreground mt-sm">
           {trimmed.replace(/\*\*/g, '')}
         </p>
       );
     } else if (trimmed === '---') {
       flushList();
-      elements.push(<hr key={index} className="my-6 border-border" />);
+      elements.push(<hr key={index} className="my-lg border-border" />);
     } else if (trimmed === '') {
       flushList();
     } else {
       flushList();
       elements.push(
-        <p key={index} className="text-body-sm text-muted-foreground mb-2">
+        <p key={index} className="text-body-sm text-muted-foreground mb-sm">
           {trimmed}
         </p>
       );
@@ -174,11 +174,11 @@ export default function HowTo() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-4 w-4 mr-sm" />
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={updatePage.isPending}>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-sm" />
               {updatePage.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
