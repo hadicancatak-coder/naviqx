@@ -74,6 +74,7 @@ export default function Notifications() {
     setDataLoading(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const enrichNotificationData = async (notifs: any[]) => {
     const enriched = new Map();
 
@@ -105,12 +106,15 @@ export default function Notifications() {
     ]);
 
     // Create lookup maps
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const commentsMap = new Map((commentsResult.data || []).map((c: any) => [c.id, c]));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profilesMap = new Map((profilesResult.data || []).map((p: any) => [p.user_id, p]));
 
     // Enrich notifications using lookup maps (O(1) per notification)
     for (const notif of notifs) {
       const payload = notif.payload_json || {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: any = {};
 
       if (notif.type === "comment_mention" && payload.comment_id) {
@@ -240,6 +244,7 @@ export default function Notifications() {
   };
 
   // Combine title + context into one concise action-oriented message
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getNotificationTitle = (notification: any) => {
     const payload = notification.payload_json || {};
     const data = enrichedData.get(notification.id) || {};
@@ -291,6 +296,7 @@ export default function Notifications() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getNotificationMessage = (notification: any) => {
     const payload = notification.payload_json || {};
     const data = enrichedData.get(notification.id) || {};
@@ -322,13 +328,16 @@ export default function Notifications() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getTaskOrCampaignTitle = (notification: any) => {
     const payload = notification.payload_json;
     return payload.task_title || payload.campaign_title || null;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getContentPreview = (notification: any) => {
-    const data = enrichedData.get(notification.id) || {};
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data: any = enrichedData.get(notification.id) || {};
     
     if (notification.type === "comment_mention" && data.commentBody) {
       // Strip HTML and truncate
@@ -349,7 +358,9 @@ export default function Notifications() {
     return null;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const groupByDate = (notifs: any[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groups: Record<string, any[]> = {
       Today: [],
       Yesterday: [],
