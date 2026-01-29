@@ -42,6 +42,7 @@ export default function Security() {
 
   useEffect(() => {
     fetchSecurityInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchSecurityInfo = async () => {
@@ -89,7 +90,7 @@ export default function Security() {
     const hasMinLength = newPassword.length >= 9;
     const hasUppercase = /[A-Z]/.test(newPassword);
     const hasNumber = /[0-9]/.test(newPassword);
-    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword);
 
     if (!hasMinLength || !hasUppercase || !hasNumber || !hasSpecial) {
       toast({
@@ -140,10 +141,11 @@ export default function Security() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to change password";
       toast({
         title: "Error",
-        description: error.message || "Failed to change password",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -175,10 +177,11 @@ export default function Security() {
         description: "New backup codes have been generated. Please save them securely.",
       });
       setShowRegenerateDialog(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to regenerate codes";
       toast({
         title: "Error",
-        description: error.message || "Failed to regenerate codes",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -245,7 +248,7 @@ export default function Security() {
           >
             {changingPassword ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-sm animate-spin" />
                 Changing Password...
               </>
             ) : (
@@ -333,12 +336,12 @@ export default function Security() {
                 >
                   {copiedCodes ? (
                     <>
-                      <Check className="h-4 w-4 mr-2" />
+                      <Check className="h-4 w-4 mr-sm" />
                       Copied!
                     </>
                   ) : (
                     <>
-                      <Copy className="h-4 w-4 mr-2" />
+                      <Copy className="h-4 w-4 mr-sm" />
                       Copy All Codes
                     </>
                   )}
@@ -349,7 +352,7 @@ export default function Security() {
                   onClick={() => setShowRegenerateDialog(true)}
                   disabled={regeneratingCodes}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4 mr-sm" />
                   Regenerate
                 </Button>
               </div>
@@ -374,7 +377,7 @@ export default function Security() {
             <AlertDialogAction onClick={regenerateCodes} disabled={regeneratingCodes}>
               {regeneratingCodes ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-sm animate-spin" />
                   Regenerating...
                 </>
               ) : (
