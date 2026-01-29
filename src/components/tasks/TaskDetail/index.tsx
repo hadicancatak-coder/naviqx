@@ -94,6 +94,7 @@ function TaskDetailContent({ onClose }: { onClose?: () => void }) {
 // Main exported component
 export interface TaskDetailProps {
   taskId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task?: any;
   onClose?: () => void;
   onTaskDeleted?: () => void;

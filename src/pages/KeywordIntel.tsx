@@ -118,7 +118,7 @@ export default function KeywordIntel() {
 
   // Sorted and filtered data
   const filteredData = useMemo(() => {
-    let data = processedData.filter(kw => {
+    const data = processedData.filter(kw => {
       if (campaignFilter !== "all" && kw.campaign !== campaignFilter) return false;
       if (adGroupFilter !== "all" && kw.ad_group !== adGroupFilter) return false;
       if (matchTypeFilter !== "all" && kw.match_type !== matchTypeFilter) return false;
@@ -129,7 +129,7 @@ export default function KeywordIntel() {
     });
 
     // Sort
-    data.sort((a, b) => {
+    const sorted = [...data].sort((a, b) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let aVal: any, bVal: any;
       switch (sortColumn) {
@@ -158,7 +158,7 @@ export default function KeywordIntel() {
       return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
     });
 
-    return data;
+    return sorted;
   }, [processedData, campaignFilter, adGroupFilter, matchTypeFilter, clusterFilter, intentFilter, minScore, sortColumn, sortDirection]);
 
   // Get unique values for filters
@@ -1006,9 +1006,9 @@ export default function KeywordIntel() {
               <div className="space-y-sm">
                 {executiveSummary.bullets.map((bullet, i) => (
                   <div key={i} className="flex items-start gap-md p-md bg-elevated rounded-lg border border-border">
-                    {bullet.icon === 'red' && <CircleAlert className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />}
-                    {bullet.icon === 'yellow' && <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />}
-                    {bullet.icon === 'green' && <CircleCheck className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />}
+                    {bullet.icon === 'red' && <CircleAlert className="h-5 w-5 text-destructive flex-shrink-0 mt-xs" />}
+                    {bullet.icon === 'yellow' && <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-xs" />}
+                    {bullet.icon === 'green' && <CircleCheck className="h-5 w-5 text-success flex-shrink-0 mt-xs" />}
                     <p className="text-body">{bullet.text}</p>
                   </div>
                 ))}

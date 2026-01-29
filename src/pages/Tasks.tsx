@@ -503,12 +503,12 @@ export default function Tasks() {
                 setSelectedAssignees([]);
               }
             }}
-            className="gap-2"
+            className="gap-xs"
           >
             <User className="h-4 w-4" />
             My Tasks
             {myTasksCount > 0 && (
-              <Badge variant={showMyTasks ? "secondary" : "default"} className="ml-1 h-5 px-1.5 text-metadata">
+              <Badge variant={showMyTasks ? "secondary" : "default"} className="ml-xs h-5 px-xs text-metadata">
                 {myTasksCount}
               </Badge>
             )}
@@ -523,7 +523,7 @@ export default function Tasks() {
             <SelectContent>
               <SelectItem value="all">All Tags</SelectItem>
               {TASK_TAGS.map((tag) => (
-                <div key={tag.value} onClick={(e) => { e.preventDefault(); setSelectedTags(prev => prev.includes(tag.value) ? prev.filter(t => t !== tag.value) : [...prev, tag.value]); }} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted rounded-lg text-body-sm">
+                <div key={tag.value} onClick={(e) => { e.preventDefault(); setSelectedTags(prev => prev.includes(tag.value) ? prev.filter(t => t !== tag.value) : [...prev, tag.value]); }} className="flex items-center gap-xs px-sm py-xs cursor-pointer hover:bg-muted rounded-lg text-body-sm">
                   <input type="checkbox" checked={selectedTags.includes(tag.value)} onChange={() => {}} className="cursor-pointer rounded" />
                   <span>{tag.label}</span>
                 </div>
@@ -536,7 +536,7 @@ export default function Tasks() {
             onValueChange={(v) => setSelectedProjectId(v === "all" ? null : v)}
           >
             <SelectTrigger className="w-[140px]">
-              <FolderKanban className="h-4 w-4 mr-2" />
+              <FolderKanban className="h-4 w-4 mr-xs" />
               <SelectValue>{selectedProjectId ? projects?.find(p => p.id === selectedProjectId)?.name : "Project"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -554,7 +554,7 @@ export default function Tasks() {
             onValueChange={(v) => setSelectedSprintId(v === "all" ? null : v)}
           >
             <SelectTrigger className="w-[130px]">
-              <Zap className="h-4 w-4 mr-2" />
+              <Zap className="h-4 w-4 mr-xs" />
               <SelectValue>{selectedSprintId ? sprints?.find(s => s.id === selectedSprintId)?.name : "Sprint"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -607,7 +607,7 @@ export default function Tasks() {
 
         {/* Task Content - NO WRAPPER CARDS */}
         {finalFilteredTasks.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-section text-center">
             <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-md" />
             <h3 className="text-heading-sm font-medium text-foreground mb-xs">All Clear!</h3>
             <p className="text-body-sm text-muted-foreground mb-md">
