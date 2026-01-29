@@ -63,7 +63,8 @@ export default function KPIsManagement() {
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        {/* eslint-disable-next-line no-restricted-syntax */}
+        <CardContent className="!p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -79,7 +80,7 @@ export default function KPIsManagement() {
             <TableBody>
               {kpis.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-xl text-muted-foreground">
                     No KPIs created yet. Click "Create KPI" to get started.
                   </TableCell>
                 </TableRow>

@@ -13,7 +13,7 @@ interface LogErrorParams {
   metadata?: Record<string, unknown>;
 }
 
-interface ErrorFilters {
+export interface ErrorFilters {
   severity?: ErrorSeverity;
   type?: ErrorType;
   resolved?: boolean;

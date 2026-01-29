@@ -80,7 +80,7 @@ export default function AdRulesManagement() {
                   <TableCell>
                     <div className="flex items-center gap-sm">
                       {rule.entity === 'GLOBAL' && (
-                        <Badge variant="outline" className="text-xs">Default</Badge>
+                        <Badge variant="outline" className="text-metadata">Default</Badge>
                       )}
                       <span className="font-medium">{rule.entity}</span>
                     </div>
