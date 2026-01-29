@@ -147,7 +147,8 @@ export default function CampaignsLog() {
         const targetEntity = dropTargetId.replace('entity-', '');
         try {
           await deleteTracking.mutateAsync(trackingId);
-          await createTracking.mutateAsync({ campaign_id: campaignId, entity: targetEntity, status: "Draft" });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await createTracking.mutateAsync({ campaign_id: campaignId, entity: targetEntity, status: "Draft" as any });
           toast.success(`Campaign moved to ${targetEntity}`);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '';
@@ -173,6 +174,7 @@ export default function CampaignsLog() {
     if (!dropTargetId.startsWith('entity-')) return;
     const targetEntity = dropTargetId.replace('entity-', '');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     try {
       await createTracking.mutateAsync({ campaign_id: campaignId, entity: targetEntity, status: "Draft" });
       toast.success(`Campaign added to ${targetEntity}`);

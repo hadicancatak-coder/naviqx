@@ -136,6 +136,7 @@ export default function Profile() {
         title, 
         phone_number: phoneNumber, 
         tagline,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         teams: selectedTeams as ("PPC" | "PerMar" | "SocialUA")[]
       })
       .eq("user_id", user?.id);
