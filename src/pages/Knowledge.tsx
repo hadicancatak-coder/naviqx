@@ -215,7 +215,7 @@ export default function Knowledge() {
         title="Knowledge Base"
         description="Documentation, processes, and guides"
         actions={
-          <Button onClick={() => handleCreatePage(null)} className="rounded-full px-6 h-10 gap-2">
+          <Button onClick={() => handleCreatePage(null)} className="rounded-full px-lg h-10 gap-xs">
             <Plus className="h-4 w-4" />
             New Page
           </Button>
@@ -261,14 +261,14 @@ export default function Knowledge() {
             />
           ) : pages && pages.length > 0 ? (
             <div className="p-lg">
-              <h2 className="text-heading-lg font-semibold text-foreground mb-2">
+              <h2 className="text-heading-lg font-semibold text-foreground mb-xs">
                 Welcome to Knowledge Base
               </h2>
               <p className="text-muted-foreground mb-lg">
                 Browse documentation, processes, and guides. Select a page to get started.
               </p>
               
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 {pageTree.map((page) => (
                   <button
                     key={page.id}
@@ -329,7 +329,7 @@ export default function Knowledge() {
             <AlertDialogDescription>
               Are you sure you want to delete "{pageToDelete?.title}"? This action cannot be undone.
               {pageToDelete?.children && pageToDelete.children.length > 0 && (
-                <span className="block mt-2 text-warning">
+                <span className="block mt-xs text-warning">
                   Warning: This page has {pageToDelete.children.length} sub-page(s) that will become root pages.
                 </span>
               )}
