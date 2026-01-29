@@ -95,7 +95,7 @@ export const TasksTable = ({
       let order: number = 0;
 
       switch (groupBy) {
-        case 'dueDate':
+        case 'dueDate': {
           if (!task.due_at) {
             groupKey = 'no-date';
             groupLabel = 'No Due Date';
@@ -125,6 +125,7 @@ export const TasksTable = ({
             }
           }
           break;
+        }
 
         case 'priority':
           groupKey = task.priority || 'Low';

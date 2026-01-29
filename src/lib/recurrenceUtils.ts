@@ -58,7 +58,7 @@ export function calculateNextOccurrence(
       }
       break;
 
-    case 'monthly':
+    case 'monthly': {
       nextDate = addMonths(startOfFromDate, rule.interval);
       if (rule.day_of_month) {
         // Set to specific day of month, clamped to valid days
@@ -67,6 +67,7 @@ export function calculateNextOccurrence(
         nextDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), targetDay);
       }
       break;
+    }
 
     case 'custom':
       // Custom uses days_of_week if provided, otherwise daily
