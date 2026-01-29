@@ -171,6 +171,7 @@ export function EntityCampaignTable({
           campaign_id: campaign.id, 
           entity, 
           status: 'Live',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           notes: (campaign as any).notes || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
