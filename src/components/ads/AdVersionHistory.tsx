@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAdVersions, useRestoreAdVersion } from '@/hooks/useAdVersions';
+import { useAdVersions, useRestoreAdVersion, AdVersion } from '@/hooks/useAdVersions';
 import { History, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -23,14 +23,14 @@ interface AdVersionHistoryProps {
 }
 
 export function AdVersionHistory({ adId }: AdVersionHistoryProps) {
-  const [showRestoreConfirm, setShowRestoreConfirm] = useState<any>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState<AdVersion | null>(null);
   const { data: versions, isLoading } = useAdVersions(adId);
   const restoreVersion = useRestoreAdVersion();
 
-  const handleRestore = async (versionData: any, e: React.MouseEvent) => {
+  const handleRestore = async (snapshotData: Record<string, unknown>, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const { id, created_at, updated_at, version, ...restoreData } = versionData;
+    const { id, created_at, updated_at, version, ...restoreData } = snapshotData;
     restoreVersion.mutate({ adId, versionData: restoreData });
     setShowRestoreConfirm(null);
   };

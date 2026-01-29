@@ -13,7 +13,7 @@ import { useUtmPlatforms, useCreatePlatform, useUpdatePlatform, useDeletePlatfor
 import { useUtmMediums } from "@/hooks/useUtmMediums";
 import { checkPlatformDependencies, formatDependencyMessage } from "@/lib/selectorDependencyCheck";
 import { toast } from "sonner";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -134,7 +134,7 @@ export function UtmPlatformManager() {
     }
   };
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (active.id !== over.id && platforms) {
       const oldIndex = platforms.findIndex((p) => p.id === active.id);

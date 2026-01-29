@@ -16,7 +16,13 @@ interface BulkCSVImportDialogProps {
 }
 
 export function BulkCSVImportDialog({ open, onOpenChange, onImportComplete }: BulkCSVImportDialogProps) {
-  const [preview, setPreview] = useState<any[]>([]);
+  const [preview, setPreview] = useState<Array<{
+    campaign_name?: string;
+    ad_group_name?: string;
+    headlines?: string[];
+    descriptions?: string[];
+    [key: string]: unknown;
+  }>>([]);
   const [importing, setImporting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const { toast } = useToast();
@@ -66,8 +72,8 @@ export function BulkCSVImportDialog({ open, onOpenChange, onImportComplete }: Bu
           if (error) {
             importErrors.push(`Row ${index + 1}: ${error.message}`);
           }
-        } catch (err: any) {
-          importErrors.push(`Row ${index + 1}: ${err.message}`);
+        } catch (err: unknown) {
+          importErrors.push(`Row ${index + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
       }
 
