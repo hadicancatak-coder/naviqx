@@ -40,7 +40,7 @@ const STATUS_OPTIONS = [
 export type Caption = {
   id: string;
   element_type: string;
-  content: any;
+  content: Record<string, unknown> | string;
   entity: string[];
   language: string;
   google_status: string;
@@ -95,9 +95,10 @@ export default function CaptionLibrary() {
       if (debouncedSearch) {
         const searchLower = debouncedSearch.toLowerCase();
         filtered = filtered.filter((item) => {
+          const contentObj = item.content as Record<string, unknown>;
           const contentText = typeof item.content === "string" 
             ? item.content 
-            : (item.content as any)?.text || (item.content as any)?.en || JSON.stringify(item.content);
+            : (contentObj?.text as string) || (contentObj?.en as string) || JSON.stringify(item.content);
           return contentText.toLowerCase().includes(searchLower);
         });
       }
@@ -131,8 +132,9 @@ export default function CaptionLibrary() {
       if (typeof c.content === "string") {
         enContent = c.content;
       } else if (c.content) {
-        enContent = c.content.text || c.content.en || "";
-        arContent = c.content.ar || "";
+        const contentObj = c.content as Record<string, string>;
+        enContent = contentObj.text || contentObj.en || "";
+        arContent = contentObj.ar || "";
       }
       
       return [
@@ -171,27 +173,27 @@ export default function CaptionLibrary() {
         title="Caption Library"
         description="Unified library for all your marketing copy elements"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-sm">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "grid" | "table")}>
               <TabsList className="h-9">
-                <TabsTrigger value="grid" className="px-3">
+                <TabsTrigger value="grid" className="px-sm">
                   <Grid className="h-4 w-4" />
                 </TabsTrigger>
-                <TabsTrigger value="table" className="px-3">
+                <TabsTrigger value="table" className="px-sm">
                   <TableIcon className="h-4 w-4" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
             <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="h-4 w-4 mr-sm" />
               Import
             </Button>
             <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-sm" />
               Export
             </Button>
             <Button onClick={handleCreate} className="rounded-full">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-sm" />
               New Caption
             </Button>
           </div>
@@ -285,14 +287,14 @@ export default function CaptionLibrary() {
             <TableSkeleton columns={6} rows={10} />
           </div>
         ) : !captions || captions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-xl text-center">
             <Grid className="h-12 w-12 text-muted-foreground mb-md" />
             <h3 className="text-heading-sm font-semibold mb-sm">No captions found</h3>
             <p className="text-body-sm text-muted-foreground mb-md">
               Create your first caption or adjust filters
             </p>
             <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-sm" />
               Create Caption
             </Button>
           </div>
