@@ -14,16 +14,16 @@ const NotFound = () => {
     <GlassBackground variant="centered">
       <div className="flex flex-col items-center">
         <Card className="glass-elevated p-lg text-center max-w-md w-full">
-          <h1 className="mb-md text-4xl font-bold text-foreground">404</h1>
-          <p className="mb-lg text-xl text-muted-foreground">Oops! Page not found</p>
+          <h1 className="mb-md text-page-title font-bold text-foreground">404</h1>
+          <p className="mb-lg text-heading-sm text-muted-foreground">Oops! Page not found</p>
           <Button asChild>
-            <a href="/">
-              <Home className="h-4 w-4 mr-2" />
+            <a href="/" className="flex items-center gap-xs">
+              <Home className="h-4 w-4" />
               Return to Home
             </a>
           </Button>
         </Card>
-        <p className="mt-6 text-metadata text-muted-foreground">
+        <p className="mt-lg text-metadata text-muted-foreground">
           © 2026 Naviqx • CFI Performance Marketing
         </p>
       </div>
