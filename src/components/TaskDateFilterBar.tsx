@@ -79,7 +79,7 @@ export function TaskDateFilterBar({
           variant={customRange ? "default" : "outline"} 
           className="w-[120px] flex-shrink-0"
         >
-          <CalendarIcon className="h-4 w-4 mr-1.5" />
+          <CalendarIcon className="h-4 w-4 mr-xs" />
           <span className="truncate">
             {customRange 
               ? `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d')}`
@@ -88,7 +88,7 @@ export function TaskDateFilterBar({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 z-[200]" align="start">
+      <PopoverContent className="w-auto !p-0 z-[200]" align="start">
         <DateRangePicker
           value={customRange}
           onChange={(range) => {

@@ -31,26 +31,26 @@ export function NotificationPreferences() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadPreferences = async () => {
+      const { data } = await supabase
+        .from("notification_preferences")
+        .select("notification_type, enabled")
+        .eq("user_id", user?.id);
+
+      const prefs: Record<string, boolean> = {};
+      NOTIFICATION_TYPES.forEach((type) => {
+        const pref = data?.find((p) => p.notification_type === type.id);
+        prefs[type.id] = pref ? pref.enabled : true;
+      });
+
+      setPreferences(prefs);
+      setLoading(false);
+    };
+
     if (user) {
-      fetchPreferences();
+      loadPreferences();
     }
   }, [user]);
-
-  const fetchPreferences = async () => {
-    const { data } = await supabase
-      .from("notification_preferences")
-      .select("notification_type, enabled")
-      .eq("user_id", user?.id);
-
-    const prefs: Record<string, boolean> = {};
-    NOTIFICATION_TYPES.forEach((type) => {
-      const pref = data?.find((p) => p.notification_type === type.id);
-      prefs[type.id] = pref ? pref.enabled : true;
-    });
-
-    setPreferences(prefs);
-    setLoading(false);
-  };
 
   const togglePreference = async (notificationType: string) => {
     const newValue = !preferences[notificationType];
