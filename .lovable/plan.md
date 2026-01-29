@@ -1,117 +1,91 @@
 
-# Fix All Current Build Errors - Precise Action Plan
+# Fix SecurityScans.tsx - All 40 Errors
 
-## Current State Analysis
+## Complete Rewrite Required
 
-The build is **failing** due to **3 TypeScript errors** in `ErrorLogs.tsx`. There are also **several ESLint warnings** that must be addressed.
+The file has **9 TypeScript errors** and **31 ESLint warnings**. Here's the complete fix:
 
-## Exact Issues to Fix
+### TypeScript Fixes (9 errors)
 
-### **BUILD-BLOCKING ERRORS (3 total)**
+| Line | Current | Fix |
+|------|---------|-----|
+| 25 | `findings: any` | `findings: SecurityFinding[]` |
+| 26 | `summary: any` | `summary: ScanSummary` |
+| 37 | `details: any` | `details: Record<string, unknown>` |
+| 64 | `scansData as any` | `scansData as SecurityScan[]` |
+| 76 | `error: any` | `error: unknown` + instanceof check |
+| 101 | `error: any` | `error: unknown` + instanceof check |
+| 131 | `error: any` | `error: unknown` + instanceof check |
+| 142 | `variants: any` | `variants: Record<string, "destructive" \| "default" \| "secondary" \| "outline">` |
+| 270 | `finding: any` | `finding: SecurityFinding` |
 
-| File | Line | Issue | Fix |
-|------|------|-------|-----|
-| `ErrorLogs.tsx` | 44 | `filters: any` | Define `ErrorFilters` interface |
-| `ErrorLogs.tsx` | 52 | `data as any` | Cast to `ErrorLog[]` |
-| `ErrorLogs.tsx` | 89 | `Record<string, any>` | Use proper Badge variant type |
+### New Interfaces to Add
 
-### **ESLint Warnings to Clear (6 unique issues)**
-
-| File | Line | Issue | Fix |
-|------|------|-------|-----|
-| `ErrorLogs.tsx` | 39 | Missing `fetchErrors` dependency | Add `useCallback` wrapper |
-| `KPIsManagement.tsx` | 66 | `p-0` raw padding | Add eslint-disable comment |
-| `KPIsManagement.tsx` | 82 | `py-8` raw padding | Change to `py-xl` |
-| `AdRulesManagement.tsx` | 83 | `text-xs` raw typography | Change to `text-metadata` |
-| `sonner.tsx` | 31 | React Fast Refresh warning | Add eslint-disable comment |
-
----
-
-## Implementation Details
-
-### 1. `src/pages/admin/ErrorLogs.tsx`
-
-**Line 44** - Define proper interface:
 ```typescript
-interface ErrorFilters {
-  severity?: string;
-  type?: string;
-  resolved?: boolean;
+interface SecurityFinding {
+  type: string;
+  severity: string;
+  description: string;
+  count?: number;
+  details?: Record<string, unknown>;
 }
 
-// Then use:
-const filters: ErrorFilters = {};
+interface ScanSummary {
+  total_findings: number;
+  by_severity?: {
+    critical?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+  };
+  scan_duration_ms?: number;
+}
 ```
 
-**Line 52** - Proper type cast:
-```typescript
-setErrors(data as ErrorLog[]);
-```
+### ESLint Fixes (31 warnings)
 
-**Line 89** - Proper Badge variant type:
-```typescript
-const variants: Record<string, "destructive" | "default" | "secondary" | "outline"> = {
-  critical: 'destructive',
-  warning: 'default',
-  info: 'secondary',
-};
-```
+| Issue | Lines | Fix |
+|-------|-------|-----|
+| Missing `fetchData` dependency | 51 | Wrap `fetchData` in `useCallback`, add `[fetchData]` to `useEffect` |
+| `mt-1` | 177 | `mt-xs` |
+| `mr-2` | 184, 189 | `mr-sm` |
+| `pb-2` | 200, 213, 226, 239 | `pb-xs` |
+| `space-y-0` | 200, 213, 226, 239 | Add eslint-disable or use semantic |
+| `text-sm` | 201, 214, 227, 240 | `text-body-sm` |
+| `text-xs` | 206, 221, 234, 245, 279, 281, 284, 330 | `text-metadata` |
+| `mb-2` | 279, 294, 352 | `mb-sm` |
+| `p-2` | 284 | `p-sm` |
+| `mt-2` | 284 | `mt-sm` |
+| `py-8` | 293, 351 | `py-xl` |
 
-**Line 37-39** - Fix missing dependency warning:
+### Hook Fix Pattern
+
 ```typescript
-const fetchErrors = useCallback(async () => {
-  // existing logic
-}, [severityFilter, typeFilter, resolvedFilter]);
+const fetchData = useCallback(async () => {
+  // ... existing logic
+}, [toast]);
 
 useEffect(() => {
-  fetchErrors();
-}, [fetchErrors]);
+  fetchData();
+}, [fetchData]);
 ```
 
-### 2. `src/pages/admin/KPIsManagement.tsx`
+### Error Handler Pattern
 
-**Line 66** - Add eslint-disable for legitimate `p-0` reset:
 ```typescript
-{/* eslint-disable-next-line no-restricted-syntax */}
-<CardContent className="!p-0">
+} catch (error: unknown) {
+  logger.error('Error:', error);
+  toast({
+    title: "Error",
+    description: error instanceof Error ? error.message : "Unknown error",
+    variant: "destructive",
+  });
+}
 ```
 
-**Line 82** - Change raw padding to semantic token:
-```typescript
-className="text-center py-xl text-muted-foreground"
-```
+## Summary
 
-### 3. `src/pages/admin/AdRulesManagement.tsx`
-
-**Line 83** - Change raw typography:
-```typescript
-<Badge variant="outline" className="text-metadata">Default</Badge>
-```
-
-### 4. `src/components/ui/sonner.tsx`
-
-**Line 31** - Add eslint-disable for re-export (standard shadcn pattern):
-```typescript
-// eslint-disable-next-line react-refresh/only-export-components
-export { Toaster, toast };
-```
-
----
-
-## Expected Outcome
-
-After these changes:
-- **0 TypeScript errors** (all `any` types replaced)
-- **0 ESLint warnings** (all semantic tokens applied or properly suppressed)
-- **Build passes successfully**
-
-## File Summary
-
-| File | Changes |
-|------|---------|
-| `ErrorLogs.tsx` | 4 fixes (3 type errors + 1 hook warning) |
-| `KPIsManagement.tsx` | 2 fixes (padding) |
-| `AdRulesManagement.tsx` | 1 fix (typography) |
-| `sonner.tsx` | 1 fix (react-refresh) |
-
-**Total: 8 targeted fixes across 4 files**
+- **9 TypeScript `any` → proper types**
+- **1 useEffect dependency fix**
+- **30 raw utility classes → semantic tokens**
+- **Total: 40 problems → 0 problems**
