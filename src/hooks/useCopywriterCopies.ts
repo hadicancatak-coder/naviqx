@@ -114,10 +114,10 @@ export const useCreateCopywriterCopy = () => {
         title: "Copy created successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: "Error creating copy",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     },
@@ -143,10 +143,10 @@ export const useUpdateCopywriterCopy = () => {
         title: "Copy updated successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: "Error updating copy",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     },
@@ -169,10 +169,10 @@ export const useDeleteCopywriterCopy = () => {
         title: "Copy deleted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: "Error deleting copy",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     },
