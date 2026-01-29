@@ -31,10 +31,10 @@ export default function Settings() {
     try {
       await addDomain(normalized);
       setNewDomain("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error adding domain",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -52,10 +52,10 @@ export default function Settings() {
     
     try {
       await removeDomain(domain);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error removing domain",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -73,8 +73,8 @@ export default function Settings() {
     <div className="space-y-lg">
       {/* Allowed Email Domains */}
       <Card className="p-lg">
-        <div className="flex items-center gap-3 mb-md">
-          <div className="p-2 rounded-lg bg-primary/10">
+        <div className="flex items-center gap-sm mb-md">
+          <div className="p-sm rounded-lg bg-primary/10">
             <Mail className="h-5 w-5 text-primary" />
           </div>
           <div>
@@ -85,18 +85,18 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-md">
+        <div className="flex flex-wrap gap-sm mb-md">
           {allowedDomains.map((domain) => (
             <Badge
               key={domain}
               variant="secondary"
-              className="gap-1 pr-1 text-body-sm py-1.5 px-3"
+              className="gap-xs pr-xs text-body-sm py-xs px-sm"
             >
               @{domain}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-5 w-5 ml-1 hover:bg-destructive/20 hover:text-destructive"
+                className="h-5 w-5 ml-xs hover:bg-destructive/20 hover:text-destructive"
                 onClick={() => handleRemoveDomain(domain)}
                 disabled={isUpdating || allowedDomains.length <= 1}
               >
@@ -106,7 +106,7 @@ export default function Settings() {
           ))}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-sm">
           <Input
             placeholder="Enter domain (e.g., example.com)"
             value={newDomain}
@@ -119,9 +119,9 @@ export default function Settings() {
             disabled={!newDomain.trim() || isUpdating}
           >
             {isUpdating ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="h-4 w-4 animate-spin mr-sm" />
             ) : (
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-sm" />
             )}
             Add Domain
           </Button>
@@ -130,8 +130,8 @@ export default function Settings() {
 
       {/* Security Settings */}
       <Card className="p-lg">
-        <div className="flex items-center gap-3 mb-md">
-          <div className="p-2 rounded-lg bg-success/10">
+        <div className="flex items-center gap-sm mb-md">
+          <div className="p-sm rounded-lg bg-success/10">
             <Shield className="h-5 w-5 text-success" />
           </div>
           <div>
@@ -150,7 +150,7 @@ export default function Settings() {
                 Required for all users during signup
               </p>
             </div>
-            <Badge variant="default" className="gap-1">
+            <Badge variant="default" className="gap-xs">
               <Shield className="h-3 w-3" />
               Enforced
             </Badge>
@@ -163,7 +163,7 @@ export default function Settings() {
                 Only allowed domains can register
               </p>
             </div>
-            <Badge variant="default" className="gap-1">
+            <Badge variant="default" className="gap-xs">
               <Shield className="h-3 w-3" />
               Active
             </Badge>
@@ -173,8 +173,8 @@ export default function Settings() {
 
       {/* Info Card */}
       <Card className="p-md border-amber-500/30 bg-amber-500/5">
-        <div className="flex gap-3">
-          <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="flex gap-sm">
+          <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-xs" />
           <div>
             <p className="font-medium text-amber-700 dark:text-amber-400">
               Domain Validation
