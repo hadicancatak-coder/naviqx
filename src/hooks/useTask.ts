@@ -43,7 +43,7 @@ export interface TaskWithAssignees {
  * Uses placeholderData from the task list cache for instant display.
  * Includes assignees with working_days for deadline validation.
  */
-export function useTask(taskId: string, cachedTask?: any) {
+export function useTask(taskId: string, cachedTask?: TaskWithAssignees) {
   const queryClient = useQueryClient();
   
   return useQuery({
@@ -90,7 +90,7 @@ export function useTask(taskId: string, cachedTask?: any) {
         };
       }
       // Try to find in list cache
-      const listData = queryClient.getQueryData(TASK_QUERY_KEY) as any[];
+      const listData = queryClient.getQueryData(TASK_QUERY_KEY) as TaskWithAssignees[] | undefined;
       const found = listData?.find(t => t.id === taskId);
       if (found) {
         return {

@@ -325,10 +325,8 @@ export default function Tasks() {
   
   const myTasksCount = useMemo(() => {
     if (!user || !data) return 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return data.filter((task: any) => 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      task.assignees?.some((assignee: any) => assignee.user_id === user.id) &&
+    return data.filter((task) => 
+      task.assignees?.some((assignee) => assignee.user_id === user.id) &&
       task.status !== 'Completed' && task.status !== 'Failed'
     ).length;
   }, [data, user]);

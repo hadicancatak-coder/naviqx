@@ -56,10 +56,23 @@ export function TeamTasksOverview() {
 
       if (assignmentsError) throw assignmentsError;
 
+      // Define type for assignment with nested task
+      interface TaskAssignmentRow {
+        user_id: string;
+        tasks: {
+          id: string;
+          title: string;
+          status: string;
+          due_at: string | null;
+          priority: string | null;
+        };
+      }
+
       // Group tasks by user
       const userTasksMap = new Map<string, UserTask[]>();
+      const typedAssignments = assignments as TaskAssignmentRow[] | null;
       
-      assignments?.forEach((assignment: any) => {
+      typedAssignments?.forEach((assignment) => {
         const userId = assignment.user_id;
         const task = assignment.tasks;
         

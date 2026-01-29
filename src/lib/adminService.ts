@@ -166,13 +166,21 @@ class AdminService {
         return logs?.map(log => ({ ...log, admin: null, target: null })) || [];
       }
 
+      // Define type for profile row
+      interface ProfileRow {
+        user_id: string;
+        name: string | null;
+        email: string | null;
+        avatar_url: string | null;
+      }
+
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, name, email, avatar_url')
         .in('user_id', allUserIds);
 
-      const profilesMap: Record<string, any> = {};
-      profiles?.forEach(p => profilesMap[p.user_id] = p);
+      const profilesMap: Record<string, ProfileRow> = {};
+      profiles?.forEach(p => { profilesMap[p.user_id] = p; });
 
       const enrichedLogs = logs?.map(log => ({
         ...log,
