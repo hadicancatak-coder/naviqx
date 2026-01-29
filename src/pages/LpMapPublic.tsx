@@ -57,24 +57,24 @@ const SectionCard = ({
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-card-hover transition-colors">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground text-sm font-medium">
+              <div className="flex items-center gap-sm">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground text-body-sm font-medium">
                   {mapSection.position + 1}
                 </div>
                 <div>
-                  <CardTitle className="text-base">{section.name}</CardTitle>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className={cn("text-xs", typeColor)}>
+                  <CardTitle className="text-body">{section.name}</CardTitle>
+                  <div className="flex items-center gap-xs mt-xxs">
+                    <Badge variant="outline" className={cn("text-metadata", typeColor)}>
                       {section.section_type}
                     </Badge>
                     {section.sample_images.length > 0 && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-metadata text-muted-foreground flex items-center gap-xxs">
                         <Image className="h-3 w-3" />
                         {section.sample_images.length}
                       </span>
                     )}
                     {sectionComments.length > 0 && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-metadata text-muted-foreground flex items-center gap-xxs">
                         <MessageSquare className="h-3 w-3" />
                         {sectionComments.length}
                       </span>
@@ -92,18 +92,18 @@ const SectionCard = ({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <CardContent className="pt-0 space-y-6">
+          <CardContent className="pt-0 space-y-lg">
             {section.description && (
-              <p className="text-sm text-muted-foreground">{section.description}</p>
+              <p className="text-body-sm text-muted-foreground">{section.description}</p>
             )}
 
             {/* Images */}
             {section.sample_images.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-sm">
                   Sample Images (click to enlarge)
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-sm">
                   {section.sample_images.map((image, index) => (
                     <div 
                       key={image.id} 
@@ -119,7 +119,7 @@ const SectionCard = ({
                         className="w-full h-32 object-cover"
                       />
                       {image.caption && (
-                        <p className="text-xs text-muted-foreground p-2 bg-muted/50">
+                        <p className="text-metadata text-muted-foreground p-xs bg-muted/50">
                           {image.caption}
                         </p>
                       )}
@@ -141,7 +141,7 @@ const SectionCard = ({
             {/* Brief */}
             {section.brief_content && (
               <div>
-                <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-xs">
                   Brief / Instructions
                 </h4>
                 <div className="text-body-sm whitespace-pre-wrap bg-muted/50 rounded-lg p-md">
@@ -153,17 +153,17 @@ const SectionCard = ({
             {/* Links */}
             {section.website_links.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-xs">
                   Reference Links
                 </h4>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-xs">
                   {section.website_links.map((link) => (
                     <a
                       key={link.id}
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+                      className="inline-flex items-center gap-xxs px-sm py-xs text-body-sm bg-muted rounded-lg hover:bg-muted/80 transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       {link.label || link.url}
@@ -177,28 +177,28 @@ const SectionCard = ({
 
             {/* Comments Section */}
             <div>
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-sm">
                 Comments ({sectionComments.length})
               </h4>
 
               {sectionComments.length > 0 && (
-                <div className="space-y-3 mb-4">
+                <div className="space-y-sm mb-md">
                   {sectionComments.map((comment) => (
-                    <div key={comment.id} className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">{comment.reviewer_name}</span>
-                        <span className="text-xs text-muted-foreground">
+                    <div key={comment.id} className="bg-muted/50 rounded-lg p-sm">
+                      <div className="flex items-center gap-xs mb-xxs">
+                        <span className="text-body-sm font-medium">{comment.reviewer_name}</span>
+                        <span className="text-metadata text-muted-foreground">
                           {format(new Date(comment.created_at), "MMM d, h:mm a")}
                         </span>
                       </div>
-                      <p className="text-sm">{comment.comment_text}</p>
+                      <p className="text-body-sm">{comment.comment_text}</p>
                     </div>
                   ))}
                 </div>
               )}
 
               {reviewerName && reviewerEmail && (
-                <div className="flex gap-2">
+                <div className="flex gap-xs">
                   <Textarea
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
@@ -273,7 +273,7 @@ const LpMapPublic = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-md" />
           <p className="text-muted-foreground">Loading LP map...</p>
         </div>
       </div>
@@ -283,7 +283,7 @@ const LpMapPublic = () => {
   if (error || !map) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center max-w-md px-4">
+        <div className="text-center max-w-md px-md">
           <h1 className="text-heading-lg font-bold mb-sm">Link Not Found</h1>
           <p className="text-muted-foreground text-body">
             This link may have expired or been deactivated. Please contact the person who shared it with you.
@@ -300,8 +300,8 @@ const LpMapPublic = () => {
     <div className="min-h-screen bg-background">
       {/* CFD Warning Banner */}
       <div className="bg-destructive/10 border-b border-destructive/30">
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-center gap-2">
+        <div className="max-w-5xl mx-auto px-md py-sm">
+          <div className="flex items-center justify-center gap-xs">
             <AlertTriangle className="h-4 w-4 text-destructive-text" />
             <p className="text-body-sm font-semibold text-destructive-text">
               IMPORTANT: NO CFD WORDS ALLOWED - This is for external review
@@ -312,8 +312,8 @@ const LpMapPublic = () => {
 
       {/* Header */}
       <div className="border-b border-border bg-card">
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="max-w-5xl mx-auto px-md py-lg">
+          <div className="flex items-center gap-sm mb-xs">
             {map.entity && (
               <Badge variant="outline">{map.entity.name}</Badge>
             )}
@@ -321,7 +321,7 @@ const LpMapPublic = () => {
           </div>
           <h1 className="text-heading-lg font-bold">{map.name}</h1>
           {map.description && (
-            <p className="text-muted-foreground mt-2">{map.description}</p>
+            <p className="text-muted-foreground mt-xs">{map.description}</p>
           )}
           {hasSession && (
             <p className="text-body-sm text-muted-foreground mt-sm">
@@ -331,7 +331,7 @@ const LpMapPublic = () => {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-md py-xl">
         {/* Inline Identification Bar - shown when not identified */}
         {!hasSession && (
           <Card className="mb-md border-primary/30">
@@ -363,12 +363,12 @@ const LpMapPublic = () => {
         )}
 
         {/* Sections */}
-        <div className="space-y-md mb-8">
+        <div className="space-y-md mb-xl">
           <h2 className="text-heading-sm font-semibold">LP Sections ({sections.length})</h2>
           {sections.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <CardContent className="py-2xl text-center">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-md" />
                 <p className="text-muted-foreground">No sections have been added to this map yet.</p>
               </CardContent>
             </Card>
@@ -392,24 +392,24 @@ const LpMapPublic = () => {
             <CardHeader>
               <CardTitle className="text-heading-sm">Overall Feedback</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-md">
               {overallComments.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-sm">
                   {overallComments.map((comment) => (
-                    <div key={comment.id} className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">{comment.reviewer_name}</span>
-                        <span className="text-xs text-muted-foreground">
+                    <div key={comment.id} className="bg-muted/50 rounded-lg p-sm">
+                      <div className="flex items-center gap-xs mb-xxs">
+                        <span className="text-body-sm font-medium">{comment.reviewer_name}</span>
+                        <span className="text-metadata text-muted-foreground">
                           {format(new Date(comment.created_at), "MMM d, h:mm a")}
                         </span>
                       </div>
-                      <p className="text-sm">{comment.comment_text}</p>
+                      <p className="text-body-sm">{comment.comment_text}</p>
                     </div>
                   ))}
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-xs">
                 <Textarea
                   value={overallComment}
                   onChange={(e) => setOverallComment(e.target.value)}
@@ -421,7 +421,7 @@ const LpMapPublic = () => {
                   onClick={handleSubmitOverallComment}
                   disabled={!overallComment.trim()}
                 >
-                  <Send className="h-4 w-4 mr-2" />
+                  <Send className="h-4 w-4 mr-sm" />
                   Submit
                 </Button>
               </div>
