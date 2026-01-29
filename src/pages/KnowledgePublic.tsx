@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,7 +6,6 @@ import { BookOpen, FileText } from "lucide-react";
 import { format } from "date-fns";
 import DOMPurify from "dompurify";
 import * as LucideIcons from "lucide-react";
-import { useEffect } from "react";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { Card } from "@/components/ui/card";
 import { ExternalPageFooter } from "@/components/layout/ExternalPageFooter";
@@ -33,6 +33,7 @@ export default function KnowledgePublic() {
   });
 
   // Track page view (click count and last accessed)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once per page.id, not on click_count changes
   useEffect(() => {
     if (page?.id) {
       supabase
@@ -61,7 +62,7 @@ export default function KnowledgePublic() {
       <GlassBackground variant="centered">
         <Card className="glass-elevated p-lg text-center max-w-md w-full">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-md" />
-          <h1 className="text-heading-lg font-semibold text-foreground mb-2">Page Not Found</h1>
+          <h1 className="text-heading-lg font-semibold text-foreground mb-xs">Page Not Found</h1>
           <p className="text-muted-foreground">
             This page doesn't exist or is no longer shared.
           </p>
@@ -71,14 +72,15 @@ export default function KnowledgePublic() {
   }
 
   const iconName = page.icon || 'file-text';
-  const IconComponent = (LucideIcons as any)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] || FileText;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LucideIcons is a dynamic icon library with complex types
+  const IconComponent = (LucideIcons as Record<string, unknown>)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] as React.ComponentType<{ className?: string }> || FileText;
 
   return (
     <GlassBackground variant="full" className="pb-0">
       {/* Header */}
       <header className="border-b border-border glass-elevated mb-lg">
         <div className="max-w-4xl mx-auto px-lg py-md">
-          <div className="flex items-center gap-2 text-muted-foreground text-body-sm">
+          <div className="flex items-center gap-sm text-muted-foreground text-body-sm">
             <BookOpen className="h-4 w-4" />
             <span>Knowledge Base</span>
           </div>
@@ -88,12 +90,12 @@ export default function KnowledgePublic() {
       {/* Content */}
       <main className="max-w-4xl mx-auto px-lg py-xl">
         <div className="flex items-start gap-md mb-lg">
-          <div className="p-3 bg-primary/10 rounded-xl">
+          <div className="p-sm bg-primary/10 rounded-xl">
             <IconComponent className="h-8 w-8 text-primary" />
           </div>
           <div>
             <h1 className="text-heading-lg font-semibold text-foreground">{page.title}</h1>
-            <p className="text-metadata text-muted-foreground mt-1">
+            <p className="text-metadata text-muted-foreground mt-xs">
               Last updated {format(new Date(page.updated_at), "MMMM d, yyyy")}
             </p>
           </div>
@@ -109,7 +111,7 @@ export default function KnowledgePublic() {
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }}
           />
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-xl text-muted-foreground">
             <p>This page has no content yet.</p>
           </div>
         )}
