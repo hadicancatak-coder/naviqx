@@ -43,9 +43,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { targetUserId } = await req.json();
+    const body: unknown = await req.json();
+    const targetUserId = (body && typeof body === 'object' && 'targetUserId' in body) 
+      ? (body as { targetUserId: unknown }).targetUserId 
+      : undefined;
 
-    if (!targetUserId) {
+    if (!targetUserId || typeof targetUserId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Target user ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -142,12 +145,12 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in admin-reset-mfa:', error);
+    const message = error instanceof Error ? error.message : 'Failed to reset MFA';
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to reset MFA' }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
-

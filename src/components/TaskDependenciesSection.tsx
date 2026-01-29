@@ -9,23 +9,42 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
+interface TaskInfo {
+  title: string;
+  status: string;
+}
+
 interface Dependency {
   id: string;
   depends_on_task_id: string;
   dependency_type: string;
-  task: {
-    title: string;
-    status: string;
-  };
+  task: TaskInfo;
 }
 
 interface ReverseDependency {
   id: string;
   task_id: string;
-  task: {
-    title: string;
-    status: string;
-  };
+  task: TaskInfo;
+}
+
+interface AvailableTask {
+  id: string;
+  title: string;
+  status: string;
+}
+
+// Raw row from Supabase before narrowing
+interface DependencyRow {
+  id: string;
+  depends_on_task_id: string;
+  dependency_type: string;
+  task: TaskInfo | null;
+}
+
+interface ReverseDependencyRow {
+  id: string;
+  task_id: string;
+  task: TaskInfo | null;
 }
 
 interface TaskDependenciesSectionProps {
@@ -36,7 +55,7 @@ interface TaskDependenciesSectionProps {
 export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenciesSectionProps) {
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [reverseDependencies, setReverseDependencies] = useState<ReverseDependency[]>([]);
-  const [availableTasks, setAvailableTasks] = useState<any[]>([]);
+  const [availableTasks, setAvailableTasks] = useState<AvailableTask[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string>("");
   const [dependencyType, setDependencyType] = useState<string>("blocks");
   const [showBlocking, setShowBlocking] = useState(true);
@@ -59,7 +78,17 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
       .eq("task_id", taskId);
 
     if (!error && data) {
-      setDependencies(data as any);
+      const rows = data as unknown as DependencyRow[];
+      // Filter and narrow to valid dependencies
+      const validDeps: Dependency[] = rows
+        .filter((row): row is DependencyRow & { task: TaskInfo } => row.task !== null)
+        .map((row) => ({
+          id: row.id,
+          depends_on_task_id: row.depends_on_task_id,
+          dependency_type: row.dependency_type,
+          task: row.task,
+        }));
+      setDependencies(validDeps);
     }
   };
 
@@ -74,7 +103,15 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
       .eq("depends_on_task_id", taskId);
 
     if (!error && data) {
-      setReverseDependencies(data as any);
+      const rows = data as unknown as ReverseDependencyRow[];
+      const validReverse: ReverseDependency[] = rows
+        .filter((row): row is ReverseDependencyRow & { task: TaskInfo } => row.task !== null)
+        .map((row) => ({
+          id: row.id,
+          task_id: row.task_id,
+          task: row.task,
+        }));
+      setReverseDependencies(validReverse);
     }
   };
 
@@ -87,7 +124,7 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
       .order("title");
 
     if (!error && data) {
-      setAvailableTasks(data);
+      setAvailableTasks(data as AvailableTask[]);
     }
   };
 

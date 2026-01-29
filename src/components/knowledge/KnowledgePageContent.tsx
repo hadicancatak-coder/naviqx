@@ -6,12 +6,25 @@ import { format } from "date-fns";
 import DOMPurify from "dompurify";
 import * as LucideIcons from "lucide-react";
 import { FileText } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getProductionUrl } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+// Type-safe icon resolver
+type LucideIconRecord = Record<string, LucideIcon>;
+
+function resolveIcon(iconName: string): LucideIcon {
+  const pascalCase = iconName
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  const icons = LucideIcons as unknown as LucideIconRecord;
+  return icons[pascalCase] || FileText;
+}
 
 interface KnowledgePageContentProps {
   page: KnowledgePage;
@@ -53,7 +66,7 @@ export function KnowledgePageContent({
   
   // Get icon component
   const iconName = page.icon || 'file-text';
-  const IconComponent = (LucideIcons as any)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] || FileText;
+  const IconComponent = resolveIcon(iconName);
 
   const publicUrl = page.public_token 
     ? `${getProductionUrl()}/knowledge/public/${page.public_token}`
@@ -192,9 +205,7 @@ export function KnowledgePageContent({
           <h3 className="text-heading-sm font-medium text-foreground mb-md">Sub-pages</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {page.children.map((child) => {
-              const ChildIcon = (LucideIcons as any)[
-                (child.icon || 'file-text').split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')
-              ] || FileText;
+              const ChildIcon = resolveIcon(child.icon || 'file-text');
               
               return (
                 <button
