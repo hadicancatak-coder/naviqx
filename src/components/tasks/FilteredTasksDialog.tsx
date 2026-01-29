@@ -16,6 +16,7 @@ interface FilteredTasksDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   filterType: 'all' | 'overdue' | 'ongoing' | 'completed';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   onRefresh: () => void;
 }
@@ -54,9 +55,10 @@ export const FilteredTasksDialog = ({
     // Sort
     filtered.sort((a, b) => {
       switch(sortBy) {
-        case 'priority':
+        case 'priority': {
           const priorityOrder = { High: 0, Medium: 1, Low: 2 };
           return priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+        }
         case 'created_at':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         default: // due_date
@@ -256,6 +258,7 @@ export const FilteredTasksDialog = ({
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
                         <div className="flex -space-x-2">
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                           {task.assignees.slice(0, 3).map((assignee: any) => (
                             <Avatar key={assignee.user_id} className="h-5 w-5 border-2 border-background">
                               <AvatarImage src={assignee.avatar_url} />
