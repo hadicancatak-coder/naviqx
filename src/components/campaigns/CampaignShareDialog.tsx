@@ -123,11 +123,11 @@ export const CampaignShareDialog = ({
         toast.success("Link activated");
       }
       onRefresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Revert local state on error
       setLocalIsPublic(isPublic);
       setLocalToken(publicToken);
-      toast.error(error.message || "Failed to update sharing settings");
+      toast.error(error instanceof Error ? error.message : "Failed to update sharing settings");
     } finally {
       setIsUpdating(false);
     }
