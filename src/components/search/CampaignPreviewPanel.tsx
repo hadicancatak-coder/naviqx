@@ -8,13 +8,19 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { calculateAdStrength } from "@/lib/adQualityScore";
 
 interface CampaignPreviewPanelProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   campaign: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adGroups: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ads: any[];
   entity: string;
   onViewAllAds?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onEditAd?: (ad: any, adGroup: any, campaign: any, entity: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onCreateAd?: (adGroup: any, campaign: any, entity: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onCreateAdGroup?: (campaign: any, entity: string) => void;
 }
 

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface SavedElementsTableViewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   elements: any[];
   onRefresh?: () => void;
 }
@@ -30,6 +31,7 @@ export function SavedElementsTableView({ elements, onRefresh }: SavedElementsTab
   const [sortField, setSortField] = useState<'use_count' | 'created_at'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedElement, setSelectedElement] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);

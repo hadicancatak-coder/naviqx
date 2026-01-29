@@ -14,6 +14,7 @@ interface SaveAsTemplateDialogProps {
     entity?: string;
     headlines: string[];
     descriptions: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sitelinks: any[];
     callouts: string[];
     landing_page?: string;

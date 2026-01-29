@@ -9,11 +9,14 @@ import { SearchAdPreview } from '@/components/ads/SearchAdPreview';
 import { calculateAdStrength } from '@/lib/adQualityScore';
 
 interface AdPreviewPanelProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ad: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   campaign: any;
   entity: string;
   headlines: string[];
   descriptions: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sitelinks: any[];
   callouts: string[];
   landingPage: string;

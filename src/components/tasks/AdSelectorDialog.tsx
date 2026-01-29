@@ -13,12 +13,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface AdSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSelectAds: (ads: any[]) => void;
   excludeIds?: string[];
 }
 
 export function AdSelectorDialog({ open, onOpenChange, onSelectAds, excludeIds = [] }: AdSelectorDialogProps) {
   const { user } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ads, setAds] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");

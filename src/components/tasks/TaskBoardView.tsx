@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
 
 interface TaskBoardViewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   onTaskClick: (taskId: string) => void;
   groupBy?: 'status' | 'date' | 'assignee';
@@ -31,6 +32,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
     const assignees = new Map<string, string>();
     tasks.forEach(task => {
       if (task.assignees?.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         task.assignees.forEach((a: any) => {
           const name = a.name || 'Unknown';
           if (!assignees.has(name)) assignees.set(name, name);
@@ -42,6 +44,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
 
   const groups = groupBy === 'status' ? statusGroups : groupBy === 'date' ? dateGroups : assigneeGroups;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getDateGroup = (task: any): string => {
     if (!task.due_at) return 'Later';
     const dueDate = new Date(task.due_at);

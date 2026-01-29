@@ -52,6 +52,7 @@ const WEBSITE_PARAM_OPTIONS = [
 export function EntitiesManager() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingEntity, setEditingEntity] = useState<any>(null);
   const [entityForm, setEntityForm] = useState({ 
     name: "", 

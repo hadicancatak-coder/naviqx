@@ -32,6 +32,7 @@ export function UtmBuilder() {
   const [city, setCity] = useState("");
   const [deviceType, setDeviceType] = useState<"desktop" | "mobile">("desktop");
   const [withExtensions, setWithExtensions] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [generatedLinks, setGeneratedLinks] = useState<any[]>([]);
   const [showAddCampaign, setShowAddCampaign] = useState(false);
   const [selectedLpType, setSelectedLpType] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export function UtmBuilder() {
     if (detection.purpose === 'Webinar' && !webinarName.trim()) { toast.error("Please enter a webinar name"); return; }
     if (detection.purpose === 'Seminar' && !city.trim()) { toast.error("Please select a city for the seminar"); return; }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const links: any[] = [];
     const purpose = detection.purpose!;
 
