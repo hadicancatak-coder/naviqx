@@ -56,21 +56,33 @@ export const CHARACTER_LIMITS = {
   utm_description: 500,
 };
 
+/** Minimal assignee shape for visibility checks */
+interface VisibilityAssignee {
+  user_id: string;
+}
+
+/** Minimal item shape for visibility filtering */
+interface VisibilityItem {
+  assignees?: VisibilityAssignee[];
+  teams?: string | string[];
+  visibility?: string;
+}
+
 /**
  * Filter items based on visibility rules
  */
-export function filterByVisibilityRule(
-  items: any[],
+export function filterByVisibilityRule<T extends VisibilityItem>(
+  items: T[],
   rule: 'assigned_only' | 'global_and_assigned',
   userId: string,
   userTeams: string[]
-): any[] {
+): T[] {
   return items.filter(item => {
-    const isDirectAssignee = item.assignees?.some((a: any) => a.user_id === userId);
+    const isDirectAssignee = item.assignees?.some((a) => a.user_id === userId);
     const taskTeams = Array.isArray(item.teams) 
       ? item.teams 
       : (typeof item.teams === 'string' ? JSON.parse(item.teams) : []);
-    const isTeamMember = userTeams.some((team: string) => taskTeams.includes(team));
+    const isTeamMember = userTeams.some((team) => taskTeams.includes(team));
     
     if (rule === 'assigned_only') {
       // PROFILE PAGE: Only show if user is assigned OR in team

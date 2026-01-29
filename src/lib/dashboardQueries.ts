@@ -178,8 +178,19 @@ export const getUpcomingTasks = async (userId: string, limit = 5) => {
     return (priorityOrder[a.priority as keyof typeof priorityOrder] || 1) - (priorityOrder[b.priority as keyof typeof priorityOrder] || 1);
   }).slice(0, limit);
 
+  // Define type for task assignee row
+  interface TaskAssigneeProfile {
+    user_id: string;
+    name: string | null;
+    avatar_url: string | null;
+  }
+  interface TaskAssigneeRow {
+    task_id: string;
+    profiles: TaskAssigneeProfile;
+  }
+
   // Get task assignees with profiles
-  const { data: taskAssignees } = await supabase
+  const { data: taskAssigneesData } = await supabase
     .from("task_assignees")
     .select(`
       task_id,
@@ -192,12 +203,13 @@ export const getUpcomingTasks = async (userId: string, limit = 5) => {
     .in("task_id", sortedTasks.map(t => t.id));
 
   // Map assignees to tasks
-  const assigneeMap = new Map();
-  taskAssignees?.forEach((ta: any) => {
+  const assigneeMap = new Map<string, TaskAssigneeProfile[]>();
+  const typedAssignees = taskAssigneesData as unknown as TaskAssigneeRow[] | null;
+  typedAssignees?.forEach((ta) => {
     if (!assigneeMap.has(ta.task_id)) {
       assigneeMap.set(ta.task_id, []);
     }
-    assigneeMap.get(ta.task_id).push(ta.profiles);
+    assigneeMap.get(ta.task_id)!.push(ta.profiles);
   });
   
   return sortedTasks.map(task => ({

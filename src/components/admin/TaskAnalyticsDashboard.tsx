@@ -63,8 +63,17 @@ export const TaskAnalyticsDashboard = () => {
 
       if (profilesError) throw profilesError;
 
+      // Define type for task with assignees
+      interface TaskWithAssigneesRow {
+        id: string;
+        status: string | null;
+        due_at: string | null;
+        created_at: string;
+        task_assignees: { user_id: string }[];
+      }
+
       // Fetch all tasks with assignees
-      const { data: tasks, error: tasksError } = await supabase
+      const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
         .select(`
           id,
@@ -75,6 +84,7 @@ export const TaskAnalyticsDashboard = () => {
             user_id
           )
         `);
+      const tasks = tasksData as unknown as TaskWithAssigneesRow[] | null;
 
       if (tasksError) throw tasksError;
 
@@ -112,7 +122,7 @@ export const TaskAnalyticsDashboard = () => {
       // Calculate per-user stats
       const stats: UserStats[] = profiles?.map(profile => {
         const userTasks = tasks?.filter(task => 
-          task.task_assignees?.some((a: any) => a.user_id === profile.user_id)
+          task.task_assignees?.some((a) => a.user_id === profile.user_id)
         ) || [];
 
         const completedToday = userTasks.filter(t => 

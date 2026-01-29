@@ -26,7 +26,7 @@ export function RecurringTasksToday() {
     const today = new Date();
 
     return tasks
-      .filter((task: any) => {
+      .filter((task) => {
         // Is it a recurring instance (has template_task_id) OR legacy recurring task?
         const isRecurringInstance = !!task.template_task_id;
         const isLegacyRecurring = task.task_type === 'recurring' || task.recurrence_rrule;
@@ -37,7 +37,7 @@ export function RecurringTasksToday() {
         if (task.status === 'Completed') return false;
         
         // Is user assigned?
-        const isAssigned = task.assignees?.some((a: any) => a.user_id === user.id);
+        const isAssigned = task.assignees?.some((a) => a.user_id === user.id);
         if (!isAssigned) return false;
         
         // For new instances, check if due today via occurrence_date or due_at
