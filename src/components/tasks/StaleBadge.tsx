@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { getDaysSinceUpdate, getStaleLevel, isTaskStale } from "@/lib/staleTaskHelpers";
 
 interface StaleBadgeProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task: any;
   className?: string;
   showIcon?: boolean;

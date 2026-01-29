@@ -8,9 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getStatusBadgeVariant } from "@/lib/constants";
 
 interface SearchAdGroupAdsViewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adGroup: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   campaign: any;
   entity: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAdSelected: (ad: any) => void;
   onAdCreated: (adId?: string) => void;
 }

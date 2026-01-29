@@ -94,17 +94,21 @@ function SortableTaskItem({
 }
 
 interface SortableTaskListProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   selectedIds?: string[];
   focusedIndex?: number;
   onSelectionChange?: (ids: string[]) => void;
   onShiftSelect?: (taskId: string, shiftKey: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onTaskClick?: (taskId: string, task?: any) => void;
   onComplete?: (taskId: string, completed: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onDuplicate?: (task: any, e: React.MouseEvent) => void;
   onDelete?: (taskId: string) => void;
   processingAction?: { taskId: string; action: 'complete' | 'duplicate' | 'delete' } | null;
   userRole?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onOrderChange?: (tasks: any[]) => void;
   isDragDisabled?: boolean;
 }

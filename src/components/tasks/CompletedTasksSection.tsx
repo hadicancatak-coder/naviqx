@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 interface CompletedTasksSectionProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   onTaskClick: (taskId: string) => void;
   onTaskComplete: (taskId: string, completed: boolean) => void;

@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 interface BulkCSVExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ads: any[];
 }
 

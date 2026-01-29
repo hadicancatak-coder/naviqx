@@ -16,6 +16,7 @@ interface DealFormData {
 interface DealFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deal?: any;
   onSave: (dealData: DealFormData) => void;
 }

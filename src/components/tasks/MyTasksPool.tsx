@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface MyTasksPoolProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   onAddToMyTasks: (taskIds: string[]) => void;
   onTaskClick: (taskId: string) => void;

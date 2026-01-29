@@ -6,7 +6,9 @@ import { X, Plus, Megaphone } from "lucide-react";
 import { AdSelectorDialog } from "./AdSelectorDialog";
 
 interface AttachedAdsSectionProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attachedAds: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAdsChange: (ads: any[]) => void;
   editable?: boolean;
 }
