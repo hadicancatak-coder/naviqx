@@ -31,7 +31,7 @@ export const BlockerDialog = ({ open, onOpenChange, taskId, onSuccess }: Blocker
   const [fixProcess, setFixProcess] = useState("");
   const [dueDate, setDueDate] = useState<Date>();
   const [timeline, setTimeline] = useState("");
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<{ id: string; title: string }[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState(taskId || "");
   const [loading, setLoading] = useState(false);
 
@@ -93,11 +93,12 @@ export const BlockerDialog = ({ open, onOpenChange, taskId, onSuccess }: Blocker
       resetForm();
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         toast({ title: "Validation Error", description: error.errors[0].message, variant: "destructive" });
       } else {
-        toast({ title: "Error", description: error.message || "Failed to add blocker", variant: "destructive" });
+        const message = error instanceof Error ? error.message : "Failed to add blocker";
+        toast({ title: "Error", description: message, variant: "destructive" });
       }
     } finally {
       setLoading(false);
