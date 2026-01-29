@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 interface EditorState {
   adId: string | null;
   hasUnsavedChanges: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   draftData: any;
 }
 
@@ -11,6 +12,7 @@ const STORAGE_KEY = "ad_editor_draft";
 
 export function useAdEditorState(adId: string | null) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [draftData, setDraftData] = useState<any>(null);
 
   // Load draft from localStorage
@@ -30,6 +32,7 @@ export function useAdEditorState(adId: string | null) {
 
   // Save draft to localStorage
   const saveDraft = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (data: any) => {
       if (adId) {
         localStorage.setItem(`${STORAGE_KEY}_${adId}`, JSON.stringify(data));

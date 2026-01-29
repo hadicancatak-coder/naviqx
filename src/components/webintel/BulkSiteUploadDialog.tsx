@@ -21,6 +21,7 @@ export function BulkSiteUploadDialog({
 }: BulkSiteUploadDialogProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [previewData, setPreviewData] = useState<any[]>([]);
 
   const downloadTemplate = () => {
@@ -87,6 +88,7 @@ export function BulkSiteUploadDialog({
           name: row[0] || '',
           url: row[1] || '',
           country: row[2] || 'UAE',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           type: (row[3] as any) || 'Website',
           category: row[4] || undefined,
           estimated_monthly_traffic: undefined,

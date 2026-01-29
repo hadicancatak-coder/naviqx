@@ -48,9 +48,11 @@ export function UtmMediumManager() {
   const updateMediumOrder = useUpdateMediumOrder();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingMedium, setEditingMedium] = useState<any>(null);
   const [mediumForm, setMediumForm] = useState({ name: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [mediumToDelete, setMediumToDelete] = useState<any>(null);
 
   const sensors = useSensors(

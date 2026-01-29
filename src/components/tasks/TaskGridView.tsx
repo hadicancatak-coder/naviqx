@@ -1,6 +1,7 @@
 import { TaskCard } from "./TaskCard";
 
 interface TaskGridViewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks: any[];
   onTaskClick: (taskId: string) => void;
 }

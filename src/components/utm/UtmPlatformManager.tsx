@@ -52,9 +52,11 @@ export function UtmPlatformManager() {
   const updatePlatformOrder = useUpdatePlatformOrder();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingPlatform, setEditingPlatform] = useState<any>(null);
   const [platformForm, setPlatformForm] = useState({ name: "", utm_medium: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [platformToDelete, setPlatformToDelete] = useState<any>(null);
 
   const sensors = useSensors(

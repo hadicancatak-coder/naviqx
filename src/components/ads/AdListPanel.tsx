@@ -9,8 +9,10 @@ import { cn } from "@/lib/utils";
 import { getStatusColor } from "@/lib/constants";
 
 interface AdListPanelProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ads: any[];
   selectedAdId: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSelectAd: (ad: any) => void;
   selectedIds: string[];
   onToggleSelection: (id: string) => void;

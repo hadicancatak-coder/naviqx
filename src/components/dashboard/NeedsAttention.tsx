@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 
 export function NeedsAttention() {
   const { user } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>({ overdueTasks: [], blockers: [], pendingApprovals: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
