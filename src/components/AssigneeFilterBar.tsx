@@ -71,7 +71,7 @@ export function AssigneeFilterBar({
               e.preventDefault();
               toggleAssignee(user.user_id);
             }}
-            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded text-sm"
+            className="flex items-center gap-xs px-xs py-1.5 cursor-pointer hover:bg-accent rounded text-body-sm"
           >
             <input
               type="checkbox"
