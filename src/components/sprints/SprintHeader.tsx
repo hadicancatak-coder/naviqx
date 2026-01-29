@@ -91,7 +91,7 @@ export function SprintHeader({ sprint, taskStats, onComplete, onSettings }: Spri
       {/* Stats Row */}
       <div className="flex items-center gap-xl mt-lg pl-[60px]">
         <div className="flex-1 max-w-md">
-          <div className="flex items-center justify-between text-metadata mb-1">
+          <div className="flex items-center justify-between text-metadata mb-xs">
             <span className="text-muted-foreground">Progress</span>
             <span className="font-medium">{completionRate}%</span>
           </div>

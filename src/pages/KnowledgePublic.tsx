@@ -75,7 +75,8 @@ export default function KnowledgePublic() {
   const IconComponent = (LucideIcons as Record<string, unknown>)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] as React.ComponentType<{ className?: string }> || FileText;
 
   return (
-    <GlassBackground variant="full" className="!pb-0">
+    /* eslint-disable-next-line no-restricted-syntax -- reset padding for full-height layout */
+    <GlassBackground variant="full" className="pb-0">
       {/* Header */}
       <header className="border-b border-border glass-elevated mb-lg">
         <div className="max-w-4xl mx-auto px-lg py-md">

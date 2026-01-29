@@ -157,6 +157,7 @@ export default function CampaignReview() {
     };
 
     verify();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadCampaignDataFn is intentionally excluded to prevent re-runs
   }, [token, verifyToken, storedSession]);
 
   const loadCampaignData = async (entity: string, campaignId?: string) => {
