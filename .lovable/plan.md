@@ -1,115 +1,112 @@
 
-# Comprehensive ESLint Violation Fix Plan
 
-## Problem Summary
-The build keeps failing because there are **245 ESLint violations across 25+ files**. We've been fixing them one-at-a-time, which is why you keep seeing new errors after each fix.
+# Complete ESLint Batch Fix Plan
 
-## Root Cause
-The project enforces strict design system rules (semantic tokens instead of raw Tailwind classes), but many files were written before this enforcement. Each build failure reveals only the *first* problematic file, hiding the rest.
+## Why This Keeps Happening
 
-## Solution: Batch Fix All Violations
+**The Core Issue:** The project has **strict ESLint rules that block builds** when any file contains raw Tailwind classes. The build system processes files one-by-one and **fails on the first error it finds**. This means:
 
-### Phase 1: Critical Pages (Current Blockers)
-Fix the immediate build blockers:
+1. We fix `MfaSetup.tsx` → Build tries again → Fails on `Profile.tsx`
+2. We fix `Profile.tsx` → Build tries again → Fails on `Projects.tsx`
+3. And so on...
 
-| File | Issues |
-|------|--------|
-| `src/pages/MfaVerify.tsx` | 9 spacing/margin violations, 1 `any` type, 1 hook dependency |
-| `src/pages/LpPlanner.tsx` | 1 padding violation (needs eslint-disable) |
-
-### Phase 2: Core UI Components
-These affect the entire app:
-
-| File | Issues |
-|------|--------|
-| `src/components/AppSidebar.tsx` | 36 violations - gap, padding, spacing tokens |
-| `src/components/ui/sidebar.tsx` | 30 violations - padding, gap, margin, typography |
-| `src/components/ui/button.tsx` | 3 padding violations in size variants |
-| `src/components/ui/card.tsx` | 2 padding violations |
-| `src/components/layout/TopHeader.tsx` | 1 gap violation |
-| `src/components/layout/InternalPageFooter.tsx` | 1 padding violation |
-| `src/components/editor/GlobalBubbleMenu.tsx` | 22 violations - padding, gap, margin, any types |
-
-### Phase 3: High-Violation Pages
-
-| File | Issues |
-|------|--------|
-| `src/pages/Notifications.tsx` | 27 violations - any types, hook deps, spacing |
-| `src/pages/Tasks.tsx` | 27 violations - any types, hook deps, spacing |
-| `src/pages/Profile.tsx` | 16 violations - any type, spacing |
-| `src/pages/Sprints.tsx` | 12 violations - any type, spacing |
-| `src/pages/Projects.tsx` | 8 violations - gap, spacing |
-| `src/pages/CampaignsLog.tsx` | 9 violations - any types, padding |
-| `src/pages/KeywordIntel.tsx` | 6 violations - const, any, margin |
-| `src/pages/Knowledge.tsx` | 7 violations - gap, padding, margin |
-| `src/pages/TechStack.tsx` | 9 violations - gap, padding, margin, any |
-| `src/pages/KPIs.tsx` | 1 gap violation |
-| `src/pages/SearchPlanner.tsx` | 10 violations - any types, color |
-| `src/pages/UtmPlanner.tsx` | 4 gap violations |
-| `src/lib/taskPrefetch.ts` | 2 any type violations |
-
-## Token Mapping Reference
-These conversions will be applied:
-
-### Spacing Tokens
-```text
-gap-1/2/3    → gap-xs (8px)
-gap-4        → gap-md (16px)
-gap-6        → gap-lg (24px)
-gap-8        → gap-xl (32px)
-
-px-3/4       → px-sm/px-md
-py-3/4       → py-sm/py-md
-p-6          → p-lg
-
-space-y-6/8  → space-y-lg/space-y-xl
-mb-2/4       → mb-xs/mb-md
-mt-6/8       → mt-lg/mt-section
-```
-
-### Type Safety Fixes
-```typescript
-// Before
-catch (error: any) { ... }
-
-// After
-catch (error: unknown) {
-  const message = error instanceof Error ? error.message : "Unknown error";
-}
-```
-
-### Hook Dependency Fixes
-```typescript
-// Before
-useEffect(() => { checkSession(); }, []);
-
-// After (with useCallback)
-const checkSession = useCallback(async () => { ... }, [navigate]);
-useEffect(() => { checkSession(); }, [checkSession]);
-```
-
-## Implementation Approach
-1. Fix all files in parallel batches (not one-by-one)
-2. For UI components that need raw values for layout (like sidebar widths), use `eslint-disable-next-line` comments
-3. Run a final verification build to catch any stragglers
-
-## Expected Outcome
-- **0 ESLint errors** blocking builds
-- Clean, consistent design system usage across all files
-- Proper TypeScript types replacing all `any` usages
-- Correct React hook dependencies
+**The Solution:** Fix ALL remaining files in ONE batch, not one at a time.
 
 ---
 
-## Technical Details
+## Files Still Blocking Build
 
-### Files Requiring `eslint-disable` Exceptions
-Some layout-critical code legitimately needs raw values:
-- Sidebar collapsed/expanded states with conditional classes
-- Container resets like `!p-0`
-- Dynamic responsive breakpoints
+Based on my analysis, these 10 files still have violations:
 
-### Estimated Changes
-- ~25 files modified
-- ~245 violations resolved
-- ~15 `eslint-disable` comments for legitimate exceptions
+| File | Violations | Type |
+|------|------------|------|
+| `src/pages/Projects.tsx` | 8 | gap, space-y, padding, margin |
+| `src/pages/Notifications.tsx` | 27 | any types, hook deps, spacing |
+| `src/pages/Tasks.tsx` | 27 | any types, hook deps, spacing |
+| `src/pages/Sprints.tsx` | 12 | any type, spacing |
+| `src/pages/Knowledge.tsx` | 7 | gap, padding, margin |
+| `src/pages/TechStack.tsx` | 9 | gap, padding, margin, any |
+| `src/pages/CampaignsLog.tsx` | 9 | any types, padding |
+| `src/pages/KeywordIntel.tsx` | 6 | const, any, margin |
+
+---
+
+## What I'll Fix
+
+### Projects.tsx (8 errors)
+- Line 176: `gap-4` → `gap-md`
+- Line 202: `gap-2` → `gap-xs`
+- Line 269: `space-y-2` → `space-y-xs`
+- Line 271: `gap-2` → `gap-xs`
+- Line 302: `mr-2` → flex with `gap-xs`
+- Line 317: `pl-10` → `pl-lg` with eslint-disable
+- Line 351: `py-12` → `py-section`
+- Line 353: `mb-2` → `mb-xs`
+
+### Notifications.tsx (27 errors)
+- Replace all `any` types with proper interfaces
+- Wrap functions in `useCallback` for hook dependencies
+- Convert raw spacing: `px-12` → `px-lg`, `mt-1` → `mt-xs`, etc.
+
+### Tasks.tsx (27 errors)
+- Replace `any` types with Task interfaces
+- Fix `useMemo`/`useEffect` dependencies
+- Convert: `space-y-4` → `space-y-md`, `gap-2` → `gap-xs`, `mr-2` → flex gap
+
+### Sprints.tsx (12 errors)
+- Replace `any` type
+- Convert: `mt-1` → `mt-xs`, `mr-2` → flex gap, `gap-2 mt-2` → `gap-xs mt-xs`
+
+### Knowledge.tsx (7 errors)
+- Convert: `gap-4 p-4` → `gap-md p-md`, `p-3` → `p-sm`, `p-2` → `p-xs`
+
+### TechStack.tsx (9 errors)
+- Replace `any` type
+- Convert: `gap-4` → `gap-md`, `p-4` → `p-md`
+
+### CampaignsLog.tsx (9 errors)
+- Replace all `any` types
+- Convert padding values
+
+### KeywordIntel.tsx (6 errors)
+- Change `let` to `const`
+- Replace `any` types
+- Convert margin values
+
+---
+
+## Token Mapping Quick Reference
+
+```text
+Raw Value     → Semantic Token
+─────────────────────────────────
+gap-2         → gap-xs (8px)
+gap-4         → gap-md (16px)
+gap-6         → gap-lg (24px)
+
+p-2, p-3      → p-xs, p-sm
+p-4           → p-md
+p-6           → p-lg
+
+space-y-2     → space-y-xs
+space-y-4     → space-y-md
+
+mt-1, mb-1    → mt-xs, mb-xs
+mt-2, mb-2    → mb-xs (or mt-xs)
+mr-2          → Use gap-xs on parent flex instead
+
+py-12         → py-section
+px-10, pl-10  → px-lg, pl-lg
+```
+
+---
+
+## Execution Order
+
+I'll fix all 8 files in parallel batches:
+1. **Batch 1:** Projects.tsx, Sprints.tsx, Knowledge.tsx, TechStack.tsx
+2. **Batch 2:** Notifications.tsx, Tasks.tsx (largest files)
+3. **Batch 3:** CampaignsLog.tsx, KeywordIntel.tsx
+
+This ensures zero remaining violations after completion.
+
