@@ -20,6 +20,34 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+// Type definitions
+interface TimelinePhase {
+  id: string;
+  start_date: string;
+  end_date: string;
+  phase_name: string;
+  color?: string;
+  description?: string;
+  progress?: number;
+  startDate: Date;
+  endDate: Date;
+}
+
+interface MonthMarker {
+  date: Date;
+  position: number;
+}
+
+interface AssigneeWithProfile {
+  id: string;
+  user_id: string;
+  profiles: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  } | null;
+}
+
 const phaseColors: Record<string, { bg: string; border: string; text: string; glass: string }> = {
   primary: { bg: "bg-primary/20", border: "border-primary", text: "text-primary", glass: "bg-primary/10" },
   success: { bg: "bg-success/20", border: "border-success", text: "text-success-text", glass: "bg-success/10" },
@@ -179,6 +207,7 @@ export default function ProjectsPublic() {
         .eq("id", project.id)
         .then(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once per project.id, not on click_count changes
   }, [project?.id]);
 
   // Roadmap calculations
@@ -187,7 +216,16 @@ export default function ProjectsPublic() {
       return { minDate: new Date(), maxDate: new Date(), totalDays: 1, today: new Date(), phases: [], monthMarkers: [] };
     }
 
-    const dates = timelines.flatMap((t: any) => [parseISO(t.start_date), parseISO(t.end_date)]);
+    interface TimelineItem {
+      id: string;
+      start_date: string;
+      end_date: string;
+      phase_name: string;
+      color?: string;
+      description?: string;
+      progress?: number;
+    }
+    const dates = timelines.flatMap((t: TimelineItem) => [parseISO(t.start_date), parseISO(t.end_date)]);
     const min = startOfDay(new Date(Math.min(...dates.map((d) => d.getTime()))));
     const max = startOfDay(new Date(Math.max(...dates.map((d) => d.getTime()))));
     const paddedMin = addDays(min, -7);
@@ -208,7 +246,7 @@ export default function ProjectsPublic() {
       maxDate: paddedMax,
       totalDays: total,
       today: startOfDay(new Date()),
-      phases: timelines.map((t: any) => ({
+      phases: timelines.map((t: TimelineItem) => ({
         ...t,
         startDate: parseISO(t.start_date),
         endDate: parseISO(t.end_date),
@@ -225,7 +263,7 @@ export default function ProjectsPublic() {
   if (isLoading) {
     return (
       <GlassBackground variant="centered">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-md">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
           <p className="text-body-sm text-muted-foreground">Loading project...</p>
         </div>
@@ -238,7 +276,7 @@ export default function ProjectsPublic() {
       <GlassBackground variant="centered">
         <div className="liquid-glass-elevated p-lg text-center max-w-md w-full rounded-2xl">
           <FolderKanban className="h-16 w-16 text-muted-foreground mx-auto mb-md" />
-          <h1 className="text-heading-lg font-semibold text-foreground mb-2">Project Not Found</h1>
+          <h1 className="text-heading-lg font-semibold text-foreground mb-sm">Project Not Found</h1>
           <p className="text-muted-foreground">This project doesn't exist or is no longer shared.</p>
         </div>
       </GlassBackground>
@@ -247,7 +285,7 @@ export default function ProjectsPublic() {
 
   const iconName = project.icon || "folder-kanban";
   const IconComponent =
-    (LucideIcons as any)[iconName.split("-").map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join("")] ||
+    (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconName.split("-").map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join("")] ||
     LucideIcons.FolderKanban;
 
   const statusInfo = statusLabels[project.status] || statusLabels.planning;
@@ -256,9 +294,9 @@ export default function ProjectsPublic() {
     <GlassBackground variant="full">
       {/* Header */}
       <header className="border-b border-border/50 liquid-glass sticky top-0 z-sticky">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+        <div className="max-w-5xl mx-auto px-lg py-md">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-muted-foreground text-body-sm">
+            <div className="flex items-center gap-sm text-muted-foreground text-body-sm">
               <FolderKanban className="h-4 w-4" />
               <span>Project Roadmap</span>
             </div>
@@ -270,11 +308,11 @@ export default function ProjectsPublic() {
       </header>
 
       {/* Content */}
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-lg">
+      <main className="max-w-5xl mx-auto px-lg py-xl space-y-lg">
         {/* Title Section - Premium Header */}
         <div className="liquid-glass-elevated rounded-2xl p-lg">
           <div className="flex items-start gap-md">
-            <div className="p-4 bg-primary/10 rounded-xl shrink-0">
+            <div className="p-md bg-primary/10 rounded-xl shrink-0">
               <IconComponent className="h-10 w-10 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
@@ -283,7 +321,7 @@ export default function ProjectsPublic() {
                 <Badge className={cn("text-metadata", statusInfo.className)}>{statusInfo.label}</Badge>
               </div>
               {project.due_date && (
-                <p className="text-body-sm text-muted-foreground mt-2">
+                <p className="text-body-sm text-muted-foreground mt-sm">
                   Due {format(new Date(project.due_date), "MMMM d, yyyy")}
                 </p>
               )}
@@ -294,7 +332,7 @@ export default function ProjectsPublic() {
         {/* Summary Metrics */}
         {phases.length > 0 && (
           <PublicRoadmapSummary
-            phases={phases.map((p: any) => ({ ...p, progress: getPhaseProgress(p.id, p.progress).calculatedProgress }))}
+            phases={phases.map((p: TimelinePhase) => ({ ...p, progress: getPhaseProgress(p.id, p.progress).calculatedProgress }))}
             milestones={milestones}
             projectDueDate={project.due_date}
           />
@@ -302,7 +340,7 @@ export default function ProjectsPublic() {
 
         {/* Visual Roadmap Timeline */}
         <div className="space-y-md">
-          <h2 className="text-heading-sm font-semibold text-foreground flex items-center gap-2">
+          <h2 className="text-heading-sm font-semibold text-foreground flex items-center gap-sm">
             <span>Timeline</span>
             {phases.length > 0 && (
               <span className="text-metadata text-muted-foreground font-normal">
@@ -312,15 +350,15 @@ export default function ProjectsPublic() {
           </h2>
 
           {phases.length === 0 ? (
-            <div className="liquid-glass-elevated rounded-xl text-center py-12">
-              <FolderKanban className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <div className="liquid-glass-elevated rounded-xl text-center py-xl">
+              <FolderKanban className="h-12 w-12 text-muted-foreground mx-auto mb-md" />
               <p className="text-body text-muted-foreground">No roadmap phases defined yet</p>
             </div>
           ) : (
             <div className="liquid-glass rounded-xl p-md overflow-x-auto">
               {/* Month markers */}
-              <div className="relative h-8 mb-3 border-b border-border/50">
-                {monthMarkers.map((marker: any, idx: number) => (
+              <div className="relative h-8 mb-sm border-b border-border/50">
+                {monthMarkers.map((marker: MonthMarker, idx: number) => (
                   <div
                     key={idx}
                     className="absolute top-0 text-metadata font-medium text-muted-foreground"
@@ -339,15 +377,15 @@ export default function ProjectsPublic() {
                     className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-destructive via-destructive to-transparent z-10"
                     style={{ left: `${todayPosition}%` }}
                   >
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-sm py-xs bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
                       Today
                     </div>
                   </div>
                 )}
 
                 {/* Phase bars */}
-                <div className="space-y-3 pt-2">
-                  {phases.map((phase: any) => {
+                <div className="space-y-sm pt-sm">
+                  {phases.map((phase: TimelinePhase) => {
                     const colors = phaseColors[phase.color] || phaseColors.primary;
                     const left = getPosition(phase.startDate);
                     const width = getWidth(phase.startDate, phase.endDate);
@@ -370,11 +408,11 @@ export default function ProjectsPublic() {
                               )}
                               style={{ left: `${left}%`, width: `${width}%`, minWidth: "100px" }}
                             >
-                              <div className="h-full px-3 py-2 flex flex-col justify-between overflow-hidden">
+                              <div className="h-full px-sm py-xs flex flex-col justify-between overflow-hidden">
                                 <span className="text-body-sm font-semibold truncate !text-foreground">
                                   {phase.phase_name}
                                 </span>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-sm">
                                   <Progress value={calculatedProgress} className="h-1.5 flex-1" />
                                   <span className="text-metadata font-medium !text-foreground">
                                     {calculatedProgress}%
@@ -384,7 +422,7 @@ export default function ProjectsPublic() {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="liquid-glass-dropdown max-w-xs">
-                            <div className="space-y-1.5 p-1">
+                            <div className="space-y-xs p-xs">
                               <p className="font-semibold text-foreground">{phase.phase_name}</p>
                               <p className="text-metadata text-muted-foreground">
                                 {format(phase.startDate, "MMM d")} – {format(phase.endDate, "MMM d, yyyy")}
@@ -409,11 +447,11 @@ export default function ProjectsPublic() {
         {phases.length > 0 && (
           <div className="space-y-md">
             <h2 className="text-heading-sm font-semibold text-foreground">Phase Details</h2>
-            <p className="text-body-sm text-muted-foreground -mt-2">
+            <p className="text-body-sm text-muted-foreground -mt-sm">
               Click any phase to view milestones and details
             </p>
-            <div className="space-y-3">
-              {phases.map((phase: any) => {
+            <div className="space-y-sm">
+              {phases.map((phase: TimelinePhase) => {
                 const colors = phaseColors[phase.color] || phaseColors.primary;
                 const { calculatedProgress } = getPhaseProgress(phase.id, phase.progress);
                 return (
@@ -435,7 +473,7 @@ export default function ProjectsPublic() {
           <CollapsibleTrigger className="w-full">
             <div className="liquid-glass-elevated rounded-xl px-md py-sm flex items-center justify-between hover:bg-card-hover transition-smooth cursor-pointer">
               <h2 className="text-heading-sm font-semibold text-foreground">Project Details</h2>
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-sm text-muted-foreground">
                 <span className="text-body-sm">
                   {showDetails ? "Hide" : "Show"} details
                 </span>
@@ -448,11 +486,11 @@ export default function ProjectsPublic() {
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="mt-3 space-y-md">
+            <div className="mt-sm space-y-md">
               {/* Purpose & Outcomes Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
                 {project.purpose && (
-                  <div className="liquid-glass-elevated rounded-xl p-md space-y-2">
+                  <div className="liquid-glass-elevated rounded-xl p-md space-y-sm">
                     <h3 className="text-body-sm font-semibold text-muted-foreground uppercase tracking-wide">
                       Purpose
                     </h3>
@@ -460,7 +498,7 @@ export default function ProjectsPublic() {
                   </div>
                 )}
                 {project.outcomes && (
-                  <div className="liquid-glass-elevated rounded-xl p-md space-y-2">
+                  <div className="liquid-glass-elevated rounded-xl p-md space-y-sm">
                     <h3 className="text-body-sm font-semibold text-muted-foreground uppercase tracking-wide">
                       Expected Outcomes
                     </h3>
@@ -471,16 +509,16 @@ export default function ProjectsPublic() {
 
               {/* Stakeholders */}
               {assignees && assignees.length > 0 && (
-                <div className="liquid-glass-elevated rounded-xl p-md space-y-3">
-                  <h3 className="text-body-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <div className="liquid-glass-elevated rounded-xl p-md space-y-sm">
+                  <h3 className="text-body-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-sm">
                     <Users className="h-4 w-4" />
                     Stakeholders
                   </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {assignees.map((a: any) => (
+                  <div className="flex flex-wrap gap-sm">
+                    {assignees.map((a: AssigneeWithProfile) => (
                       <div 
                         key={a.id} 
-                        className="px-3 py-1.5 bg-muted rounded-full text-body-sm font-medium text-foreground"
+                        className="px-sm py-xs bg-muted rounded-full text-body-sm font-medium text-foreground"
                       >
                         {a.profiles?.name || a.profiles?.email}
                       </div>
@@ -491,7 +529,7 @@ export default function ProjectsPublic() {
 
               {/* Description */}
               {project.description && (
-                <div className="liquid-glass-elevated rounded-xl p-md space-y-2">
+                <div className="liquid-glass-elevated rounded-xl p-md space-y-sm">
                   <h3 className="text-body-sm font-semibold text-muted-foreground uppercase tracking-wide">
                     Description
                   </h3>
