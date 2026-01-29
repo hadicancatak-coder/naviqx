@@ -77,7 +77,7 @@ export default function KnowledgePublic() {
     <GlassBackground variant="full" className="pb-0">
       {/* Header */}
       <header className="border-b border-border glass-elevated mb-lg">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-4xl mx-auto px-lg py-md">
           <div className="flex items-center gap-2 text-muted-foreground text-body-sm">
             <BookOpen className="h-4 w-4" />
             <span>Knowledge Base</span>
@@ -86,7 +86,7 @@ export default function KnowledgePublic() {
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-lg py-xl">
         <div className="flex items-start gap-md mb-lg">
           <div className="p-3 bg-primary/10 rounded-xl">
             <IconComponent className="h-8 w-8 text-primary" />

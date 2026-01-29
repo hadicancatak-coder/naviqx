@@ -92,6 +92,7 @@ const SectionCard = ({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
+          {/* eslint-disable-next-line no-restricted-syntax -- reset padding for collapsible content */}
           <CardContent className="!pt-0 space-y-lg">
             {section.description && (
               <p className="text-body-sm text-muted-foreground">{section.description}</p>
