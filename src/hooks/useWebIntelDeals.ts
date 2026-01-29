@@ -85,11 +85,19 @@ export const useWebIntelDeals = () => {
 
   // Create deal
   const createDeal = useMutation({
-    mutationFn: async (deal: Omit<WebIntelDeal, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    mutationFn: async (deal: { name: string; website?: string; app_name?: string; description?: string; notes?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('web_intel_deals')
-        .insert({ ...deal, created_by: user?.id, status: deal.status || 'Active' })
+        .insert({ 
+          name: deal.name,
+          website: deal.website || null,
+          app_name: deal.app_name || null,
+          description: deal.description || null,
+          notes: deal.notes || null,
+          created_by: user?.id, 
+          status: 'Active' 
+        })
         .select()
         .single();
       
@@ -100,8 +108,9 @@ export const useWebIntelDeals = () => {
       queryClient.invalidateQueries({ queryKey: ['web-intel-deals'] });
       toast.success("Deal created successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create deal");
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to create deal";
+      toast.error(message);
     },
   });
 
@@ -122,8 +131,9 @@ export const useWebIntelDeals = () => {
       queryClient.invalidateQueries({ queryKey: ['web-intel-deals'] });
       toast.success("Deal updated successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update deal");
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to update deal";
+      toast.error(message);
     },
   });
 
@@ -141,8 +151,9 @@ export const useWebIntelDeals = () => {
       queryClient.invalidateQueries({ queryKey: ['web-intel-deals'] });
       toast.success("Deal deleted successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete deal");
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to delete deal";
+      toast.error(message);
     },
   });
 
@@ -162,8 +173,9 @@ export const useWebIntelDeals = () => {
       queryClient.invalidateQueries({ queryKey: ['deal-campaigns'] });
       toast.success("Campaign added to deal");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add campaign to deal");
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to add campaign to deal";
+      toast.error(message);
     },
   });
 
@@ -183,8 +195,9 @@ export const useWebIntelDeals = () => {
       queryClient.invalidateQueries({ queryKey: ['deal-utm-links'] });
       toast.success("UTM link added to deal");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add UTM link to deal");
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to add UTM link to deal";
+      toast.error(message);
     },
   });
 
