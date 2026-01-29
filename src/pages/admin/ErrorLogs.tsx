@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { errorLogger } from "@/lib/errorLogger";
+import { useEffect, useState, useCallback } from "react";
+import { errorLogger, type ErrorFilters } from "@/lib/errorLogger";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,29 +34,29 @@ export default function ErrorLogs() {
   const [resolvedFilter, setResolvedFilter] = useState<string>("unresolved");
   const [selectedError, setSelectedError] = useState<ErrorLog | null>(null);
 
-  useEffect(() => {
-    fetchErrors();
-  }, [severityFilter, typeFilter, resolvedFilter]);
-
-  const fetchErrors = async () => {
+  const fetchErrors = useCallback(async () => {
     setLoading(true);
     try {
-      const filters: any = {};
+      const filters: ErrorFilters = {};
       
-      if (severityFilter !== 'all') filters.severity = severityFilter;
-      if (typeFilter !== 'all') filters.type = typeFilter;
+      if (severityFilter !== 'all') filters.severity = severityFilter as ErrorFilters['severity'];
+      if (typeFilter !== 'all') filters.type = typeFilter as ErrorFilters['type'];
       if (resolvedFilter === 'resolved') filters.resolved = true;
       if (resolvedFilter === 'unresolved') filters.resolved = false;
 
       const data = await errorLogger.getErrors(filters);
-      setErrors(data as any);
+      setErrors(data as ErrorLog[]);
     } catch (error) {
       logger.error('Error fetching error logs:', error);
       toast.error('Failed to fetch error logs');
     } finally {
       setLoading(false);
     }
-  };
+  }, [severityFilter, typeFilter, resolvedFilter]);
+
+  useEffect(() => {
+    fetchErrors();
+  }, [fetchErrors]);
 
   const handleResolve = async (errorId: string) => {
     try {
@@ -86,12 +86,12 @@ export default function ErrorLogs() {
   };
 
   const getSeverityBadge = (severity: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, "destructive" | "default" | "secondary" | "outline"> = {
       critical: 'destructive',
       warning: 'default',
       info: 'secondary',
     };
-    return <Badge variant={variants[severity]}>{severity}</Badge>;
+    return <Badge variant={variants[severity] || 'default'}>{severity}</Badge>;
   };
 
   const [timeRange, setTimeRange] = useState<string>("all");
