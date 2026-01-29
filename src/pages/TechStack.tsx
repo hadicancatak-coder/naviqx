@@ -195,7 +195,7 @@ export default function TechStack() {
         title="Tech Stack"
         description="Services, tools, and technologies we use"
         actions={
-          <Button onClick={() => handleCreatePage(null)} className="rounded-full px-6 h-10 gap-2">
+          <Button onClick={() => handleCreatePage(null)} className="rounded-full px-lg h-10 gap-xs">
             <Plus className="h-4 w-4" />
             Add Tech
           </Button>
@@ -241,14 +241,14 @@ export default function TechStack() {
             />
           ) : pages && pages.length > 0 ? (
             <div className="p-lg">
-              <h2 className="text-heading-lg font-semibold text-foreground mb-2">
+              <h2 className="text-heading-lg font-semibold text-foreground mb-xs">
                 Our Tech Stack
               </h2>
               <p className="text-muted-foreground mb-lg">
                 Browse the technologies, services, and tools we use. Select an item to learn more.
               </p>
               
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 {pageTree.map((page) => {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const IconComponent = (LucideIcons as any)[
@@ -316,7 +316,7 @@ export default function TechStack() {
             <AlertDialogDescription>
               Are you sure you want to delete "{pageToDelete?.title}"? This action cannot be undone.
               {pageToDelete?.children && pageToDelete.children.length > 0 && (
-                <span className="block mt-2 text-warning">
+                <span className="block mt-xs text-warning">
                   Warning: This item has {pageToDelete.children.length} sub-item(s) that will become root items.
                 </span>
               )}
