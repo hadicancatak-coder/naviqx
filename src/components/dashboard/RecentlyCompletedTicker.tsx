@@ -12,6 +12,22 @@ interface CompletedTask {
   completed_by: string | null;
 }
 
+// Raw row shape from Supabase
+interface TaskAssigneeProfile {
+  name: string | null;
+}
+
+interface TaskAssigneeRow {
+  profiles: TaskAssigneeProfile | null;
+}
+
+interface TaskRow {
+  id: string;
+  title: string;
+  updated_at: string;
+  task_assignees: TaskAssigneeRow[];
+}
+
 export function RecentlyCompletedTicker() {
   const navigate = useNavigate();
   const [isPaused, setIsPaused] = useState(false);
@@ -34,13 +50,15 @@ export function RecentlyCompletedTicker() {
 
       if (error) throw error;
 
-      // Transform data to expected format
-      return (completedTasks || []).map(task => ({
+      // Type assertion at data boundary, then narrow
+      const rows = (completedTasks ?? []) as unknown as TaskRow[];
+      
+      return rows.map((task): CompletedTask => ({
         id: task.id,
         title: task.title,
         updated_at: task.updated_at,
-        completed_by: (task.task_assignees as any)?.[0]?.profiles?.name || null,
-      })) as CompletedTask[];
+        completed_by: task.task_assignees?.[0]?.profiles?.name ?? null,
+      }));
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - reduces dashboard load
     gcTime: 5 * 60 * 1000,

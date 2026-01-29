@@ -4,6 +4,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { TechStackPage } from "@/hooks/useTechStackPages";
 import * as LucideIcons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+// Type-safe icon resolver
+type LucideIconRecord = Record<string, LucideIcon>;
+
+function resolveIcon(iconName: string): LucideIcon {
+  const pascalCase = iconName
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  const icons = LucideIcons as unknown as LucideIconRecord;
+  return icons[pascalCase] || Server;
+}
 
 interface TechStackTreeProps {
   pages: TechStackPage[];
@@ -29,7 +42,7 @@ function TreeNode({ page, level, selectedPageId, onSelectPage, onCreatePage, isA
 
   // Dynamically get icon from lucide-react
   const iconName = page.icon || 'server';
-  const IconComponent = (LucideIcons as any)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] || Server;
+  const IconComponent = resolveIcon(iconName);
 
   return (
     <div>

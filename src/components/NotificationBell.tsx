@@ -9,11 +9,41 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 
+// Typed notification payload
+interface NotificationPayload {
+  task_id?: string;
+  task_title?: string;
+  campaign_id?: string;
+  campaign_title?: string;
+  comment_id?: string;
+  comment_preview?: string;
+  old_status?: string;
+  new_status?: string;
+  new_priority?: string;
+  ad_name?: string;
+  title?: string;
+  message?: string;
+}
+
+// Notification from database
+interface NotificationRow {
+  id: string;
+  type: string;
+  created_at: string;
+  read_at: string | null;
+  payload_json: NotificationPayload | null;
+}
+
+// Extended notification with optional computed fields
+interface EnrichedNotification extends NotificationRow {
+  commentPreview?: string;
+}
+
 export function NotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { openTaskDrawer } = useTaskDrawer();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<EnrichedNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -47,15 +77,17 @@ export function NotificationBell() {
       .order("created_at", { ascending: false })
       .limit(5);
 
-    // Fast path: set notifications immediately, enrich async for comment types only
-    const notifications = data || [];
-    setNotifications(notifications);
-    setUnreadCount(notifications.length);
+    // Type assertion at the boundary
+    const rawNotifications = (data ?? []) as unknown as NotificationRow[];
+    const enriched: EnrichedNotification[] = rawNotifications.map((n) => ({ ...n }));
+    
+    setNotifications(enriched);
+    setUnreadCount(enriched.length);
 
     // Only enrich comment_mention types (batched)
-    const commentIds = notifications
-      .filter(n => n.type === "comment_mention" && (n.payload_json as any)?.comment_id)
-      .map(n => (n.payload_json as any).comment_id);
+    const commentIds = enriched
+      .filter((n) => n.type === "comment_mention" && n.payload_json?.comment_id)
+      .map((n) => n.payload_json!.comment_id as string);
 
     if (commentIds.length > 0) {
       const { data: comments } = await supabase
@@ -64,14 +96,16 @@ export function NotificationBell() {
         .in("id", commentIds);
 
       if (comments) {
-        const commentMap = new Map(comments.map(c => [c.id, c.body?.substring(0, 60) || ""]));
-        setNotifications(prev => prev.map(n => {
-          const commentId = (n.payload_json as any)?.comment_id;
-          if (n.type === "comment_mention" && commentId && commentMap.has(commentId)) {
-            return { ...n, commentPreview: commentMap.get(commentId) };
-          }
-          return n;
-        }));
+        const commentMap = new Map(comments.map((c) => [c.id, c.body?.substring(0, 60) || ""]));
+        setNotifications((prev) =>
+          prev.map((n) => {
+            const commentId = n.payload_json?.comment_id;
+            if (n.type === "comment_mention" && commentId && commentMap.has(commentId)) {
+              return { ...n, commentPreview: commentMap.get(commentId) };
+            }
+            return n;
+          })
+        );
       }
     }
   };
@@ -86,7 +120,7 @@ export function NotificationBell() {
     setUnreadCount(0);
   };
 
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = async (notification: EnrichedNotification) => {
     // Mark as read first
     await supabase
       .from("notifications")
@@ -136,7 +170,7 @@ export function NotificationBell() {
     }
   };
 
-  const getNotificationMessage = (notification: any) => {
+  const getNotificationMessage = (notification: EnrichedNotification) => {
     const payload = notification.payload_json || {};
     const taskTitle = payload.task_title || payload.campaign_title || "";
     

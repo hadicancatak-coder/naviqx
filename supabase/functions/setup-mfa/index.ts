@@ -52,10 +52,12 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body if present
-    let verifyOtp;
+    let verifyOtp: string | undefined;
     try {
-      const body = await req.json();
-      verifyOtp = body.verifyOtp;
+      const body: unknown = await req.json();
+      if (body && typeof body === 'object' && 'verifyOtp' in body) {
+        verifyOtp = (body as { verifyOtp?: unknown }).verifyOtp as string | undefined;
+      }
       
       // Validate OTP format if provided
       if (verifyOtp !== undefined) {
@@ -78,13 +80,13 @@ Deno.serve(async (req) => {
     }
 
     // Get or create secret from secure table
-    let { data: mfaSecrets } = await supabase
+    const { data: mfaSecrets } = await supabase
       .from('user_mfa_secrets')
       .select('mfa_secret')
       .eq('user_id', user.id)
       .single();
 
-    let secret = mfaSecrets?.mfa_secret;
+    let secret = mfaSecrets?.mfa_secret as string | undefined;
     
     if (!secret) {
       // Generate new secret (base32, 20 bytes = 160 bits)
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
       }
 
       // Generate 10 backup codes
-      const backupCodes = [];
+      const backupCodes: string[] = [];
       for (let i = 0; i < 10; i++) {
         const code = Math.random().toString(36).substring(2, 10).toUpperCase();
         backupCodes.push(code);
@@ -185,10 +187,11 @@ Deno.serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in setup-mfa:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

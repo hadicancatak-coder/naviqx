@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { ChevronRight, ChevronDown, FileText, FolderOpen, Folder, Plus } from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { KnowledgePage } from "@/hooks/useKnowledgePages";
 import * as LucideIcons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+// Type-safe icon resolver
+type LucideIconRecord = Record<string, LucideIcon>;
+
+function resolveIcon(iconName: string): LucideIcon {
+  const pascalCase = iconName
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  const icons = LucideIcons as unknown as LucideIconRecord;
+  return icons[pascalCase] || FileText;
+}
 
 interface KnowledgeTreeProps {
   pages: KnowledgePage[];
@@ -29,7 +42,7 @@ function TreeNode({ page, level, selectedPageId, onSelectPage, onCreatePage, isA
 
   // Dynamically get icon from lucide-react
   const iconName = page.icon || 'file-text';
-  const IconComponent = (LucideIcons as any)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] || FileText;
+  const IconComponent = resolveIcon(iconName);
 
   return (
     <div>
