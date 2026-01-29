@@ -52,12 +52,12 @@ export default function KPIsManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-section-title">KPI Management</h2>
-          <p className="text-body text-muted-foreground mt-1">
+          <p className="text-body text-muted-foreground mt-xs">
             Create, assign, and track team KPIs
           </p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-sm" />
           Create KPI
         </Button>
       </div>
@@ -93,7 +93,7 @@ export default function KPIsManagement() {
                     <TableCell>{kpi.target}</TableCell>
                     <TableCell>
                       {kpi.deadline ? (
-                        <div className="flex items-center gap-1 text-body-sm">
+                        <div className="flex items-center gap-xs text-body-sm">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
                           {format(new Date(kpi.deadline), 'MMM d, yyyy')}
                         </div>
@@ -102,19 +102,19 @@ export default function KPIsManagement() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-xs">
                         <Target className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{kpi.targets?.length || 0}</span>
+                        <span className="text-body-sm">{kpi.targets?.length || 0}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-xs">
                         <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{kpi.assignments?.length || 0}</span>
+                        <span className="text-body-sm">{kpi.assignments?.length || 0}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-xs">
                         <Button
                           variant="ghost"
                           size="sm"

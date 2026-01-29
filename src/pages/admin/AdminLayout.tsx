@@ -22,40 +22,40 @@ export default function AdminLayout() {
       />
 
       <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <TabsList className="flex overflow-x-auto w-full lg:w-auto bg-muted/50 gap-1 pb-1 scrollbar-none">
-          <TabsTrigger value="overview" className="gap-2">
+        <TabsList className="flex overflow-x-auto w-full lg:w-auto bg-muted/50 gap-xs pb-xs scrollbar-none">
+          <TabsTrigger value="overview" className="gap-sm">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="users" className="gap-2">
+          <TabsTrigger value="users" className="gap-sm">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Users</span>
           </TabsTrigger>
-          <TabsTrigger value="sprints" className="gap-2">
+          <TabsTrigger value="sprints" className="gap-sm">
             <Zap className="h-4 w-4" />
             <span className="hidden sm:inline">Sprints</span>
           </TabsTrigger>
-          <TabsTrigger value="kpis" className="gap-2">
+          <TabsTrigger value="kpis" className="gap-sm">
             <Target className="h-4 w-4" />
             <span className="hidden sm:inline">KPIs</span>
           </TabsTrigger>
-          <TabsTrigger value="config" className="gap-2">
+          <TabsTrigger value="config" className="gap-sm">
             <Database className="h-4 w-4" />
             <span className="hidden sm:inline">Config</span>
           </TabsTrigger>
-          <TabsTrigger value="external-links" className="gap-2">
+          <TabsTrigger value="external-links" className="gap-sm">
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">Links</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
+          <TabsTrigger value="security" className="gap-sm">
             <ShieldCheck className="h-4 w-4" />
             <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2">
+          <TabsTrigger value="logs" className="gap-sm">
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Logs</span>
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2">
+          <TabsTrigger value="settings" className="gap-sm">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
           </TabsTrigger>

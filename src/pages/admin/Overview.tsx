@@ -71,7 +71,7 @@ export default function Overview() {
     <div className="space-y-lg">
       <div>
         <h2 className="text-heading-md font-semibold">System Overview</h2>
-        <p className="text-body-sm text-muted-foreground mt-1">
+        <p className="text-body-sm text-muted-foreground mt-xs">
           Monitor system health and key metrics
         </p>
       </div>
@@ -91,7 +91,7 @@ export default function Overview() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-xs">
                     <p className="text-body-sm text-muted-foreground">{card.title}</p>
-                    <p className="text-3xl font-bold text-foreground">{card.value}</p>
+                    <p className="text-heading-lg font-bold text-foreground">{card.value}</p>
                     <p className="text-metadata text-muted-foreground">{card.subtitle}</p>
                   </div>
                   <div className={`p-sm rounded-xl ${card.bgColor}`}>
@@ -100,7 +100,7 @@ export default function Overview() {
                 </div>
                 <div className="mt-md flex items-center text-metadata text-primary opacity-0 group-hover:opacity-100 transition-smooth">
                   <span>View details</span>
-                  <ArrowRight className="h-3 w-3 ml-1" />
+                  <ArrowRight className="h-3 w-3 ml-xs" />
                 </div>
               </CardContent>
             </Card>

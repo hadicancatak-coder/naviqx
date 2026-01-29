@@ -225,15 +225,15 @@ export function TeamTasksOverview() {
                     </div>
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-1">
-                  <div className="ml-12 space-y-1 pb-2">
+                <CollapsibleContent className="mt-xs">
+                  <div className="ml-xl space-y-xs pb-sm">
                     {user.tasks.slice(0, 8).map(task => {
                       const deadline = getDeadlineInfo(task.due_at);
                       
                       return (
                         <div
                           key={task.id}
-                          className="flex items-center gap-2 py-1.5 px-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-smooth text-body-sm"
+                          className="flex items-center gap-sm py-xs px-sm rounded-md bg-muted/30 hover:bg-muted/50 transition-smooth text-body-sm"
                         >
                           {deadline.isOverdue && (
                             <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
@@ -241,7 +241,7 @@ export function TeamTasksOverview() {
                           <span className="flex-1 truncate text-foreground">
                             {task.title}
                           </span>
-                          <span className={cn("text-metadata shrink-0 flex items-center gap-1", deadline.className)}>
+                          <span className={cn("text-metadata shrink-0 flex items-center gap-xs", deadline.className)}>
                             <Clock className="h-3 w-3" />
                             {deadline.label}
                           </span>
@@ -249,7 +249,7 @@ export function TeamTasksOverview() {
                       );
                     })}
                     {user.tasks.length > 8 && (
-                      <p className="text-metadata text-muted-foreground pl-3">
+                      <p className="text-metadata text-muted-foreground pl-sm">
                         + {user.tasks.length - 8} more tasks
                       </p>
                     )}

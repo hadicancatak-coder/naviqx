@@ -111,8 +111,9 @@ export default function UsersManagement() {
       })) || [];
 
       setUsers(usersWithData);
-    } catch (error: any) {
-      toast.error('Failed to fetch users: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to fetch users: ' + message);
     } finally {
       setLoading(false);
     }
@@ -135,8 +136,9 @@ export default function UsersManagement() {
 
       toast.success('Role updated successfully');
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Failed to update role: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to update role: ' + message);
     }
   };
 
@@ -144,6 +146,7 @@ export default function UsersManagement() {
     try {
       const { error } = await supabase
         .from('profiles')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- teams column type is narrower than string[]
         .update({ teams: teams as any })
         .eq('user_id', userId);
 
@@ -157,8 +160,9 @@ export default function UsersManagement() {
 
       toast.success('Teams updated successfully');
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Failed to update teams: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to update teams: ' + message);
     }
   };
 
@@ -179,8 +183,9 @@ export default function UsersManagement() {
 
       toast.success('Working days updated');
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Failed to update working days: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to update working days: ' + message);
     }
   };
 
@@ -199,8 +204,9 @@ export default function UsersManagement() {
 
       toast.success('User deleted successfully');
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Failed to delete user: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to delete user: ' + message);
     }
   };
 
@@ -218,8 +224,9 @@ export default function UsersManagement() {
       setMfaResetDialogOpen(false);
       setMfaResetUser(null);
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Failed to reset MFA: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to reset MFA: ' + message);
     }
   };
 
@@ -244,8 +251,9 @@ export default function UsersManagement() {
         setPasswordResetDialogOpen(false);
         setPasswordResetUser(null);
       }
-    } catch (error: any) {
-      toast.error('Failed to reset password: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to reset password: ' + message);
     }
   };
 
@@ -284,8 +292,9 @@ export default function UsersManagement() {
       setSelectedUsers([]);
       setBulkAction("");
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Bulk action failed: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Bulk action failed: ' + message);
     }
   };
 
@@ -297,8 +306,9 @@ export default function UsersManagement() {
       setBulkAction("");
       setDeleteDialogOpen(false);
       fetchUsers();
-    } catch (error: any) {
-      toast.error('Bulk delete failed: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Bulk delete failed: ' + message);
     }
   };
 
@@ -411,7 +421,7 @@ export default function UsersManagement() {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-sm">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={user.avatar_url || undefined} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>

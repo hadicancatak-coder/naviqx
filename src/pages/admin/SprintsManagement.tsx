@@ -123,7 +123,7 @@ export default function SprintsManagement() {
           <p className="text-body-sm text-muted-foreground">Manage iteration cycles for your team</p>
         </div>
         <Button onClick={openCreateDialog}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-sm" />
           New Sprint
         </Button>
       </div>
@@ -186,7 +186,7 @@ export default function SprintsManagement() {
       {sprints.length === 0 && (
         <Card className="p-xl text-center">
           <Zap className="h-12 w-12 mx-auto text-muted-foreground/50 mb-md" />
-          <h3 className="text-heading-sm font-medium mb-2">No sprints yet</h3>
+          <h3 className="text-heading-sm font-medium mb-sm">No sprints yet</h3>
           <p className="text-body-sm text-muted-foreground mb-md">
             Create your first sprint to organize work into iterations
           </p>
@@ -324,7 +324,7 @@ function SprintCard({
             <Icon className="h-4 w-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-sm">
               <h4 className="font-semibold">{sprint.name}</h4>
               <Badge variant="outline" className={cn("text-metadata", config.color)}>
                 {config.label}
@@ -353,7 +353,7 @@ function SprintCard({
       
       {stats.total > 0 && (
         <div className="mt-md">
-          <div className="flex items-center justify-between text-metadata mb-1">
+          <div className="flex items-center justify-between text-metadata mb-xs">
             <span className="text-muted-foreground">Progress</span>
             <span>{stats.completed}/{stats.total} tasks</span>
           </div>

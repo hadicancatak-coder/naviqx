@@ -180,12 +180,12 @@ export function MultiAssigneeSelector({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-xs">
       {assignees.map((assignee) => (
         <Badge
           key={assignee.id}
           variant="secondary"
-          className="gap-1 pr-1 pl-2 py-1"
+          className="gap-xs pr-xs pl-sm py-xs"
         >
           <Avatar className="h-4 w-4">
             <AvatarFallback className="text-[8px]">
@@ -215,15 +215,15 @@ export function MultiAssigneeSelector({
             <Button
               variant="outline"
               size="sm"
-              className="h-6 px-2 gap-1 text-metadata"
+              className="h-6 px-sm gap-xs text-metadata"
             >
               <UserPlus className="h-3 w-3" />
               Add
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-2 bg-background" align="start">
+          <PopoverContent className="w-64 p-sm bg-background" align="start">
             <ScrollArea className="max-h-64">
-              <div className="space-y-1 pr-3">
+              <div className="space-y-xs pr-sm">
                 {availableUsers.length > 0 ? (
                   availableUsers.map((user) => (
                     <button
