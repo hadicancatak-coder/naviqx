@@ -51,10 +51,21 @@ export function useTasks(filters?: TaskFilters) {
     if (error) throw error;
 
     // Map tasks and include comments count, transform DB status → UI status
-    return (data || []).map((task: any) => ({
+    interface TaskAssigneeRow {
+      user_id: string;
+      profiles: Record<string, unknown> | null;
+    }
+    interface TaskRow {
+      id: string;
+      status: string;
+      task_assignees?: TaskAssigneeRow[];
+      task_comment_counts?: Array<{ comment_count: number }>;
+      [key: string]: unknown;
+    }
+    return (data || []).map((task: TaskRow) => ({
       ...task,
       status: mapStatusToUi(task.status),
-      assignees: task.task_assignees?.map((ta: any) => ta.profiles).filter(Boolean) || [],
+      assignees: task.task_assignees?.map((ta) => ta.profiles).filter(Boolean) || [],
       comments_count: task.task_comment_counts?.[0]?.comment_count || 0
     }));
   };

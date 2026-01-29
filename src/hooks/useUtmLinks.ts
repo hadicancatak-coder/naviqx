@@ -57,7 +57,7 @@ export const useUtmLinks = (filters?: UtmLinkFilters) => {
         query = query.eq("lp_type", filters.lp_type);
       }
       if (filters?.status) {
-        query = query.eq("status", filters.status as any);
+        query = query.eq("status", filters.status as "active" | "archived" | "paused");
       }
       if (filters?.created_by) {
         query = query.eq("created_by", filters.created_by);

@@ -86,14 +86,14 @@ export function useKnowledgePages() {
       queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
       toast({ title: "Page created" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to create page", description: error.message, variant: "destructive" });
     },
   });
 
   const updatePage = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; title?: string; content?: string; parent_id?: string | null; icon?: string }) => {
-      const updateData: any = { ...data };
+      const updateData: Record<string, unknown> = { ...data };
       if (data.title) {
         updateData.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       }
@@ -116,7 +116,7 @@ export function useKnowledgePages() {
       queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
       toast({ title: "Page updated" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to update page", description: error.message, variant: "destructive" });
     },
   });
@@ -134,7 +134,7 @@ export function useKnowledgePages() {
       queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
       toast({ title: "Page deleted" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to delete page", description: error.message, variant: "destructive" });
     },
   });
@@ -158,7 +158,7 @@ export function useKnowledgePages() {
         description: data.is_public ? "Anyone with the link can view this page" : "Only authenticated users can view this page"
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Failed to update sharing", description: error.message, variant: "destructive" });
     },
   });
@@ -198,7 +198,7 @@ export function useKnowledgePages() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       logger.error("Failed to generate public token:", error);
     },
   });

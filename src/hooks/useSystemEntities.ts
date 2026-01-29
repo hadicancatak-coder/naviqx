@@ -30,7 +30,7 @@ export const useSystemEntities = () => {
         
         if (error) throw error;
         return (data as SystemEntity[]) || [];
-      } catch (error: any) {
+      } catch (error) {
         logger.error('Error fetching system entities:', error);
         throw error;
       }
@@ -53,7 +53,7 @@ export const useAllEntities = () => {
         
         if (error) throw error;
         return (data as SystemEntity[]) || [];
-      } catch (error: any) {
+      } catch (error) {
         logger.error('Error fetching all entities:', error);
         throw error;
       }
@@ -79,7 +79,7 @@ export const useCreateEntity = () => {
         
         if (error) throw error;
         return data as SystemEntity;
-      } catch (error: any) {
+      } catch (error) {
         logger.error('Error creating entity:', error);
         throw error;
       }
@@ -100,7 +100,7 @@ export const useCreateEntity = () => {
       });
       toast({ title: 'Entity created successfully' });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       logger.error('Entity creation failed:', error);
     },
     onSettled: () => {
@@ -142,7 +142,7 @@ export const useUpdateEntity = () => {
     onSuccess: () => {
       toast({ title: 'Entity updated successfully' });
     },
-    onError: (error: any, _, context) => {
+    onError: (error: Error, _, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['system-entities'], context.previousEntities);
       }
@@ -192,7 +192,7 @@ export const useDeleteEntity = () => {
     onSuccess: () => {
       toast({ title: 'Entity deleted successfully' });
     },
-    onError: (error: any, _, context) => {
+    onError: (error: Error, _, context) => {
       if (context?.previousEntities) {
         queryClient.setQueryData(['system-entities'], context.previousEntities);
       }
@@ -234,7 +234,7 @@ export const useEntityChangeLog = (entityId?: string) => {
         
         if (error) throw error;
         return data || [];
-      } catch (error: any) {
+      } catch (error) {
         logger.error('Error fetching entity change log:', error);
         // Return empty array on error to prevent crashes
         return [];

@@ -17,17 +17,21 @@ interface UpdateTaskParams {
     due_at: string | null;
     title: string;
     description: string;
-    [key: string]: any;
-  }>;
+  }> & Record<string, unknown>;
 }
 
 // =============================================================================
 // Helper: Optimistic update for both list and detail caches
 // =============================================================================
+interface TaskListItem {
+  id: string;
+  [key: string]: unknown;
+}
+
 function optimisticUpdate(
   queryClient: QueryClient,
   taskId: string,
-  updates: Record<string, any>
+  updates: Record<string, unknown>
 ) {
   const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
   const previousTask = queryClient.getQueryData(TASK_DETAIL_KEY(taskId));
@@ -35,15 +39,15 @@ function optimisticUpdate(
   const patchedData = { ...updates, updated_at: new Date().toISOString() };
   
   // Update list cache
-  queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
+  queryClient.setQueryData(TASK_QUERY_KEY, (old: TaskListItem[] | undefined) => {
     if (!old) return old;
-    return old.map((task: any) =>
+    return old.map((task) =>
       task.id === taskId ? { ...task, ...patchedData } : task
     );
   });
   
   // Update detail cache
-  queryClient.setQueryData(TASK_DETAIL_KEY(taskId), (old: any) => {
+  queryClient.setQueryData(TASK_DETAIL_KEY(taskId), (old: Record<string, unknown> | undefined) => {
     if (!old) return old;
     return { ...old, ...patchedData };
   });
@@ -54,7 +58,7 @@ function optimisticUpdate(
 function rollback(
   queryClient: QueryClient,
   taskId: string,
-  context: { previousTasks?: any; previousTask?: any } | undefined
+  context: { previousTasks?: unknown; previousTask?: unknown } | undefined
 ) {
   if (context?.previousTasks) {
     queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
@@ -82,7 +86,7 @@ export const useTaskMutations = () => {
     mutationFn: async ({ id, updates }: UpdateTaskParams) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update(updates as any)
+        .update(updates as Record<string, unknown>)
         .eq('id', id)
         .select()
         .single();
@@ -94,7 +98,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, updates);
     },
-    onError: (err: any, { id }, context) => {
+    onError: (err: Error, { id }, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Update failed", description: err.message, variant: "destructive" });
     },
@@ -119,7 +123,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, { status: 'Completed' });
     },
-    onError: (err: any, id, context) => {
+    onError: (err: Error, id, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Failed to complete task", description: err.message, variant: "destructive" });
     },
@@ -144,7 +148,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, { due_at });
     },
-    onError: (err: any, { id }, context) => {
+    onError: (err: Error, { id }, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Failed to update deadline", description: err.message, variant: "destructive" });
     },
@@ -170,7 +174,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, { status });
     },
-    onError: (err: any, { id }, context) => {
+    onError: (err: Error, { id }, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Failed to update status", description: err.message, variant: "destructive" });
     },
@@ -195,7 +199,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, { priority });
     },
-    onError: (err: any, { id }, context) => {
+    onError: (err: Error, { id }, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Failed to update priority", description: err.message, variant: "destructive" });
     },
@@ -220,7 +224,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, { description });
     },
-    onError: (err: any, { id }, context) => {
+    onError: (err: Error, { id }, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Failed to save description", description: err.message, variant: "destructive" });
     },
@@ -244,7 +248,7 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
       return optimisticUpdate(queryClient, id, { title });
     },
-    onError: (err: any, { id }, context) => {
+    onError: (err: Error, { id }, context) => {
       rollback(queryClient, id, context);
       toast({ title: "Failed to save title", description: err.message, variant: "destructive" });
     },
@@ -267,9 +271,9 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
       const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => {
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: TaskListItem[] | undefined) => {
         if (!old) return old;
-        return old.map((task: any) =>
+        return old.map((task) =>
           taskIds.includes(task.id) 
             ? { ...task, sprint: sprintId, updated_at: new Date().toISOString() } 
             : task
@@ -278,7 +282,7 @@ export const useTaskMutations = () => {
       
       return { previousTasks };
     },
-    onError: (err: any, _, context) => {
+    onError: (err: Error, _, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }

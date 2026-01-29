@@ -273,8 +273,18 @@ export function useProjectTimelines(projectId: string | null) {
     enabled: !!projectId,
   });
 
+  interface TimelineInsertData extends Partial<ProjectTimeline> {
+    project_id: string;
+    phase_name: string;
+    owner?: string | null;
+    system_name?: string | null;
+    status?: string;
+    step_lane?: string;
+    expected_outcomes?: string[];
+  }
+
   const createTimeline = useMutation({
-    mutationFn: async (timeline: Partial<ProjectTimeline> & { project_id: string; phase_name: string } & Record<string, unknown>) => {
+    mutationFn: async (timeline: TimelineInsertData) => {
       const { data, error } = await supabase
         .from("project_timelines")
         .insert({
@@ -285,11 +295,11 @@ export function useProjectTimelines(projectId: string | null) {
           description: timeline.description || null,
           color: timeline.color || "primary",
           progress: timeline.progress || 0,
-          owner: (timeline as any).owner || null,
-          system_name: (timeline as any).system_name || null,
-          status: (timeline as any).status || "not_started",
-          step_lane: (timeline as any).step_lane || "execution",
-          expected_outcomes: (timeline as any).expected_outcomes || [],
+          owner: timeline.owner || null,
+          system_name: timeline.system_name || null,
+          status: timeline.status || "not_started",
+          step_lane: timeline.step_lane || "execution",
+          expected_outcomes: timeline.expected_outcomes || [],
         })
         .select()
         .single();
@@ -306,8 +316,17 @@ export function useProjectTimelines(projectId: string | null) {
     },
   });
 
+  interface TimelineUpdateData extends Partial<ProjectTimeline> {
+    id: string;
+    owner?: string | null;
+    system_name?: string | null;
+    status?: string;
+    step_lane?: string;
+    expected_outcomes?: string[];
+  }
+
   const updateTimeline = useMutation({
-    mutationFn: async (timeline: Partial<ProjectTimeline> & { id: string } & Record<string, unknown>) => {
+    mutationFn: async (timeline: TimelineUpdateData) => {
       // Only pass valid database columns
       const updates: Record<string, unknown> = {};
       if (timeline.phase_name !== undefined) updates.phase_name = timeline.phase_name;
@@ -318,11 +337,11 @@ export function useProjectTimelines(projectId: string | null) {
       if (timeline.progress !== undefined) updates.progress = timeline.progress;
       if (timeline.order_index !== undefined) updates.order_index = timeline.order_index;
       // New step columns
-      if ((timeline as any).owner !== undefined) updates.owner = (timeline as any).owner;
-      if ((timeline as any).system_name !== undefined) updates.system_name = (timeline as any).system_name;
-      if ((timeline as any).status !== undefined) updates.status = (timeline as any).status;
-      if ((timeline as any).step_lane !== undefined) updates.step_lane = (timeline as any).step_lane;
-      if ((timeline as any).expected_outcomes !== undefined) updates.expected_outcomes = (timeline as any).expected_outcomes;
+      if (timeline.owner !== undefined) updates.owner = timeline.owner;
+      if (timeline.system_name !== undefined) updates.system_name = timeline.system_name;
+      if (timeline.status !== undefined) updates.status = timeline.status;
+      if (timeline.step_lane !== undefined) updates.step_lane = timeline.step_lane;
+      if (timeline.expected_outcomes !== undefined) updates.expected_outcomes = timeline.expected_outcomes;
 
       const { data, error } = await supabase
         .from("project_timelines")

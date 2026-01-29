@@ -53,7 +53,7 @@ export function useSprints() {
       queryClient.invalidateQueries({ queryKey: ['sprints'] });
       toast({ title: "Sprint created" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error creating sprint", description: error.message, variant: "destructive" });
     },
   });
@@ -74,7 +74,7 @@ export function useSprints() {
       queryClient.invalidateQueries({ queryKey: ['sprints'] });
       toast({ title: "Sprint updated" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error updating sprint", description: error.message, variant: "destructive" });
     },
   });
@@ -92,7 +92,7 @@ export function useSprints() {
       queryClient.invalidateQueries({ queryKey: ['sprints'] });
       toast({ title: "Sprint deleted" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error deleting sprint", description: error.message, variant: "destructive" });
     },
   });

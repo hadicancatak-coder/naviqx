@@ -92,22 +92,51 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
       if (error) throw error;
       if (!allTasksData) return { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] };
 
+      // Define task row shape from query
+      interface TaskAssigneeRow {
+        user_id: string;
+        profiles: { id: string; user_id: string; name: string; avatar_url: string | null; teams: string[] | null } | null;
+      }
+      interface TaskRow {
+        id: string;
+        status: string;
+        visibility?: string;
+        teams?: string[] | string | null;
+        task_assignees?: TaskAssigneeRow[];
+        task_comment_counts?: Array<{ comment_count: number }>;
+        [key: string]: unknown;
+      }
+      interface MappedTask extends Record<string, unknown> {
+        id: string;
+        status: string;
+        assignees: Array<{ id: string; user_id: string; name: string; avatar_url: string | null; teams: string[] | null }>;
+        comments_count: number;
+        visibility?: string;
+        teams?: string[] | null;
+      }
+
       // Map tasks
-      const mappedTasks = allTasksData.map((task: any) => ({
-        ...task,
-        status: mapStatusToUi(task.status),
-        assignees: task.task_assignees?.map((ta: any) => ta.profiles).filter(Boolean) || [],
-        comments_count: task.task_comment_counts?.[0]?.comment_count || 0,
-      }));
+      const mappedTasks: MappedTask[] = (allTasksData as TaskRow[]).map((task) => {
+        // Normalize teams to string[] | null
+        const normalizedTeams = Array.isArray(task.teams) 
+          ? task.teams 
+          : typeof task.teams === 'string' 
+            ? JSON.parse(task.teams) as string[]
+            : null;
+        
+        return {
+          ...task,
+          teams: normalizedTeams,
+          status: mapStatusToUi(task.status),
+          assignees: task.task_assignees?.map((ta) => ta.profiles).filter((p): p is NonNullable<typeof p> => p !== null) || [],
+          comments_count: task.task_comment_counts?.[0]?.comment_count || 0,
+        };
+      });
 
       // Filter to only tasks assigned to this user
-      const visibleTasks = mappedTasks.filter((task: any) => {
-        const isDirectAssignee = task.assignees?.some((a: any) => a.user_id === userId);
-        const taskTeams = Array.isArray(task.teams)
-          ? task.teams
-          : typeof task.teams === "string"
-          ? JSON.parse(task.teams)
-          : [];
+      const visibleTasks = mappedTasks.filter((task) => {
+        const isDirectAssignee = task.assignees?.some((a) => a.user_id === userId);
+        const taskTeams = task.teams || [];
         const isTeamMember = (userTeams || []).some((team: string) => taskTeams.includes(team));
 
         if (!isDirectAssignee && !isTeamMember) return false;
@@ -118,11 +147,11 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
 
       return {
         all: visibleTasks,
-        ongoing: visibleTasks.filter((t: any) => t.status === "Ongoing"),
-        completed: visibleTasks.filter((t: any) => t.status === "Completed"),
-        pending: visibleTasks.filter((t: any) => t.status === "Pending"),
-        blocked: visibleTasks.filter((t: any) => t.status === "Blocked"),
-        failed: visibleTasks.filter((t: any) => t.status === "Failed"),
+        ongoing: visibleTasks.filter((t) => t.status === "Ongoing"),
+        completed: visibleTasks.filter((t) => t.status === "Completed"),
+        pending: visibleTasks.filter((t) => t.status === "Pending"),
+        blocked: visibleTasks.filter((t) => t.status === "Blocked"),
+        failed: visibleTasks.filter((t) => t.status === "Failed"),
       };
     },
     enabled: !!userId,
