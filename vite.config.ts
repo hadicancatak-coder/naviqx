@@ -17,12 +17,11 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    // ESLint plugin - will show errors in console but not block build
-    // Set failOnError: true to block build on ESLint errors
+    // ESLint plugin - errors block build, warnings do not
     eslint({
       failOnWarning: false,
       failOnError: true,
-      emitWarning: true,
+      emitWarning: false, // Suppress warning output during build
       emitError: true,
       cache: true,
       include: ['src/**/*.ts', 'src/**/*.tsx'],
