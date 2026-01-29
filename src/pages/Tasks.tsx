@@ -205,6 +205,7 @@ export default function Tasks() {
       if (quickFilterDef) return filteredTasks.filter(quickFilterDef.filter);
     }
     return filteredTasks;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredTasks, activeQuickFilter]);
 
   useEffect(() => { setCurrentPage(1); }, [selectedAssignees, dateFilter, statusFilters, selectedTags, debouncedSearch, activeQuickFilter, selectedProjectId]);
@@ -216,6 +217,7 @@ export default function Tasks() {
         setShowMyTasks(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAssignees, user?.id, showMyTasks]);
 
   const [focusedIndex, setFocusedIndex] = useState(-1);

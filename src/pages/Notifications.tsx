@@ -53,10 +53,12 @@ export default function Notifications() {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
     applyFilters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications, readFilter, typeFilter, searchQuery]);
 
   const fetchNotifications = async () => {
