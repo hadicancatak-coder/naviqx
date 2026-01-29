@@ -30,14 +30,18 @@ import { AdComplianceChecker } from "../AdComplianceChecker";
 import { Plus } from "lucide-react";
 
 interface SearchAdEditorProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ad: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adGroup: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   campaign: any;
   entity: string;
   onSave: (adId?: string) => void;
   onCancel: () => void;
   adType?: "search" | "display";
   showHeader?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFieldChange?: (fields: any) => void;
   hidePreview?: boolean;
 }
@@ -80,6 +84,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
   );
 
   const createElementMutation = useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async (elementData: any) => {
       const { data, error } = await supabase
         .from('ad_elements')
@@ -94,6 +99,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       queryClient.invalidateQueries({ queryKey: ['ad-elements'] });
       toast.success("Element saved to library!");
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       toast.error("Failed to save element: " + error.message);
     }
@@ -129,6 +135,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       
       // Load sitelinks with backward compatibility
       if (ad.sitelinks && Array.isArray(ad.sitelinks)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const loadedSitelinks = ad.sitelinks.map((s: any) => ({
           description: s.description || s.text || "",
           link: s.link || s.url || ""
@@ -378,6 +385,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
     setIsSaving(true);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const baseData: any = {
         name,
         ad_group_id: adGroup.id,
@@ -471,6 +479,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
         toast.success("Ad created successfully");
         onSave(data.id);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       logger.error('Save ad error:', error);
       
