@@ -163,7 +163,7 @@ export default function Sprints() {
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-lg shadow-lg shadow-primary/10">
             <Zap className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="text-heading-md font-semibold mb-2">No Active Sprint</h2>
+          <h2 className="text-heading-md font-semibold mb-xs">No Active Sprint</h2>
           <p className="text-body text-muted-foreground max-w-md mx-auto mb-lg">
             Create a sprint to start organizing your work into focused iterations. 
             Sprints help teams deliver value in regular, predictable cycles.
@@ -257,7 +257,7 @@ export default function Sprints() {
             <SelectContent>
               {activeSprint && (
                 <SelectItem value={activeSprint.id}>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-xs">
                     <Zap className="h-4 w-4 text-success" />
                     {activeSprint.name} (Active)
                   </span>
@@ -265,7 +265,7 @@ export default function Sprints() {
               )}
               {upcomingSprints.map(sprint => (
                 <SelectItem key={sprint.id} value={sprint.id}>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-xs">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     {sprint.name}
                   </span>
@@ -282,11 +282,11 @@ export default function Sprints() {
           <Tabs value={view} onValueChange={(v) => setView(v as 'kanban' | 'list')}>
             <TabsList>
               <TabsTrigger value="kanban">
-                <LayoutGrid className="h-4 w-4 mr-1.5" />
+                <LayoutGrid className="h-4 w-4 mr-xs" />
                 Kanban
               </TabsTrigger>
               <TabsTrigger value="list">
-                <List className="h-4 w-4 mr-1.5" />
+                <List className="h-4 w-4 mr-xs" />
                 List
               </TabsTrigger>
             </TabsList>
