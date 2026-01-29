@@ -343,7 +343,7 @@ export default function UsersManagement() {
               placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-md"
             />
           </div>
 
@@ -386,19 +386,19 @@ export default function UsersManagement() {
                   <TableHead>Working Days</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="text-center">
-                    <div className="flex items-center gap-1 justify-center">
+                    <div className="flex items-center gap-xs justify-center">
                       <Target className="h-3.5 w-3.5" />
                       KPIs
                     </div>
                   </TableHead>
                   <TableHead>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-xs">
                       <Shield className="h-3.5 w-3.5" />
                       MFA
                     </div>
                   </TableHead>
                   <TableHead>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-xs">
                       <Activity className="h-3.5 w-3.5" />
                       Last Activity
                     </div>
@@ -480,9 +480,9 @@ export default function UsersManagement() {
                               className={user.mfa_enabled ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}
                             >
                               {user.mfa_enabled ? (
-                                <><Shield className="h-3 w-3 mr-1" /> Enabled</>
+                                <><Shield className="h-3 w-3 mr-xs" /> Enabled</>
                               ) : (
-                                <><ShieldOff className="h-3 w-3 mr-1" /> Not Set</>
+                                <><ShieldOff className="h-3 w-3 mr-xs" /> Not Set</>
                               )}
                             </Badge>
                           </TooltipTrigger>
@@ -516,7 +516,7 @@ export default function UsersManagement() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-xs">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -592,18 +592,18 @@ export default function UsersManagement() {
         <AlertDialog open={mfaResetDialogOpen} onOpenChange={setMfaResetDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
+              <AlertDialogTitle className="flex items-center gap-sm">
                 <RotateCcw className="h-5 w-5 text-warning" />
                 Reset MFA for {mfaResetUser?.name}?
               </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
+              <AlertDialogDescription className="space-y-sm">
                 <p>This will:</p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
+                <ul className="list-disc list-inside space-y-xs text-body-sm">
                   <li>Delete all MFA secrets and backup codes</li>
                   <li>End all active MFA sessions</li>
                   <li>Require the user to set up MFA again on next login</li>
                 </ul>
-                <p className="mt-3 font-medium">
+                <p className="mt-sm font-medium">
                   Use this if the user lost access to their authenticator app and cannot use backup codes.
                 </p>
               </AlertDialogDescription>
@@ -626,16 +626,16 @@ export default function UsersManagement() {
         }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
+              <AlertDialogTitle className="flex items-center gap-sm">
                 <KeyRound className="h-5 w-5 text-primary" />
                 Reset Password for {passwordResetUser?.name}?
               </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
+              <AlertDialogDescription className="space-y-sm">
                 {resetLink ? (
-                  <div className="space-y-3">
+                  <div className="space-y-sm">
                     <p className="text-success font-medium">Password reset link generated!</p>
                     <p className="text-body-sm">Share this link with the user. It will expire in 24 hours.</p>
-                    <div className="flex items-center gap-2 p-sm bg-muted rounded-md">
+                    <div className="flex items-center gap-sm p-sm bg-muted rounded-md">
                       <code className="flex-1 text-metadata break-all">{resetLink}</code>
                       <Button 
                         variant="ghost" 
@@ -649,7 +649,7 @@ export default function UsersManagement() {
                 ) : (
                   <>
                     <p>This will generate a password reset link for <strong>{passwordResetUser?.email}</strong>.</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body-sm text-muted-foreground">
                       You can then share this link with the user to allow them to set a new password.
                     </p>
                   </>

@@ -119,7 +119,7 @@ export default function Overview() {
               <Button
                 key={action.label}
                 variant="outline"
-                className="gap-2"
+                className="gap-sm"
                 onClick={() => navigate(action.path)}
               >
                 <action.icon className="h-4 w-4" />
