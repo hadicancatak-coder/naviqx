@@ -30,7 +30,7 @@ export function isDateWorkingDay(date: Date, workingDays: string | null): boolea
  */
 export function validateDateForUsers(
   date: Date | undefined,
-  users: Array<{ name: string; working_days: string | null }>
+  users: Array<{ name: string; working_days?: string | null }>
 ): WorkingDaysValidation {
   if (!date) {
     return { isValid: true, invalidUsers: [] };

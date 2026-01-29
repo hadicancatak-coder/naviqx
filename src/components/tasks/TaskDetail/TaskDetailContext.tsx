@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtimeAssignees } from "@/hooks/useRealtimeAssignees";
 import { useTaskChangeLogs } from "@/hooks/useTaskChangeLogs";
+import type { TaskChangeLog } from "@/hooks/useTaskChangeLogs";
 import { useTask } from "@/hooks/useTask";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
 import { useTaskComments } from "@/hooks/useTaskComments";
@@ -13,14 +14,18 @@ import { useTaskBlocker } from "@/hooks/useTaskBlocker";
 import { useCollaborativeTask } from "@/hooks/useCollaborativeTask";
 import { completeTask as completeTaskAction } from "@/domain/tasks/actions";
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from "@/lib/queryKeys";
+import type { Database } from "@/integrations/supabase/types";
+import type { TaskWithAssignees, RealtimeAssignee } from "@/types/tasks";
+
+type BlockerRow = Database["public"]["Tables"]["blockers"]["Row"];
 
 interface TaskDetailContextValue {
   taskId: string;
-  task: any;
+  task: TaskWithAssignees | undefined;
   loading: boolean;
   mutations: ReturnType<typeof useTaskMutations>;
   comments: ReturnType<typeof useTaskComments>;
-  realtimeAssignees: any[];
+  realtimeAssignees: RealtimeAssignee[];
   refetchAssignees: () => void;
   isCompleted: boolean;
   isSubtask: boolean;
@@ -32,11 +37,11 @@ interface TaskDetailContextValue {
     allCompleted: boolean;
   } | null;
   currentUserCompleted: boolean;
-  blocker: any;
+  blocker: BlockerRow | null;
   blockerDialogOpen: boolean;
   setBlockerDialogOpen: (v: boolean) => void;
   fetchBlocker: () => Promise<void>;
-  changeLogs: any[];
+  changeLogs: TaskChangeLog[];
   markComplete: () => Promise<void>;
   deleteTask: () => Promise<void>;
 }
@@ -53,7 +58,7 @@ export function useTaskDetailContext() {
 
 interface TaskDetailProviderProps {
   taskId: string;
-  cachedTask?: any;
+  cachedTask?: TaskWithAssignees;
   children: ReactNode;
   onClose?: () => void;
   onTaskDeleted?: () => void;

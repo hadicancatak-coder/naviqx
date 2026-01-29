@@ -1,10 +1,24 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useRef } from "react";
 
+/**
+ * Minimal task data used as a cache hint when opening the drawer.
+ * The drawer will fetch full task data but can display cached fields immediately.
+ * Allows any task-like object with an id to be passed.
+ */
+interface CachedTaskHint {
+  id: string;
+  title?: string;
+  status?: string;
+  priority?: string;
+  due_at?: string | null;
+  assignees?: unknown[];
+}
+
 interface TaskDrawerContextValue {
   isOpen: boolean;
   taskId: string | null;
-  task: unknown | null;
-  openTaskDrawer: (taskId: string, task?: unknown) => void;
+  task: CachedTaskHint | null;
+  openTaskDrawer: (taskId: string, task?: CachedTaskHint) => void;
   closeTaskDrawer: () => void;
 }
 
@@ -13,14 +27,14 @@ const TaskDrawerContext = createContext<TaskDrawerContextValue | undefined>(unde
 export function TaskDrawerProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [task, setTask] = useState<unknown | null>(null);
+  const [task, setTask] = useState<CachedTaskHint | null>(null);
   const isOpeningRef = useRef(false);
 
-  const openTaskDrawer = useCallback((id: string, cachedTask?: unknown) => {
+  const openTaskDrawer = useCallback((id: string, cachedTask?: CachedTaskHint) => {
     // Prevent race condition when clicking another task while drawer is open
     isOpeningRef.current = true;
     setTaskId(id);
-    setTask(cachedTask || null);
+    setTask(cachedTask ?? null);
     setIsOpen(true);
     // Reset flag after a short delay
     setTimeout(() => {

@@ -1,8 +1,18 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-export function useTaskBlocker(taskId: string) {
-  const [blocker, setBlocker] = useState<any>(null);
+type BlockerRow = Database["public"]["Tables"]["blockers"]["Row"];
+
+export interface TaskBlockerResult {
+  blocker: BlockerRow | null;
+  blockerDialogOpen: boolean;
+  setBlockerDialogOpen: (open: boolean) => void;
+  fetchBlocker: () => Promise<void>;
+}
+
+export function useTaskBlocker(taskId: string): TaskBlockerResult {
+  const [blocker, setBlocker] = useState<BlockerRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const fetchBlocker = useCallback(async () => {
