@@ -16,14 +16,17 @@ import { toast } from "@/hooks/use-toast";
 import { Megaphone, Plus, CalendarIcon, Edit, Trash2, Send } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/integrations/supabase/types";
+
+type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
 
 export function AnnouncementsSection() {
   const { user, userRole } = useAuth();
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [priority, setPriority] = useState("normal");
@@ -142,7 +145,7 @@ export function AnnouncementsSection() {
     }
   };
 
-  const handleBroadcastAgain = async (announcement: any) => {
+  const handleBroadcastAgain = async (announcement: Announcement) => {
     const { data: allUsers } = await supabase.from("profiles").select("user_id");
 
     if (allUsers && allUsers.length > 0) {
@@ -167,7 +170,7 @@ export function AnnouncementsSection() {
     }
   };
 
-  const openEditDialog = (announcement: any) => {
+  const openEditDialog = (announcement: Announcement) => {
     setSelectedAnnouncement(announcement);
     setTitle(announcement.title);
     setMessage(announcement.message);

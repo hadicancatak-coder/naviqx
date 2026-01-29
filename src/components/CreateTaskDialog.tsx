@@ -65,6 +65,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
   const [recurrenceEndType, setRecurrenceEndType] = useState<'never' | 'after_n' | 'until_date'>('never');
   const [recurrenceEndValue, setRecurrenceEndValue] = useState<string>('');
   const [workingDaysWarning, setWorkingDaysWarning] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [users, setUsers] = useState<any[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -131,7 +132,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
     try {
       // Build recurrence configuration for templates
       const isRecurring = recurrence !== 'none';
-      let recurrenceConfig: any = {};
+      let recurrenceConfig: Record<string, string | boolean | number | null> = {};
       let nextRunAt: Date | null = null;
       
       if (isRecurring) {
@@ -229,11 +230,12 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
       // Reset and close
       resetForm();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error("Error creating task:", error);
+      const message = error instanceof Error ? error.message : "Failed to create task";
       toast({
         title: "Error",
-        description: error.message || "Failed to create task",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -413,7 +415,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
 
               <div className="space-y-2">
                 <Label>Priority</Label>
-                <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+                <Select value={priority} onValueChange={(v: "High" | "Medium" | "Low") => setPriority(v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
