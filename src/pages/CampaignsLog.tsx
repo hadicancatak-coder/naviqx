@@ -174,7 +174,6 @@ export default function CampaignsLog() {
     if (!dropTargetId.startsWith('entity-')) return;
     const targetEntity = dropTargetId.replace('entity-', '');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     try {
       await createTracking.mutateAsync({ campaign_id: campaignId, entity: targetEntity, status: "Draft" });
       toast.success(`Campaign added to ${targetEntity}`);
@@ -322,7 +321,7 @@ export default function CampaignsLog() {
             open={expandedCampaigns.has('library')} 
             onOpenChange={(open) => { 
               const n = new Set(expandedCampaigns); 
-              open ? n.add('library') : n.delete('library'); 
+              if (open) { n.add('library'); } else { n.delete('library'); }
               setExpandedCampaigns(n); 
             }}
           >
@@ -357,7 +356,7 @@ export default function CampaignsLog() {
                     placeholder="Search campaigns..." 
                     value={searchTerm} 
                     onChange={(e) => setSearchTerm(e.target.value)} 
-                    className="pl-10 bg-card/50" 
+                    className="pl-xl bg-card/50" 
                   />
                 </div>
                 <Select value={libraryEntityFilter} onValueChange={setLibraryEntityFilter}>
