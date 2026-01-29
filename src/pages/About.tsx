@@ -21,7 +21,7 @@ function renderMarkdown(content: string) {
   const flushList = () => {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`list-${elements.length}`} className="space-y-1 list-disc list-inside ml-md mb-md">
+        <ul key={`list-${elements.length}`} className="space-y-xs list-disc list-inside ml-md mb-md">
           {listItems.map((item, i) => (
             <li key={i} className="text-body-sm text-muted-foreground">{item}</li>
           ))}
@@ -55,19 +55,19 @@ function renderMarkdown(content: string) {
     } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
       flushList();
       elements.push(
-        <p key={index} className="text-body font-medium text-foreground mt-2">
+        <p key={index} className="text-body font-medium text-foreground mt-xs">
           {trimmed.replace(/\*\*/g, '')}
         </p>
       );
     } else if (trimmed === '---') {
       flushList();
-      elements.push(<hr key={index} className="my-6 border-border" />);
+      elements.push(<hr key={index} className="my-lg border-border" />);
     } else if (trimmed === '') {
       flushList();
     } else {
       flushList();
       elements.push(
-        <p key={index} className="text-body-sm text-muted-foreground mb-2">
+        <p key={index} className="text-body-sm text-muted-foreground mb-xs">
           {trimmed}
         </p>
       );
@@ -116,7 +116,7 @@ export default function About() {
         description="Comprehensive Task & Campaign Management Platform"
         actions={
           userRole === 'admin' ? (
-            <Button variant="outline" onClick={handleEdit} className="gap-2">
+            <Button variant="outline" onClick={handleEdit} className="gap-sm">
               <Edit className="h-4 w-4" />
               Edit Page
             </Button>
@@ -169,7 +169,7 @@ export default function About() {
           <h2 className="text-heading-sm font-semibold">Support & Contact</h2>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-sm">
           <div>
             <p className="text-body-sm font-medium">Support Email</p>
             <a href="mailto:h.catak@cfi.trade" className="text-body-sm text-primary hover:underline">
@@ -193,7 +193,7 @@ export default function About() {
             <DialogTitle>Edit About Page</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-md py-md">
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Version</Label>
               <Input
                 value={editVersion}
@@ -201,7 +201,7 @@ export default function About() {
                 placeholder="e.g., 2.0"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Content (Markdown)</Label>
               <Textarea
                 value={editContent}
@@ -213,11 +213,11 @@ export default function About() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-4 w-4 mr-sm" />
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={updatePage.isPending}>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-sm" />
               {updatePage.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
