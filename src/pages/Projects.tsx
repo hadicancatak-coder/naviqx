@@ -173,7 +173,7 @@ export default function Projects() {
   if (projectsError) {
     return (
       <PageContainer>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="flex flex-col items-center justify-center h-64 gap-md">
           <p className="text-muted-foreground">Could not load projects.</p>
         </div>
       </PageContainer>
@@ -199,7 +199,7 @@ export default function Projects() {
           <Button 
             variant="ghost" 
             onClick={handleBackToList}
-            className="gap-2"
+            className="gap-xs"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Projects
@@ -266,9 +266,9 @@ export default function Projects() {
                 />
               </div>
               {selectedProject?.is_public && selectedProject.public_token && (
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   <Label className="text-body-sm">Public Link</Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-xs">
                     <Input
                       readOnly
                       value={`${APP_BASE_URL}/projects/public/${selectedProject.public_token}`}
@@ -298,8 +298,8 @@ export default function Projects() {
         description="Manage projects with roadmaps and linked tasks"
         actions={
           isAdmin ? (
-            <Button onClick={() => handleCreateProject()}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => handleCreateProject()} className="gap-xs">
+              <Plus className="h-4 w-4" />
               New Project
             </Button>
           ) : undefined
@@ -314,7 +314,7 @@ export default function Projects() {
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-lg"
           />
         </div>
       )}
@@ -348,9 +348,9 @@ export default function Projects() {
         </div>
       ) : projects && projects.length > 0 ? (
         // Search returned no results
-        <div className="text-center py-12">
+        <div className="text-center py-section">
           <Search className="h-12 w-12 text-muted-foreground mx-auto mb-md" />
-          <h2 className="text-heading-sm font-semibold text-foreground mb-2">
+          <h2 className="text-heading-sm font-semibold text-foreground mb-xs">
             No projects found
           </h2>
           <p className="text-muted-foreground mb-md">

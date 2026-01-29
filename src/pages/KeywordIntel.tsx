@@ -130,6 +130,7 @@ export default function KeywordIntel() {
 
     // Sort
     data.sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let aVal: any, bVal: any;
       switch (sortColumn) {
         case 'keyword': aVal = a.keyword; bVal = b.keyword; break;

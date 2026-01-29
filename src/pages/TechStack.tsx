@@ -171,7 +171,7 @@ export default function TechStack() {
   if (isError) {
     return (
       <PageContainer>
-        <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <div className="flex flex-col items-center justify-center h-96 gap-md">
           <p className="text-muted-foreground">Could not load tech stack.</p>
         </div>
       </PageContainer>
@@ -205,7 +205,7 @@ export default function TechStack() {
       <div className="grid grid-cols-[280px_1fr] gap-lg min-h-[600px]">
         {/* Sidebar */}
         <DataCard className="h-fit max-h-[calc(100vh-200px)] overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-border">
+          <div className="p-sm border-b border-border">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -217,7 +217,7 @@ export default function TechStack() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto hide-scrollbar p-2">
+          <div className="flex-1 overflow-y-auto hide-scrollbar p-xs">
             <TechStackTree
               pages={filteredTree}
               selectedPageId={selectedPage?.id || null}
@@ -250,6 +250,7 @@ export default function TechStack() {
               
               <div className="space-y-2">
                 {pageTree.map((page) => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const IconComponent = (LucideIcons as any)[
                     (page.icon || 'server').split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')
                   ] || Server;

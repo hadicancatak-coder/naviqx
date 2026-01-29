@@ -225,7 +225,7 @@ export default function Knowledge() {
       <div className="grid grid-cols-[280px_1fr] gap-lg min-h-[600px]">
         {/* Sidebar */}
         <DataCard className="h-fit max-h-[calc(100vh-200px)] overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-border">
+          <div className="p-sm border-b border-border">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -237,7 +237,7 @@ export default function Knowledge() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto hide-scrollbar p-2">
+          <div className="flex-1 overflow-y-auto hide-scrollbar p-xs">
             <KnowledgeTree
               pages={filteredTree}
               selectedPageId={selectedPage?.id || null}

@@ -70,6 +70,7 @@ export default function Sprints() {
     blocked: sprintTasks.filter(t => t.status === 'Blocked').length,
   }), [sprintTasks]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleTaskClick = useCallback((taskId: string, task?: any) => {
     openTaskDrawer(taskId, task || allTasks?.find(t => t.id === taskId));
   }, [openTaskDrawer, allTasks]);
@@ -147,12 +148,12 @@ export default function Sprints() {
         <div className="flex items-center justify-between mb-lg">
           <div>
             <h1 className="text-heading-lg font-semibold">Sprint Board</h1>
-            <p className="text-body-sm text-muted-foreground mt-1">
+            <p className="text-body-sm text-muted-foreground mt-xs">
               Plan and track work in time-boxed iterations
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setCreateDialogOpen(true)} className="gap-xs">
+            <Plus className="h-4 w-4" />
             Create Sprint
           </Button>
         </div>
@@ -168,8 +169,8 @@ export default function Sprints() {
             Sprints help teams deliver value in regular, predictable cycles.
           </p>
           <div className="flex items-center justify-center gap-md">
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setCreateDialogOpen(true)} className="gap-xs">
+              <Plus className="h-4 w-4" />
               Create Your First Sprint
             </Button>
             {sprints.length > 0 && (
@@ -209,7 +210,7 @@ export default function Sprints() {
                   onClick={() => handleTaskClick(task.id)}
                 >
                   <p className="text-body-sm font-medium truncate">{task.title}</p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-xs mt-xs">
                     {task.priority && (
                       <Badge variant="outline" className={priorityColors[task.priority] || 'status-neutral'}>
                         {task.priority}
@@ -293,8 +294,8 @@ export default function Sprints() {
         </div>
 
         <div className="flex items-center gap-sm">
-          <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={() => setCreateDialogOpen(true)} className="gap-xs">
+            <Plus className="h-4 w-4" />
             New Sprint
           </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin/sprints')}>

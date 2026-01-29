@@ -17,13 +17,16 @@ export default function Notifications() {
   const { user, userRole, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { openTaskDrawer } = useTaskDrawer();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [notifications, setNotifications] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [filteredNotifications, setFilteredNotifications] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [enrichedData, setEnrichedData] = useState<Map<string, any>>(new Map());
 
   useEffect(() => {
@@ -390,7 +393,7 @@ export default function Notifications() {
   }
 
   return (
-    <div className="px-md sm:px-lg lg:px-12 py-lg lg:py-8 space-y-lg lg:space-y-8">
+    <div className="px-md sm:px-lg lg:px-xl py-lg lg:py-xl space-y-lg lg:space-y-xl">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md">
         <div>
           <h1 className="text-page-title">Notifications</h1>
@@ -408,7 +411,7 @@ export default function Notifications() {
       {/* Filters and Actions */}
       <div className="border border-border rounded p-md">
         <div className="flex flex-col md:flex-row gap-md">
-          <Tabs value={readFilter} onValueChange={(v: any) => setReadFilter(v)} className="w-full md:w-auto">
+          <Tabs value={readFilter} onValueChange={(v: "all" | "unread" | "read") => setReadFilter(v)} className="w-full md:w-auto">
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="unread">Unread</TabsTrigger>
@@ -440,8 +443,8 @@ export default function Notifications() {
             />
           </div>
 
-          <Button onClick={markAllAsRead} variant="outline" size="sm">
-            <CheckCheck className="h-4 w-4 mr-2" />
+          <Button onClick={markAllAsRead} variant="outline" size="sm" className="gap-xs">
+            <CheckCheck className="h-4 w-4" />
             Mark All Read
           </Button>
         </div>
@@ -449,12 +452,12 @@ export default function Notifications() {
         {selectedIds.length > 0 && (
           <div className="mt-md flex items-center gap-sm p-sm bg-muted rounded">
             <span className="text-body">{selectedIds.length} selected</span>
-            <Button onClick={markSelectedAsRead} variant="outline" size="sm">
-              <Check className="h-4 w-4 mr-2" />
+            <Button onClick={markSelectedAsRead} variant="outline" size="sm" className="gap-xs">
+              <Check className="h-4 w-4" />
               Mark Read
             </Button>
-            <Button onClick={deleteSelected} variant="destructive" size="sm">
-              <Trash2 className="h-4 w-4 mr-2" />
+            <Button onClick={deleteSelected} variant="destructive" size="sm" className="gap-xs">
+              <Trash2 className="h-4 w-4" />
               Delete
             </Button>
             <Button onClick={() => setSelectedIds([])} variant="ghost" size="sm">
@@ -497,7 +500,7 @@ export default function Notifications() {
                             checked={selectedIds.includes(notification.id)}
                             onCheckedChange={() => toggleSelect(notification.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="mt-1 flex-shrink-0"
+                            className="mt-xs flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0 space-y-sm">
                             {/* Title and type */}
@@ -533,14 +536,14 @@ export default function Notifications() {
                             )}
 
                             {/* Metadata */}
-                            <div className="flex items-center gap-3 text-metadata text-muted-foreground">
+                            <div className="flex items-center gap-sm text-metadata text-muted-foreground">
                               <span>{formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}</span>
                               <span>•</span>
                               <span className="capitalize">{notification.type.replace(/_/g, " ")}</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-xs flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                           {!notification.read_at && (
                             <Button
                               size="sm"
@@ -573,7 +576,7 @@ export default function Notifications() {
         ))}
 
         {filteredNotifications.length === 0 && !dataLoading && (
-          <div className="py-12 text-center">
+          <div className="py-section text-center">
             <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-md" />
             <p className="text-body text-muted-foreground">
               {searchQuery || typeFilter !== "all" || readFilter !== "all"
