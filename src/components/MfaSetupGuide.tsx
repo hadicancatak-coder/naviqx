@@ -20,7 +20,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="ghost" size="sm" className="gap-2">
+          <Button variant="ghost" size="sm" className="gap-xs">
             <HelpCircle className="h-4 w-4" />
             Need help?
           </Button>
@@ -28,7 +28,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-xs">
             <Shield className="h-5 w-5 text-primary" />
             Two-Factor Authentication Guide
           </DialogTitle>
@@ -131,7 +131,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
             <p className="text-body-sm text-muted-foreground">
               Don't worry! You have options:
             </p>
-            <ul className="text-body-sm text-muted-foreground mt-xs space-y-1 ml-md list-disc">
+            <ul className="text-body-sm text-muted-foreground mt-xs space-y-xs ml-md list-disc">
               <li>Use one of your backup codes to log in</li>
               <li>Contact your administrator to reset your 2FA</li>
               <li>If using Authy with cloud backup, restore on a new device</li>
@@ -147,7 +147,7 @@ export function MfaSetupGuide({ trigger }: MfaSetupGuideProps) {
             <p className="text-body-sm text-muted-foreground">
               For your security, you'll need to verify with 2FA:
             </p>
-            <ul className="text-body-sm text-muted-foreground mt-xs space-y-1 ml-md list-disc">
+            <ul className="text-body-sm text-muted-foreground mt-xs space-y-xs ml-md list-disc">
               <li>When you log in</li>
               <li>If your IP address changes (different network/location)</li>
               <li>After signing out</li>

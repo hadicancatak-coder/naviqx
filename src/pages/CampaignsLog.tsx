@@ -372,10 +372,10 @@ export default function CampaignsLog() {
                 
                 {/* View Toggle */}
                 <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
-                  <ToggleGroupItem value="grid" aria-label="Grid view" className="px-3">
+                  <ToggleGroupItem value="grid" aria-label="Grid view" className="px-sm">
                     <LayoutGrid className="size-4" />
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="list" aria-label="List view" className="px-3">
+                  <ToggleGroupItem value="list" aria-label="List view" className="px-sm">
                     <List className="size-4" />
                   </ToggleGroupItem>
                 </ToggleGroup>

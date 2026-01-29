@@ -117,7 +117,7 @@ export function AppSidebar() {
               <div className="flex flex-col">
                 <span className="text-section-title text-foreground font-semibold">Naviqx</span>
                 {userName && (
-                  <span className="text-metadata text-muted-foreground mt-0.5">
+                  <span className="text-metadata text-muted-foreground mt-xs">
                     {userName}
                   </span>
                 )}

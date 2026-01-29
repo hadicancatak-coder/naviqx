@@ -304,10 +304,11 @@ export default function Notifications() {
         return payload.commenter_name ? `by ${payload.commenter_name}` : "";
       case "task_status_changed":
         return payload.old_status ? `was ${payload.old_status}` : "";
-      case "task_deadline_changed":
+      case "task_deadline_changed": {
         const oldDate = payload.old_due_date ? new Date(payload.old_due_date).toLocaleDateString() : "None";
         const newDate = payload.new_due_date ? new Date(payload.new_due_date).toLocaleDateString() : "Removed";
         return `${oldDate} → ${newDate}`;
+      }
       case "task_priority_changed":
         return `${payload.old_priority} → ${payload.new_priority}`;
       case "deadline_reminder_overdue":

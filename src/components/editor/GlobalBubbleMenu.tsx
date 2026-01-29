@@ -46,11 +46,14 @@ function findEditorFromElement(element: Element | null): Editor | null {
   while (current && iterations < 50) {
     iterations++;
     // Check for __tiptap_editor property (attached by useRichTextEditor)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((current as any).__tiptap_editor) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (current as any).__tiptap_editor as Editor;
     }
     // Check if this is a ProseMirror element
     if (current.classList?.contains('ProseMirror')) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const editor = (current as any).__tiptap_editor;
       if (editor) {
         return editor as Editor;
