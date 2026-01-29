@@ -16,6 +16,7 @@ import { getDaysOverdue } from "@/lib/overdueHelpers";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
 
 interface TaskCardProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task: any;
   onClick: () => void;
 }
@@ -135,6 +136,7 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
       if (error) throw error;
 
       if (task.assignees?.length > 0 && duplicatedTask) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const assigneeInserts = task.assignees.map((assignee: any) => ({
           task_id: duplicatedTask.id,
           user_id: assignee.user_id,
@@ -150,10 +152,10 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
       });
 
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -202,10 +204,10 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowDeleteConfirm(false);
       setOpenDropdown(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -334,6 +336,7 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
       {/* Footer with metadata */}
       <div className="flex items-center justify-between mt-md pt-md border-t cursor-pointer" onClick={onClick}>
         <div className="flex items-center -space-x-2">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {task.assignees?.slice(0, 3).map((assignee: any) => (
             <Avatar key={assignee.user_id} className="h-6 w-6 border-2 border-background">
               <AvatarImage src={assignee.avatar_url} />
