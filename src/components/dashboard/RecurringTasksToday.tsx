@@ -118,6 +118,7 @@ export function RecurringTasksToday() {
       </div>
       
       <div className="space-y-sm">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {recurringTasksToday.map((task: any) => (
           <div
             key={task.id}
@@ -144,6 +145,7 @@ export function RecurringTasksToday() {
         ))}
       </div>
 
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {tasks && tasks.filter((t: any) => t.template_task_id || t.task_type === 'recurring').length > 5 && (
         <button
           onClick={() => navigate('/tasks')}
