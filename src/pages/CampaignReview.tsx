@@ -37,6 +37,33 @@ interface ExternalComment {
   created_at: string;
 }
 
+interface CampaignData {
+  id: string;
+  name: string;
+  lp_type?: string;
+  campaign_type?: string;
+  landing_page?: string;
+  description?: string | null;
+}
+
+interface VersionData {
+  id: string;
+  utm_campaign_id: string;
+  version_number: number;
+  version_notes: string | null;
+  image_url: string | null;
+  asset_link: string | null;
+  created_at: string;
+}
+
+interface AccessData {
+  entity: string;
+  campaign_id?: string;
+  email_verified?: boolean;
+  reviewer_name?: string;
+  reviewer_email?: string;
+}
+
 type ViewMode = "grid" | "list";
 type SortMode = "latest" | "name" | "versions";
 
@@ -53,7 +80,7 @@ export default function CampaignReview() {
     hasSession 
   } = useReviewerSession('campaign_review', token);
   
-  const [accessData, setAccessData] = useState<any>(null);
+  const [accessData, setAccessData] = useState<AccessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   
@@ -62,8 +89,8 @@ export default function CampaignReview() {
   const [email, setEmail] = useState("");
   const [isIdentified, setIsIdentified] = useState(false);
   
-  const [campaignData, setCampaignData] = useState<any[]>([]);
-  const [versions, setVersions] = useState<any[]>([]);
+  const [campaignData, setCampaignData] = useState<CampaignData[]>([]);
+  const [versions, setVersions] = useState<VersionData[]>([]);
   const [comments, setComments] = useState<{ [key: string]: string }>({});
   const [submitting, setSubmitting] = useState<{ [key: string]: boolean }>({});
   const [entityComment, setEntityComment] = useState("");
@@ -117,12 +144,12 @@ export default function CampaignReview() {
         
         // Always load campaign data - don't block on identification
         await loadCampaignData(result.entity, result.campaign_id);
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error("Token verification failed:", error);
         setAccessData(null);
-        const errorMessage = error.message?.includes("fetch") 
+        const errorMessage = error instanceof Error && error.message?.includes("fetch") 
           ? "Network error - please check your connection and try again"
-          : (error.message || "This review link is invalid or has expired");
+          : (error instanceof Error ? error.message : "This review link is invalid or has expired");
         toast.error(errorMessage);
       } finally {
         setLoading(false);
@@ -178,14 +205,14 @@ export default function CampaignReview() {
           throw trackError;
         }
         
-        const campaigns = tracking.map((t: any) => t.utm_campaigns).filter(Boolean);
+        const campaigns = tracking.map((t) => t.utm_campaigns as CampaignData).filter(Boolean);
         
         if (!campaigns || campaigns.length === 0) {
           logger.debug(`No campaigns found for ${entity}`);
         }
         
         setCampaignData(campaigns);
-        campaignIds = campaigns.map((c: any) => c.id);
+        campaignIds = campaigns.map((c) => c.id);
 
         if (campaignIds.length > 0) {
           const { data: versionData, error: versionError } = await supabase
@@ -204,11 +231,12 @@ export default function CampaignReview() {
       
       // Load existing comments for this entity
       await loadExistingComments(entity, campaignIds);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading campaign data:", error);
-      if (error.message?.includes("expired")) {
+      const message = error instanceof Error ? error.message : "";
+      if (message?.includes("expired")) {
         toast.error("This review link has expired");
-      } else if (error.message?.includes("JWT")) {
+      } else if (message?.includes("JWT")) {
         toast.error("Invalid review link");
       } else {
         toast.error("Failed to load campaign data");
@@ -219,7 +247,7 @@ export default function CampaignReview() {
   const loadExistingComments = async (entity: string, campaignIds: string[]) => {
     try {
       // Fetch all comments for this entity (both campaign-specific and entity-level)
-      let query = supabase
+      const query = supabase
         .from("external_campaign_review_comments")
         .select("*")
         .eq("entity", entity)
@@ -263,8 +291,9 @@ export default function CampaignReview() {
       
       setIsIdentified(true);
       toast.success("You can now leave feedback");
-    } catch (error: any) {
-      toast.error("Verification failed: " + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Verification failed: " + message);
     } finally {
       setVerifying(false);
     }
@@ -306,7 +335,7 @@ export default function CampaignReview() {
       setExistingComments(prev => [newComment, ...prev]);
       setComments({ ...comments, [versionId]: "" });
       toast.success("Feedback submitted");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Comment submission error:", error);
       toast.error("Failed to submit feedback");
     } finally {
@@ -350,7 +379,7 @@ export default function CampaignReview() {
       setExistingComments(prev => [newComment, ...prev]);
       setEntityComment("");
       toast.success("Entity feedback submitted");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Entity comment submission error:", error);
       toast.error("Failed to submit feedback");
     } finally {
@@ -382,16 +411,18 @@ export default function CampaignReview() {
       switch (sortMode) {
         case "name":
           return (a.name || "").localeCompare(b.name || "");
-        case "versions":
+        case "versions": {
           const aVersions = versions.filter(v => v.utm_campaign_id === a.id).length;
           const bVersions = versions.filter(v => v.utm_campaign_id === b.id).length;
           return bVersions - aVersions;
+        }
         case "latest":
-        default:
+        default: {
           // Sort by most recent version
           const aLatest = versions.find(v => v.utm_campaign_id === a.id)?.created_at || "";
           const bLatest = versions.find(v => v.utm_campaign_id === b.id)?.created_at || "";
           return bLatest.localeCompare(aLatest);
+        }
       }
     });
   };
@@ -441,7 +472,7 @@ export default function CampaignReview() {
               </p>
             </div>
             <Badge variant="outline" className="text-metadata">
-              <ExternalLink className="h-3 w-3 mr-1" />
+              <ExternalLink className="h-3 w-3 mr-xs" />
               External Review
             </Badge>
           </div>
@@ -474,7 +505,7 @@ export default function CampaignReview() {
                 >
                   {verifying ? (
                     <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      <Loader2 className="h-3 w-3 mr-xs animate-spin" />
                       Verifying...
                     </>
                   ) : (
@@ -521,10 +552,10 @@ export default function CampaignReview() {
               onValueChange={(v) => v && setViewMode(v as ViewMode)}
               className="bg-muted rounded-lg p-0.5"
             >
-              <ToggleGroupItem value="grid" size="sm" className="h-8 px-3 data-[state=on]:bg-background">
+              <ToggleGroupItem value="grid" size="sm" className="h-8 px-sm data-[state=on]:bg-background">
                 <LayoutGrid className="h-4 w-4" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="list" size="sm" className="h-8 px-3 data-[state=on]:bg-background">
+              <ToggleGroupItem value="list" size="sm" className="h-8 px-sm data-[state=on]:bg-background">
                 <List className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
@@ -533,7 +564,7 @@ export default function CampaignReview() {
           <FilterPill>
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
               <SelectTrigger className="w-[140px] h-9">
-                <ArrowUpDown className="h-3 w-3 mr-1" />
+                <ArrowUpDown className="h-3 w-3 mr-xs" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -554,10 +585,10 @@ export default function CampaignReview() {
         {/* Campaign Grid/List */}
         {sortedCampaigns.length === 0 ? (
           <Card>
-            <CardContent className="py-12">
+            <CardContent className="py-xl">
               <div className="text-center text-muted-foreground">
                 <p className="text-body">No campaigns available for review at this time.</p>
-                <p className="text-body-sm mt-2">Entity: {accessData?.entity}</p>
+                <p className="text-body-sm mt-xs">Entity: {accessData?.entity}</p>
               </div>
             </CardContent>
           </Card>
@@ -637,13 +668,13 @@ export default function CampaignReview() {
                     </div>
                     
                     {/* Badges */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-sm">
                       <Badge variant="secondary" className="text-metadata">
                         {campaignVersions.length} v
                       </Badge>
                       {commentCount > 0 && (
                         <Badge className="text-metadata">
-                          <MessageSquare className="h-3 w-3 mr-1" />
+                          <MessageSquare className="h-3 w-3 mr-xs" />
                           {commentCount}
                         </Badge>
                       )}
@@ -673,7 +704,7 @@ export default function CampaignReview() {
         {/* Entity-Level Feedback Section */}
         <Card className="bg-accent/5 border-2 border-dashed">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-sm">
               <MessageSquare className="h-5 w-5 text-primary" />
               General Feedback for {accessData?.entity}
             </CardTitle>
@@ -704,7 +735,7 @@ export default function CampaignReview() {
                               {format(new Date(comment.created_at), "MMM d, h:mm a")} ({formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })})
                             </span>
                           </div>
-                          <p className="text-body-sm text-foreground mt-1">{comment.comment_text}</p>
+                          <p className="text-body-sm text-foreground mt-xs">{comment.comment_text}</p>
                         </div>
                       </div>
                     ))}
@@ -726,7 +757,7 @@ export default function CampaignReview() {
               >
                 {submittingEntityComment ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-sm animate-spin" />
                     Submitting...
                   </>
                 ) : (
