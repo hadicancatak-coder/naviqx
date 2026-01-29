@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+import type { Json } from "@/integrations/supabase/types";
+
 export interface TaskChangeLog {
   id: string;
   task_id: string;
   changed_by: string;
   changed_at: string;
   field_name: string;
-  old_value: any;
-  new_value: any;
+  old_value: Json;
+  new_value: Json;
   change_type: string;
   description: string;
   profiles?: {
