@@ -136,13 +136,14 @@ export function TaskListView({
           aVal = a.title?.toLowerCase() || '';
           bVal = b.title?.toLowerCase() || '';
           break;
-        case 'entity':
+        case 'entity': {
           // entity can be string or array
           const aEntity = Array.isArray(a.entity) ? a.entity[0] : a.entity;
           const bEntity = Array.isArray(b.entity) ? b.entity[0] : b.entity;
           aVal = (aEntity || '').toLowerCase();
           bVal = (bEntity || '').toLowerCase();
           break;
+        }
         case 'status':
           aVal = a.status?.toLowerCase() || '';
           bVal = b.status?.toLowerCase() || '';
