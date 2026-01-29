@@ -32,6 +32,7 @@ export function useKPIs() {
       
       const { data: newKPI, error: kpiError } = await supabase
         .from("kpis")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert requires partial type cast
         .insert(kpiData as any)
         .select()
         .single();
@@ -39,9 +40,11 @@ export function useKPIs() {
       if (kpiError) throw kpiError;
 
       if (targets && targets.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert requires dynamic type
         const targetsData = targets.map(t => ({ ...t, kpi_id: (newKPI as any).id }));
         const { error: targetsError } = await supabase
           .from("kpi_targets")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert requires partial type cast
           .insert(targetsData as any);
 
         if (targetsError) throw targetsError;
@@ -62,6 +65,7 @@ export function useKPIs() {
     mutationFn: async ({ id, ...updates }: Partial<TeamKPI> & { id: string }) => {
       const { error } = await supabase
         .from("kpis")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase update requires partial type cast
         .update(updates as any)
         .eq("id", id);
 
@@ -113,7 +117,8 @@ export function useKPIs() {
           throw new Error("Your profile was not found. Please contact support.");
         }
 
-        let finalAssignment: any = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic assignment object for Supabase
+        const finalAssignment: any = {
           ...assignment,
           assigned_by: assignedByProfile.id,
         };
@@ -190,6 +195,7 @@ export function useKPIs() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
         .from("kpi_assignments")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase update requires partial type cast
         .update({ status } as any)
         .eq("id", id);
 
