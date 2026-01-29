@@ -27,6 +27,7 @@ export function ActivityFeed() {
     return unsubscribe;
   }, [queryClient]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getActionText = (activity: any) => {
     if (activity.field_name) {
       return `${activity.action} ${activity.entity_type} ${activity.field_name}`;
@@ -64,6 +65,7 @@ export function ActivityFeed() {
       </div>
       <div className="space-y-sm max-h-[400px] overflow-y-auto">
         {activities.length > 0 ? (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           activities.map((activity: any) => (
             <div key={activity.id} className="flex items-start gap-sm py-sm border-b border-border/50 last:border-0 hover:bg-muted/30 transition-smooth cursor-pointer">
               <Avatar className="h-8 w-8">
