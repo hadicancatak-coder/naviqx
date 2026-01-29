@@ -98,6 +98,7 @@ export function UnifiedTaskBoard({ tasks, onTaskClick, groupBy = 'status' }: Uni
     const assignees = new Map<string, string>();
     tasks.forEach(task => {
       const taskAssignees = task.assignees || task.task_assignees || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       taskAssignees.forEach((a: any) => {
         const name = a.name || a.profiles?.name || 'Unknown';
         const id = a.user_id || a.id || name;
@@ -145,6 +146,7 @@ export function UnifiedTaskBoard({ tasks, onTaskClick, groupBy = 'status' }: Uni
     const assignees = task.assignees || task.task_assignees || [];
     if (!assignees.length) return 'Unassigned';
     const first = assignees[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (first as any).user_id || (first as any).id || 'Unassigned';
   };
 
@@ -258,6 +260,7 @@ function TaskCard({ task, onClick }: TaskCardProps) {
         
         {assignees.length > 0 && (
           <div className="flex -space-x-1.5">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {assignees.slice(0, 2).map((assignee: any, idx) => (
               <Avatar key={assignee.user_id || assignee.id || idx} className="h-5 w-5 border-2 border-background">
                 <AvatarImage src={assignee.avatar_url || assignee.profiles?.avatar_url} />
