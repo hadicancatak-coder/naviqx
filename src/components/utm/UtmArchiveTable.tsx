@@ -88,6 +88,7 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
 
   const handleBulkExport = () => {
     const selectedLinks = links.filter((l) => selectedIds.has(l.id));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exportUtmLinksToCSV(selectedLinks as any, "utm_links_export.csv");
     toast.success(`Exported ${selectedLinks.length} links`);
   };
