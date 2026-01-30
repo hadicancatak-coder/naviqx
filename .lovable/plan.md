@@ -1,268 +1,157 @@
 
-## Fix ALL Remaining @typescript-eslint/no-explicit-any Errors
+## Fix Build Errors and Enable Instant UI Updates
 
 ### Problem Analysis
-The build keeps failing because there are **20+ files** with unprotected `any` types. Previous fixes addressed files one-by-one, but new files kept appearing in the build queue. This plan addresses ALL remaining instances at once.
 
-### Files Requiring Fixes
-
-Based on the comprehensive codebase search, here are ALL files with unprotected `any` types that need ESLint suppression comments:
-
-| # | File | Lines with `any` | Fix Required |
-|---|------|------------------|--------------|
-| 1 | `src/components/ads/SavedElementsTableView.tsx` | 24, 33 | `elements: any[]`, `selectedElement: any` |
-| 2 | `src/hooks/useAdEditorState.ts` | 7, 14, 33 | `draftData: any` (interface + state + param) |
-| 3 | `src/components/dashboard/NeedsAttention.tsx` | 11 | `data: any` |
-| 4 | `src/components/tasks/TaskBoardView.tsx` | 12, 34, 45 | `tasks: any[]`, `(a: any)`, `(task: any)` |
-| 5 | `src/components/ads/SaveAsTemplateDialog.tsx` | 17 | `sitelinks: any[]` |
-| 6 | `src/components/search/AdPreviewPanel.tsx` | 12, 13, 17 | `ad: any`, `campaign: any`, `sitelinks: any[]` |
-| 7 | `src/components/utm/UtmMediumManager.tsx` | 51, 54 | `editingMedium: any`, `mediumToDelete: any` |
-| 8 | `src/components/utm/UtmPlatformManager.tsx` | 55, 58 | `editingPlatform: any`, `platformToDelete: any` |
-| 9 | `src/components/utm/EntitiesManager.tsx` | 55 | `editingEntity: any` |
-| 10 | `src/components/webintel/BulkSiteUploadDialog.tsx` | 24, 90 | `previewData: any[]`, `as any` |
-| 11 | `src/components/tasks/TaskGridView.tsx` | 4 | `tasks: any[]` |
-| 12 | `src/components/tasks/AdSelectorDialog.tsx` | 16, 22 | `onSelectAds: (ads: any[])`, `ads: any[]` |
-| 13 | `src/components/utm/UtmBuilder.tsx` | 35, 106 | `generatedLinks: any[]`, `links: any[]` |
-| 14 | `src/components/ads/AdListPanel.tsx` | 12, 14 | `ads: any[]`, `onSelectAd: (ad: any)` |
-| 15 | `src/components/search/CampaignPreviewPanel.tsx` | 11-17 | `campaign: any`, `adGroups: any[]`, `ads: any[]`, etc. |
-
-### Implementation Strategy
-
-For each file, add `// eslint-disable-next-line @typescript-eslint/no-explicit-any` before lines containing `any` types.
-
-#### Example Pattern
+**Issue 1: Build Failure**
+The build is failing on `src/components/utm/UtmArchiveTable.tsx` due to an unprotected `any` type on line 91:
 ```typescript
-// Before:
-interface Props {
-  tasks: any[];
-}
-
-// After:
-interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks: any[];
-}
+exportUtmLinksToCSV(selectedLinks as any, "utm_links_export.csv");
 ```
 
-### Detailed Changes by File
+Additionally, `src/hooks/useTaskComments.ts` has an unprotected `any` on line 20:
+```typescript
+attachments?: any;
+```
+
+**Issue 2: Non-Instant UI Updates**
+Changes to tasks (descriptions, comments, status updates) are not immediately visible. The current architecture has several issues:
+
+1. **Comments Hook**: Uses manual `fetchComments()` with no realtime subscription - comments only update after a page refresh or manual trigger
+2. **Description Updates**: While optimistic updates work for the local user, other changes don't reflect instantly
+3. **Realtime Service**: Only listens for `tasks` table changes, not `comments` table changes
+4. **High StaleTime**: 2-minute staleTime means cached data persists too long
 
 ---
 
-#### 1. `src/components/ads/SavedElementsTableView.tsx`
-**Lines 23-24 and 33:**
-```typescript
-interface SavedElementsTableViewProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  elements: any[];
-  onRefresh?: () => void;
-}
+### Implementation Plan
 
-// Line 33:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [selectedElement, setSelectedElement] = useState<any>(null);
-```
+#### Part 1: Fix Build Errors
+
+**File 1: `src/components/utm/UtmArchiveTable.tsx`**
+- Add ESLint suppression comment before line 91
+
+**File 2: `src/hooks/useTaskComments.ts`**
+- Add ESLint suppression comment before line 20 for `attachments?: any`
 
 ---
 
-#### 2. `src/hooks/useAdEditorState.ts`
-**Lines 7, 14, 33:**
+#### Part 2: Enable Instant UI Updates
+
+**Step 1: Add Realtime to Comments Hook**
+
+Update `src/hooks/useTaskComments.ts` to subscribe to the `comments` table:
+
 ```typescript
-interface EditorState {
-  adId: string | null;
-  hasUnsavedChanges: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  draftData: any;
-}
+// Add realtime subscription for comments
+useEffect(() => {
+  if (!taskId) return;
+  
+  const channel = supabase
+    .channel(`comments-${taskId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'comments',
+        filter: `task_id=eq.${taskId}`
+      },
+      () => {
+        // Refetch comments when any change occurs
+        fetchComments();
+      }
+    )
+    .subscribe();
 
-// Line 14:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [draftData, setDraftData] = useState<any>(null);
-
-// Line 33:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(data: any) => {
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [taskId, fetchComments]);
 ```
 
----
+**Step 2: Reduce StaleTime for Task Queries**
 
-#### 3. `src/components/dashboard/NeedsAttention.tsx`
-**Line 11:**
+Update `src/hooks/useTasks.ts`:
+- Change `staleTime` from `2 * 60 * 1000` (2 minutes) to `30 * 1000` (30 seconds)
+- This allows more frequent background refetches while still benefiting from caching
+
+**Step 3: Add Realtime to Task Detail**
+
+Update `src/hooks/useTask.ts`:
+- Add a realtime subscription for the specific task being viewed
+- Immediately refetch when changes are detected
+
 ```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [data, setData] = useState<any>({ overdueTasks: [], blockers: [], pendingApprovals: [] });
-```
+// Add realtime subscription for single task updates
+useEffect(() => {
+  if (!taskId) return;
+  
+  const channel = supabase
+    .channel(`task-detail-${taskId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tasks',
+        filter: `id=eq.${taskId}`
+      },
+      () => {
+        queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
+      }
+    )
+    .subscribe();
 
----
-
-#### 4. `src/components/tasks/TaskBoardView.tsx`
-**Lines 12, 34, 45:**
-```typescript
-interface TaskBoardViewProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks: any[];
-  ...
-}
-
-// Line 34:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-task.assignees.forEach((a: any) => {
-
-// Line 45:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getDateGroup = (task: any): string => {
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [taskId, queryClient]);
 ```
 
 ---
 
-#### 5. `src/components/ads/SaveAsTemplateDialog.tsx`
-**Line 17:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-sitelinks: any[];
+### Technical Details
+
+#### Files to Modify:
+
+| File | Change |
+|------|--------|
+| `src/components/utm/UtmArchiveTable.tsx` | Add ESLint suppression on line 90 |
+| `src/hooks/useTaskComments.ts` | Add suppression + realtime subscription |
+| `src/hooks/useTasks.ts` | Reduce staleTime to 30s |
+| `src/hooks/useTask.ts` | Add realtime subscription for task detail |
+
+#### Realtime Architecture After Changes:
+
+```text
+┌─────────────────────────────────────────────────────┐
+│                 Realtime Subscriptions               │
+├─────────────────────────────────────────────────────┤
+│ Global (via realtimeService):                       │
+│   • tasks table → invalidates TASK_QUERY_KEY        │
+│                                                     │
+│ Per-Component:                                      │
+│   • useTask: task-detail-{id} → TASK_DETAIL_KEY     │
+│   • useTaskComments: comments-{taskId} → refetch    │
+└─────────────────────────────────────────────────────┘
 ```
+
+#### Expected Behavior After Fix:
+
+1. **Status Changes**: Optimistic update shows immediately + realtime confirms
+2. **Description Edits**: Already optimistic, now realtime syncs across tabs/users
+3. **Comments**: New comments appear instantly via realtime subscription
+4. **Priority/Deadline**: Same optimistic + realtime pattern
 
 ---
 
-#### 6. `src/components/search/AdPreviewPanel.tsx`
-**Lines 12-17:**
-```typescript
-interface AdPreviewPanelProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ad: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  campaign: any;
-  entity: string;
-  headlines: string[];
-  descriptions: string[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sitelinks: any[];
-```
+### Summary of Changes
 
----
+1. **2 ESLint suppressions** to fix build
+2. **3 realtime subscriptions added** for instant updates:
+   - Task detail updates (per-task channel)
+   - Comments (per-task channel)
+   - Task list already has global subscription
+3. **Reduced staleTime** from 2 min to 30 sec for fresher data
 
-#### 7. `src/components/utm/UtmMediumManager.tsx`
-**Lines 51, 54:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [editingMedium, setEditingMedium] = useState<any>(null);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [mediumToDelete, setMediumToDelete] = useState<any>(null);
-```
-
----
-
-#### 8. `src/components/utm/UtmPlatformManager.tsx`
-**Lines 55, 58:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [editingPlatform, setEditingPlatform] = useState<any>(null);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [platformToDelete, setPlatformToDelete] = useState<any>(null);
-```
-
----
-
-#### 9. `src/components/utm/EntitiesManager.tsx`
-**Line 55:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [editingEntity, setEditingEntity] = useState<any>(null);
-```
-
----
-
-#### 10. `src/components/webintel/BulkSiteUploadDialog.tsx`
-**Lines 24, 90:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [previewData, setPreviewData] = useState<any[]>([]);
-
-// Line 90:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type: (row[3] as any) || 'Website',
-```
-
----
-
-#### 11. `src/components/tasks/TaskGridView.tsx`
-**Line 4:**
-```typescript
-interface TaskGridViewProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks: any[];
-```
-
----
-
-#### 12. `src/components/tasks/AdSelectorDialog.tsx`
-**Lines 16, 22:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-onSelectAds: (ads: any[]) => void;
-
-// Line 22:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [ads, setAds] = useState<any[]>([]);
-```
-
----
-
-#### 13. `src/components/utm/UtmBuilder.tsx`
-**Lines 35, 106:**
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const [generatedLinks, setGeneratedLinks] = useState<any[]>([]);
-
-// Line 106:
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const links: any[] = [];
-```
-
----
-
-#### 14. `src/components/ads/AdListPanel.tsx`
-**Lines 12, 14:**
-```typescript
-interface AdListPanelProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ads: any[];
-  selectedAdId: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSelectAd: (ad: any) => void;
-```
-
----
-
-#### 15. `src/components/search/CampaignPreviewPanel.tsx`
-**Lines 11-18:**
-```typescript
-interface CampaignPreviewPanelProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  campaign: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  adGroups: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ads: any[];
-  entity: string;
-  onViewAllAds?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onEditAd?: (ad: any, adGroup: any, campaign: any, entity: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onCreateAd?: (adGroup: any, campaign: any, entity: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onCreateAdGroup?: (campaign: any, entity: string) => void;
-```
-
----
-
-### Expected Result
-- **0 build-blocking errors** related to `@typescript-eslint/no-explicit-any`
-- Build passes successfully
-- All 15 files fixed in a single batch
-
-### Technical Notes
-- These ESLint suppressions are a temporary measure to unblock the build
-- Proper typing would require defining interfaces for all data structures (Ad, Task, Campaign, etc.)
-- The project memory indicates this is acceptable during the ongoing migration phase
