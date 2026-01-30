@@ -67,6 +67,7 @@ export function TechStackPageContent({
 
   // Get icon component
   const iconName = page.icon || 'server';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const IconComponent = (LucideIcons as any)[iconName.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')] || Server;
 
   const statusConfig = page.status ? STATUS_CONFIG[page.status] : null;
@@ -178,6 +179,7 @@ export function TechStackPageContent({
           <h3 className="text-heading-sm font-medium text-foreground mb-md">Related Items</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {page.children.map((child) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const ChildIcon = (LucideIcons as any)[
                 (child.icon || 'server').split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')
               ] || Server;
