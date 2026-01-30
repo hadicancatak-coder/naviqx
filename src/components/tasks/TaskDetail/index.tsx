@@ -116,4 +116,5 @@ export function TaskDetail({ taskId, task, onClose, onTaskDeleted }: TaskDetailP
 }
 
 // Re-export context hook for external use
+// eslint-disable-next-line react-refresh/only-export-components
 export { useTaskDetailContext } from "./TaskDetailContext";
