@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from '@/lib/queryKeys';
 import { mapStatusToUi } from '@/domain';
@@ -45,6 +46,31 @@ export interface TaskWithAssignees {
  */
 export function useTask(taskId: string, cachedTask?: TaskWithAssignees) {
   const queryClient = useQueryClient();
+  
+  // Subscribe to realtime updates for this specific task
+  useEffect(() => {
+    if (!taskId || taskId === '' || taskId === 'undefined') return;
+    
+    const channel = supabase
+      .channel(`task-detail-${taskId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tasks',
+          filter: `id=eq.${taskId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [taskId, queryClient]);
   
   return useQuery({
     queryKey: TASK_DETAIL_KEY(taskId),

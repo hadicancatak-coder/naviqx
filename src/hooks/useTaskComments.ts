@@ -17,6 +17,7 @@ interface Comment {
   author_id: string;
   body: string;
   created_at: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attachments?: any;
   author?: {
     id: string;
@@ -76,10 +77,32 @@ export function useTaskComments(taskId: string, user: User | null) {
     setUsers(data || []);
   }, []);
 
-  // Initial fetch
+  // Initial fetch + realtime subscription
   useEffect(() => {
     fetchComments();
     fetchUsers();
+    
+    // Subscribe to realtime comment changes
+    const channel = supabase
+      .channel(`comments-${taskId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments',
+          filter: `task_id=eq.${taskId}`
+        },
+        () => {
+          // Refetch comments when any change occurs
+          fetchComments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [taskId, fetchComments, fetchUsers]);
 
   // Add comment
