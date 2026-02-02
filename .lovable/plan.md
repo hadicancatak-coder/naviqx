@@ -1,140 +1,150 @@
 
+# Build Fix Plan: Eliminating All `@typescript-eslint/no-explicit-any` Errors
 
-## Fix Build-Blocking `no-useless-escape` Errors
+## Problem Summary
+Your build has been failing due to **unsuppressed `any` types** across multiple files. The ESLint rule `@typescript-eslint/no-explicit-any` is set to `error` level, causing immediate build failures.
 
-### Problem Summary
-
-The build is failing due to 17+ `no-useless-escape` errors across 4 files. These errors occur because regex patterns contain unnecessarily escaped characters inside character classes `[]`.
-
----
-
-### Files to Fix
-
-#### 1. `src/lib/keywordEngine.ts` (3 locations)
-
-**Line 204** - ASCII normalization regex:
-```javascript
-// Before:
-const asciiNorm = norm.replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ')
-
-// After:
-const asciiNorm = norm.replace(/[.,/;:_()\[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ')
-```
-
-**Line 467** - Junk pattern regex:
-```javascript
-// Before:
-const JUNK_PATTERN = /^[0-9\s\-\.]+$|^\s*$/;
-
-// After:
-const JUNK_PATTERN = /^[0-9\s.]+$|^\s*$/;  // hyphen removed as not needed
-```
-
-**Line 510** - Dictionary matching regex:
-```javascript
-// Before:
-const aliasAscii = aliasNorm.replace(/[.,/;:_\-()[\]{}\"'`!@#$%^&*+=<>?\\|~]/g, ' ')
-
-// After:
-const aliasAscii = aliasNorm.replace(/[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ')
-```
-
-**Line 863** - Token extraction regex:
-```javascript
-// Before:
-const norm = text.toLowerCase().replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ')
-
-// After:
-const norm = text.toLowerCase().replace(/[.,/;:_()\[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ')
-```
-
-#### 2. `src/components/PasswordStrengthIndicator.tsx` (Line 17)
-
-```javascript
-// Before:
-{ label: "One special character", met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) }
-
-// After:
-{ label: "One special character", met: /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(password) }
-```
-
-#### 3. `src/pages/Security.tsx` (Line 93)
-
-```javascript
-// Before:
-const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword);
-
-// After:
-const hasSpecial = /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(newPassword);
-```
-
-#### 4. `src/lib/validationSchemas.ts` (Line ~202)
-
-```javascript
-// Before:
-.regex(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, "...")
-
-// After:
-.regex(/[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/, "...")
-```
+After thorough investigation, I identified **25+ instances** across **16 files** that need to be fixed.
 
 ---
 
-### Regex Escape Rules (Reference)
+## Files to Fix (Grouped by Category)
 
-Inside a character class `[]`:
-| Character | Needs Escape? | Notes |
-|-----------|--------------|-------|
-| `/` | No | Only needs escape outside `[]` in regex literals |
-| `(` `)` | No | Not special inside `[]` |
-| `{` `}` | No | Not special inside `[]` |
-| `"` | No | Not special in regex |
-| `.` | No | Literal dot inside `[]` |
-| `-` | **Sometimes** | Only if in the middle; safe at start/end |
-| `[` `]` | **Yes** | Must escape `]` to include it; `[` is safe |
-| `\` | **Yes** | Always needs escaping |
-| `^` | **Sometimes** | Only at the start of `[]` |
+### Category 1: Hook Files (13 files, ~24 fixes)
+
+| File | Lines | Issue |
+|------|-------|-------|
+| `src/hooks/useUtmMediums.ts` | 49, 82, 102 | `onError: (error: any)` in 3 mutations |
+| `src/hooks/useEntityComments.ts` | 76, 94, 112 | `onError: (error: any)` in 3 mutations |
+| `src/hooks/useVersionComments.ts` | 132, 151, 169, 194 | `onError: (error: any)` in 4 mutations |
+| `src/hooks/useCampaignComments.ts` | 99, 138, 156 | `onError: (error: any)` in 3 mutations |
+| `src/hooks/useSubtasks.ts` | 162, 193, 222, 247 | `onError: (error: any)` in 4 mutations |
+| `src/hooks/useWebsiteCampaigns.ts` | 57, 77 | `onError: (error: any)` in 2 mutations |
+
+### Category 2: Component Files (4 files, ~8 fixes)
+
+| File | Lines | Issue |
+|------|-------|-------|
+| `src/components/utm/UtmMediumManager.tsx` | 65, 106 | Function params `(medium: any)` |
+| `src/components/TasksTable.tsx` | 69-70, 74, 249 | Mutation callbacks with `any` |
+| `src/components/UserManagementDialog.tsx` | 94, 122, 158 | `catch (error: any)` blocks |
+| `src/components/ReportDialog.tsx` | 52 | `catch (error: any)` |
+| `src/components/ProjectDialog.tsx` | 104 | `catch (error: any)` |
+| `src/components/tasks/SortableTaskList.tsx` | 182 | `catch (error: any)` |
+
+### Category 3: Edge Functions (2 files, 2 fixes)
+
+| File | Lines | Issue |
+|------|-------|-------|
+| `supabase/functions/reschedule-overdue-tasks/index.ts` | 48 | `catch (error: any)` |
+| `supabase/functions/delete-users/index.ts` | 80 | `catch (error: any)` |
 
 ---
 
-### Prevention Strategy
+## Fix Strategy
 
-After fixing these issues, add a pre-commit check or CI step to catch regex issues early:
+For each category, I will apply the project's established pattern:
 
-1. **ESLint runs on save** - Already configured in Vite
-2. **Consider adding a utility function** for the common punctuation strip pattern to avoid duplication:
+### Pattern 1: Mutation `onError` callbacks
+Replace `error: any` with `error: unknown` and use type narrowing:
 
 ```typescript
-// src/lib/stringUtils.ts
-export const PUNCTUATION_PATTERN = /[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g;
+// BEFORE
+onError: (error: any) => {
+  toast.error(error.message || "Failed");
+}
 
-export function stripPunctuation(text: string): string {
-  return text.replace(PUNCTUATION_PATTERN, ' ').replace(/\s+/g, ' ').trim();
+// AFTER
+onError: (error: unknown) => {
+  toast.error(error instanceof Error ? error.message : "Failed");
 }
 ```
 
-This would:
-- Centralize the pattern (fix once, apply everywhere)
-- Reduce duplication across 3+ locations in `keywordEngine.ts`
-- Make future maintenance easier
+### Pattern 2: `catch` blocks
+Same approach with `unknown` and `instanceof` check:
+
+```typescript
+// BEFORE
+} catch (error: any) {
+  toast({ description: error.message });
+}
+
+// AFTER
+} catch (error: unknown) {
+  toast({ description: error instanceof Error ? error.message : "An error occurred" });
+}
+```
+
+### Pattern 3: Component function parameters
+Define proper interfaces based on the Supabase types:
+
+```typescript
+// BEFORE (UtmMediumManager.tsx)
+const handleOpenDialog = (medium: any = null) => { ... }
+
+// AFTER
+interface UtmMediumData {
+  id: string;
+  name: string;
+  display_order: number;
+}
+const handleOpenDialog = (medium: UtmMediumData | null = null) => { ... }
+```
 
 ---
 
-### Implementation Order
+## Implementation Order
 
-1. Fix `src/lib/keywordEngine.ts` (4 regex patterns)
-2. Fix `src/components/PasswordStrengthIndicator.tsx` (1 pattern)
-3. Fix `src/pages/Security.tsx` (1 pattern)
-4. Fix `src/lib/validationSchemas.ts` (1 pattern)
-5. Verify build passes
-6. (Optional) Refactor to use shared utility function
+I will fix files in this sequence to ensure the build passes as quickly as possible:
+
+1. **Hooks first** (they're imported by components)
+2. **Components second**
+3. **Edge functions last** (need deployment)
+
+### Step-by-Step Execution
+
+**Batch 1 - UTM & Entity Hooks:**
+- `useUtmMediums.ts` - 3 fixes
+- `useEntityComments.ts` - 3 fixes
+- `useWebsiteCampaigns.ts` - 2 fixes
+
+**Batch 2 - Comment Hooks:**
+- `useVersionComments.ts` - 4 fixes
+- `useCampaignComments.ts` - 3 fixes
+
+**Batch 3 - Task Hooks:**
+- `useSubtasks.ts` - 4 fixes
+
+**Batch 4 - UTM Components:**
+- `UtmMediumManager.tsx` - 2 fixes (function params + proper interface)
+
+**Batch 5 - Task & Dialog Components:**
+- `TasksTable.tsx` - 3 fixes
+- `SortableTaskList.tsx` - 1 fix
+- `UserManagementDialog.tsx` - 3 fixes
+- `ReportDialog.tsx` - 1 fix
+- `ProjectDialog.tsx` - 1 fix
+
+**Batch 6 - Edge Functions:**
+- `reschedule-overdue-tasks/index.ts` - 1 fix
+- `delete-users/index.ts` - 1 fix
 
 ---
 
-### Expected Outcome
+## Expected Outcome
 
-After these changes:
-- All 17 `no-useless-escape` errors will be resolved
-- Build will succeed without suppression comments
-- Regex patterns will be more readable and maintainable
+After all fixes are applied:
+- Build will pass with **0 TypeScript/ESLint errors**
+- All `any` types replaced with proper `unknown` + type narrowing
+- Code follows project's established type safety standards
+- Edge functions will be automatically redeployed
 
+---
+
+## Technical Notes
+
+- The project has `UnsafeAny` defined in `src/types/unsafe.ts` but I will use proper `unknown` typing with runtime checks where possible
+- For component state that already has `eslint-disable` comments (like `editingMedium`, `mediumToDelete`), I will add proper interfaces
+- The `no-restricted-syntax` warnings (spacing/typography) are at `warn` level and won't block the build
+
+Approve this plan to begin the fixes.
