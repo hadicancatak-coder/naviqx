@@ -27,6 +27,18 @@ import { ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 
+interface MergedComment {
+  id: string;
+  entity: string;
+  comment_text: string;
+  author_name: string | null;
+  author_email?: string | null;
+  author_id: string | null;
+  created_at: string;
+  isExternal: boolean;
+  isExternalTable?: boolean;
+}
+
 interface EntityCommentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -100,8 +112,8 @@ export function EntityCommentsDialog({
       // Invalidate external comments query
       queryClient.invalidateQueries({ queryKey: ["external-entity-comments"] });
       toast.success("All comments cleared");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to clear comments");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to clear comments");
     }
   };
 
@@ -117,8 +129,8 @@ export function EntityCommentsDialog({
       } else {
         await deleteComment.mutateAsync(commentId);
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete comment");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
     }
   };
 
@@ -149,7 +161,7 @@ export function EntityCommentsDialog({
             {isAdmin && allComments.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-destructive gap-1">
+                  <Button variant="ghost" size="sm" className="text-destructive gap-xs">
                     <Trash2 className="size-3.5" />
                     Clear All
                   </Button>
@@ -187,7 +199,7 @@ export function EntityCommentsDialog({
                 No comments yet. Be the first to add one!
               </div>
             ) : (
-              allComments.map((comment: any) => (
+              allComments.map((comment: MergedComment) => (
                 <div key={comment.id} className="flex gap-sm p-sm rounded-lg bg-muted/50 group">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-metadata">
