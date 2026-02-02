@@ -42,16 +42,18 @@ export function CampaignLibrary() {
       case 'usage':
         comparison = (a.usage_count || 0) - (b.usage_count || 0);
         break;
-      case 'lastUsed':
+      case 'lastUsed': {
         const aTime = a.last_used_at ? new Date(a.last_used_at).getTime() : 0;
         const bTime = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
         comparison = aTime - bTime;
         break;
-      case 'updated':
+      }
+      case 'updated': {
         const aUpdated = new Date(a.created_at).getTime();
         const bUpdated = new Date(b.created_at).getTime();
         comparison = aUpdated - bUpdated;
         break;
+      }
     }
     
     return sortOrder === 'asc' ? comparison : -comparison;
@@ -83,6 +85,7 @@ export function CampaignLibrary() {
         <Info className="h-4 w-4" />
         <AlertDescription>
           This is a read-only view. To edit or delete campaigns, please go to{" "}
+          {/* eslint-disable-next-line no-restricted-syntax -- legitimate reset for inline link button */}
           <Button variant="link" className="p-0 h-auto font-medium" onClick={handleManageClick}>
             Campaign Log
           </Button>
@@ -106,7 +109,7 @@ export function CampaignLibrary() {
             
             {/* Sort Options */}
             <div className="flex gap-sm">
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <Select value={sortBy} onValueChange={(value: 'name' | 'usage' | 'lastUsed' | 'updated') => setSortBy(value)}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -134,6 +137,7 @@ export function CampaignLibrary() {
           </div>
         </CardContent>
         
+        {/* eslint-disable-next-line no-restricted-syntax -- legitimate reset for flush table */}
         <CardContent className="p-0">
           <Table>
             <TableHeader>
