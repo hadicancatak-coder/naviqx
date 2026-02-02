@@ -21,7 +21,7 @@ export function ElementQuickInsert({ elementType, onInsert }: ElementQuickInsert
     search: search || undefined,
   });
 
-  const handleInsert = (content: any) => {
+  const handleInsert = (content: string | Record<string, unknown>) => {
     const text = typeof content === 'string' ? content : JSON.stringify(content);
     onInsert(text);
     setOpen(false);

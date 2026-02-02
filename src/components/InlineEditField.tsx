@@ -89,6 +89,7 @@ export function InlineEditField({
     <div className="flex items-center gap-1">
       {type === "textarea" ? (
         <Textarea
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React ref type assertion
           ref={inputRef as any}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
@@ -100,6 +101,7 @@ export function InlineEditField({
         />
       ) : (
         <Input
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React ref type assertion
           ref={inputRef as any}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}

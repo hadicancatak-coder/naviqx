@@ -15,11 +15,26 @@ interface AgendaItem {
   created_at: string;
 }
 
+interface AgendaTask {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  due_at: string | null;
+  visibility?: string;
+  template_task_id?: string | null;
+  is_recurrence_template?: boolean;
+  occurrence_date?: string | null;
+  assignees?: Array<{ user_id?: string; profiles?: { user_id?: string } }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB extensibility requires index signature
+  [key: string]: any;
+}
+
 interface UseMyTasksOptions {
   userId?: string;
   date: Date;
-  allTasks: any[];
-  completions?: any[];
+  allTasks: AgendaTask[];
+  completions?: Array<{ task_id: string; completed_at: string }>;
 }
 
 export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTasksOptions) {
@@ -74,18 +89,18 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
   });
 
   // Check if user is assigned to a task - strict matching
-  const isUserAssigned = useCallback((task: any) => {
+  const isUserAssigned = useCallback((task: AgendaTask) => {
     if (!task.assignees || task.assignees.length === 0) return false;
     if (!effectiveUserId) return false;
     
-    return task.assignees.some((a: any) => {
+    return task.assignees.some((a) => {
       const assigneeUserId = a.user_id || a.profiles?.user_id;
       return assigneeUserId === effectiveUserId;
     });
   }, [effectiveUserId]);
 
   // Check if a recurring task instance occurs on the selected date
-  const taskOccursOnDate = useCallback((task: any, targetDate: Date) => {
+  const taskOccursOnDate = useCallback((task: AgendaTask, targetDate: Date) => {
     // For new template-based instances, check occurrence_date
     if (task.occurrence_date) {
       return isSameDay(new Date(task.occurrence_date), targetDate);
@@ -278,7 +293,7 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
     if (!allTasks) return [];
     
     const agendaTaskIds = new Set(agendaItems.map(item => item.task_id));
-    const result: any[] = [];
+    const result: AgendaTask[] = [];
     const addedIds = new Set<string>();
     
     for (const task of allTasks) {

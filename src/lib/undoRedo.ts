@@ -75,9 +75,9 @@ export class UndoRedoManager {
 
 export interface CellEditCommandData {
   cellKey: string;
-  oldValue: any;
-  newValue: any;
-  setCellData: (updates: any) => void;
+  oldValue: unknown;
+  newValue: unknown;
+  setCellData: (updates: Record<string, unknown>) => void;
 }
 
 export class CellEditCommand implements Command {
@@ -98,9 +98,9 @@ export class CellEditCommand implements Command {
 
 export interface StyleChangeCommandData {
   cellKeys: string[];
-  oldStyles: Record<string, any>;
-  newStyle: any;
-  applyStyle: (cellKeys: string[], style: any) => void;
+  oldStyles: Record<string, unknown>;
+  newStyle: unknown;
+  applyStyle: (cellKeys: string[], style: unknown) => void;
 }
 
 export class StyleChangeCommand implements Command {
@@ -124,8 +124,8 @@ export class StyleChangeCommand implements Command {
 }
 
 export interface BulkEditCommandData {
-  changes: Record<string, any>;
-  setCellData: (updates: any) => void;
+  changes: Record<string, unknown>;
+  setCellData: (updates: Record<string, unknown>) => void;
 }
 
 export class BulkEditCommand implements Command {
@@ -140,7 +140,7 @@ export class BulkEditCommand implements Command {
   }
 
   undo(): void {
-    const undoChanges: Record<string, any> = {};
+    const undoChanges: Record<string, unknown> = {};
     Object.keys(this.data.changes).forEach(key => {
       undoChanges[key] = { value: '' }; // Restore to empty
     });

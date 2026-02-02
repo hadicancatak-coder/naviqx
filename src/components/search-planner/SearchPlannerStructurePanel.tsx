@@ -71,6 +71,7 @@ interface AdData {
   business_name: string;
   language?: string;
   approval_status?: string;
+  [key: string]: unknown;
 }
 
 interface AdGroupData {

@@ -8,10 +8,31 @@ interface SearchBuilderAreaProps {
 
 type ViewState = 'hierarchy' | 'ad-editor';
 
+interface AdData {
+  id?: string;
+  name?: string;
+  headlines?: string[];
+  descriptions?: string[];
+  [key: string]: unknown;
+}
+
+interface AdGroupData {
+  id: string;
+  name: string;
+  campaign_id: string;
+  [key: string]: unknown;
+}
+
+interface CampaignData {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
 interface EditorContext {
-  ad: any;
-  adGroup: any;
-  campaign: any;
+  ad: AdData;
+  adGroup: AdGroupData;
+  campaign: CampaignData;
   entity: string;
 }
 

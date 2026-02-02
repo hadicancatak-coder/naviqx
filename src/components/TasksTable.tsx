@@ -24,14 +24,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import type { TaskWithAssignees } from "@/types/tasks";
 
 interface TasksTableProps {
-  tasks: any[];
+  tasks: TaskWithAssignees[];
   onTaskUpdate: () => void;
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   groupBy?: 'none' | 'dueDate' | 'priority' | 'assignee' | 'tags';
-  onTaskClick?: (taskId: string, task?: any) => void;
+  onTaskClick?: (taskId: string, task?: TaskWithAssignees) => void;
   focusedIndex?: number;
   onShiftSelect?: (taskId: string, shiftKey: boolean) => void;
   enableDragDrop?: boolean;
@@ -66,8 +67,8 @@ export const TasksTable = ({
     onMutate: async (taskId) => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
       const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
-      queryClient.setQueryData(TASK_QUERY_KEY, (old: any) => 
-        old?.filter((task: any) => task.id !== taskId)
+      queryClient.setQueryData(TASK_QUERY_KEY, (old: TaskWithAssignees[] | undefined) => 
+        old?.filter((task) => task.id !== taskId)
       );
       return { previousTasks };
     },
@@ -87,7 +88,7 @@ export const TasksTable = ({
   const groupedTasks = useMemo(() => {
     if (groupBy === 'none') return null;
 
-    const groups: Record<string, { label: string; tasks: any[]; order: number }> = {};
+    const groups: Record<string, { label: string; tasks: TaskWithAssignees[]; order: number }> = {};
 
     tasks.forEach((task) => {
       let groupKey: string;
@@ -204,12 +205,13 @@ export const TasksTable = ({
     }
   };
 
-  const handleDuplicate = async (task: any, e: React.MouseEvent) => {
+  const handleDuplicate = async (task: TaskWithAssignees, e: React.MouseEvent) => {
     e.stopPropagation();
     setProcessingAction({ taskId: task.id, action: 'duplicate' });
     try {
       const { data: newTask, error } = await supabase
         .from('tasks')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
         .insert({
           title: `${task.title} (Copy)`,
           description: task.description,
@@ -235,7 +237,7 @@ export const TasksTable = ({
           
         if (creatorProfile) {
           await supabase.from('task_assignees').insert(
-            task.assignees.map((a: any) => ({
+            task.assignees.map((a) => ({
               task_id: newTask.id,
               user_id: a.id,
               assigned_by: creatorProfile.id,
@@ -274,7 +276,7 @@ export const TasksTable = ({
     );
   };
 
-  const handleRowClick = (taskId: string, task?: any) => {
+  const handleRowClick = (taskId: string, task?: TaskWithAssignees) => {
     onTaskClick?.(taskId, task);
   };
 
@@ -286,7 +288,7 @@ export const TasksTable = ({
   };
 
   // Handle drag-drop order change - no-op since we use parent's tasks directly
-  const handleOrderChange = useCallback((_newOrder: any[]) => {
+  const handleOrderChange = useCallback((_newOrder: TaskWithAssignees[]) => {
     // Order changes are handled by parent via onTaskUpdate
   }, []);
 
@@ -309,7 +311,7 @@ export const TasksTable = ({
     />
   );
 
-  const renderTaskList = (taskList: any[]) => (
+  const renderTaskList = (taskList: TaskWithAssignees[]) => (
     <div>
       {taskList.map((task) => {
         const flatIndex = getTaskFlatIndex(task.id);

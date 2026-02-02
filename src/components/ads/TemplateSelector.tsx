@@ -16,11 +16,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+// Import the template type from the hook to ensure consistency
+import type { AdTemplate } from '@/hooks/useAdTemplates';
 
 interface TemplateSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (template: any) => void;
+  onSelect: (template: AdTemplate) => void;
 }
 
 export function TemplateSelector({ open, onOpenChange, onSelect }: TemplateSelectorProps) {
@@ -97,15 +99,15 @@ export function TemplateSelector({ open, onOpenChange, onSelect }: TemplateSelec
                 </div>
                 
                  <div className="flex gap-2 mt-3">
-                  <Badge variant={(template as any).ad_type === 'display' ? 'default' : 'outline'}>
-                    {(template as any).ad_type === 'display' ? 'Display' : 'Search'}
+                  <Badge variant={template.ad_type === 'display' ? 'default' : 'outline'}>
+                    {template.ad_type === 'display' ? 'Display' : 'Search'}
                   </Badge>
                   {template.entity && (
                     <Badge variant="outline">{template.entity}</Badge>
                   )}
                   <Badge variant="secondary">
-                    {(template as any).ad_type === 'display' 
-                      ? `${((template as any).short_headlines?.filter((h: string) => h).length || 0)} headlines`
+                    {template.ad_type === 'display' 
+                      ? `${(template.short_headlines?.filter(h => h).length || 0)} headlines`
                       : `${(template.headlines?.length || 0)} headlines`
                     }
                   </Badge>
