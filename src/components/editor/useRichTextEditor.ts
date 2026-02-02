@@ -77,11 +77,13 @@ export function useRichTextEditor({
   // Attach editor to DOM for GlobalBubbleMenu discovery
   useEffect(() => {
     if (editor?.view?.dom) {
-      (editor.view.dom as any).__tiptap_editor = editor;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (editor.view.dom as HTMLElement & { __tiptap_editor?: typeof editor }).__tiptap_editor = editor;
     }
     return () => {
       if (editor?.view?.dom) {
-        delete (editor.view.dom as any).__tiptap_editor;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (editor.view.dom as HTMLElement & { __tiptap_editor?: typeof editor }).__tiptap_editor;
       }
     };
   }, [editor]);
