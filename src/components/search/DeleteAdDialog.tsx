@@ -7,10 +7,16 @@ import { AlertCircle } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { useQueryClient } from "@tanstack/react-query";
 
+interface Ad {
+  id?: string;
+  name: string;
+  ad_group_id?: string;
+}
+
 interface DeleteAdDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ad: any;
+  ad: Ad | null;
   onSuccess: () => void;
 }
 
@@ -46,9 +52,9 @@ export function DeleteAdDialog({ open, onOpenChange, ad, onSuccess }: DeleteAdDi
       toast.success(`"${ad.name}" deleted successfully`);
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error("Delete ad error:", error);
-      const errorMessage = error.message || error.details || "Failed to delete ad. Please try again.";
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete ad. Please try again.";
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -59,7 +65,7 @@ export function DeleteAdDialog({ open, onOpenChange, ad, onSuccess }: DeleteAdDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-xs">
             <AlertCircle className="h-5 w-5 text-destructive" />
             Delete Ad
           </DialogTitle>

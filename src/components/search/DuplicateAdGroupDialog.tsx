@@ -10,10 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
+interface AdGroup {
+  id: string;
+  name: string;
+  campaign_id?: string;
+  status?: string;
+}
+
 interface DuplicateAdGroupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  adGroup: any;
+  adGroup: AdGroup | null;
   adsCount: number;
   onSuccess: () => void;
 }
@@ -98,8 +105,8 @@ export function DuplicateAdGroupDialog({ open, onOpenChange, adGroup, adsCount, 
       toast.success(`Ad group duplicated successfully${includeAds && adsCount > 0 ? ` with ${adsCount} ad(s)` : ''}`);
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to duplicate ad group");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to duplicate ad group");
     } finally {
       setIsLoading(false);
       setProgress(0);
@@ -141,13 +148,13 @@ export function DuplicateAdGroupDialog({ open, onOpenChange, adGroup, adsCount, 
           </div>
 
           {adsCount > 0 && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-xs">
               <Checkbox 
                 id="include-ads" 
                 checked={includeAds} 
                 onCheckedChange={(checked) => setIncludeAds(checked === true)} 
               />
-              <Label htmlFor="include-ads" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <Label htmlFor="include-ads" className="text-body-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Include all {adsCount} ad(s)
               </Label>
             </div>
