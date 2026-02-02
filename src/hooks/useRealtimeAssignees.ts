@@ -43,15 +43,18 @@ export function useRealtimeAssignees(entityType: EntityType, entityId: string) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from(tableName as any)
+      // Dynamic table name requires type assertion - validated at runtime
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic table name
+      const queryBuilder = supabase.from(tableName as any);
+      const { data, error } = await queryBuilder
         .select("user_id")
         .eq(idColumn, entityId);
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const userIds = data.map((d: any) => d.user_id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic data shape
+        const userIds = (data as any[]).map((d) => d.user_id);
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, user_id, name, username, avatar_url, working_days")
