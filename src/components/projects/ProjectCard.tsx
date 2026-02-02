@@ -29,9 +29,9 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconKey] || LucideIcons.FolderKanban;
 
   // Count tasks
-  const projectTasks = tasks?.filter((t: any) => t.project_id === project.id) || [];
+  const projectTasks = tasks?.filter((t: { project_id?: string | null }) => t.project_id === project.id) || [];
   const taskCount = projectTasks.length;
-  const completedTasks = projectTasks.filter((t: any) => t.status === "done").length;
+  const completedTasks = projectTasks.filter((t: { status?: string }) => t.status === "done").length;
   const progress = taskCount > 0 ? Math.round((completedTasks / taskCount) * 100) : 0;
 
   const status = statusConfig[project.status] || statusConfig.planning;
