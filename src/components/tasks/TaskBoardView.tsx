@@ -73,7 +73,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
   const filterTasksByGroup = (group: string) => {
     if (groupBy === 'status') {
       if (group === 'Backlog') {
-        return tasks.filter(t => t.status === 'Pending' || t.status === 'Backlog');
+        return tasks.filter(t => t.status === 'Backlog');
       }
       return tasks.filter(t => t.status === group);
     } else if (groupBy === 'date') {
@@ -85,7 +85,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
 
   const handleComplete = (task: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+    const newStatus = task.status === 'Completed' ? 'Backlog' : 'Completed';
     updateStatus.mutate({ id: task.id, status: newStatus });
   };
 
