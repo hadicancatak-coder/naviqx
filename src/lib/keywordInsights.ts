@@ -633,7 +633,7 @@ export function generateExecutiveSummary(
     const eduIsolates = isolates.filter(i => i.rule_triggered.includes('EDUCATION') || i.rule_triggered.includes('TOF'));
     const compIsolates = isolates.filter(i => i.rule_triggered.includes('COMPETITOR'));
     
-    let reasonParts: string[] = [];
+    const reasonParts: string[] = [];
     if (eduIsolates.length > 0) reasonParts.push(`${eduIsolates.length} education/TOF`);
     if (compIsolates.length > 0) reasonParts.push(`${compIsolates.length} competitor conquest`);
     
@@ -650,7 +650,7 @@ export function generateExecutiveSummary(
     const junk = negatives.filter(n => n.rule_triggered === 'JUNK_TERM');
     const perf = negatives.filter(n => n.rule_triggered.startsWith('PERF_'));
     
-    let reasonParts: string[] = [];
+    const reasonParts: string[] = [];
     if (noMoney.length > 0) reasonParts.push(`${noMoney.length} no-money`);
     if (brandLogin.length > 0) reasonParts.push(`${brandLogin.length} brand login`);
     if (junk.length > 0) reasonParts.push(`${junk.length} junk`);
