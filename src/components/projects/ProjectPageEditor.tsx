@@ -87,7 +87,8 @@ export function ProjectPageEditor({
         setDueDate(project.due_date ? new Date(project.due_date) : undefined);
         // Load assignees
         if (assignees) {
-          setSelectedUserIds(assignees.map((a: any) => a.user_id));
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setSelectedUserIds(assignees.map((a: { user_id: string }) => a.user_id));
         }
       } else {
         setName("");
