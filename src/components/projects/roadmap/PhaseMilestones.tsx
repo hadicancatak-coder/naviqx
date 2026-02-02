@@ -101,7 +101,7 @@ export function PhaseMilestones({ phaseId, isAdmin }: PhaseMilestonesProps) {
         {milestones.map((milestone) => (
           <div
             key={milestone.id}
-            className="flex items-center gap-2 group py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-xs group py-xs px-xs rounded-md hover:bg-muted/50 transition-colors"
           >
             <Checkbox
               checked={milestone.is_completed}

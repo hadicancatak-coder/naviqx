@@ -24,7 +24,7 @@ export const CompletedTasksSection = ({
     <div className="mt-lg">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 w-full py-3 px-4 rounded-lg bg-success/10 hover:bg-success/20 border border-success/30 transition-smooth group"
+        className="flex items-center gap-xs w-full py-sm px-md rounded-lg bg-success/10 hover:bg-success/20 border border-success/30 transition-smooth group"
       >
         {isExpanded ? (
           <ChevronDown className="w-4 h-4 text-success" />
@@ -40,11 +40,11 @@ export const CompletedTasksSection = ({
       </button>
 
       {isExpanded && (
-        <div className="mt-2 space-y-2 opacity-85">
+        <div className="mt-xs space-y-xs opacity-85">
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-start gap-3 py-3 px-4 border border-border/50 rounded-lg hover:bg-muted/30 transition-smooth cursor-pointer group"
+              className="flex items-start gap-sm py-sm px-md border border-border/50 rounded-lg hover:bg-muted/30 transition-smooth cursor-pointer group"
               onClick={() => onTaskClick(task.id)}
             >
               <Checkbox

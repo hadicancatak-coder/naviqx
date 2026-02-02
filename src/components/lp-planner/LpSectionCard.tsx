@@ -63,13 +63,13 @@ export const LpSectionCard = ({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-medium text-sm truncate">{section.name}</span>
+          <span className="font-medium text-body-sm truncate">{section.name}</span>
           <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", typeColor)}>
             {section.section_type}
           </Badge>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-sm text-metadata text-muted-foreground">
           {section.sample_images.length > 0 && (
             <span className="flex items-center gap-1">
               <Image className="h-3 w-3" />

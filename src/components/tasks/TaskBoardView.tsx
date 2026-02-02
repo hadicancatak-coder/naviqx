@@ -32,8 +32,13 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
     const assignees = new Map<string, string>();
     tasks.forEach(task => {
       if (task.assignees?.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        task.assignees.forEach((a: any) => {
+      interface TaskAssignee {
+          user_id?: string;
+          id?: string;
+          name?: string;
+          avatar_url?: string | null;
+        }
+        task.assignees.forEach((a: TaskAssignee) => {
           const name = a.name || 'Unknown';
           if (!assignees.has(name)) assignees.set(name, name);
         });
@@ -100,7 +105,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
         return (
           <div key={group} className="flex flex-col min-h-[300px]">
             {/* Column Header */}
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
+            <div className="flex items-center justify-between pb-xs mb-xs border-b border-border">
               <h3 className="font-medium text-body-sm text-foreground">{group}</h3>
               <Badge variant="secondary" className="text-metadata h-5 px-1.5">
                 {groupTasks.length}
@@ -109,7 +114,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
 
             {/* Column Content */}
             <ScrollArea className="flex-1">
-              <div className="space-y-2 pr-2">
+              <div className="space-y-xs pr-xs">
                 {groupTasks.length === 0 ? (
                   <div className="py-8 text-center text-muted-foreground text-metadata border border-dashed border-border rounded-lg">
                     No tasks
@@ -163,7 +168,7 @@ export const TaskBoardView = ({ tasks, onTaskClick, groupBy = 'status' }: TaskBo
                         <div className="flex items-center justify-between mt-2 pl-4">
                           {/* Assignees */}
                           <div className="flex -space-x-1">
-                            {task.assignees?.slice(0, 2).map((a: any) => (
+                            {task.assignees?.slice(0, 2).map((a: { user_id?: string; id?: string; name?: string; avatar_url?: string | null }) => (
                               <Avatar key={a.user_id || a.id} className="h-5 w-5 border border-background">
                                 <AvatarImage src={a.avatar_url} />
                                 <AvatarFallback className="text-[8px] bg-muted">

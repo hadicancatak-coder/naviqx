@@ -203,8 +203,8 @@ export function TeamKPIsManager() {
             {filteredProfiles.map(profile => {
               const annualKPIs = Array.isArray(profile.kpis) ? profile.kpis : [];
               const quarterlyKPIs = Array.isArray(profile.quarterly_kpis) ? profile.quarterly_kpis : [];
-              const annualWeight = annualKPIs.reduce((sum: number, kpi: any) => sum + (kpi.weight || 0), 0);
-              const quarterlyWeight = quarterlyKPIs.reduce((sum: number, kpi: any) => sum + (kpi.weight || 0), 0);
+              const annualWeight = annualKPIs.reduce((sum: number, kpi: KPI) => sum + (kpi.weight || 0), 0);
+              const quarterlyWeight = quarterlyKPIs.reduce((sum: number, kpi: KPI) => sum + (kpi.weight || 0), 0);
 
               return (
                 <div key={profile.user_id} className="p-md border rounded-lg hover:bg-muted/50 transition-smooth">
@@ -255,7 +255,7 @@ export function TeamKPIsManager() {
                     <div className="mt-3 pt-3 border-t">
                       <p className="text-metadata font-semibold text-muted-foreground mb-2">Annual KPIs:</p>
                       <div className="space-y-1">
-                        {annualKPIs.map((kpi: any, idx: number) => (
+                        {annualKPIs.map((kpi: KPI, idx: number) => (
                           <div key={idx} className="text-body-sm flex items-center gap-2">
                             <TrendingUp className="h-3 w-3 text-info" />
                             <span className="flex-1">{kpi.description}</span>

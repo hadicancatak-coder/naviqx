@@ -316,7 +316,7 @@ export function AccountStructureTree({
           
           {getIcon()}
           
-          <span className="flex-1 text-sm truncate">{node.name}</span>
+          <span className="flex-1 text-body-sm truncate">{node.name}</span>
           
           {/* Quick Action Button - only on hover */}
           {hoveredNode === node.id && (
@@ -400,9 +400,9 @@ export function AccountStructureTree({
 
   return (
     <div className="flex flex-col h-full border-r border-border bg-card">
-      <div className="p-3 border-b border-border space-y-2">
+      <div className="p-sm border-b border-border space-y-xs">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm">Account Structure</h3>
+          <h3 className="font-semibold text-body-sm">Account Structure</h3>
           <div className="flex gap-1">
             <Button
               variant="ghost"
@@ -423,7 +423,7 @@ export function AccountStructureTree({
           </div>
         </div>
         
-        <div className="flex gap-2 text-xs text-muted-foreground">
+        <div className="flex gap-xs text-metadata text-muted-foreground">
           <span>{tree.length} entities</span>
           <span>•</span>
           <span>{totalCampaigns} campaigns</span>
