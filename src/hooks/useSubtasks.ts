@@ -84,16 +84,17 @@ export function useSubtasks(parentId: string | null) {
     mutationFn: async ({ title, parentId: pId }: { title: string; parentId: string }) => {
       if (!user) throw new Error("Must be logged in");
       
+      const insertData = {
+        title,
+        parent_id: pId,
+        status: 'Pending' as const,
+        priority: 'Medium' as const,
+        created_by: user.id,
+      };
+      
       const { data, error } = await supabase
         .from('tasks')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
-        .insert({
-          title,
-          parent_id: pId,
-          status: 'Pending' as const,
-          priority: 'Medium' as const,
-          created_by: user.id,
-        } as any)
+        .insert(insertData)
         .select()
         .single();
       
