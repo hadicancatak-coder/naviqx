@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { TaskAssigneeSelector } from "@/components/tasks/TaskAssigneeSelector";
 import { useTaskDetailContext } from "./TaskDetailContext";
 import { TaskDetailPriorityCard } from "./TaskDetailPriorityCard";
+import { RecurrenceEditor } from "@/components/tasks/RecurrenceEditor";
+import { RecurrenceRule } from "@/lib/recurrenceUtils";
 
 export function TaskDetailFields() {
   const { taskId, task, mutations, realtimeAssignees, refetchAssignees, isCompleted, comments } = useTaskDetailContext();
@@ -84,6 +86,20 @@ export function TaskDetailFields() {
 
       {/* Priority Card - Prominent status, priority, due date */}
       <TaskDetailPriorityCard />
+
+      {/* Recurrence Editor - only for template tasks */}
+      {task?.is_recurrence_template && (
+        <RecurrenceEditor
+          taskId={taskId}
+          currentRrule={task.recurrence_rrule as string | null}
+          nextRunAt={task.next_run_at as string | null}
+          isTemplate={true}
+          onUpdate={(rule: RecurrenceRule) => {
+            mutations.updateRecurrence.mutate({ id: taskId, rule });
+          }}
+          isPending={mutations.updateRecurrence.isPending}
+        />
+      )}
 
       {/* Compact Assignees Row */}
       <div className="space-y-xs">

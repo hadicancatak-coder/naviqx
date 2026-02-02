@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { mapStatusToDb, completeTask as completeTaskAction } from '@/domain';
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from '@/lib/queryKeys';
+import { RecurrenceRule, calculateFirstOccurrence } from '@/lib/recurrenceUtils';
 
 /**
  * Task mutation hooks with optimistic updates for instant UI feedback.
@@ -295,6 +296,43 @@ export const useTaskMutations = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY })
   });
 
+  // Update recurrence rule for recurring task templates
+  const updateRecurrence = useMutation({
+    mutationFn: async ({ id, rule }: { id: string; rule: RecurrenceRule }) => {
+      const nextRun = calculateFirstOccurrence(rule);
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          recurrence_rrule: JSON.stringify(rule),
+          recurrence_end_type: rule.end_condition,
+          recurrence_end_value: rule.end_value?.toString() || null,
+          next_run_at: nextRun?.toISOString() || null,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ id, rule }) => {
+      await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
+      await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      const nextRun = calculateFirstOccurrence(rule);
+      return optimisticUpdate(queryClient, id, {
+        recurrence_rrule: JSON.stringify(rule),
+        recurrence_end_type: rule.end_condition,
+        recurrence_end_value: rule.end_value?.toString() || null,
+        next_run_at: nextRun?.toISOString() || null,
+      });
+    },
+    onError: (err: Error, { id }, context) => {
+      rollback(queryClient, id, context);
+      toast({ title: "Failed to update recurrence", description: err.message, variant: "destructive" });
+    },
+    onSuccess: () => toast({ title: "Recurrence updated", duration: 2000 }),
+    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
+  });
+
   return { 
     updateTask, 
     completeTask, 
@@ -303,6 +341,7 @@ export const useTaskMutations = () => {
     updatePriority,
     updateDescription,
     updateTitle,
+    updateRecurrence,
     setSprintBulk: (taskIds: string[], sprintId: string | null) => setSprintBulk.mutate({ taskIds, sprintId }),
     isSettingSprintBulk: setSprintBulk.isPending,
   };
