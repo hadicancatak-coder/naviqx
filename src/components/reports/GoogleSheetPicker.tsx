@@ -49,7 +49,7 @@ export function GoogleSheetPicker({ accessToken, onSheetSelected }: GoogleSheetP
         new window.google.picker.DocsView(window.google.picker.ViewId.SPREADSHEETS)
           .setMode(window.google.picker.DocsViewMode.LIST)
       )
-      .setCallback((data: any) => {
+      .setCallback((data: { action: string; docs?: Array<{ id: string; name: string; url: string }> }) => {
         if (data.action === window.google.picker.Action.PICKED) {
           const doc = data.docs[0];
           onSheetSelected({
@@ -74,7 +74,9 @@ export function GoogleSheetPicker({ accessToken, onSheetSelected }: GoogleSheetP
 
 declare global {
   interface Window {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     gapi: any;
     google: any;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
   }
 }
