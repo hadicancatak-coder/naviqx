@@ -33,7 +33,7 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
   const { openTaskDrawer } = useTaskDrawer();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const handleTaskClick = (taskId: string, task: any) => {
+  const handleTaskClick = (taskId: string, task: { id: string; title: string; status: string }) => {
     openTaskDrawer(taskId, task);
   };
 
@@ -53,7 +53,7 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
         </div>
         {isAdmin && (
           <Button variant="outline" size="sm" onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4 mr-xs" />
             Add Task
           </Button>
         )}
@@ -66,13 +66,13 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
       />
 
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-xs">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-14 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
       ) : tasks && tasks.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-xs">
           {tasks.map((task) => (
             <div
               key={task.id}
@@ -95,7 +95,7 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-xs">
                 {task.priority && (
                   <Badge className={priorityColors[task.priority]} variant="secondary">
                     {task.priority}
@@ -107,10 +107,10 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
+        <div className="text-center py-xl text-muted-foreground border border-dashed border-border rounded-lg">
           <p className="text-body-sm">No tasks linked to this project</p>
           {isAdmin && (
-            <Button variant="link" className="mt-2" onClick={() => setCreateDialogOpen(true)}>
+            <Button variant="link" className="mt-xs" onClick={() => setCreateDialogOpen(true)}>
               Create the first task
             </Button>
           )}
