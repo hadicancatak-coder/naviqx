@@ -224,8 +224,8 @@ export function CaptionDialog({
       }
 
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save caption");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to save caption");
     } finally {
       setIsSubmitting(false);
     }
