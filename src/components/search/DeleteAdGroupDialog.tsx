@@ -7,10 +7,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 
+interface AdGroup {
+  id: string;
+  name: string;
+}
+
 interface DeleteAdGroupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  adGroup: any;
+  adGroup: AdGroup;
   adsCount: number;
   onSuccess: () => void;
 }
@@ -48,8 +53,8 @@ export function DeleteAdGroupDialog({ open, onOpenChange, adGroup, adsCount, onS
       toast.success(`"${adGroup.name}" and ${adsCount} ad(s) deleted successfully`);
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete ad group");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete ad group");
     } finally {
       setIsDeleting(false);
     }
