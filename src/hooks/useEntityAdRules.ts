@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface EntityAdRules {
   id: string;
   entity: string;
   prohibited_words: string[];
   competitor_names: string[];
-  custom_validation_rules: any[];
+  custom_validation_rules: Json[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -89,19 +90,19 @@ export const useEntityAdRules = (entity?: string) => {
       entity: string;
       prohibited_words?: string[];
       competitor_names?: string[];
-      custom_validation_rules?: any[];
+      custom_validation_rules?: Json[];
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
         .from("entity_ad_rules")
-        .upsert({
+        .upsert([{
           entity: updates.entity,
           prohibited_words: updates.prohibited_words,
           competitor_names: updates.competitor_names,
-          custom_validation_rules: updates.custom_validation_rules,
+          custom_validation_rules: updates.custom_validation_rules as Json,
           updated_by: user?.id,
-        })
+        }])
         .select()
         .single();
 
@@ -113,8 +114,8 @@ export const useEntityAdRules = (entity?: string) => {
       queryClient.invalidateQueries({ queryKey: ["entity_ad_rules_all"] });
       toast.success("Ad rules updated successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update rules");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update rules");
     },
   });
 
