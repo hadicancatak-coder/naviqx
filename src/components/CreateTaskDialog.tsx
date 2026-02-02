@@ -218,7 +218,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
             title: title.trim(),
             description: description || null,
             priority,
-            status: 'Pending',
+            status: mapStatusToDb(status),
             due_at: firstOccurrenceDate.toISOString(),
             created_by: user!.id,
             entity: entities.length > 0 ? entities : [],
