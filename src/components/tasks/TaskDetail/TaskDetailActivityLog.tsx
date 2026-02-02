@@ -6,12 +6,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ActivityLogEntry } from "@/components/tasks/ActivityLogEntry";
 import { useTaskDetailContext } from "./TaskDetailContext";
 
+/**
+ * Activity log component showing task history
+ * Uses TaskDetailContext for change logs data
+ */
 export function TaskDetailActivityLog() {
   const { changeLogs } = useTaskDetailContext();
   // Collapsed by default to reduce clutter
   const [activityExpanded, setActivityExpanded] = useState(false);
 
-  // Sort activity logs by date, newest first for display but oldest first for reading
+  // Sort activity logs by date, oldest first for reading order
   const sortedLogs = [...changeLogs].sort((a, b) => 
     new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime()
   );
