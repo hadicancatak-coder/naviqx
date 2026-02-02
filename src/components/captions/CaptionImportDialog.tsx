@@ -190,8 +190,8 @@ export function CaptionImportDialog({ open, onOpenChange, onSuccess }: CaptionIm
       toast.success(`Successfully imported ${validRows.length} captions`);
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      toast.error("Failed to import: " + error.message);
+    } catch (error: unknown) {
+      toast.error("Failed to import: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
       setIsImporting(false);
     }
