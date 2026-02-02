@@ -395,7 +395,7 @@ export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, ad
                   <CollapsibleContent>
                     <div className="space-y-0.5 mt-1">
                         {campaignAdGroups.length === 0 ? (
-                          <div className="text-metadata text-muted-foreground py-sm px-sm">
+                          <div className="text-metadata text-muted-foreground py-xs px-xs">
                             No ad groups yet
                           </div>
                         ) : (

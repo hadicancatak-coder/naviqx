@@ -27,7 +27,7 @@ export function PanelHeader({ title, collapsed, onToggle, actions, className }: 
   }
 
   return (
-    <div className={cn("flex items-center justify-between border-b px-4 py-3 bg-muted/30", className)}>
+    <div className={cn("flex items-center justify-between border-b px-md py-sm bg-muted/30", className)}>
       <h3 className="font-semibold text-body-sm">{title}</h3>
       <div className="flex items-center gap-2">
         {actions}

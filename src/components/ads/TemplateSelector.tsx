@@ -63,7 +63,7 @@ export function TemplateSelector({ open, onOpenChange, onSelect }: TemplateSelec
                   <div>
                     <h3 className="font-semibold">{template.name}</h3>
                     {template.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+                      <p className="text-body-sm text-muted-foreground mt-xs">{template.description}</p>
                     )}
                   </div>
                   <AlertDialog open={showDeleteConfirm === template.id} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>

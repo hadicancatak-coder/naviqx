@@ -89,7 +89,7 @@ export const LpSectionLibrary = ({
 
   return (
     <div className="h-full flex flex-col bg-card border-r border-border">
-      <div className="p-md border-b border-border space-y-3">
+      <div className="p-md border-b border-border space-y-sm">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-body-sm">Section Library</h3>
           <Button size="sm" onClick={onCreateSection} className="h-7 text-metadata">
@@ -139,22 +139,22 @@ export const LpSectionLibrary = ({
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-4">
+        <div className="p-sm space-y-md">
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="text-center py-8 text-muted-foreground text-body-sm">
               Loading sections...
             </div>
           ) : Object.keys(groupedSections).length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-8 text-muted-foreground text-body-sm">
               No sections found
             </div>
           ) : (
             Object.entries(groupedSections).map(([type, typeSections]) => (
               <div key={type}>
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <h4 className="text-metadata font-medium text-muted-foreground uppercase tracking-wider mb-xs">
                   {type}
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   {typeSections.map((section) => (
                     <DraggableSectionCard
                       key={section.id}

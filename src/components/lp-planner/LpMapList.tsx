@@ -105,7 +105,7 @@ export const LpMapList = ({ selectedMapId, onSelectMap }: LpMapListProps) => {
   return (
     <>
       <div className="h-full flex flex-col bg-card border-r border-border">
-        <div className="p-md border-b border-border space-y-3">
+        <div className="p-md border-b border-border space-y-sm">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-body-sm">LP Maps</h3>
             <Button size="sm" onClick={() => setShowCreateDialog(true)} className="h-7 text-metadata">
@@ -155,13 +155,13 @@ export const LpMapList = ({ selectedMapId, onSelectMap }: LpMapListProps) => {
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-3 space-y-2">
+          <div className="p-sm space-y-xs">
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="text-center py-8 text-muted-foreground text-body-sm">
                 Loading maps...
               </div>
             ) : filteredMaps.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="text-center py-8 text-muted-foreground text-body-sm">
                 No maps found
               </div>
             ) : (
@@ -179,12 +179,12 @@ export const LpMapList = ({ selectedMapId, onSelectMap }: LpMapListProps) => {
                   <LayoutTemplate className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{map.name}</span>
+                      <span className="font-medium text-body-sm truncate">{map.name}</span>
                       <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", statusColors[map.status])}>
                         {map.status}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-xs text-metadata text-muted-foreground mt-0.5">
                       {map.entity && <span>{map.entity.name}</span>}
                       <span>•</span>
                       <span>{format(new Date(map.created_at), "MMM d, yyyy")}</span>
