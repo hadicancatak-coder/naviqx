@@ -47,7 +47,7 @@ export interface TaskWithAssignees {
   task_type?: string | null;
   // Allow additional fields from database
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

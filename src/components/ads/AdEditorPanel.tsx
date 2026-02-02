@@ -21,9 +21,31 @@ import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import type { AdVariation } from "@/lib/adVariationGenerator";
 
+interface AdData {
+  id?: string;
+  name?: string;
+  ad_type?: "search" | "display";
+  campaign?: string;
+  ad_group?: string;
+  entity?: string;
+  headlines?: string[];
+  descriptions?: string[];
+  final_url?: string;
+  path1?: string;
+  path2?: string;
+  business_name?: string;
+  sitelinks?: Array<{ text: string; url: string; desc1?: string; desc2?: string }>;
+  callouts?: string[];
+  long_headline?: string;
+  images?: string[];
+  logo_url?: string;
+  approval_status?: string;
+  [key: string]: unknown;
+}
+
 interface AdEditorPanelProps {
-  ad: any | null;
-  onSave: (adData: any) => void;
+  ad: AdData | null;
+  onSave: (adData: AdData) => void;
   onCancel: () => void;
   isCreating: boolean;
 }
@@ -124,7 +146,7 @@ export default function AdEditorPanel({ ad, onSave, onCancel, isCreating }: AdEd
     }
   }, [ad, isCreating]);
 
-  const handleFieldChange = (setter: Function) => (value: any) => {
+  const handleFieldChange = <T,>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
     setter(value);
     setHasChanges(true);
   };

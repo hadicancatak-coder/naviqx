@@ -46,8 +46,8 @@ export function CreateAdGroupDialog({ open, onOpenChange, campaignId, campaignNa
       setMaxCpc('');
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
-      toast({ title: "Failed to create ad group", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Failed to create ad group", description: error instanceof Error ? error.message : "An error occurred", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

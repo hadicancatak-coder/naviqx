@@ -4,9 +4,10 @@ import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDaysSinceUpdate, getStaleLevel, isTaskStale } from "@/lib/staleTaskHelpers";
 
+import type { TaskWithAssignees } from "@/types/tasks";
+
 interface StaleBadgeProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  task: any;
+  task: TaskWithAssignees;
   className?: string;
   showIcon?: boolean;
 }

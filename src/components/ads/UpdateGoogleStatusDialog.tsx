@@ -46,7 +46,7 @@ export function UpdateGoogleStatusDialog({ open, onOpenChange, element }: Update
         <div className="space-y-md">
           <div>
             <Label>Google Status</Label>
-            <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+            <Select value={status} onValueChange={(v) => setStatus(v as 'pending' | 'approved' | 'limited' | 'rejected')}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
