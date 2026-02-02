@@ -9,6 +9,7 @@ import { useTaskDetailContext } from "./TaskDetailContext";
 import { TaskDetailPriorityCard } from "./TaskDetailPriorityCard";
 import { RecurrenceEditor } from "@/components/tasks/RecurrenceEditor";
 import { RecurrenceRule } from "@/lib/recurrenceUtils";
+import { useTemplateTask } from "@/hooks/useTemplateTask";
 
 export function TaskDetailFields() {
   const { taskId, task, mutations, realtimeAssignees, refetchAssignees, isCompleted, comments } = useTaskDetailContext();
@@ -17,6 +18,12 @@ export function TaskDetailFields() {
   const [localTitle, setLocalTitle] = useState(task?.title || "");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // For instance tasks, fetch the parent template's recurrence data
+  const isTemplate = !!task?.is_recurrence_template;
+  const isInstance = !!task?.template_task_id;
+  const templateTaskId = task?.template_task_id as string | null;
+  const { data: templateData } = useTemplateTask(isInstance ? templateTaskId : null);
 
   // Sync local title when task changes (switching tasks)
   useEffect(() => {
@@ -34,7 +41,7 @@ export function TaskDetailFields() {
   const selectedAssignees = realtimeAssignees.map(a => a.id);
 
   const isSubtask = !!task?.parent_id;
-  const isRecurring = task?.task_type === 'recurring';
+  const isRecurring = task?.task_type === 'recurring' || isInstance;
 
   return (
     <div className="space-y-md">
@@ -87,15 +94,19 @@ export function TaskDetailFields() {
       {/* Priority Card - Prominent status, priority, due date */}
       <TaskDetailPriorityCard />
 
-      {/* Recurrence Editor - only for template tasks */}
-      {task?.is_recurrence_template && (
+      {/* Recurrence Editor - for templates AND instances */}
+      {(isTemplate || isInstance) && (
         <RecurrenceEditor
           taskId={taskId}
-          currentRrule={task.recurrence_rrule as string | null}
-          nextRunAt={task.next_run_at as string | null}
-          isTemplate={true}
+          templateTaskId={isInstance ? templateTaskId || undefined : undefined}
+          currentRrule={isTemplate ? (task?.recurrence_rrule as string | null) : (templateData?.recurrence_rrule || null)}
+          nextRunAt={isTemplate ? (task?.next_run_at as string | null) : (templateData?.next_run_at || null)}
+          isTemplate={isTemplate}
+          isInstance={isInstance}
           onUpdate={(rule: RecurrenceRule) => {
-            mutations.updateRecurrence.mutate({ id: taskId, rule });
+            // Always update the template (either this task if it's a template, or the parent template)
+            const targetId = templateTaskId || taskId;
+            mutations.updateRecurrence.mutate({ id: targetId, rule });
           }}
           isPending={mutations.updateRecurrence.isPending}
         />

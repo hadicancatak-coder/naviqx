@@ -8,18 +8,22 @@ import { RecurrenceEditSheet } from "./RecurrenceEditSheet";
 
 interface RecurrenceEditorProps {
   taskId: string;
+  templateTaskId?: string; // For instances - the ID of their parent template
   currentRrule: string | null;
   nextRunAt: string | null;
   isTemplate: boolean;
+  isInstance?: boolean; // True when viewing an instance task
   onUpdate: (rule: RecurrenceRule) => void;
   isPending?: boolean;
 }
 
 export function RecurrenceEditor({
   taskId,
+  templateTaskId,
   currentRrule,
   nextRunAt,
   isTemplate,
+  isInstance,
   onUpdate,
   isPending,
 }: RecurrenceEditorProps) {
@@ -34,8 +38,8 @@ export function RecurrenceEditor({
     setIsOpen(false);
   };
 
-  // Only show for templates
-  if (!isTemplate) return null;
+  // Show for templates OR instances that have a parent template
+  if (!isTemplate && !isInstance) return null;
 
   return (
     <div className="space-y-xs">
