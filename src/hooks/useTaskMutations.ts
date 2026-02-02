@@ -330,7 +330,11 @@ export const useTaskMutations = () => {
       toast({ title: "Failed to update recurrence", description: err.message, variant: "destructive" });
     },
     onSuccess: () => toast({ title: "Recurrence updated", duration: 2000 }),
-    onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
+    onSettled: (_, __, { id }) => {
+      invalidateBothCaches(queryClient, id);
+      // Also invalidate the template-task cache so instances see updated recurrence
+      queryClient.invalidateQueries({ queryKey: ['template-task', id] });
+    }
   });
 
   return { 
