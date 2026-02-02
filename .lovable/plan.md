@@ -1,157 +1,140 @@
 
-## Fix Build Errors and Enable Instant UI Updates
 
-### Problem Analysis
+## Fix Build-Blocking `no-useless-escape` Errors
 
-**Issue 1: Build Failure**
-The build is failing on `src/components/utm/UtmArchiveTable.tsx` due to an unprotected `any` type on line 91:
-```typescript
-exportUtmLinksToCSV(selectedLinks as any, "utm_links_export.csv");
-```
+### Problem Summary
 
-Additionally, `src/hooks/useTaskComments.ts` has an unprotected `any` on line 20:
-```typescript
-attachments?: any;
-```
-
-**Issue 2: Non-Instant UI Updates**
-Changes to tasks (descriptions, comments, status updates) are not immediately visible. The current architecture has several issues:
-
-1. **Comments Hook**: Uses manual `fetchComments()` with no realtime subscription - comments only update after a page refresh or manual trigger
-2. **Description Updates**: While optimistic updates work for the local user, other changes don't reflect instantly
-3. **Realtime Service**: Only listens for `tasks` table changes, not `comments` table changes
-4. **High StaleTime**: 2-minute staleTime means cached data persists too long
+The build is failing due to 17+ `no-useless-escape` errors across 4 files. These errors occur because regex patterns contain unnecessarily escaped characters inside character classes `[]`.
 
 ---
 
-### Implementation Plan
+### Files to Fix
 
-#### Part 1: Fix Build Errors
+#### 1. `src/lib/keywordEngine.ts` (3 locations)
 
-**File 1: `src/components/utm/UtmArchiveTable.tsx`**
-- Add ESLint suppression comment before line 91
+**Line 204** - ASCII normalization regex:
+```javascript
+// Before:
+const asciiNorm = norm.replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ')
 
-**File 2: `src/hooks/useTaskComments.ts`**
-- Add ESLint suppression comment before line 20 for `attachments?: any`
-
----
-
-#### Part 2: Enable Instant UI Updates
-
-**Step 1: Add Realtime to Comments Hook**
-
-Update `src/hooks/useTaskComments.ts` to subscribe to the `comments` table:
-
-```typescript
-// Add realtime subscription for comments
-useEffect(() => {
-  if (!taskId) return;
-  
-  const channel = supabase
-    .channel(`comments-${taskId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'comments',
-        filter: `task_id=eq.${taskId}`
-      },
-      () => {
-        // Refetch comments when any change occurs
-        fetchComments();
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [taskId, fetchComments]);
+// After:
+const asciiNorm = norm.replace(/[.,/;:_()\[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ')
 ```
 
-**Step 2: Reduce StaleTime for Task Queries**
+**Line 467** - Junk pattern regex:
+```javascript
+// Before:
+const JUNK_PATTERN = /^[0-9\s\-\.]+$|^\s*$/;
 
-Update `src/hooks/useTasks.ts`:
-- Change `staleTime` from `2 * 60 * 1000` (2 minutes) to `30 * 1000` (30 seconds)
-- This allows more frequent background refetches while still benefiting from caching
+// After:
+const JUNK_PATTERN = /^[0-9\s.]+$|^\s*$/;  // hyphen removed as not needed
+```
 
-**Step 3: Add Realtime to Task Detail**
+**Line 510** - Dictionary matching regex:
+```javascript
+// Before:
+const aliasAscii = aliasNorm.replace(/[.,/;:_\-()[\]{}\"'`!@#$%^&*+=<>?\\|~]/g, ' ')
 
-Update `src/hooks/useTask.ts`:
-- Add a realtime subscription for the specific task being viewed
-- Immediately refetch when changes are detected
+// After:
+const aliasAscii = aliasNorm.replace(/[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ')
+```
 
-```typescript
-// Add realtime subscription for single task updates
-useEffect(() => {
-  if (!taskId) return;
-  
-  const channel = supabase
-    .channel(`task-detail-${taskId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tasks',
-        filter: `id=eq.${taskId}`
-      },
-      () => {
-        queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(taskId) });
-      }
-    )
-    .subscribe();
+**Line 863** - Token extraction regex:
+```javascript
+// Before:
+const norm = text.toLowerCase().replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ')
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [taskId, queryClient]);
+// After:
+const norm = text.toLowerCase().replace(/[.,/;:_()\[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ')
+```
+
+#### 2. `src/components/PasswordStrengthIndicator.tsx` (Line 17)
+
+```javascript
+// Before:
+{ label: "One special character", met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) }
+
+// After:
+{ label: "One special character", met: /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(password) }
+```
+
+#### 3. `src/pages/Security.tsx` (Line 93)
+
+```javascript
+// Before:
+const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword);
+
+// After:
+const hasSpecial = /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(newPassword);
+```
+
+#### 4. `src/lib/validationSchemas.ts` (Line ~202)
+
+```javascript
+// Before:
+.regex(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, "...")
+
+// After:
+.regex(/[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/, "...")
 ```
 
 ---
 
-### Technical Details
+### Regex Escape Rules (Reference)
 
-#### Files to Modify:
-
-| File | Change |
-|------|--------|
-| `src/components/utm/UtmArchiveTable.tsx` | Add ESLint suppression on line 90 |
-| `src/hooks/useTaskComments.ts` | Add suppression + realtime subscription |
-| `src/hooks/useTasks.ts` | Reduce staleTime to 30s |
-| `src/hooks/useTask.ts` | Add realtime subscription for task detail |
-
-#### Realtime Architecture After Changes:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│                 Realtime Subscriptions               │
-├─────────────────────────────────────────────────────┤
-│ Global (via realtimeService):                       │
-│   • tasks table → invalidates TASK_QUERY_KEY        │
-│                                                     │
-│ Per-Component:                                      │
-│   • useTask: task-detail-{id} → TASK_DETAIL_KEY     │
-│   • useTaskComments: comments-{taskId} → refetch    │
-└─────────────────────────────────────────────────────┘
-```
-
-#### Expected Behavior After Fix:
-
-1. **Status Changes**: Optimistic update shows immediately + realtime confirms
-2. **Description Edits**: Already optimistic, now realtime syncs across tabs/users
-3. **Comments**: New comments appear instantly via realtime subscription
-4. **Priority/Deadline**: Same optimistic + realtime pattern
+Inside a character class `[]`:
+| Character | Needs Escape? | Notes |
+|-----------|--------------|-------|
+| `/` | No | Only needs escape outside `[]` in regex literals |
+| `(` `)` | No | Not special inside `[]` |
+| `{` `}` | No | Not special inside `[]` |
+| `"` | No | Not special in regex |
+| `.` | No | Literal dot inside `[]` |
+| `-` | **Sometimes** | Only if in the middle; safe at start/end |
+| `[` `]` | **Yes** | Must escape `]` to include it; `[` is safe |
+| `\` | **Yes** | Always needs escaping |
+| `^` | **Sometimes** | Only at the start of `[]` |
 
 ---
 
-### Summary of Changes
+### Prevention Strategy
 
-1. **2 ESLint suppressions** to fix build
-2. **3 realtime subscriptions added** for instant updates:
-   - Task detail updates (per-task channel)
-   - Comments (per-task channel)
-   - Task list already has global subscription
-3. **Reduced staleTime** from 2 min to 30 sec for fresher data
+After fixing these issues, add a pre-commit check or CI step to catch regex issues early:
+
+1. **ESLint runs on save** - Already configured in Vite
+2. **Consider adding a utility function** for the common punctuation strip pattern to avoid duplication:
+
+```typescript
+// src/lib/stringUtils.ts
+export const PUNCTUATION_PATTERN = /[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g;
+
+export function stripPunctuation(text: string): string {
+  return text.replace(PUNCTUATION_PATTERN, ' ').replace(/\s+/g, ' ').trim();
+}
+```
+
+This would:
+- Centralize the pattern (fix once, apply everywhere)
+- Reduce duplication across 3+ locations in `keywordEngine.ts`
+- Make future maintenance easier
+
+---
+
+### Implementation Order
+
+1. Fix `src/lib/keywordEngine.ts` (4 regex patterns)
+2. Fix `src/components/PasswordStrengthIndicator.tsx` (1 pattern)
+3. Fix `src/pages/Security.tsx` (1 pattern)
+4. Fix `src/lib/validationSchemas.ts` (1 pattern)
+5. Verify build passes
+6. (Optional) Refactor to use shared utility function
+
+---
+
+### Expected Outcome
+
+After these changes:
+- All 17 `no-useless-escape` errors will be resolved
+- Build will succeed without suppression comments
+- Regex patterns will be more readable and maintainable
 
