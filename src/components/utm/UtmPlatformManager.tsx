@@ -43,6 +43,14 @@ function SortableRow({ id, children }: { id: string; children: React.ReactNode }
   );
 }
 
+interface UtmPlatformData {
+  id: string;
+  name: string;
+  utm_medium: string | null;
+  is_active: boolean | null;
+  display_order: number | null;
+}
+
 export function UtmPlatformManager() {
   const { data: platforms = [], isLoading } = useUtmPlatforms();
   const { data: mediums = [] } = useUtmMediums();
@@ -52,12 +60,10 @@ export function UtmPlatformManager() {
   const updatePlatformOrder = useUpdatePlatformOrder();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [editingPlatform, setEditingPlatform] = useState<any>(null);
+  const [editingPlatform, setEditingPlatform] = useState<UtmPlatformData | null>(null);
   const [platformForm, setPlatformForm] = useState({ name: "", utm_medium: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [platformToDelete, setPlatformToDelete] = useState<any>(null);
+  const [platformToDelete, setPlatformToDelete] = useState<UtmPlatformData | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -66,7 +72,7 @@ export function UtmPlatformManager() {
     })
   );
 
-  const handleOpenDialog = (platform: any = null) => {
+  const handleOpenDialog = (platform: UtmPlatformData | null = null) => {
     if (platform) {
       setEditingPlatform(platform);
       setPlatformForm({ name: platform.name, utm_medium: platform.utm_medium || "" });
@@ -112,7 +118,7 @@ export function UtmPlatformManager() {
     }
   };
 
-  const handleDeleteClick = async (platform: any) => {
+  const handleDeleteClick = async (platform: UtmPlatformData) => {
     const dependencies = await checkPlatformDependencies(platform.name);
     if (!dependencies.canDelete) {
       toast.error("Cannot delete platform", {
@@ -153,7 +159,7 @@ export function UtmPlatformManager() {
   };
 
   if (isLoading) {
-    return <div className="text-center text-muted-foreground py-8">Loading platforms...</div>;
+    return <div className="text-center text-muted-foreground py-xl">Loading platforms...</div>;
   }
 
   return (
@@ -163,7 +169,7 @@ export function UtmPlatformManager() {
           <div className="flex justify-between items-center mb-md">
             <h3 className="text-heading-sm font-semibold">UTM Platforms</h3>
             <Button onClick={() => handleOpenDialog()} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-xs" />
               Add Platform
             </Button>
           </div>
@@ -181,7 +187,7 @@ export function UtmPlatformManager() {
               <TableBody>
                 {platforms.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-xl">
                       No platforms yet. Click "Add Platform" to create one.
                     </TableCell>
                   </TableRow>
@@ -194,7 +200,7 @@ export function UtmPlatformManager() {
                           <Badge variant="secondary">{platform.utm_medium || 'Not set'}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-xs">
                             <Button
                               variant="ghost"
                               size="sm"
