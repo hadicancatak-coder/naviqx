@@ -1,203 +1,137 @@
 
-# Fix Plan: Recurring Task Disappearing After Creation
 
-## Root Cause Analysis
+# Unify Task Status: Replace Pending with Backlog
 
-When you create a recurring task, TWO things happen:
+## Problem Summary
 
-1. A **template** is created (with `is_recurrence_template=true`) - this is HIDDEN from the task list
-2. An **instance** should be generated based on `next_run_at` - this is VISIBLE
+Your app has a confusing split between UI and database:
+- **Database enum**: `Pending`, `Ongoing`, `Blocked`, `Completed`, `Failed`
+- **UI labels**: `Backlog`, `Ongoing`, `Blocked`, `Completed`, `Failed`
 
-The problem: Your "Daily Budget Table" template exists but has NO visible instances because:
+This causes constant mapping bugs and confusion. You want them to match.
 
-| Issue | Current Behavior | Expected Behavior |
-|-------|-----------------|-------------------|
-| `next_run_at` calculation | Set to today at 12:00 AM (already in the past!) | Should be set to TODAY or TOMORROW at a future time |
-| First instance creation | Relies on hourly cron job | Should create first instance IMMEDIATELY upon template creation |
+---
 
-## The Fix
+## Your Status Definitions (Business Logic)
 
-### Part 1: Create First Instance Immediately
+| Status | Meaning |
+|--------|---------|
+| **Backlog** | Planned but not started yet |
+| **Ongoing** | Currently being worked on |
+| **Blocked** | Stopped due to a reason (requires reason) |
+| **Completed** | Done |
+| **Failed** | Failed (requires reason) |
 
-When a recurring template is created, generate the first instance right away instead of waiting for the cron job.
+---
 
-**File: `src/components/CreateTaskDialog.tsx`**
+## Solution: Three-Step Fix
 
-After creating the template, immediately create the first task instance:
+### Step 1: Database Migration
 
-```typescript
-// After template is created successfully...
-if (isRecurring && createdTask.id) {
-  // Create first instance immediately
-  const firstInstanceDate = nextRunAt || new Date();
-  const occurrenceDateStr = format(firstInstanceDate, 'yyyy-MM-dd');
-  
-  const { data: firstInstance } = await supabase
-    .from('tasks')
-    .insert({
-      title: createdTask.title,
-      description: createdTask.description,
-      priority: createdTask.priority,
-      status: 'Pending',
-      due_at: firstInstanceDate.toISOString(),
-      entity: createdTask.entity,
-      project_id: createdTask.project_id,
-      labels: createdTask.labels,
-      created_by: user!.id,
-      template_task_id: createdTask.id,
-      occurrence_date: occurrenceDateStr,
-      task_type: 'recurring',
-      is_collaborative: createdTask.is_collaborative ?? false,
-    })
-    .select()
-    .single();
-    
-  // Copy assignees to the first instance
-  if (firstInstance && selectedAssignees.length > 0) {
-    await supabase.from('task_assignees').insert(
-      selectedAssignees.map(profileId => ({
-        task_id: firstInstance.id,
-        user_id: profileId,
-      }))
-    );
-  }
-  
-  // Update template's next_run_at to NEXT occurrence (tomorrow for daily)
-  const nextOccurrence = calculateNextOccurrence(rule, firstInstanceDate, 1);
-  await supabase
-    .from('tasks')
-    .update({ 
-      next_run_at: nextOccurrence?.toISOString() || null,
-      occurrence_count: 1 
-    })
-    .eq('id', createdTask.id);
-}
+Add `Backlog` to the enum and migrate all `Pending` data:
+
+```sql
+-- 1. Add 'Backlog' to the task_status enum
+ALTER TYPE task_status ADD VALUE 'Backlog';
+
+-- 2. Migrate all existing 'Pending' tasks to 'Backlog'
+UPDATE tasks SET status = 'Backlog' WHERE status = 'Pending';
 ```
 
-### Part 2: Fix `calculateFirstOccurrence` for Daily Tasks
+**Data Impact**: ~10 tasks will be updated from `Pending` → `Backlog`. No data loss.
 
-The function returns "today" for daily tasks, which can be problematic if it's already past the intended time.
+### Step 2: Code Updates
 
-**File: `src/lib/recurrenceUtils.ts`**
+Replace all `'Pending'` references with `'Backlog'` in task-related files:
+
+| File | Change |
+|------|--------|
+| `src/domain/tasks/constants.ts` | Change `TaskStatusDB.Pending` → `TaskStatusDB.Backlog` |
+| `src/domain/tasks/index.ts` | Update `TASK_STATUS_OPTIONS` dbValue |
+| `src/hooks/useSubtasks.ts` | New subtasks: `status: 'Backlog'` |
+| `src/hooks/useTaskMutations.ts` | Type union uses `'Backlog'` |
+| `src/components/CreateTaskDialog.tsx` | Template status: `'Backlog'` |
+| `src/components/tasks/TaskListView.tsx` | Duplicate/uncomplete: `'Backlog'` |
+| `src/components/tasks/TaskBoardView.tsx` | Column filter uses `'Backlog'` |
+| `src/components/tasks/UnifiedTaskBoard.tsx` | Column id: `'Backlog'` |
+| `src/components/sprints/SprintKanban.tsx` | Column id: `'Backlog'` |
+| `src/components/dashboard/OverdueTasks.tsx` | Exclude filter: `'Backlog'` |
+| `src/lib/overdueHelpers.ts` | Exclude `'Backlog'` from overdue |
+| `src/pages/Tasks.tsx` | Status filter matches `'Backlog'` |
+| `src/components/projects/ProjectTasksSection.tsx` | Status icon key |
+| `src/components/admin/TaskAnalyticsDashboard.tsx` | Count filter |
+| `src/domain/tasks/actions.ts` | Default fallback |
+| `supabase/functions/generate-recurring-tasks/index.ts` | Inherit template status or `'Backlog'` |
+| `supabase/functions/daily-notification-scheduler/index.ts` | `.in("status", ["Backlog", "Ongoing"])` |
+
+### Step 3: Simplify Domain Constants
+
+Remove the mapping complexity since UI and DB now match:
 
 ```typescript
-// Line 162: For daily tasks, still use today as the first occurrence
-// This is correct - the issue is we need to CREATE the instance immediately
-return today;
+// src/domain/tasks/constants.ts
+
+export const TaskStatus = {
+  Backlog: 'Backlog',      // Was Pending
+  Ongoing: 'Ongoing',
+  Blocked: 'Blocked',
+  Completed: 'Completed',
+  Failed: 'Failed',
+} as const;
+
+export type TaskStatusType = typeof TaskStatus[keyof typeof TaskStatus];
+
+// No more separate UI/DB enums needed!
+// Keep simple mappers for backward compatibility that just return input
+export const mapStatusToDb = (status: string): TaskStatusType => 
+  status as TaskStatusType;
+
+export const mapStatusToUi = (status: string): TaskStatusType => 
+  status as TaskStatusType;
 ```
-
-This is actually correct - the first occurrence SHOULD be today. The real issue is that we're not creating the instance immediately.
-
-### Part 3: Fix the Template's next_run_at
-
-After creating the first instance, `next_run_at` should point to the NEXT occurrence (tomorrow for daily).
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/CreateTaskDialog.tsx` | Create first instance immediately after template |
-| `src/lib/recurrenceUtils.ts` | No changes needed (logic is correct) |
-
-## Immediate Database Fix
-
-For the existing "Daily Budget Table" template, I need to:
-
-1. Manually create a task instance for today
-2. Update the template's `next_run_at` to tomorrow
-
-This is a one-time fix for the stuck template.
+| Category | Files |
+|----------|-------|
+| **Database** | Migration to add `Backlog` enum value and update data |
+| **Domain** | `src/domain/tasks/constants.ts`, `src/domain/tasks/index.ts`, `src/domain/tasks/actions.ts` |
+| **Components** | `src/components/CreateTaskDialog.tsx`, `src/components/tasks/TaskListView.tsx`, `src/components/tasks/TaskBoardView.tsx`, `src/components/tasks/UnifiedTaskBoard.tsx`, `src/components/sprints/SprintKanban.tsx`, `src/components/tasks/TaskRow.tsx`, `src/components/projects/ProjectTasksSection.tsx`, `src/components/dashboard/OverdueTasks.tsx`, `src/components/admin/TaskAnalyticsDashboard.tsx` |
+| **Hooks** | `src/hooks/useSubtasks.ts`, `src/hooks/useTaskMutations.ts` |
+| **Pages** | `src/pages/Tasks.tsx` |
+| **Lib** | `src/lib/overdueHelpers.ts`, `src/lib/constants.ts` |
+| **Edge Functions** | `supabase/functions/generate-recurring-tasks/index.ts`, `supabase/functions/daily-notification-scheduler/index.ts` |
 
 ---
 
-## User Experience After Fix
+## Outcome After Implementation
 
 ```text
-1. User creates "Daily Budget Table" with Daily recurrence
-2. Template created (hidden) with next_run_at = tomorrow
-3. First instance created immediately (visible!) for today
-4. User sees the task in their list immediately
-5. Tomorrow, cron generates next instance from template
+Database enum:  'Backlog' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed'
+                         ↑
+                    (Pending still exists in enum but unused)
+
+UI labels:      'Backlog' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed'
+                         ↑
+                    (Perfect match!)
+
+Mapping layer:  Simplified to pass-through (no conversion needed)
 ```
 
-## Implementation Summary
+**Benefits:**
+- No more confusion between Pending/Backlog
+- No mapping bugs
+- Cleaner, simpler code
+- UI and DB speak the same language
 
-The key insight is: **Don't rely on the cron job for the FIRST instance**. Create it immediately when the user clicks "Create", then let the cron handle future occurrences.
+---
 
-## Technical Details
+## Technical Notes
 
-### CreateTaskDialog.tsx Changes
+1. **Enum values can't be removed** - `Pending` stays in the PostgreSQL enum but won't be used
+2. **The migration is safe** - PostgreSQL allows adding enum values without table rewrites
+3. **Backward compatibility** - Keep `mapStatusToDb`/`mapStatusToUi` as pass-through functions to avoid breaking existing imports
+4. **Edge functions** - Must be redeployed after changes
 
-Add new code after line ~186 where the template is created:
-
-```typescript
-if (isRecurring && createdTask.id) {
-  // Immediately create the first visible task instance
-  const firstOccurrenceDate = nextRunAt || startOfDay(new Date());
-  const instanceDateStr = format(firstOccurrenceDate, 'yyyy-MM-dd');
-
-  const { data: firstInstance, error: instanceError } = await supabase
-    .from('tasks')
-    .insert({
-      title: title.trim(),
-      description: description || null,
-      priority,
-      status: 'Pending',
-      due_at: firstOccurrenceDate.toISOString(),
-      created_by: user!.id,
-      entity: entities.length > 0 ? entities : [],
-      labels: tags.length > 0 ? tags : [],
-      task_type: 'recurring',
-      visibility: 'global',
-      project_id: projectId || null,
-      template_task_id: createdTask.id,
-      occurrence_date: instanceDateStr,
-      is_recurrence_template: false,
-    })
-    .select()
-    .single();
-
-  if (!instanceError && firstInstance) {
-    // Copy assignees to first instance
-    if (selectedAssignees.length > 0 && creatorProfile) {
-      await supabase.from('task_assignees').insert(
-        selectedAssignees.map(profileId => ({
-          task_id: firstInstance.id,
-          user_id: profileId,
-          assigned_by: creatorProfile.id,
-        }))
-      );
-    }
-
-    // Advance template to next occurrence
-    const rule: RecurrenceRule = {
-      type: recurrence,
-      interval: 1,
-      days_of_week: recurrence === 'weekly' ? recurrenceDaysOfWeek : undefined,
-      day_of_month: recurrence === 'monthly' ? (recurrenceDayOfMonth || undefined) : undefined,
-      end_condition: recurrenceEndType,
-      end_value: recurrenceEndType === 'after_n' 
-        ? parseInt(recurrenceEndValue) || 10 
-        : recurrenceEndType === 'until_date' 
-          ? recurrenceEndValue 
-          : undefined,
-    };
-    
-    const nextOccurrence = calculateNextOccurrence(rule, firstOccurrenceDate, 1);
-    
-    await supabase
-      .from('tasks')
-      .update({
-        next_run_at: nextOccurrence?.toISOString() || null,
-        occurrence_count: 1,
-      })
-      .eq('id', createdTask.id);
-  }
-}
-```
-
-### Edge Function Coordination
-
-The cron job already handles `occurrence_count` correctly, so once we set it to 1 after creating the first instance, future runs will work properly.
