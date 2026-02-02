@@ -145,7 +145,7 @@ export function EntitiesManager() {
     e.code.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const openEditDialog = (entity: any) => {
+  const openEditDialog = (entity: { id: string; name: string; code: string; emoji?: string | null; display_order: number; website_param?: string | null }) => {
     setEditingEntity(entity);
     const isCustomParam = entity.website_param && !WEBSITE_PARAM_OPTIONS.some(opt => opt.value === entity.website_param && opt.value !== 'custom');
     setEntityForm({ 
@@ -163,7 +163,7 @@ export function EntitiesManager() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-sm">
             <Building2 className="h-5 w-5 text-muted-foreground" />
             <div>
               <CardTitle>Entities</CardTitle>
@@ -175,7 +175,7 @@ export function EntitiesManager() {
             setEntityForm({ name: "", code: "", emoji: "", display_order: entities?.length || 0, website_param: "", customWebsiteParam: "" }); 
             setIsDialogOpen(true); 
           }}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-xs" />
             Add Entity
           </Button>
         </div>
@@ -187,7 +187,7 @@ export function EntitiesManager() {
             placeholder="Search entities..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-lg"
           />
         </div>
 
@@ -209,13 +209,13 @@ export function EntitiesManager() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-xl text-muted-foreground">
                       Loading entities...
                     </TableCell>
                   </TableRow>
                 ) : filteredEntities.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-xl text-muted-foreground">
                       No entities found
                     </TableCell>
                   </TableRow>
@@ -224,7 +224,7 @@ export function EntitiesManager() {
                     {filteredEntities.map((entity) => (
                       <SortableRow key={entity.id} id={entity.id}>
                         <TableCell>{entity.display_order}</TableCell>
-                        <TableCell className="text-xl">{entity.emoji || '—'}</TableCell>
+                        <TableCell className="text-heading-md">{entity.emoji || '—'}</TableCell>
                         <TableCell className="font-medium">{entity.name}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{entity.code}</Badge>
@@ -238,7 +238,7 @@ export function EntitiesManager() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-xs">
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -285,7 +285,7 @@ export function EntitiesManager() {
                   placeholder="CFI International"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="code">Code</Label>
                 <Input
                   id="code"
@@ -305,7 +305,7 @@ export function EntitiesManager() {
                   placeholder="🌍"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="display_order">Display Order</Label>
                 <Input
                   id="display_order"
@@ -315,7 +315,7 @@ export function EntitiesManager() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label htmlFor="website_param">Website Parameter</Label>
               <Select
                 value={entityForm.website_param}
@@ -334,7 +334,7 @@ export function EntitiesManager() {
               </Select>
             </div>
             {entityForm.website_param === 'custom' && (
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label htmlFor="customWebsiteParam">Custom Website Parameter</Label>
                 <Input
                   id="customWebsiteParam"
