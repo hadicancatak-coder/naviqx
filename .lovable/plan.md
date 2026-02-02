@@ -1,157 +1,120 @@
 
-# Comprehensive Type Safety Fix Plan
 
-## Problem Summary
-The build is failing due to **unsuppressed `@typescript-eslint/no-explicit-any` errors** scattered across multiple files. This plan addresses ALL remaining violations to ensure the build passes completely.
+# Fix Plan: Recurring Tasks Visibility + Build Error
 
----
+## Problem Analysis
 
-## Files to Fix (18 files, ~35 fixes)
+### Issue 1: Recurring Task Not Visible
 
-### Batch 1: Immediate Build-Blocking Errors
+After investigation, I found the root cause:
 
-| File | Lines | Issue | Fix Strategy |
-|------|-------|-------|--------------|
-| `src/hooks/useTask.ts` | 39, 97 | `[key: string]: any` index signature, `(ta: any)` mapping | Add ESLint suppression with comment (index sig needed for DB extensibility), type the nested assignee mapping |
+**Your recurring task "Mobile Performance Report" was created as a template**, but the Edge Function that generates task instances (`generate-recurring-tasks`) is **not scheduled to run automatically**.
 
-### Batch 2: Hook Files (6 files)
-
-| File | Lines | Issue | Fix Strategy |
-|------|-------|-------|--------------|
-| `src/hooks/useSubtasks.ts` | 90, 119, 128, 153, 175, 186 | Multiple `as any` casts for Supabase inserts/updates and cache callbacks | Add ESLint suppressions for Supabase type gaps, type cache callbacks with `Subtask[]` |
-| `src/hooks/useKPIs.ts` | Throughout | Multiple `as any` for mutations | ESLint suppressions with justification comments |
-| `src/hooks/useAdVersions.ts` | 9, 40 | `snapshot_data: any`, `versionData: any` | Type as `Record<string, unknown>` or use `Json` from Supabase types |
-| `src/hooks/useMyTasks.ts` | 21-281 | `any[]` in props/state | Replace with `TaskWithAssignees[]` from shared types |
-
-### Batch 3: Component Files (9 files)
-
-| File | Lines | Issue | Fix Strategy |
-|------|-------|-------|--------------|
-| `src/components/TasksTable.tsx` | Multiple | `any[]` and group processing | Import and use `TaskWithAssignees` interface |
-| `src/components/InlineEditField.tsx` | 92, 103 | `ref={inputRef as any}` | Type assertion to proper React ref type with ESLint suppression |
-| `src/components/dashboard/ActivityFeed.tsx` | 31, 69 | `activity: any` in function and map | Define `ActivityItem` interface based on query shape |
-| `src/components/search/DuplicateAdDialog.tsx` | 14 | `ad: any` prop | Define `AdData` interface or import from shared types |
-| `src/components/ads/CreateAdDialog.tsx` | 88, 115 | `adData: any` object, `catch (error: any)` | Type `adData` as `Partial<Ad>`, fix catch with `unknown` |
-| `src/components/search/SearchBuilderArea.tsx` | 12-14 | `EditorContext` with `any` fields | Define proper interfaces for ad/campaign/adGroup |
-| `src/components/ads/ElementQuickInsert.tsx` | 24 | `content: any` parameter | Type as `string \| Record<string, unknown>` |
-| `src/components/ads/TemplateSelector.tsx` | 23+ | Multiple `any` casts | Add ESLint suppressions or define template interface |
-
-### Batch 4: Library Files (2 files)
-
-| File | Lines | Issue | Fix Strategy |
-|------|-------|-------|--------------|
-| `src/lib/undoRedo.ts` | 78-143 | Multiple `any` in command data structures | Replace with `unknown` and type guards, or use `Record<string, unknown>` |
-| `src/lib/taskExport.ts` | 3-50 | `UnsafeAny[]` already used | Already using project's `UnsafeAny` pattern - no change needed |
-
-### Batch 5: Edge Functions (2 files)
-
-| File | Lines | Issue | Fix Strategy |
-|------|-------|-------|--------------|
-| `supabase/functions/verify-mfa-otp/index.ts` | 163 | `catch (error: any)` | Replace with `error: unknown` + `instanceof Error` check |
-| `supabase/functions/manage-mfa-session/index.ts` | 197 | `catch (error: any)` | Replace with `error: unknown` + `instanceof Error` check |
-
----
-
-## Fix Patterns Used
-
-### Pattern 1: Index Signatures (useTask.ts line 39)
-```typescript
-// BEFORE - causes lint error
-[key: string]: any;
-
-// AFTER - suppressed with justification
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB extensibility requires index signature
-[key: string]: any;
+Looking at the data:
+```
+Title: "Mobile Performance Report"
+is_recurrence_template: true  ← This is the TEMPLATE (hidden by design)
+next_run_at: 2026-02-01 20:00:00  ← Was due yesterday!
+occurrence_count: 0  ← No instances generated yet
 ```
 
-### Pattern 2: Supabase Nested Query Mapping (useTask.ts line 97)
-```typescript
-// BEFORE
-const assignees = data.task_assignees
-  ?.map((ta: any) => ta.profiles)
-
-// AFTER - define interface for nested structure
-interface TaskAssigneeJoin {
-  user_id: string;
-  completed_at: string | null;
-  profiles: TaskAssignee | null;
-}
-
-const assignees = data.task_assignees
-  ?.map((ta: TaskAssigneeJoin) => ta.profiles)
+The problem: **There's no cron job configured** for `generate-recurring-tasks` in `supabase/config.toml`:
+```toml
+[edge_runtime.cron_jobs]
+daily_notifications = { schedule = "0 8 * * *", function = "daily-notification-scheduler" }
+daily_security_scan = { schedule = "0 2 * * *", function = "security-scanner" }
+# Missing: generate-recurring-tasks!
 ```
 
-### Pattern 3: Cache Callbacks (useSubtasks.ts)
+### Issue 2: Build Error (Unrelated but blocking)
+
+The `useCampaignComments.ts` file has a React Hooks violation:
 ```typescript
-// BEFORE
-queryClient.setQueryData(['subtasks', pId], (old: any[] | undefined) => { ... })
-
-// AFTER
-queryClient.setQueryData(['subtasks', pId], (old: Subtask[] | undefined) => { ... })
-```
-
-### Pattern 4: Supabase Insert/Update Casts
-```typescript
-// BEFORE - breaks build
-.insert({ ... } as any)
-
-// AFTER - suppressed with justification
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
-.insert({ ... } as any)
-```
-
-### Pattern 5: Catch Blocks (Edge Functions)
-```typescript
-// BEFORE
-} catch (error: any) {
-  return new Response(JSON.stringify({ error: error.message }), ...)
-
-// AFTER
-} catch (error: unknown) {
-  const message = error instanceof Error ? error.message : 'An error occurred';
-  return new Response(JSON.stringify({ error: message }), ...)
+// Line 162-164 - WRONG: Calling a hook inside a regular function
+const getCommentCount = (trackingId: string) => {
+  const { data: comments } = useComments(trackingId);  // ❌ Hooks can't be called here!
+  return comments?.length || 0;
+};
 ```
 
 ---
 
-## Implementation Order
+## Fix Plan
 
-**Step 1**: Fix `src/hooks/useTask.ts` - Unblock the build immediately (2 fixes)
+### Fix 1: Add Cron Job for Recurring Task Generation
 
-**Step 2**: Fix remaining hooks in parallel:
-- `useSubtasks.ts` (6 fixes)
-- `useKPIs.ts` (~5 fixes)
-- `useAdVersions.ts` (2 fixes)
-- `useMyTasks.ts` (if needed)
+**File:** `supabase/config.toml`
 
-**Step 3**: Fix components in parallel:
-- `CreateAdDialog.tsx` (2 fixes)
-- `InlineEditField.tsx` (2 fixes)
-- `ActivityFeed.tsx` (2 fixes)
-- `DuplicateAdDialog.tsx` (1 fix)
-- `SearchBuilderArea.tsx` (3 fixes)
-- `ElementQuickInsert.tsx` (1 fix)
-- `TemplateSelector.tsx` (~3 fixes)
+Add the missing cron job to run every hour (catching tasks throughout the day):
 
-**Step 4**: Fix library files:
-- `undoRedo.ts` (~8 fixes)
+```toml
+project_id = "mwogxqonlzjrkktwbkma"
 
-**Step 5**: Fix edge functions and redeploy:
-- `verify-mfa-otp/index.ts` (1 fix)
-- `manage-mfa-session/index.ts` (1 fix)
+[edge_runtime.cron_jobs]
+daily_notifications = { schedule = "0 8 * * *", function = "daily-notification-scheduler" }
+daily_security_scan = { schedule = "0 2 * * *", function = "security-scanner" }
+generate_recurring = { schedule = "0 * * * *", function = "generate-recurring-tasks" }
+
+[functions.sync-google-sheet]
+verify_jwt = false
+```
+
+This schedules the function to run at the **top of every hour**, so tasks are generated promptly when due.
+
+### Fix 2: Trigger Manual Generation for Backlogged Tasks
+
+After adding the cron job, I'll **manually invoke** the `generate-recurring-tasks` function to immediately process the backlog (templates with `next_run_at` in the past).
+
+### Fix 3: Fix React Hooks Violation in useCampaignComments.ts
+
+**File:** `src/hooks/useCampaignComments.ts`
+
+The `getCommentCount` function cannot use hooks inside it. Instead, we remove this helper (it's not being used correctly) or convert it to a proper hook:
+
+**Option A (Remove - Simplest):**
+```typescript
+// Remove the getCommentCount function entirely since calling hooks
+// inside regular functions is not allowed. If comment count is needed,
+// the consuming component should use useComments(id).data?.length directly.
+```
+
+**Option B (Convert to Hook):**
+```typescript
+// Convert to a proper hook that can be used by components
+const useCommentCount = (trackingId: string) => {
+  const { data: comments } = useComments(trackingId);
+  return comments?.length || 0;
+};
+```
+
+I'll implement **Option A** (remove the invalid function) to minimize changes, unless it's actively used somewhere.
+
+---
+
+## Implementation Steps
+
+| Step | Action | Purpose |
+|------|--------|---------|
+| 1 | Add cron job to `supabase/config.toml` | Schedule automatic recurring task generation every hour |
+| 2 | Fix `useCampaignComments.ts` hook violation | Unblock the build |
+| 3 | Invoke `generate-recurring-tasks` edge function | Immediately generate missed task instances |
+| 4 | Verify tasks appear in list | Confirm fix works |
+
+---
+
+## Expected Outcome
+
+After implementation:
+1. **Build passes** - No more React hooks violation
+2. **Your "Mobile Performance Report" appears** - The edge function runs and creates an instance
+3. **Future recurring tasks generate automatically** - Cron job runs hourly
 
 ---
 
 ## Technical Notes
 
-- Files already using `UnsafeAny` pattern (like `taskExport.ts`) are acceptable - no changes needed
-- Files with existing ESLint suppressions (like `TaskListView.tsx`, `AdListPanel.tsx`) are already compliant
-- The `src/types/tasks.ts` index signature already has suppression comment - no change needed
-- Some Supabase type mismatches require `as any` casts due to schema/types.ts gaps - these get suppression comments
+- Templates are intentionally hidden from the task list (they're blueprints, not actionable tasks)
+- Only **instances** (created by the edge function) appear in your task list
+- The dashboard's "Recurring Tasks Today" widget filters for these instances
+- Your 5 templates (including "Daily Checklist", "Daily Report Updates", etc.) will all catch up once the function runs
 
-## Expected Outcome
-After all fixes:
-- Build passes with **0 TypeScript/ESLint errors**
-- All `any` types either properly typed or suppressed with justification
-- Edge functions automatically redeployed
-- No runtime behavior changes
