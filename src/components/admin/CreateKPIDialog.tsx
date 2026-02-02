@@ -60,7 +60,7 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
     setTargets(targets.filter((_, i) => i !== index));
   };
 
-  const handleTargetChange = (index: number, field: keyof KPITarget, value: any) => {
+  const handleTargetChange = (index: number, field: keyof KPITarget, value: string | number) => {
     const newTargets = [...targets];
     newTargets[index] = { ...newTargets[index], [field]: value };
     setTargets(newTargets);
@@ -86,8 +86,8 @@ export function CreateKPIDialog({ open, onOpenChange, editingKPI }: CreateKPIDia
         target,
         deadline: deadline || null,
         created_by: user.id,
-        targets,
-      } as any);
+        targets: targets as KPITarget[],
+      });
     }
 
     onOpenChange(false);
