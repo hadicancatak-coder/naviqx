@@ -76,8 +76,8 @@ export const useCampaignMetadata = () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-metadata"] });
       toast.success("Campaign metadata saved");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to save metadata");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to save metadata");
     },
   });
 
@@ -105,8 +105,8 @@ export const useCampaignMetadata = () => {
 
       return { publicUrl, fileSize: file.size };
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to upload image");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
     },
   });
 
