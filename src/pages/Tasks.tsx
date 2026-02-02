@@ -186,7 +186,8 @@ export default function Tasks() {
         if (!task.due_at) { dateMatch = dateFilter.label === "Backlog"; } 
         else { const dueDate = new Date(task.due_at); dateMatch = dueDate >= dateFilter.startDate && dueDate <= dateFilter.endDate; }
       }
-      const statusMatch = statusFilters.length === 0 || statusFilters.some(s => {
+      // When showing only recurring tasks, bypass status filter to show all recurring regardless of status
+      const statusMatch = showOnlyRecurring || statusFilters.length === 0 || statusFilters.some(s => {
         if (s === 'Backlog') return task.status === 'Pending' || task.status === 'Backlog';
         return task.status === s;
       });
