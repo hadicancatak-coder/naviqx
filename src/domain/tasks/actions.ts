@@ -34,7 +34,7 @@ const mapStatusToDbLocal = (status: string): TaskStatusDBType => {
 export interface TaskActionResult {
   success: boolean;
   error?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface SetStatusOptions {
@@ -139,9 +139,9 @@ export async function completeTask(taskId: string, userId?: string): Promise<Tas
 
     logger.debug('[Task Actions] completeTask success:', data);
     return { success: true, data };
-  } catch (err: any) {
+  } catch (err: unknown) {
     logger.error('[Task Actions] completeTask exception:', err);
-    return { success: false, error: err.message || 'Failed to complete task' };
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to complete task' };
   }
 }
 
@@ -170,8 +170,8 @@ export async function setTaskCollaborative(taskId: string, isCollaborative: bool
     }
 
     return { success: true, data };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to update collaborative mode' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update collaborative mode' };
   }
 }
 
@@ -195,13 +195,13 @@ export async function getCollaborativeStatus(taskId: string): Promise<{
       id,
       user_id,
       completed_at,
-      profiles:user_id (name)
+      profiles!task_assignees_user_id_fkey (name)
     `)
     .eq('task_id', taskId);
 
-  const mappedAssignees = (assignees || []).map((a: any) => ({
+  const mappedAssignees = (assignees || []).map((a) => ({
     id: a.user_id,
-    name: a.profiles?.name || 'Unknown',
+    name: (a.profiles as { name: string } | null)?.name || 'Unknown',
     completed: a.completed_at !== null,
     completedAt: a.completed_at,
   }));
@@ -267,7 +267,7 @@ export async function setTaskStatus(
     const dbStatus = mapStatusToDbLocal(status);
     
     // Build update object
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, string | null> = {
       status: dbStatus,
       updated_at: new Date().toISOString(),
     };
@@ -292,8 +292,8 @@ export async function setTaskStatus(
     }
 
     return { success: true, data };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to update task status' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update task status' };
   }
 }
 
@@ -452,8 +452,8 @@ export async function addTaskComment(
     }
 
     return { success: true, data };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to add comment' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to add comment' };
   }
 }
 
