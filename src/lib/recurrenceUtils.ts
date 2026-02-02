@@ -184,9 +184,10 @@ export function getRecurrenceLabelNew(rule: RecurrenceRule): string {
       }
       return rule.interval === 1 ? 'Weekly' : `Every ${rule.interval} weeks`;
 
-    case 'monthly':
+    case 'monthly': {
       const dayText = rule.day_of_month ? ` on day ${rule.day_of_month}` : '';
       return rule.interval === 1 ? `Monthly${dayText}` : `Every ${rule.interval} months${dayText}`;
+    }
 
     case 'custom':
       if (rule.days_of_week && rule.days_of_week.length > 0) {
