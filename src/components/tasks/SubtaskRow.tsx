@@ -8,6 +8,19 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Subtask } from "@/hooks/useSubtasks";
 
+interface SubtaskAssignee {
+  id?: string;
+  user_id: string;
+  name?: string;
+  avatar_url?: string | null;
+  profiles?: {
+    id: string;
+    user_id: string;
+    name: string;
+    avatar_url: string | null;
+  } | null;
+}
+
 interface SubtaskRowProps {
   subtask: Subtask;
   onComplete: (id: string, completed: boolean) => void;
@@ -110,14 +123,18 @@ export function SubtaskRow({
       {/* Assignee Avatar (smaller) */}
       {subtask.assignees && subtask.assignees.length > 0 && (
         <div className="flex -space-x-1 flex-shrink-0">
-          {subtask.assignees.slice(0, 1).map((assignee: any) => (
-            <Avatar key={assignee.user_id || assignee.id} className="h-4 w-4 border border-background">
-              <AvatarImage src={assignee.avatar_url} />
-              <AvatarFallback className="text-[7px] bg-muted text-muted-foreground">
-                {assignee.name?.charAt(0) || '?'}
-              </AvatarFallback>
-            </Avatar>
-          ))}
+          {subtask.assignees.slice(0, 1).map((assignee: SubtaskAssignee) => {
+            const name = assignee.profiles?.name || assignee.name || '';
+            const avatarUrl = assignee.profiles?.avatar_url || assignee.avatar_url;
+            return (
+              <Avatar key={assignee.user_id || assignee.id} className="h-4 w-4 border border-background">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="text-[7px] bg-muted text-muted-foreground">
+                  {name.charAt(0) || '?'}
+                </AvatarFallback>
+              </Avatar>
+            );
+          })}
         </div>
       )}
 
@@ -131,7 +148,7 @@ export function SubtaskRow({
       {/* Actions Menu */}
       <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
         <DropdownMenuTrigger
-          className="opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 p-0.5 rounded hover:bg-muted"
+          className="opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 p-xs rounded hover:bg-muted"
           disabled={isProcessing}
         >
           {isProcessing ? (
@@ -148,7 +165,7 @@ export function SubtaskRow({
             }}
             className="text-destructive focus:text-destructive"
           >
-            <Trash2 className="mr-2 h-3 w-3" />
+            <Trash2 className="mr-xs h-3 w-3" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
