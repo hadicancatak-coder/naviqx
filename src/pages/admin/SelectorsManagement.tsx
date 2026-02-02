@@ -79,7 +79,7 @@ export default function SelectorsManagement() {
   
   // City state
   const [isCityDialogOpen, setIsCityDialogOpen] = useState(false);
-  const [editingCity, setEditingCity] = useState<any>(null);
+  const [editingCity, setEditingCity] = useState<{ id: string; name: string; country: string | null; display_order: number | null } | null>(null);
   const [cityForm, setCityForm] = useState({ name: "", country: "", display_order: 0 });
   const [isDeleteCityDialogOpen, setIsDeleteCityDialogOpen] = useState(false);
   const [cityToDelete, setCityToDelete] = useState<{ id: string; name: string } | null>(null);
