@@ -114,8 +114,8 @@ export const useCampaignVersions = () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
       toast.success("Campaign version saved");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to save version");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to save version");
     },
   });
 
@@ -153,8 +153,8 @@ export const useCampaignVersions = () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
       toast.success("Version updated");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update version");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update version");
     },
   });
 
@@ -172,8 +172,8 @@ export const useCampaignVersions = () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
       toast.success("Version deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete version");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete version");
     },
   });
 
