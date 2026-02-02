@@ -83,7 +83,7 @@ export function TaskAssigneeSelector({
             toast.success('Assignee added');
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         toast.error('Failed to update assignee');
         return;
       }
@@ -136,8 +136,12 @@ export function TaskAssigneeSelector({
                         role="button"
                         tabIndex={0}
                         onClick={(e) => removeUser(selectedUser.id, e)}
-                        onKeyDown={(e) => e.key === 'Enter' && removeUser(selectedUser.id, e as any)}
-                        className="ml-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive p-0.5 transition-smooth cursor-pointer"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            removeUser(selectedUser.id, e as unknown as React.MouseEvent);
+                          }
+                        }}
+                        className="ml-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive p-xs transition-smooth cursor-pointer"
                       >
                         <X className="h-3 w-3" />
                       </span>
