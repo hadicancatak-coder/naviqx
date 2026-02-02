@@ -1,120 +1,158 @@
 
 
-# Fix Plan: Recurring Tasks Visibility + Build Error
+# Mass Fix Plan: 5 Build-Blocking `any` Errors + Token Migration
 
-## Problem Analysis
+## Priority 1: Fix Build-Blocking `any` Errors
 
-### Issue 1: Recurring Task Not Visible
+### 1. `src/hooks/useSubtasks.ts` (Line 96)
+**Problem:** `} as any)` cast on Supabase insert
 
-After investigation, I found the root cause:
-
-**Your recurring task "Mobile Performance Report" was created as a template**, but the Edge Function that generates task instances (`generate-recurring-tasks`) is **not scheduled to run automatically**.
-
-Looking at the data:
-```
-Title: "Mobile Performance Report"
-is_recurrence_template: true  ← This is the TEMPLATE (hidden by design)
-next_run_at: 2026-02-01 20:00:00  ← Was due yesterday!
-occurrence_count: 0  ← No instances generated yet
-```
-
-The problem: **There's no cron job configured** for `generate-recurring-tasks` in `supabase/config.toml`:
-```toml
-[edge_runtime.cron_jobs]
-daily_notifications = { schedule = "0 8 * * *", function = "daily-notification-scheduler" }
-daily_security_scan = { schedule = "0 2 * * *", function = "security-scanner" }
-# Missing: generate-recurring-tasks!
-```
-
-### Issue 2: Build Error (Unrelated but blocking)
-
-The `useCampaignComments.ts` file has a React Hooks violation:
+**Fix:** Add proper interface and ESLint suppression (Supabase type mismatch is a known issue):
 ```typescript
-// Line 162-164 - WRONG: Calling a hook inside a regular function
-const getCommentCount = (trackingId: string) => {
-  const { data: comments } = useComments(trackingId);  // ❌ Hooks can't be called here!
-  return comments?.length || 0;
+// Line 89-96: Already has eslint-disable on line 89, but line 96 still has `as any`
+// Move the suppression to cover the whole statement or remove the cast
+const insertData = {
+  title,
+  parent_id: pId,
+  status: 'Pending' as const,
+  priority: 'Medium' as const,
+  created_by: user.id,
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
+const { data, error } = await supabase.from('tasks').insert(insertData as any).select().single();
+```
+
+### 2. `src/components/tasks/TaskBoardView.tsx` (Line 166)
+**Problem:** `(a: any)` in assignee mapping
+
+**Fix:** Define interface and use it:
+```typescript
+interface TaskAssignee {
+  user_id?: string;
+  id?: string;
+  name?: string;
+  avatar_url?: string | null;
+}
+
+// Line 166
+{task.assignees?.slice(0, 2).map((a: TaskAssignee) => (
+```
+
+### 3. `src/components/admin/TeamKPIsManager.tsx` (Lines 206, 207, 258)
+**Problem:** `(kpi: any)` in reduce and map functions
+
+**Fix:** Define KPI interface:
+```typescript
+interface KPI {
+  description: string;
+  weight: number;
+  // Add other fields as needed
+}
+
+// Lines 206-207
+const annualWeight = annualKPIs.reduce((sum: number, kpi: KPI) => sum + (kpi.weight || 0), 0);
+const quarterlyWeight = quarterlyKPIs.reduce((sum: number, kpi: KPI) => sum + (kpi.weight || 0), 0);
+
+// Line 258
+{annualKPIs.map((kpi: KPI, idx: number) => (
 ```
 
 ---
 
-## Fix Plan
+## Priority 2: Fix Semantic Token Violations
 
-### Fix 1: Add Cron Job for Recurring Task Generation
+After build is unblocked, migrate these files to semantic tokens:
 
-**File:** `supabase/config.toml`
+### `src/components/tasks/CompletedTasksSection.tsx`
+```diff
+- className="flex items-center gap-2 w-full py-3 px-4 rounded-lg..."
++ className="flex items-center gap-xs w-full py-sm px-md rounded-lg..."
 
-Add the missing cron job to run every hour (catching tasks throughout the day):
+- className="mt-2 space-y-2 opacity-85"
++ className="mt-xs space-y-xs opacity-85"
 
-```toml
-project_id = "mwogxqonlzjrkktwbkma"
-
-[edge_runtime.cron_jobs]
-daily_notifications = { schedule = "0 8 * * *", function = "daily-notification-scheduler" }
-daily_security_scan = { schedule = "0 2 * * *", function = "security-scanner" }
-generate_recurring = { schedule = "0 * * * *", function = "generate-recurring-tasks" }
-
-[functions.sync-google-sheet]
-verify_jwt = false
+- className="flex items-start gap-3 py-3 px-4..."
++ className="flex items-start gap-sm py-sm px-md..."
 ```
 
-This schedules the function to run at the **top of every hour**, so tasks are generated promptly when due.
-
-### Fix 2: Trigger Manual Generation for Backlogged Tasks
-
-After adding the cron job, I'll **manually invoke** the `generate-recurring-tasks` function to immediately process the backlog (templates with `next_run_at` in the past).
-
-### Fix 3: Fix React Hooks Violation in useCampaignComments.ts
-
-**File:** `src/hooks/useCampaignComments.ts`
-
-The `getCommentCount` function cannot use hooks inside it. Instead, we remove this helper (it's not being used correctly) or convert it to a proper hook:
-
-**Option A (Remove - Simplest):**
-```typescript
-// Remove the getCommentCount function entirely since calling hooks
-// inside regular functions is not allowed. If comment count is needed,
-// the consuming component should use useComments(id).data?.length directly.
+### `src/components/tasks/TaskBoardView.tsx`
+```diff
+- className="flex items-center justify-between pb-2 mb-2 border-b..."
++ className="flex items-center justify-between pb-xs mb-xs border-b..."
 ```
 
-**Option B (Convert to Hook):**
-```typescript
-// Convert to a proper hook that can be used by components
-const useCommentCount = (trackingId: string) => {
-  const { data: comments } = useComments(trackingId);
-  return comments?.length || 0;
-};
+### `src/components/ads/AccountStructureTree.tsx`
+```diff
+- className="p-3 border-b border-border space-y-2"
++ className="p-sm border-b border-border space-y-xs"
 ```
 
-I'll implement **Option A** (remove the invalid function) to minimize changes, unless it's actively used somewhere.
+### `src/components/lp-planner/LpSectionLibrary.tsx` and `LpMapList.tsx`
+```diff
+- className="p-md border-b border-border space-y-3"
++ className="p-md border-b border-border space-y-sm"
+```
+
+### `src/components/search/SearchAdEditor.tsx`
+```diff
+- className="sticky top-0 z-10 p-3 border-b bg-background"
++ className="sticky top-0 z-10 p-sm border-b bg-background"
+```
+
+### `src/components/ads/PanelHeader.tsx`
+```diff
+- className={cn("flex items-center justify-between border-b px-4 py-3...", className)}
++ className={cn("flex items-center justify-between border-b px-md py-sm...", className)}
+```
+
+### `src/components/projects/roadmap/PhaseMilestones.tsx`
+```diff
+- className="flex items-center gap-2 group py-1 px-2..."
++ className="flex items-center gap-xs group py-xs px-xs..."
+```
+
+### `src/components/lp-planner/LpSectionCard.tsx`
+```diff
+- <span className="font-medium text-sm truncate">
++ <span className="font-medium text-body-sm truncate">
+
+- <div className="flex items-center gap-3 text-xs text-muted-foreground">
++ <div className="flex items-center gap-sm text-metadata text-muted-foreground">
+```
+
+### `src/components/ads/TemplateSelector.tsx`
+```diff
+- <p className="text-sm text-muted-foreground mt-1">
++ <p className="text-body-sm text-muted-foreground mt-xs">
+```
+
+### `src/components/search/SearchHierarchyPanel.tsx`
+```diff
+- <span className="flex-1 text-sm truncate">
++ <span className="flex-1 text-body-sm truncate">
+
+- <div className="text-xs text-muted-foreground py-2 px-2">
++ <div className="text-metadata text-muted-foreground py-xs px-xs">
+```
 
 ---
 
-## Implementation Steps
+## Implementation Order
 
-| Step | Action | Purpose |
-|------|--------|---------|
-| 1 | Add cron job to `supabase/config.toml` | Schedule automatic recurring task generation every hour |
-| 2 | Fix `useCampaignComments.ts` hook violation | Unblock the build |
-| 3 | Invoke `generate-recurring-tasks` edge function | Immediately generate missed task instances |
-| 4 | Verify tasks appear in list | Confirm fix works |
+| Step | Files | Purpose |
+|------|-------|---------|
+| 1 | `useSubtasks.ts` | Fix the immediate build error |
+| 2 | `TaskBoardView.tsx` | Type + token fix |
+| 3 | `TeamKPIsManager.tsx` | Type fix (3 `any` instances) |
+| 4 | `CompletedTasksSection.tsx` | Token migration |
+| 5 | Remaining 9 files | Token migration batch |
 
 ---
 
 ## Expected Outcome
 
-After implementation:
-1. **Build passes** - No more React hooks violation
-2. **Your "Mobile Performance Report" appears** - The edge function runs and creates an instance
-3. **Future recurring tasks generate automatically** - Cron job runs hourly
-
----
-
-## Technical Notes
-
-- Templates are intentionally hidden from the task list (they're blueprints, not actionable tasks)
-- Only **instances** (created by the edge function) appear in your task list
-- The dashboard's "Recurring Tasks Today" widget filters for these instances
-- Your 5 templates (including "Daily Checklist", "Daily Report Updates", etc.) will all catch up once the function runs
+- **Build passes** with 0 errors
+- **Semantic token compliance** for all touched files
+- **Type safety** with proper interfaces instead of `any`
 
