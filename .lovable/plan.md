@@ -1,165 +1,150 @@
 
-# Fix Plan: Enable Recurrence Editing After Task Creation
+# Fix Plan: Make Recurring Task Editing User-Friendly
 
-## Problem Summary
+## The Problem
 
-You're absolutely right - **there is no way to edit recurrence settings after a task template is created**. This is a significant gap in the task system. Currently:
+The current system has a hidden "template" concept that users never see:
 
-1. Recurrence is only configurable in `CreateTaskDialog.tsx`
-2. `TaskDetailFields.tsx` and `TaskDetailDetails.tsx` have NO recurrence editing UI
-3. Once created, users are stuck with the original schedule (daily instead of weekly on Mondays)
+| What Exists | What User Sees | What User Can Do |
+|------------|----------------|-----------------|
+| Template (hidden, is_recurrence_template=true) | Nothing | Nothing |
+| Instances (visible, template_task_id points to template) | Two identical "Mobile Performance Report" tasks | No way to edit recurrence |
 
-## Root Cause
+**You're 100% correct** - there should be no hidden "template" concept. Users should see ONE task and edit its recurrence directly.
 
-The recurring task system was built with a "create once, never modify" assumption. The template/instance architecture is solid, but the **editing capability was never implemented**.
+## Solution: Two-Part Fix
 
-## Solution: Add Recurrence Editor to Task Detail
+### Part 1: Show Recurrence Editor on Instance Tasks
 
-### Component Architecture
+When you open a recurring task instance, show the recurrence editor with schedule from its parent template. Editing the recurrence updates the template behind the scenes.
 
-```text
-TaskDetailFields.tsx (existing)
-├── Title (editable) ✓
-├── Priority Card ✓
-├── Assignees ✓
-└── [NEW] RecurrenceEditor (only shows for templates)
-    ├── Current schedule display
-    ├── Edit button → opens RecurrenceEditSheet
-    └── RecurrenceEditSheet
-        ├── Type selector (Daily/Weekly/Monthly)
-        ├── Days of week (for weekly)
-        ├── Day of month (for monthly)
-        ├── End condition (never/after N/until date)
-        └── Save button → updates template
+**Changes to `TaskDetailFields.tsx`:**
+```typescript
+// Show recurrence editor for:
+// 1. Template tasks (is_recurrence_template === true) - current behavior
+// 2. Instance tasks that have a template (template_task_id exists) - NEW
+const showRecurrenceEditor = task?.is_recurrence_template || task?.template_task_id;
+const templateId = task?.template_task_id || task?.id;
 ```
 
-### Files to Create/Modify
+**Changes to `RecurrenceEditor.tsx`:**
+- Accept `templateTaskId` prop for instances
+- Fetch template's `recurrence_rrule` when editing an instance
+- Update the template when saving
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/components/tasks/RecurrenceEditor.tsx` | **CREATE** | New component for editing recurrence |
-| `src/components/tasks/RecurrenceEditSheet.tsx` | **CREATE** | Sheet with full recurrence options |
-| `src/components/tasks/TaskDetail/TaskDetailFields.tsx` | **MODIFY** | Add RecurrenceEditor for templates |
-| `src/hooks/useTaskMutations.ts` | **MODIFY** | Add `updateRecurrence` mutation |
-| `src/lib/recurrenceUtils.ts` | **MODIFY** | Add helper to recalculate next_run_at |
+### Part 2: Consolidate Duplicate Instances in View (Optional Enhancement)
+
+Show only ONE entry per recurring task series in the list, with a way to see all instances.
+
+**Option A - Group instances under template:**
+- Show template task with "Recurring" badge
+- Expand to see all generated instances
+
+**Option B - Show next due instance only:**
+- Filter to show only the next upcoming instance per series
+- Past instances move to "Completed" or "History"
 
 ## Implementation Details
 
-### 1. New RecurrenceEditor Component
+### File Changes
+
+| File | Change |
+|------|--------|
+| `src/components/tasks/RecurrenceEditor.tsx` | Support instance tasks, fetch template data |
+| `src/components/tasks/TaskDetail/TaskDetailFields.tsx` | Show editor for instances with template_task_id |
+| `src/hooks/useTaskMutations.ts` | Handle updating template from instance view |
+| `src/components/tasks/TaskDetail/TaskDetailContext.tsx` | Optionally fetch template data for instances |
+
+### RecurrenceEditor Changes
 
 ```typescript
-// src/components/tasks/RecurrenceEditor.tsx
 interface RecurrenceEditorProps {
   taskId: string;
-  currentRule: RecurrenceRule | null;
-  isTemplate: boolean;
-  onUpdate: (rule: RecurrenceRule) => void;
+  templateTaskId?: string; // For instances - the ID of their template
+  currentRrule: string | null;
+  // ...
 }
 
-// Shows:
-// - Current schedule: "Weekly on Mon" with edit button
-// - Only visible for is_recurrence_template === true tasks
-// - Opens RecurrenceEditSheet on click
+// Component now works for both templates and instances
+// When templateTaskId is provided, it fetches and updates the template
 ```
 
-### 2. New RecurrenceEditSheet Component
+### TaskDetailFields Changes
 
 ```typescript
-// src/components/tasks/RecurrenceEditSheet.tsx
-// Reuses the same UI from CreateTaskDialog:
-// - Type dropdown (none/daily/weekly/monthly)
-// - Days of week checkboxes (for weekly)
-// - Day of month input (for monthly)
-// - End condition (never/after N/until date)
-```
+// In TaskDetailFields.tsx
 
-### 3. Add to TaskDetailFields
+// Determine if we should show the recurrence editor
+const isTemplate = task?.is_recurrence_template;
+const isInstance = !!task?.template_task_id;
+const showRecurrenceEditor = isTemplate || isInstance;
 
-```typescript
-// In TaskDetailFields.tsx, after Assignees section:
-{task?.is_recurrence_template && (
+// For instances, get template data
+const templateTaskId = isInstance ? task.template_task_id : null;
+
+{showRecurrenceEditor && (
   <RecurrenceEditor
     taskId={taskId}
-    currentRule={task.recurrence_rrule ? JSON.parse(task.recurrence_rrule) : null}
-    isTemplate={true}
-    onUpdate={(rule) => mutations.updateRecurrence.mutate({ id: taskId, rule })}
+    templateTaskId={templateTaskId}
+    currentRrule={isTemplate ? task.recurrence_rrule : null} // Will fetch from template
+    nextRunAt={isTemplate ? task.next_run_at : null}
+    isTemplate={isTemplate || false}
+    isInstance={isInstance}
+    onUpdate={(rule) => {
+      // Update the template (either this task or the parent template)
+      const targetId = templateTaskId || taskId;
+      mutations.updateRecurrence.mutate({ id: targetId, rule });
+    }}
   />
 )}
 ```
 
-### 4. New Mutation in useTaskMutations
+### Mutation Update
 
-```typescript
-// Add updateRecurrence mutation
-const updateRecurrence = useMutation({
-  mutationFn: async ({ id, rule }: { id: string; rule: RecurrenceRule }) => {
-    const nextRun = calculateFirstOccurrence(rule);
-    const { data, error } = await supabase
-      .from('tasks')
-      .update({
-        recurrence_rrule: JSON.stringify(rule),
-        recurrence_end_type: rule.end_condition,
-        recurrence_end_value: rule.end_value?.toString() || null,
-        next_run_at: nextRun?.toISOString() || null,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  },
-  onSuccess: () => toast({ title: "Recurrence updated" }),
-  // ... optimistic updates
-});
-```
+The `updateRecurrence` mutation already works - it just needs to receive the correct template ID.
 
-## Technical Considerations
+## User Experience After Fix
 
-### What Happens to Existing Instances?
-- **Already generated instances** remain unchanged (they have their own due dates)
-- **Future instances** will follow the new schedule
-- The edge function uses `next_run_at` to determine when to generate the next instance
+1. **User opens "Mobile Performance Report"** (the Feb 2 instance)
+2. **Sees "Recurrence" section** showing "Daily" with Edit button  
+3. **Clicks Edit** → Opens sheet with current schedule
+4. **Changes to "Weekly on Mondays"** → Saves
+5. **Template is updated** → Next instance will be on Monday
+6. **Future instances follow new schedule**
 
-### Edge Cases Handled
-1. Changing from daily to weekly: Recalculates `next_run_at` to next valid weekday
-2. Changing to "ends after N": Checks current `occurrence_count` 
-3. Removing recurrence: Sets `is_recurrence_template = false`, stops generating instances
-
-## UI/UX Design
-
-The recurrence editor will appear in the TaskDetail panel:
+## Visual Change
 
 ```text
+Before (current - broken):
 ┌─────────────────────────────────────┐
-│ Task: Mobile Performance Report     │
+│ Mobile Performance Report           │
+│ Due: Feb 2  │ Status: Backlog       │
+│                                     │
+│ [No recurrence section visible]     │
+│                                     │
+│ Assignees: Adel                     │
+└─────────────────────────────────────┘
+
+After (fixed):
+┌─────────────────────────────────────┐
+│ Mobile Performance Report           │
+│ 🔄 Recurring Instance               │
+│ Due: Feb 2  │ Status: Backlog       │
 ├─────────────────────────────────────┤
-│ Priority: High  │ Status: Ongoing   │
-│ Due: Feb 3      │ Sprint: Week 5    │
-├─────────────────────────────────────┤
-│ 🔄 Recurrence                       │
+│ Recurrence                          │
 │ ┌─────────────────────────────────┐ │
 │ │ Daily                    [Edit] │ │
-│ │ Next: Tomorrow at 9:00 AM       │ │
+│ │ Next: Feb 3 at 12:00 AM         │ │
 │ └─────────────────────────────────┘ │
 ├─────────────────────────────────────┤
-│ Assignees: ...                      │
+│ Assignees: Adel                     │
 └─────────────────────────────────────┘
 ```
 
-Clicking "Edit" opens a sheet with full recurrence options, matching the create dialog.
+## Testing
 
-## Expected Outcome
-
-1. Users can **edit recurrence schedule** from task detail (daily → weekly on Mondays)
-2. Changes **immediately reflect** in next_run_at
-3. Future task instances follow the **new schedule**
-4. UI shows clear **current schedule** with easy edit access
-5. Works for both template tasks and legacy recurring tasks
-
-## Testing Steps
-
-1. Open a recurring task template
-2. Click "Edit" on recurrence section  
-3. Change from "Daily" to "Weekly on Mondays"
-4. Save and verify `recurrence_rrule` and `next_run_at` updated in database
-5. Wait for cron job or manually trigger - verify next instance is Monday
+1. Open a recurring task instance (like the ones you see now)
+2. Verify "Recurrence" section appears with current schedule
+3. Click Edit → Change to "Weekly on Monday"
+4. Save and verify the template's `recurrence_rrule` and `next_run_at` are updated
+5. Confirm future instances will follow the new Monday schedule
