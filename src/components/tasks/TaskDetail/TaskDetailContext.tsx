@@ -93,8 +93,9 @@ export function TaskDetailProvider({
     if (task?.is_collaborative && user) {
       const result = await completeTaskAction(taskId, user.id);
       if (result.success) {
-        if (result.data?.partialComplete) {
-          toast({ title: "Marked as complete", description: result.data.message });
+        const data = result.data as { partialComplete?: boolean; message?: string } | undefined;
+        if (data?.partialComplete) {
+          toast({ title: "Marked as complete", description: data.message });
           await refreshCollaborativeStatus();
         } else {
           toast({ title: "Task completed", description: "All assignees have completed" });
