@@ -144,7 +144,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
           .select("id", { count: "exact", head: true })
           .in("id", userTaskIds)
           .lt("due_at", today.toISOString())
-          .not("status", "in", "(Completed,Pending)"),
+          .not("status", "in", "(Completed,Backlog)"),
         supabase
           .from("tasks")
           .select("id", { count: "exact", head: true })

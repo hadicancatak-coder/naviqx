@@ -15,7 +15,7 @@ interface ProjectTasksSectionProps {
 }
 
 const statusIcons: Record<string, React.ReactNode> = {
-  Pending: <Circle className="h-4 w-4 text-muted-foreground" />,
+  Backlog: <Circle className="h-4 w-4 text-muted-foreground" />,
   Ongoing: <Clock className="h-4 w-4 text-info-text" />,
   Completed: <CheckCircle2 className="h-4 w-4 text-success-text" />,
   Blocked: <AlertCircle className="h-4 w-4 text-destructive" />,
@@ -79,7 +79,7 @@ export function ProjectTasksSection({ projectId, projectName, isAdmin }: Project
               className="flex items-center gap-md p-md bg-card border border-border rounded-lg hover:bg-card-hover cursor-pointer transition-smooth"
               onClick={() => handleTaskClick(task.id, task)}
             >
-              <div className="flex-shrink-0">{statusIcons[task.status] || statusIcons["Pending"]}</div>
+              <div className="flex-shrink-0">{statusIcons[task.status] || statusIcons["Backlog"]}</div>
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(

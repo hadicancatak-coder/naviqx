@@ -87,7 +87,7 @@ export function useSubtasks(parentId: string | null) {
       const insertData = {
         title,
         parent_id: pId,
-        status: 'Pending' as const,
+        status: 'Backlog' as const,
         priority: 'Medium' as const,
         created_by: user.id,
       };
@@ -113,7 +113,7 @@ export function useSubtasks(parentId: string | null) {
       const optimisticSubtask = {
         id: tempId,
         title,
-        status: 'Pending',
+        status: 'Backlog',
         priority: 'Medium',
         due_at: null,
         parent_id: pId,
@@ -181,7 +181,7 @@ export function useSubtasks(parentId: string | null) {
       const { error } = await supabase
         .from('tasks')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase update type mismatch
-        .update({ status: completed ? 'Completed' : 'Pending' } as any)
+        .update({ status: completed ? 'Completed' : 'Backlog' } as any)
         .eq('id', id);
       
       if (error) throw error;
@@ -194,7 +194,7 @@ export function useSubtasks(parentId: string | null) {
       // Optimistic update
       queryClient.setQueryData(['subtasks', parentId], (old: Subtask[] | undefined) => {
         if (!old) return old;
-        return old.map(s => s.id === id ? { ...s, status: completed ? 'Completed' : 'Pending' } : s);
+        return old.map(s => s.id === id ? { ...s, status: completed ? 'Completed' : 'Backlog' } : s);
       });
       
       return { previousSubtasks };

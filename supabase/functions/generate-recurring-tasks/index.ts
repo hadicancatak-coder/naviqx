@@ -317,7 +317,7 @@ serve(async (req) => {
               title: template.title,
               description: template.description,
               priority: template.priority,
-              status: 'Pending',
+              status: template.status || 'Backlog',
               due_at: template.next_run_at,
               entity: template.entity,
               project_id: template.project_id,

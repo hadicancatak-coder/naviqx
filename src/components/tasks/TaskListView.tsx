@@ -33,7 +33,6 @@ const priorityColors: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  Pending: "bg-muted text-muted-foreground",
   Backlog: "bg-muted text-muted-foreground",
   Ongoing: "bg-primary/15 text-primary border-primary/30",
   "In Progress": "bg-primary/15 text-primary border-primary/30",
@@ -205,7 +204,7 @@ export function TaskListView({
       return; // Recurring tasks handled by RecurringCompletionToggle
     }
     setProcessingId(task.id);
-    const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+    const newStatus = task.status === 'Completed' ? 'Backlog' : 'Completed';
     updateStatus.mutate(
       { id: task.id, status: newStatus },
       { onSettled: () => setProcessingId(null) }
@@ -221,7 +220,7 @@ export function TaskListView({
         title: `${task.title} (Copy)`,
         description: task.description,
         priority: task.priority,
-        status: 'Pending',
+        status: 'Backlog',
         due_at: task.due_at,
         labels: task.labels,
         entity: task.entity,

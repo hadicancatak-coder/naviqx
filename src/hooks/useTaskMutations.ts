@@ -13,7 +13,7 @@ import { RecurrenceRule, calculateFirstOccurrence } from '@/lib/recurrenceUtils'
 interface UpdateTaskParams {
   id: string;
   updates: Partial<{
-    status: 'Pending' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked';
+    status: 'Backlog' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked';
     priority: 'Low' | 'Medium' | 'High';
     due_at: string | null;
     title: string;
@@ -160,7 +160,7 @@ export const useTaskMutations = () => {
   // Update status
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const dbStatus = mapStatusToDb(status) as 'Pending' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked';
+      const dbStatus = mapStatusToDb(status) as 'Backlog' | 'Ongoing' | 'Completed' | 'Failed' | 'Blocked';
       const { data, error } = await supabase
         .from('tasks')
         .update({ status: dbStatus })

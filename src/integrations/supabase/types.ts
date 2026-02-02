@@ -5405,7 +5405,13 @@ export type Database = {
         | "Glass Wrap"
       task_priority: "High" | "Medium" | "Low"
       task_source: "native" | "jira"
-      task_status: "Pending" | "Ongoing" | "Failed" | "Blocked" | "Completed"
+      task_status:
+        | "Pending"
+        | "Ongoing"
+        | "Failed"
+        | "Blocked"
+        | "Completed"
+        | "Backlog"
       task_type: "generic" | "campaign" | "recurring"
       task_visibility: "global" | "pool" | "private"
       team: "SocialUA" | "PPC" | "PerMar"
@@ -5582,7 +5588,14 @@ export const Constants = {
       ],
       task_priority: ["High", "Medium", "Low"],
       task_source: ["native", "jira"],
-      task_status: ["Pending", "Ongoing", "Failed", "Blocked", "Completed"],
+      task_status: [
+        "Pending",
+        "Ongoing",
+        "Failed",
+        "Blocked",
+        "Completed",
+        "Backlog",
+      ],
       task_type: ["generic", "campaign", "recurring"],
       task_visibility: ["global", "pool", "private"],
       team: ["SocialUA", "PPC", "PerMar"],

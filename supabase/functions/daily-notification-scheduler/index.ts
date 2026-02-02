@@ -101,7 +101,7 @@ serve(async (req) => {
       )
       .gte("due_at", threeDaysFromNow.toISOString().split("T")[0])
       .lt("due_at", new Date(threeDaysFromNow.getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0])
-      .in("status", ["Pending", "Ongoing"]);
+      .in("status", ["Backlog", "Ongoing"]);
 
     const tasks3Days = (tasks3DaysRaw ?? []) as unknown as TaskWithAssignees[];
     
@@ -131,7 +131,7 @@ serve(async (req) => {
       )
       .gte("due_at", oneDayFromNow.toISOString().split("T")[0])
       .lt("due_at", new Date(oneDayFromNow.getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0])
-      .in("status", ["Pending", "Ongoing"]);
+      .in("status", ["Backlog", "Ongoing"]);
 
     const tasks1Day = (tasks1DayRaw ?? []) as unknown as TaskWithAssignees[];
     
@@ -160,7 +160,7 @@ serve(async (req) => {
       `
       )
       .lt("due_at", now.toISOString())
-      .in("status", ["Pending", "Ongoing"]);
+      .in("status", ["Backlog", "Ongoing"]);
 
     const overdueTasks = (overdueTasksRaw ?? []) as unknown as TaskWithAssignees[];
     

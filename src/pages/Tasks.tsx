@@ -188,7 +188,6 @@ export default function Tasks() {
       }
       // When showing only recurring tasks, bypass status filter to show all recurring regardless of status
       const statusMatch = showOnlyRecurring || statusFilters.length === 0 || statusFilters.some(s => {
-        if (s === 'Backlog') return task.status === 'Pending' || task.status === 'Backlog';
         return task.status === s;
       });
       const tagsMatch = selectedTags.length === 0 || selectedTags.some(tag => task.labels?.includes(tag));
