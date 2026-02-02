@@ -66,6 +66,7 @@ export const useExternalAccess = () => {
     onSuccess: () => {
       toast.success("Review link generated");
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       toast.error(error.message || "Failed to generate link");
     },
@@ -104,6 +105,7 @@ export const useExternalAccess = () => {
         .eq("id", data.id);
       
       return data as ExternalAccess;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       // Handle network errors specifically
       if (err.message?.includes("fetch") || err.name === "TypeError") {
@@ -141,6 +143,7 @@ export const useExternalAccess = () => {
     onSuccess: () => {
       toast.success("Email verified successfully");
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       toast.error(error.message || "Verification failed");
     },
