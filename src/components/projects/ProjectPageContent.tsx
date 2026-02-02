@@ -44,7 +44,7 @@ export function ProjectPageContent({
   const { data: tasks } = useTasks();
 
   // Count tasks linked to this project
-  const projectTasks = tasks?.filter((t: any) => t.project_id === project.id) || [];
+  const projectTasks = tasks?.filter((t: { project_id?: string | null }) => t.project_id === project.id) || [];
   const taskCount = projectTasks.length;
 
   const iconName = project.icon || "folder-kanban";
@@ -68,9 +68,9 @@ export function ProjectPageContent({
         <div className="flex items-center gap-sm">
           {/* Breadcrumbs inline */}
           {breadcrumbs.length > 1 && (
-            <nav className="flex items-center gap-1 text-body-sm text-muted-foreground mr-2">
+            <nav className="flex items-center gap-xs text-body-sm text-muted-foreground mr-xs">
               {breadcrumbs.slice(0, -1).map((crumb, idx) => (
-                <span key={crumb.id} className="flex items-center gap-1">
+                <span key={crumb.id} className="flex items-center gap-xs">
                   {idx > 0 && <span>/</span>}
                   <span>{crumb.name}</span>
                 </span>
@@ -97,14 +97,14 @@ export function ProjectPageContent({
             </Tooltip>
           )}
           {project.due_date && (
-            <span className="text-body-sm text-muted-foreground ml-2">
+            <span className="text-body-sm text-muted-foreground ml-xs">
               Due {format(new Date(project.due_date), "MMM d")}
             </span>
           )}
         </div>
 
         {isAdmin && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-xs">
             {project.is_public && project.public_token && (
               <>
                 <Tooltip>
@@ -150,16 +150,16 @@ export function ProjectPageContent({
 
       {/* Tabbed Details Panel */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full justify-start bg-muted/50 border border-border rounded-lg p-1">
-          <TabsTrigger value="overview" className="gap-1.5">
+        <TabsList className="w-full justify-start bg-muted/50 border border-border rounded-lg p-xs">
+          <TabsTrigger value="overview" className="gap-xs">
             <Info className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="gap-1.5">
+          <TabsTrigger value="tasks" className="gap-xs">
             <ListTodo className="h-4 w-4" />
-            Tasks {taskCount > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{taskCount}</Badge>}
+            Tasks {taskCount > 0 && <Badge variant="secondary" className="ml-xs h-5 px-xs">{taskCount}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="details" className="gap-1.5">
+          <TabsTrigger value="details" className="gap-xs">
             <FileText className="h-4 w-4" />
             Details
           </TabsTrigger>
@@ -171,13 +171,13 @@ export function ProjectPageContent({
             {/* Purpose & Outcomes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
               {project.purpose && (
-                <div className="space-y-2">
+              <div className="space-y-xs">
                   <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">Purpose</h3>
                   <p className="text-body text-foreground">{project.purpose}</p>
                 </div>
               )}
               {project.outcomes && (
-                <div className="space-y-2">
+              <div className="space-y-xs">
                   <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide">Expected Outcomes</h3>
                   <p className="text-body text-foreground">{project.outcomes}</p>
                 </div>
@@ -188,20 +188,20 @@ export function ProjectPageContent({
             {assignees && assignees.length > 0 && (
               <>
                 <Separator />
-                <div className="space-y-2">
-                  <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <div className="space-y-xs">
+                  <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-xs">
                     <Users className="h-4 w-4" />
                     Stakeholders
                   </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {assignees.map((assignee: any) => (
+                  <div className="flex flex-wrap gap-xs">
+                    {assignees.map((assignee: { id: string; profiles?: { name?: string; email?: string; avatar_url?: string } }) => (
                       <div
                         key={assignee.id}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-subtle rounded-full"
+                        className="flex items-center gap-xs px-sm py-xs bg-subtle rounded-full"
                       >
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={assignee.profiles?.avatar_url} />
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className="text-metadata">
                             {assignee.profiles?.name?.charAt(0) || "?"}
                           </AvatarFallback>
                         </Avatar>
@@ -215,10 +215,10 @@ export function ProjectPageContent({
 
             {/* Show message if no content */}
             {!project.purpose && !project.outcomes && (!assignees || assignees.length === 0) && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-xl text-muted-foreground">
                 <p className="text-body-sm">No overview information added yet</p>
                 {isAdmin && (
-                  <Button variant="link" size="sm" onClick={onEdit} className="mt-2">
+                  <Button variant="link" size="sm" onClick={onEdit} className="mt-xs">
                     Add project details
                   </Button>
                 )}
@@ -261,7 +261,7 @@ function MetadataCard({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 bg-subtle rounded-lg border border-border">
+    <div className="flex items-center gap-sm p-sm bg-subtle rounded-lg border border-border">
       <div className="flex items-center justify-center h-9 w-9 rounded-md bg-primary/10">
         <Icon className="h-4 w-4 text-primary" />
       </div>
@@ -284,9 +284,9 @@ function SettingsItem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 bg-subtle rounded-lg border border-border">
+    <div className="flex items-center gap-sm p-sm bg-subtle rounded-lg border border-border">
       <Icon className="h-4 w-4 text-muted-foreground" />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-xs">
         <span className="text-body-sm text-muted-foreground">{label}:</span>
         {children}
       </div>
@@ -324,7 +324,7 @@ function ProjectDetailsTab({
     <div className="space-y-md">
       {/* Project Metadata Cards */}
       <div className="bg-card border border-border rounded-xl p-lg">
-        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-2">
+        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-xs">
           <Calendar className="h-4 w-4" />
           Timeline
         </h3>
@@ -354,7 +354,7 @@ function ProjectDetailsTab({
 
       {/* Project Settings */}
       <div className="bg-card border border-border rounded-xl p-lg">
-        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-2">
+        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-xs">
           <Settings className="h-4 w-4" />
           Project Settings
         </h3>
@@ -375,13 +375,13 @@ function ProjectDetailsTab({
 
       {/* Description */}
       <div className="bg-card border border-border rounded-xl p-lg">
-        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-2">
+        <h3 className="text-body-sm font-medium text-muted-foreground uppercase tracking-wide mb-md flex items-center gap-xs">
           <FileText className="h-4 w-4" />
           Description
         </h3>
         
         {sanitizedDescription ? (
-          <div className="space-y-3">
+          <div className="space-y-sm">
             <div 
               className={cn(
                 "relative overflow-hidden transition-all duration-300",
@@ -404,7 +404,7 @@ function ProjectDetailsTab({
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                className="gap-1.5"
+                className="gap-xs"
               >
                 {isDescriptionExpanded ? (
                   <>Show less <ChevronUp className="h-4 w-4" /></>
@@ -415,11 +415,11 @@ function ProjectDetailsTab({
             )}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
-            <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <div className="text-center py-xl text-muted-foreground border border-dashed border-border rounded-lg">
+            <FileText className="h-8 w-8 mx-auto mb-xs opacity-50" />
             <p className="text-body-sm">No description added yet</p>
             {isAdmin && (
-              <Button variant="link" size="sm" onClick={onEdit} className="mt-2">
+              <Button variant="link" size="sm" onClick={onEdit} className="mt-xs">
                 Add description
               </Button>
             )}
