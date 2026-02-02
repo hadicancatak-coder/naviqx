@@ -85,7 +85,7 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
     setIsSubmitting(true);
 
     try {
-      const adData: any = {
+      const adData: Record<string, unknown> = {
         name: adName,
         ad_name: adName,
         entity,
@@ -100,7 +100,8 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
         callouts: callouts.filter(c => c.trim()),
       };
 
-      const { error } = await supabase.from('ads').insert(adData);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
+      const { error } = await supabase.from('ads').insert(adData as any);
 
       if (error) throw error;
 
@@ -112,10 +113,10 @@ export function CreateAdDialog({ open, onOpenChange, onComplete }: CreateAdDialo
       resetForm();
       onComplete();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     } finally {

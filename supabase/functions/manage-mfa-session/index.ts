@@ -194,10 +194,11 @@ Deno.serve(async (req) => {
 
     throw new Error('Invalid action');
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in manage-mfa-session');
+    const message = error instanceof Error ? error.message : 'An error occurred';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -8,10 +8,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// AdData interface for ads being duplicated - accepts data from parent components
+// with flexible typing to handle Json from Supabase
+interface AdData {
+  id?: string;
+  name: string;
+  ad_group_id?: string | null;
+  ad_group_name?: string;
+  campaign_name?: string;
+  entity?: string;
+  ad_type?: string;
+  headlines?: string[] | unknown;
+  descriptions?: string[] | unknown;
+  sitelinks?: unknown;
+  callouts?: unknown;
+  landing_page?: string;
+  business_name?: string;
+  language?: string;
+  approval_status?: string;
+  [key: string]: unknown;
+}
+
 interface DuplicateAdDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ad: any;
+  ad: AdData;
   onSuccess: () => void;
 }
 
@@ -64,13 +85,14 @@ export function DuplicateAdDialog({ open, onOpenChange, ad, onSuccess }: Duplica
     try {
       const { id, created_at, updated_at, ...adData } = ad;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
       const { data: newAd, error } = await supabase
         .from('ads')
         .insert({
           ...adData,
           name: name.trim(),
           ad_group_id: selectedAdGroupId
-        })
+        } as any)
         .select()
         .single();
 
@@ -87,8 +109,8 @@ export function DuplicateAdDialog({ open, onOpenChange, ad, onSuccess }: Duplica
       toast.success("Ad duplicated successfully");
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to duplicate ad");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to duplicate ad");
     } finally {
       setIsLoading(false);
     }

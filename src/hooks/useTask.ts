@@ -36,6 +36,7 @@ export interface TaskWithAssignees {
   blocker_reason?: string | null;
   failure_reason?: string | null;
   assignees: TaskAssignee[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB extensibility requires index signature
   [key: string]: any;
 }
 
@@ -93,8 +94,13 @@ export function useTask(taskId: string, cachedTask?: TaskWithAssignees) {
       if (error) throw error;
       
       // Transform assignees from nested structure
+      interface TaskAssigneeJoin {
+        user_id: string;
+        completed_at: string | null;
+        profiles: TaskAssignee | null;
+      }
       const assignees = data.task_assignees
-        ?.map((ta: any) => ta.profiles)
+        ?.map((ta: TaskAssigneeJoin) => ta.profiles)
         .filter(Boolean) || [];
       
       return {

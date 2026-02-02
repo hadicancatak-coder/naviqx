@@ -21,6 +21,7 @@ export interface AdTemplate {
   business_name?: string;
   long_headline?: string;
   cta_text?: string;
+  short_headlines?: string[];
 }
 
 export function useAdTemplates() {

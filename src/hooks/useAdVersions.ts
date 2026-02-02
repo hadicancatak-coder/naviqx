@@ -6,7 +6,7 @@ export interface AdVersion {
   id: string;
   ad_id: string;
   version_number: number;
-  snapshot_data: any;
+  snapshot_data: Record<string, unknown>;
   changed_fields: string[];
   created_by?: string;
   created_at: string;
@@ -37,7 +37,7 @@ export function useRestoreAdVersion() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ adId, versionData }: { adId: string; versionData: any }) => {
+    mutationFn: async ({ adId, versionData }: { adId: string; versionData: Record<string, unknown> }) => {
       const { data, error } = await supabase
         .from('ads')
         .update(versionData)

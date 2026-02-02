@@ -10,19 +10,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface AdData {
   id?: string;
   name: string;
-  ad_group_id?: string;
+  ad_group_id?: string | null;
   ad_group_name?: string;
   campaign_name?: string;
   entity?: string;
   ad_type?: string;
-  headlines: string[];
-  descriptions: string[];
-  sitelinks: { description: string; link: string }[];
-  callouts: string[];
+  // These accept Json from Supabase which can be unknown
+  headlines: string[] | unknown;
+  descriptions: string[] | unknown;
+  sitelinks: { description: string; link: string }[] | unknown;
+  callouts: string[] | unknown;
   landing_page: string;
   business_name: string;
   language?: string;
   approval_status?: string;
+  [key: string]: unknown;
 }
 
 interface AdGroupData {

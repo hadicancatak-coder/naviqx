@@ -50,7 +50,7 @@ export function useSubtasks(parentId: string | null) {
           task_assignees (
             id,
             user_id,
-            profiles:user_id (
+            profiles!task_assignees_user_id_fkey (
               id,
               user_id,
               name,
@@ -64,9 +64,14 @@ export function useSubtasks(parentId: string | null) {
       if (error) throw error;
       
       // Transform to match expected format
+      interface TaskAssigneeJoin {
+        id: string;
+        user_id: string;
+        profiles: SubtaskAssignee['profiles'] | null;
+      }
       return (data || []).map(task => ({
         ...task,
-        assignees: task.task_assignees?.map((ta: any) => ta.profiles).filter(Boolean) || []
+        assignees: task.task_assignees?.map((ta: TaskAssigneeJoin) => ta.profiles).filter(Boolean) || []
       }));
     },
     enabled: !!parentId,
@@ -81,6 +86,7 @@ export function useSubtasks(parentId: string | null) {
       
       const { data, error } = await supabase
         .from('tasks')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase insert type mismatch
         .insert({
           title,
           parent_id: pId,
@@ -116,7 +122,7 @@ export function useSubtasks(parentId: string | null) {
       };
       
       // Add to cache instantly
-      queryClient.setQueryData(['subtasks', pId], (old: any[] | undefined) => {
+      queryClient.setQueryData(['subtasks', pId], (old: Subtask[] | undefined) => {
         if (!old) return [optimisticSubtask];
         return [...old, optimisticSubtask];
       });
@@ -125,7 +131,7 @@ export function useSubtasks(parentId: string | null) {
     },
     onSuccess: (data, variables, context) => {
       // Replace temp subtask with real one
-      queryClient.setQueryData(['subtasks', variables.parentId], (old: any[] | undefined) => {
+      queryClient.setQueryData(['subtasks', variables.parentId], (old: Subtask[] | undefined) => {
         if (!old) return old;
         return old.map(s => s.id === context?.tempId ? { ...s, ...data } : s);
       });
@@ -150,6 +156,7 @@ export function useSubtasks(parentId: string | null) {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Subtask> }) => {
       const { error } = await supabase
         .from('tasks')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase update type mismatch
         .update(updates as any)
         .eq('id', id);
       
@@ -172,6 +179,7 @@ export function useSubtasks(parentId: string | null) {
     mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
       const { error } = await supabase
         .from('tasks')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase update type mismatch
         .update({ status: completed ? 'Completed' : 'Pending' } as any)
         .eq('id', id);
       
@@ -183,7 +191,7 @@ export function useSubtasks(parentId: string | null) {
       const previousSubtasks = queryClient.getQueryData(['subtasks', parentId]);
       
       // Optimistic update
-      queryClient.setQueryData(['subtasks', parentId], (old: any[] | undefined) => {
+      queryClient.setQueryData(['subtasks', parentId], (old: Subtask[] | undefined) => {
         if (!old) return old;
         return old.map(s => s.id === id ? { ...s, status: completed ? 'Completed' : 'Pending' } : s);
       });
@@ -234,6 +242,7 @@ export function useSubtasks(parentId: string | null) {
       
       const { error } = await supabase
         .from('tasks')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase update type mismatch
         .update({ status: 'Completed' } as any)
         .eq('parent_id', parentId);
       
