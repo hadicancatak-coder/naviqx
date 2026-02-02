@@ -1,115 +1,121 @@
 
-# Fix Plan: White Screen on /notifications (5 More `any` Errors)
+# Comprehensive Fix: All Remaining `any` Type Errors
 
-## Root Cause
+## Problem Summary
 
-The white screen is **not** caused by the Notifications page itself. The Vite dev server is crashing due to **5 ESLint errors** in other files that are loaded as part of the app bundle. When ESLint fails on any file, the entire dev server stops rendering.
+The white screen is caused by ESLint blocking the build due to remaining `any` type violations across **18+ files**. I apologize for the incremental approach - this plan fixes ALL remaining issues in one pass.
 
-## Files With Blocking Errors
+## Files Requiring Changes (18 Files)
 
-| File | Line(s) | Issue |
-|------|---------|-------|
-| `CreateCampaignDialog.tsx` | 73 | `error: any` in catch block |
-| `DuplicateAdDialog.tsx` | 95 | `as any` in Supabase insert |
-| `DuplicateCampaignDialog.tsx` | 14, 120 | `campaign: any` interface prop + `error: any` catch |
-| `DeleteAdDialog.tsx` | 13, 49 | `ad: any` interface prop + `error: any` catch |
-| `DuplicateAdGroupDialog.tsx` | 16, 101 | `adGroup: any` interface prop + `error: any` catch |
+### Group 1: Task Components (6 files)
+| File | Issues |
+|------|--------|
+| `InlineTaskCreator.tsx` | `as any` on insert, `error: any` in catch |
+| `TasksTableVirtualized.tsx` | `tasks: any[]`, `any` in setQueryData, `onError: any` |
+| `StaleBadge.tsx` | `task: any` prop |
+| `TaskGridView.tsx` | `tasks: any[]` prop |
+| `CompletedTasksSection.tsx` | `tasks: any[]` prop |
+| `types/tasks.ts` | Index signature `[key: string]: any` |
+
+### Group 2: Ad/Campaign Components (6 files)
+| File | Issues |
+|------|--------|
+| `BulkCSVImportDialog.tsx` | `error: any` in catch, `catch (error)` |
+| `BulkCSVExportDialog.tsx` | `ads: any[]` prop, `error: any` in catch |
+| `CreateAdGroupDialog.tsx` | `error: any` in catch |
+| `CreateAdDialog.tsx` | `as any` on Supabase insert |
+| `DuplicateAdDialog.tsx` | `as any` on insert (line 95) |
+| `DuplicateAdGroupDialog.tsx` | Remaining violations |
+
+### Group 3: Admin/Other Components (6 files)
+| File | Issues |
+|------|--------|
+| `TeamKPIsManager.tsx` | Multiple `error: any` catch blocks |
+| `BulkSiteUploadDialog.tsx` | `as any` cast, `catch (error)` |
+| `UtmArchiveTable.tsx` | `as any` in export function |
+| `GlobalSearch.tsx` | `catch (error)` without type |
+| `AdEditorPanel.tsx` | `catch (error)` without type |
+| `AddCampaignDialog.tsx` | `catch (error)` without type |
 
 ## Fix Strategy
 
-### 1. CreateCampaignDialog.tsx (Line 73)
-Convert `catch (error: any)` to proper error handling:
+### Pattern 1: Replace `catch (error: any)` with type-safe handling
 ```typescript
+// BEFORE
+} catch (error: any) {
+  toast.error(error.message);
+}
+
+// AFTER
 } catch (error: unknown) {
-  toast.error(error instanceof Error ? error.message : "Failed to create campaign");
+  toast.error(error instanceof Error ? error.message : "Operation failed");
 }
 ```
 
-### 2. DuplicateAdDialog.tsx (Line 95)
-The `as any` already has an ESLint disable comment on line 88, but line 95 still shows error. Need to verify the disable is covering the cast properly.
-
-### 3. DuplicateCampaignDialog.tsx
-Define a `Campaign` interface and fix error handling:
+### Pattern 2: Replace `any[]` props with `TaskWithAssignees[]`
 ```typescript
-interface Campaign {
-  id: string;
-  name: string;
-  entity?: string;
-  languages?: string[];
-  // add other fields used
+// BEFORE
+interface Props {
+  tasks: any[];
 }
 
-interface DuplicateCampaignDialogProps {
-  campaign: Campaign;
-  // ...
-}
+// AFTER
+import type { TaskWithAssignees } from "@/types/tasks";
 
-// Line 120
-} catch (error: unknown) {
-  toast.error(error instanceof Error ? error.message : "Failed to duplicate campaign");
+interface Props {
+  tasks: TaskWithAssignees[];
 }
 ```
 
-Also fix semantic token violations in JSX (lines 148, 149, 155, 159, 168, 170).
+### Pattern 3: Keep ESLint suppression for intentional dynamic patterns
+These are legitimate uses that need suppression comments:
+- Index signatures for DB extensibility: `[key: string]: any` in `types/tasks.ts`
+- Dynamic Supabase table names: `supabase.from(tableName as any)`
+- Dynamic Lucide icon selection
 
-### 4. DeleteAdDialog.tsx
-Define an `Ad` interface and fix error handling:
+### Pattern 4: Replace `as any` on Supabase inserts
 ```typescript
-interface Ad {
-  id: string;
-  name: string;
-  ad_group_id?: string;
-}
+// BEFORE
+.insert({ ...data } as any)
 
-interface DeleteAdDialogProps {
-  ad: Ad;
-  // ...
-}
-
-// Line 49
-} catch (error: unknown) {
-  const errorMessage = error instanceof Error 
-    ? error.message 
-    : "Failed to delete ad. Please try again.";
-  toast.error(errorMessage);
-}
+// AFTER
+const insertData = { ...data };
+.insert(insertData)
 ```
-
-Also fix gap token on line 62: `gap-2` to `gap-xs`.
-
-### 5. DuplicateAdGroupDialog.tsx
-Define an `AdGroup` interface and fix error handling:
-```typescript
-interface AdGroup {
-  id: string;
-  name: string;
-  campaign_id?: string;
-}
-
-interface DuplicateAdGroupDialogProps {
-  adGroup: AdGroup;
-  // ...
-}
-
-// Line 101
-} catch (error: unknown) {
-  toast.error(error instanceof Error ? error.message : "Failed to duplicate ad group");
-}
-```
-
-Also fix semantic token violations (lines 144, 150).
 
 ## Implementation Order
 
-1. Fix `CreateCampaignDialog.tsx` - single error catch
-2. Fix `DuplicateAdDialog.tsx` - verify ESLint disable covers the cast  
-3. Fix `DeleteAdDialog.tsx` - interface + error catch + gap token
-4. Fix `DuplicateCampaignDialog.tsx` - interface + error catch + token migrations
-5. Fix `DuplicateAdGroupDialog.tsx` - interface + error catch + token migrations
+1. **Fix type definitions first** - Update `types/tasks.ts` to use `unknown` index signature
+2. **Fix task components** - Update all task-related files to use proper types
+3. **Fix ad/campaign components** - Update all ad-related files
+4. **Fix admin/other components** - Update remaining files
 
-## Expected Outcome
+## Expected Result
 
-- Dev server stops crashing
-- White screen resolves
-- `/notifications` page renders correctly
-- All 5 files pass ESLint validation
+- All 18+ files will pass ESLint validation
+- No build-blocking errors
+- White screen will be resolved
+- App will render correctly on all routes
+
+## Technical Details
+
+### Index Signature Fix (types/tasks.ts)
+```typescript
+// Replace line 50
+[key: string]: unknown;
+```
+
+### Task Component Type Imports
+All task components will import and use:
+```typescript
+import type { TaskWithAssignees } from "@/types/tasks";
+```
+
+### Error Handling Pattern (all files)
+Standard pattern for ALL catch blocks:
+```typescript
+} catch (error: unknown) {
+  const message = error instanceof Error ? error.message : "An error occurred";
+  // Use message in toast/logger
+}
+```
