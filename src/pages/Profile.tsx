@@ -48,7 +48,7 @@ export default function Profile() {
   
   
   const { data: teamMembers = [] } = useTeamMembers(profile?.teams);
-  const { data: tasks = { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
+  const { data: tasks = { all: [], ongoing: [], completed: [], backlog: [], blocked: [], failed: [] } } = useUserTasks(targetUserId, profile?.teams);
   
   // Local form state for editing
   const [editing, setEditing] = useState(false);
@@ -460,12 +460,12 @@ export default function Profile() {
             <TabsTrigger value="all" className="rounded-md text-body-sm">All ({tasks.all.length})</TabsTrigger>
             <TabsTrigger value="ongoing" className="rounded-md text-body-sm">Ongoing ({tasks.ongoing.length})</TabsTrigger>
             <TabsTrigger value="completed" className="rounded-md text-body-sm">Completed ({tasks.completed.length})</TabsTrigger>
-            <TabsTrigger value="pending" className="rounded-md text-body-sm">Pending ({tasks.pending.length})</TabsTrigger>
+            <TabsTrigger value="backlog" className="rounded-md text-body-sm">Backlog ({tasks.backlog.length})</TabsTrigger>
             <TabsTrigger value="blocked" className="rounded-md text-body-sm">Blocked ({tasks.blocked.length})</TabsTrigger>
             <TabsTrigger value="failed" className="rounded-md text-body-sm">Failed ({tasks.failed.length})</TabsTrigger>
           </TabsList>
 
-          {(["all", "ongoing", "completed", "pending", "blocked", "failed"] as const).map((status) => (
+          {(["all", "ongoing", "completed", "backlog", "blocked", "failed"] as const).map((status) => (
             <TabsContent key={status} value={status} className="mt-md space-y-sm">
               {tasks[status].length > 0 ? (
                 tasks[status].map((task) => (

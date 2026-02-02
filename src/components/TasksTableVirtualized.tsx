@@ -122,15 +122,15 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: Task
         return "bg-destructive/5";
       case "Ongoing":
         return "bg-primary/5";
-      case "Pending":
-        return "bg-pending/5";
+      case "Backlog":
+        return "bg-muted/5";
       default:
         return "";
     }
   };
 
   const statusColors = {
-    Pending: "bg-pending/15 text-pending border-pending/30",
+    Backlog: "bg-muted/15 text-muted-foreground border-border",
     Ongoing: "bg-primary/15 text-primary border-primary/30",
     Completed: "bg-success/15 text-success border-success/30",
     Failed: "bg-muted/15 text-muted-foreground border-muted/30",
@@ -292,7 +292,7 @@ export const TasksTableVirtualized = ({ tasks, onTaskUpdate, onTaskClick }: Task
               </Badge>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Backlog">Backlog</SelectItem>
               <SelectItem value="Ongoing">Ongoing</SelectItem>
               <SelectItem value="Completed">Completed</SelectItem>
               <SelectItem value="Failed">Failed</SelectItem>

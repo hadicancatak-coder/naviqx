@@ -229,6 +229,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
             template_task_id: createdTask.id,
             occurrence_date: instanceDateStr,
             is_recurrence_template: false,
+            is_collaborative: createdTask.is_collaborative ?? false,
           })
           .select()
           .single();

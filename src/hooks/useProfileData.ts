@@ -75,7 +75,7 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
   return useQuery({
     queryKey: ["user-tasks", userId],
     queryFn: async () => {
-      if (!userId) return { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] };
+      if (!userId) return { all: [], ongoing: [], completed: [], backlog: [], blocked: [], failed: [] };
 
       const { data: allTasksData, error } = await supabase
         .from("tasks")
@@ -90,7 +90,7 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      if (!allTasksData) return { all: [], ongoing: [], completed: [], pending: [], blocked: [], failed: [] };
+      if (!allTasksData) return { all: [], ongoing: [], completed: [], backlog: [], blocked: [], failed: [] };
 
       // Define task row shape from query
       interface TaskAssigneeRow {
@@ -162,7 +162,7 @@ export const useUserTasks = (userId: string | undefined, userTeams: string[] | n
         all: visibleTasks,
         ongoing: visibleTasks.filter((t) => t.status === "Ongoing"),
         completed: visibleTasks.filter((t) => t.status === "Completed"),
-        pending: visibleTasks.filter((t) => t.status === "Pending"),
+        backlog: visibleTasks.filter((t) => t.status === "Backlog"),
         blocked: visibleTasks.filter((t) => t.status === "Blocked"),
         failed: visibleTasks.filter((t) => t.status === "Failed"),
       };
