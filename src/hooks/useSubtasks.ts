@@ -130,14 +130,14 @@ export function useSubtasks(parentId: string | null) {
         return old.map(s => s.id === context?.tempId ? { ...s, ...data } : s);
       });
     },
-    onError: (error: any, variables, context) => {
+    onError: (error: unknown, variables, context) => {
       // Rollback on error
       if (context?.previousSubtasks) {
         queryClient.setQueryData(['subtasks', variables.parentId], context.previousSubtasks);
       }
       toast({ 
         title: "Failed to create subtask", 
-        description: error.message, 
+        description: error instanceof Error ? error.message : "An error occurred", 
         variant: "destructive" 
       });
     },
@@ -159,10 +159,10 @@ export function useSubtasks(parentId: string | null) {
       queryClient.invalidateQueries({ queryKey: ['subtasks', parentId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({ 
         title: "Failed to update subtask", 
-        description: error.message, 
+        description: error instanceof Error ? error.message : "An error occurred", 
         variant: "destructive" 
       });
     },
@@ -190,13 +190,13 @@ export function useSubtasks(parentId: string | null) {
       
       return { previousSubtasks };
     },
-    onError: (error: any, _, context) => {
+    onError: (error: unknown, _, context) => {
       if (context?.previousSubtasks) {
         queryClient.setQueryData(['subtasks', parentId], context.previousSubtasks);
       }
       toast({ 
         title: "Failed to update subtask", 
-        description: error.message, 
+        description: error instanceof Error ? error.message : "An error occurred", 
         variant: "destructive" 
       });
     },
@@ -219,10 +219,10 @@ export function useSubtasks(parentId: string | null) {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast({ title: "Subtask deleted" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({ 
         title: "Failed to delete subtask", 
-        description: error.message, 
+        description: error instanceof Error ? error.message : "An error occurred", 
         variant: "destructive" 
       });
     },
@@ -244,10 +244,10 @@ export function useSubtasks(parentId: string | null) {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast({ title: "All subtasks completed" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({ 
         title: "Failed to complete subtasks", 
-        description: error.message, 
+        description: error instanceof Error ? error.message : "An error occurred", 
         variant: "destructive" 
       });
     },

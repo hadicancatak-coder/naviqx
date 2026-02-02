@@ -54,8 +54,8 @@ export const useWebsiteCampaigns = () => {
       queryClient.invalidateQueries({ queryKey: ['website-campaigns'] });
       toast.success("Website added to campaign");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add website to campaign");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to add website to campaign");
     },
   });
 
@@ -74,8 +74,8 @@ export const useWebsiteCampaigns = () => {
       queryClient.invalidateQueries({ queryKey: ['website-campaigns'] });
       toast.success("Website removed from campaign");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to remove website from campaign");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to remove website from campaign");
     },
   });
 

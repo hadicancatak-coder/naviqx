@@ -101,11 +101,11 @@ export function ProjectDialog({ open, onOpenChange, onSuccess }: ProjectDialogPr
       resetForm();
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         toast({ title: "Validation Error", description: error.errors[0].message, variant: "destructive" });
       } else {
-        toast({ title: "Error", description: error.message || "Failed to create project", variant: "destructive" });
+        toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to create project", variant: "destructive" });
       }
     }
   };

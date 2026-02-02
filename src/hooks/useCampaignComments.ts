@@ -96,8 +96,8 @@ export const useCampaignComments = () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-comments"] });
       toast.success("Comment added");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add comment");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to add comment");
     },
   });
 
@@ -135,8 +135,8 @@ export const useCampaignComments = () => {
       queryClient.invalidateQueries({ queryKey: ["utm-campaign-comments"] });
       toast.success("Comment added");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add comment");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to add comment");
     },
   });
 
@@ -153,8 +153,8 @@ export const useCampaignComments = () => {
       queryClient.invalidateQueries({ queryKey: ["utm-campaign-comments"] });
       toast.success("Comment deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete comment");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
     },
   });
 
