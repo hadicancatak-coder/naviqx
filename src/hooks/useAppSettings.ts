@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface AppSetting {
   id: string;
   key: string;
-  value: any;
+  value: Json;
   description: string | null;
   created_at: string;
   updated_at: string;
@@ -33,13 +34,13 @@ export function useAppSettings() {
     placeholderData: (prev) => prev,
   });
 
-  const getSetting = (key: string): any => {
+  const getSetting = (key: string): Json | undefined => {
     const setting = query.data?.find(s => s.key === key);
     return setting?.value;
   };
 
   const updateSetting = useMutation({
-    mutationFn: async ({ key, value, description }: { key: string; value: any; description?: string }) => {
+    mutationFn: async ({ key, value, description }: { key: string; value: Json; description?: string }) => {
       const { data, error } = await supabase
         .from('app_settings')
         .upsert({
@@ -61,10 +62,10 @@ export function useAppSettings() {
         description: "Your changes have been saved.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: "Error updating settings",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     },
@@ -83,7 +84,8 @@ export function useAppSettings() {
 export function useAllowedDomains() {
   const { settings, isLoading, updateSetting } = useAppSettings();
   
-  const allowedDomains: string[] = settings?.find(s => s.key === 'allowed_email_domains')?.value || ['cfi.trade'];
+  const rawValue = settings?.find(s => s.key === 'allowed_email_domains')?.value;
+  const allowedDomains: string[] = Array.isArray(rawValue) ? (rawValue as string[]) : ['cfi.trade'];
   
   const addDomain = async (domain: string) => {
     const normalizedDomain = domain.toLowerCase().replace(/^@/, '');
