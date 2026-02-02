@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { format, differenceInDays, addDays, startOfDay, isWithinInterval, parseISO } from "date-fns";
-import { Plus, Trash2, Layers, User2, Target, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Layers, User2, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { ProjectTimeline, useProjectTimelines } from "@/hooks/useProjects";
@@ -22,6 +21,16 @@ interface ProjectRoadmapProps {
   projectId: string;
   isAdmin?: boolean;
   projectDueDate?: string | null;
+}
+
+// Extended type for timeline with extra fields
+interface ExtendedTimeline extends ProjectTimeline {
+  owner?: string | null;
+  system_name?: string | null;
+  status?: string;
+  step_lane?: string;
+  expected_outcomes?: string[];
+  auto_progress?: boolean;
 }
 
 // Status-based colors (not priority)
@@ -46,7 +55,7 @@ const stepStatuses = [
 export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRoadmapProps) {
   const { timelines, createTimeline, updateTimeline, deleteTimeline } = useProjectTimelines(projectId);
   const [isAddingStep, setIsAddingStep] = useState(false);
-  const [editingStep, setEditingStep] = useState<ProjectTimeline | null>(null);
+  const [editingStep, setEditingStep] = useState<ExtendedTimeline | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [quickMilestoneStep, setQuickMilestoneStep] = useState<{ id: string; name: string } | null>(null);
   const [newStep, setNewStep] = useState({
@@ -82,6 +91,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
   const getInitials = (name: string) => {
     return name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
   };
+
   const { minDate, maxDate, totalDays, today, steps } = useMemo(() => {
     if (!timelines || timelines.length === 0) {
       const now = new Date();
@@ -90,7 +100,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
         maxDate: addDays(now, 90),
         totalDays: 90,
         today: now,
-        steps: [],
+        steps: [] as Array<ExtendedTimeline & { startDate: Date; endDate: Date }>,
       };
     }
 
@@ -109,7 +119,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
         ...t,
         startDate: parseISO(t.start_date),
         endDate: parseISO(t.end_date),
-      })),
+      })) as Array<ExtendedTimeline & { startDate: Date; endDate: Date }>,
     };
   }, [timelines]);
 
@@ -126,7 +136,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       const stepMilestones = milestones?.filter((m) => m.phase_id === step.id) || [];
       const stepTaskStat = taskStats?.find((s) => s.phase_id === step.id);
       const { calculatedProgress } = calculatePhaseProgress(stepMilestones, stepTaskStat);
-      const autoProgress = (step as any).auto_progress !== false; // Default true
+      const autoProgress = step.auto_progress !== false; // Default true
       const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
       const effectiveProgress = (autoProgress && hasMilestonesOrTasks) 
         ? calculatedProgress 
@@ -135,15 +145,15 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
     });
   }, [steps, milestones, taskStats]);
 
-  const getPosition = (date: Date) => {
+  const getPosition = useCallback((date: Date) => {
     const days = differenceInDays(date, minDate);
     return (days / totalDays) * 100;
-  };
+  }, [minDate, totalDays]);
 
-  const getWidth = (start: Date, end: Date) => {
+  const getWidth = useCallback((start: Date, end: Date) => {
     const days = differenceInDays(end, start) + 1;
     return (days / totalDays) * 100;
-  };
+  }, [totalDays]);
 
   const todayPosition = getPosition(today);
   const isTodayVisible = todayPosition >= 0 && todayPosition <= 100;
@@ -154,7 +164,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
     // Filter empty outcomes
     const outcomes = newStep.expected_outcomes.filter(o => o.trim() !== "");
 
-    const createdStep = await createTimeline.mutateAsync({
+    const stepData: Partial<ExtendedTimeline> = {
       project_id: projectId,
       phase_name: newStep.phase_name,
       start_date: newStep.start_date,
@@ -167,7 +177,10 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       status: newStep.status,
       step_lane: newStep.step_lane,
       expected_outcomes: outcomes,
-    } as any);
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createdStep = await createTimeline.mutateAsync(stepData as any);
 
     // Create dependencies
     for (const depId of newStep.depends_on) {
@@ -196,7 +209,8 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
 
   const handleUpdateStep = async () => {
     if (!editingStep) return;
-    await updateTimeline.mutateAsync({
+    
+    const updateData: Partial<ExtendedTimeline> & { id: string } = {
       id: editingStep.id,
       phase_name: editingStep.phase_name,
       start_date: editingStep.start_date,
@@ -204,12 +218,15 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       description: editingStep.description,
       color: editingStep.color,
       progress: editingStep.progress,
-      owner: (editingStep as any).owner || null,
-      system_name: (editingStep as any).system_name || null,
-      status: (editingStep as any).status || "not_started",
-      step_lane: (editingStep as any).step_lane || "execution",
-      expected_outcomes: (editingStep as any).expected_outcomes || [],
-    } as any);
+      owner: editingStep.owner || null,
+      system_name: editingStep.system_name || null,
+      status: editingStep.status || "not_started",
+      step_lane: editingStep.step_lane || "execution",
+      expected_outcomes: editingStep.expected_outcomes || [],
+    };
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await updateTimeline.mutateAsync(updateData as any);
     setEditingStep(null);
   };
 
@@ -221,10 +238,8 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
   };
 
   const handleQuickStatusChange = async (stepId: string, newStatus: string) => {
-    await updateTimeline.mutateAsync({
-      id: stepId,
-      status: newStatus,
-    } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await updateTimeline.mutateAsync({ id: stepId, status: newStatus } as any);
   };
 
   // Generate month markers
@@ -240,7 +255,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
     }
 
     return markers;
-  }, [minDate, maxDate, totalDays]);
+  }, [minDate, maxDate, getPosition]);
 
   // Get milestones for a specific step
   const getMilestonesForStep = (stepId: string) => {
@@ -270,7 +285,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
         <h3 className="text-heading-sm font-semibold text-foreground">Project Roadmap</h3>
         {isAdmin && (
           <Button variant="outline" size="sm" onClick={() => setIsAddingStep(true)}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4 mr-xs" />
             Add Step
           </Button>
         )}
@@ -286,15 +301,15 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       )}
 
       {steps.length === 0 ? (
-        <div className="liquid-glass-elevated text-center py-16 text-muted-foreground rounded-xl">
-          <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-          <p className="text-body font-medium mb-1">No roadmap steps yet</p>
-          <p className="text-body-sm text-muted-foreground mb-4">
+        <div className="liquid-glass-elevated text-center py-xl text-muted-foreground rounded-xl">
+          <Layers className="h-12 w-12 mx-auto mb-md text-muted-foreground/50" />
+          <p className="text-body font-medium mb-xs">No roadmap steps yet</p>
+          <p className="text-body-sm text-muted-foreground mb-md">
             Add steps to visualize what must happen, in what order, and with what outcome
           </p>
           {isAdmin && (
             <Button onClick={() => setIsAddingStep(true)}>
-              <Plus className="h-4 w-4 mr-1" />
+              <Plus className="h-4 w-4 mr-xs" />
               Add First Step
             </Button>
           )}
@@ -302,7 +317,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       ) : (
         <div className="liquid-glass rounded-xl p-md overflow-x-auto min-h-[400px]">
           {/* Month markers */}
-          <div className="relative h-8 mb-3 border-b border-border/50">
+          <div className="relative h-8 mb-sm border-b border-border/50">
             {monthMarkers.map((marker, idx) => (
               <div
                 key={idx}
@@ -332,14 +347,14 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-destructive via-destructive to-transparent z-10"
                 style={{ left: `${todayPosition}%` }}
               >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-xs py-xs bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
                   Today
                 </div>
               </div>
             )}
 
             {/* Step cards */}
-            <div className="space-y-4 pt-2">
+            <div className="space-y-md pt-xs">
               {steps.map((step) => {
                 const colors = stepColors[step.color] || stepColors.primary;
                 const left = getPosition(step.startDate);
@@ -351,7 +366,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 
                 // Calculate auto-progress based on milestones and tasks
                 const progressResult = calculatePhaseProgress(stepMilestones, stepTaskStat);
-                const autoProgress = (step as any).auto_progress !== false; // Default true
+                const autoProgress = step.auto_progress !== false; // Default true
                 const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
                 // Use calculated if auto_progress is on AND there's something to calculate, else use manual
                 const displayProgress = (autoProgress && hasMilestonesOrTasks) 
@@ -401,14 +416,14 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       <Dialog open={isAddingStep} onOpenChange={setIsAddingStep}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-xs">
               <Layers className="h-5 w-5" />
               Add Step
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-md">
             {/* Step Name */}
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Step Title</Label>
               <Input
                 value={newStep.phase_name}
@@ -419,7 +434,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
 
             {/* Dates */}
             <div className="grid grid-cols-2 gap-md">
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Start Date</Label>
                 <Input
                   type="date"
@@ -427,7 +442,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   onChange={(e) => setNewStep({ ...newStep, start_date: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>End Date</Label>
                 <Input
                   type="date"
@@ -439,8 +454,8 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
 
             {/* Owner & System */}
             <div className="grid grid-cols-2 gap-md">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1">
+              <div className="space-y-xs">
+                <Label className="flex items-center gap-xs">
                   <User2 className="h-3.5 w-3.5" />
                   Owner (Team/Person)
                 </Label>
@@ -450,7 +465,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   placeholder="e.g., Data Team, Marketing"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>System</Label>
                 <Input
                   value={newStep.system_name}
@@ -462,7 +477,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
 
             {/* Status & Lane */}
             <div className="grid grid-cols-2 gap-md">
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Status</Label>
                 <Select value={newStep.status} onValueChange={(v) => setNewStep({ ...newStep, status: v })}>
                   <SelectTrigger>
@@ -477,7 +492,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Lane</Label>
                 <Select value={newStep.step_lane} onValueChange={(v) => setNewStep({ ...newStep, step_lane: v })}>
                   <SelectTrigger>
@@ -495,7 +510,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
             </div>
 
             {/* Color */}
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Color</Label>
               <Select value={newStep.color} onValueChange={(v) => setNewStep({ ...newStep, color: v })}>
                 <SelectTrigger>
@@ -504,7 +519,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 <SelectContent>
                   {Object.keys(stepColors).map((color) => (
                     <SelectItem key={color} value={color}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-xs">
                         <div className={cn("w-3 h-3 rounded-full", stepColors[color].bg, stepColors[color].border)} />
                         <span className="capitalize">{color}</span>
                       </div>
@@ -516,7 +531,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
 
             {/* Dependencies */}
             {steps.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Depends On (optional)</Label>
                 <Select
                   value={newStep.depends_on[0] || "none"}
@@ -538,7 +553,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
             )}
 
             {/* Description */}
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Label>Description (optional)</Label>
               <Textarea
                 value={newStep.description}
@@ -549,15 +564,15 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
             </div>
 
             {/* Expected Outcomes */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
+            <div className="space-y-xs">
+              <Label className="flex items-center gap-xs">
                 <Target className="h-3.5 w-3.5" />
                 Expected Outcomes (mandatory for clarity)
               </Label>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 {newStep.expected_outcomes.map((outcome, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <span className="text-muted-foreground text-sm">–</span>
+                  <div key={idx} className="flex items-center gap-xs">
+                    <span className="text-muted-foreground text-body-sm">–</span>
                     <Input
                       value={outcome}
                       onChange={(e) => updateOutcome(idx, e.target.value)}
@@ -575,8 +590,8 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                     )}
                   </div>
                 ))}
-                <Button variant="outline" size="sm" onClick={addOutcomeField} className="mt-1">
-                  <Plus className="h-3.5 w-3.5 mr-1" />
+                <Button variant="outline" size="sm" onClick={addOutcomeField} className="mt-xs">
+                  <Plus className="h-3.5 w-3.5 mr-xs" />
                   Add Outcome
                 </Button>
               </div>
@@ -597,14 +612,14 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
       <Dialog open={!!editingStep} onOpenChange={() => setEditingStep(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-xs">
               <Layers className="h-5 w-5" />
               Edit Step
             </DialogTitle>
           </DialogHeader>
           {editingStep && (
             <div className="space-y-md">
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Step Title</Label>
                 <Input
                   value={editingStep.phase_name}
@@ -612,7 +627,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 />
               </div>
               <div className="grid grid-cols-2 gap-md">
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   <Label>Start Date</Label>
                   <Input
                     type="date"
@@ -620,7 +635,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                     onChange={(e) => setEditingStep({ ...editingStep, start_date: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   <Label>End Date</Label>
                   <Input
                     type="date"
@@ -630,11 +645,11 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-md">
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   <Label>Owner</Label>
                   <Select 
-                    value={(editingStep as any).owner || "none"} 
-                    onValueChange={(v) => setEditingStep({ ...editingStep, owner: v === "none" ? "" : v } as any)}
+                    value={editingStep.owner || "none"} 
+                    onValueChange={(v) => setEditingStep({ ...editingStep, owner: v === "none" ? "" : v })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select owner" />
@@ -645,7 +660,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                       </SelectItem>
                       {users.map((user) => (
                         <SelectItem key={user.id} value={user.name || user.id}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-xs">
                             <Avatar className="h-5 w-5">
                               <AvatarImage src={user.avatar_url || undefined} />
                               <AvatarFallback className="text-[10px]">
@@ -659,21 +674,21 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   <Label>System</Label>
                   <Input
-                    value={(editingStep as any).system_name || ""}
-                    onChange={(e) => setEditingStep({ ...editingStep, system_name: e.target.value } as any)}
+                    value={editingStep.system_name || ""}
+                    onChange={(e) => setEditingStep({ ...editingStep, system_name: e.target.value })}
                     placeholder="e.g., GA4, Meta"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-md">
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   <Label>Status</Label>
                   <Select 
-                    value={(editingStep as any).status || "not_started"} 
-                    onValueChange={(v) => setEditingStep({ ...editingStep, status: v } as any)}
+                    value={editingStep.status || "not_started"} 
+                    onValueChange={(v) => setEditingStep({ ...editingStep, status: v })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -687,11 +702,11 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-xs">
                   {(() => {
                     const stepMilestones = milestones?.filter((m) => m.phase_id === editingStep.id) || [];
                     const stepTaskStat = taskStats?.find((s) => s.phase_id === editingStep.id);
-                    const autoProgress = (editingStep as any).auto_progress !== false;
+                    const autoProgress = editingStep.auto_progress !== false;
                     const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
                     const effectiveProgress = (autoProgress && hasMilestonesOrTasks) 
                       ? calculatePhaseProgress(stepMilestones, stepTaskStat).calculatedProgress 
@@ -701,7 +716,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                       return (
                         <>
                           <Label>Progress ({effectiveProgress}%) <span className="text-muted-foreground text-metadata">– auto-calculated</span></Label>
-                          <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-md">
+                          <div className="flex items-center gap-sm p-xs bg-muted/50 rounded-md">
                             <Progress value={effectiveProgress} className="h-2 flex-1" />
                             <span className="text-body-sm font-medium">{effectiveProgress}%</span>
                           </div>
@@ -730,7 +745,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   })()}
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Color</Label>
                 <Select
                   value={editingStep.color}
@@ -742,7 +757,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   <SelectContent>
                     {Object.keys(stepColors).map((color) => (
                       <SelectItem key={color} value={color}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-xs">
                           <div className={cn("w-3 h-3 rounded-full", stepColors[color].bg, stepColors[color].border)} />
                           <span className="capitalize">{color}</span>
                         </div>
@@ -751,7 +766,7 @@ export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRo
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-xs">
                 <Label>Description</Label>
                 <Textarea
                   value={editingStep.description || ""}
