@@ -119,8 +119,8 @@ export function DuplicateAdDialog({
       toast.success("Ad duplicated successfully");
       onOpenChange(false);
       onSuccess?.();
-    } catch {
-      toast.error("Failed to duplicate ad");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to duplicate ad");
     } finally {
       setIsLoading(false);
     }

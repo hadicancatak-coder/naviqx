@@ -70,8 +70,8 @@ export function CreateCampaignDialog({ open, onOpenChange, defaultEntity, defaul
       setLanguages(["EN"]);
       onSuccess?.();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create campaign");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to create campaign");
     } finally {
       setIsLoading(false);
     }

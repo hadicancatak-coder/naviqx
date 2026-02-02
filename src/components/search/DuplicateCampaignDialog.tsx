@@ -8,10 +8,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
+interface Campaign {
+  id: string;
+  name: string;
+  entity?: string;
+  status?: string;
+  languages?: string[];
+}
+
 interface DuplicateCampaignDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  campaign: any;
+  campaign: Campaign | null;
   adGroupsCount: number;
   adsCount: number;
   onSuccess: () => void;
@@ -117,8 +125,8 @@ export function DuplicateCampaignDialog({ open, onOpenChange, campaign, adGroups
       toast.success(`Campaign duplicated successfully${includeAll ? ` with ${adGroupsCount} ad group(s) and ${adsCount} ad(s)` : ''}`);
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to duplicate campaign");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to duplicate campaign");
     } finally {
       setIsLoading(false);
       setProgress(0);
@@ -145,18 +153,18 @@ export function DuplicateCampaignDialog({ open, onOpenChange, campaign, adGroups
           </div>
 
           {adGroupsCount > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
+            <div className="space-y-xs">
+              <div className="flex items-center space-x-xs">
                 <Checkbox 
                   id="include-all" 
                   checked={includeAll} 
                   onCheckedChange={(checked) => setIncludeAll(checked === true)} 
                 />
-                <Label htmlFor="include-all" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <Label htmlFor="include-all" className="text-body-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Include all ad groups and ads
                 </Label>
               </div>
-              <div className="text-xs text-muted-foreground ml-6">
+              <div className="text-metadata text-muted-foreground ml-6">
                 • {adGroupsCount} ad group(s)
                 <br />
                 • {adsCount} total ad(s)
@@ -165,9 +173,9 @@ export function DuplicateCampaignDialog({ open, onOpenChange, campaign, adGroups
           )}
 
           {isLoading && (
-            <div className="space-y-2">
+            <div className="space-y-xs">
               <Progress value={progress} className="w-full" />
-              {statusText && <p className="text-sm text-muted-foreground text-center">{statusText}</p>}
+              {statusText && <p className="text-body-sm text-muted-foreground text-center">{statusText}</p>}
             </div>
           )}
         </div>
