@@ -1,137 +1,166 @@
 
-
-# Unify Task Status: Replace Pending with Backlog
+# Fix Plan: Complete Status Unification and Collaborative Task Bug
 
 ## Problem Summary
 
-Your app has a confusing split between UI and database:
-- **Database enum**: `Pending`, `Ongoing`, `Blocked`, `Completed`, `Failed`
-- **UI labels**: `Backlog`, `Ongoing`, `Blocked`, `Completed`, `Failed`
+The previous migration added "Backlog" to the database and migrated data, but **several UI components still reference "Pending"**. Additionally, when creating recurring tasks, the `is_collaborative` flag is NOT being copied to the first instance.
 
-This causes constant mapping bugs and confusion. You want them to match.
+## Issues Found
 
----
+| File | Line(s) | Issue |
+|------|---------|-------|
+| `src/components/tasks/TaskBoardView.tsx` | 76, 88 | Filters for `'Pending'`, toggles uncomplete to `'Pending'` |
+| `src/components/TasksTableVirtualized.tsx` | 125-126, 133, 295 | `'Pending'` in color maps and SelectItem |
+| `src/pages/Profile.tsx` | 463 | Tab labeled "Pending" instead of "Backlog" |
+| `src/hooks/useProfileData.ts` | 165 | Filters `status === "Pending"` |
+| `src/components/CreateTaskDialog.tsx` | 217-232 | First recurring instance missing `is_collaborative` |
 
-## Your Status Definitions (Business Logic)
+## Fix Details
 
-| Status | Meaning |
-|--------|---------|
-| **Backlog** | Planned but not started yet |
-| **Ongoing** | Currently being worked on |
-| **Blocked** | Stopped due to a reason (requires reason) |
-| **Completed** | Done |
-| **Failed** | Failed (requires reason) |
+### 1. TaskBoardView.tsx
 
----
+**Line 76** - Remove Pending fallback, use Backlog only:
+```typescript
+// Change from:
+if (group === 'Backlog') {
+  return tasks.filter(t => t.status === 'Pending' || t.status === 'Backlog');
+}
 
-## Solution: Three-Step Fix
-
-### Step 1: Database Migration
-
-Add `Backlog` to the enum and migrate all `Pending` data:
-
-```sql
--- 1. Add 'Backlog' to the task_status enum
-ALTER TYPE task_status ADD VALUE 'Backlog';
-
--- 2. Migrate all existing 'Pending' tasks to 'Backlog'
-UPDATE tasks SET status = 'Backlog' WHERE status = 'Pending';
+// To:
+if (group === 'Backlog') {
+  return tasks.filter(t => t.status === 'Backlog');
+}
 ```
 
-**Data Impact**: ~10 tasks will be updated from `Pending` → `Backlog`. No data loss.
-
-### Step 2: Code Updates
-
-Replace all `'Pending'` references with `'Backlog'` in task-related files:
-
-| File | Change |
-|------|--------|
-| `src/domain/tasks/constants.ts` | Change `TaskStatusDB.Pending` → `TaskStatusDB.Backlog` |
-| `src/domain/tasks/index.ts` | Update `TASK_STATUS_OPTIONS` dbValue |
-| `src/hooks/useSubtasks.ts` | New subtasks: `status: 'Backlog'` |
-| `src/hooks/useTaskMutations.ts` | Type union uses `'Backlog'` |
-| `src/components/CreateTaskDialog.tsx` | Template status: `'Backlog'` |
-| `src/components/tasks/TaskListView.tsx` | Duplicate/uncomplete: `'Backlog'` |
-| `src/components/tasks/TaskBoardView.tsx` | Column filter uses `'Backlog'` |
-| `src/components/tasks/UnifiedTaskBoard.tsx` | Column id: `'Backlog'` |
-| `src/components/sprints/SprintKanban.tsx` | Column id: `'Backlog'` |
-| `src/components/dashboard/OverdueTasks.tsx` | Exclude filter: `'Backlog'` |
-| `src/lib/overdueHelpers.ts` | Exclude `'Backlog'` from overdue |
-| `src/pages/Tasks.tsx` | Status filter matches `'Backlog'` |
-| `src/components/projects/ProjectTasksSection.tsx` | Status icon key |
-| `src/components/admin/TaskAnalyticsDashboard.tsx` | Count filter |
-| `src/domain/tasks/actions.ts` | Default fallback |
-| `supabase/functions/generate-recurring-tasks/index.ts` | Inherit template status or `'Backlog'` |
-| `supabase/functions/daily-notification-scheduler/index.ts` | `.in("status", ["Backlog", "Ongoing"])` |
-
-### Step 3: Simplify Domain Constants
-
-Remove the mapping complexity since UI and DB now match:
-
+**Line 88** - Use Backlog when uncompleting:
 ```typescript
-// src/domain/tasks/constants.ts
+// Change from:
+const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
 
-export const TaskStatus = {
-  Backlog: 'Backlog',      // Was Pending
-  Ongoing: 'Ongoing',
-  Blocked: 'Blocked',
-  Completed: 'Completed',
-  Failed: 'Failed',
-} as const;
+// To:
+const newStatus = task.status === 'Completed' ? 'Backlog' : 'Completed';
+```
 
-export type TaskStatusType = typeof TaskStatus[keyof typeof TaskStatus];
+### 2. TasksTableVirtualized.tsx
 
-// No more separate UI/DB enums needed!
-// Keep simple mappers for backward compatibility that just return input
-export const mapStatusToDb = (status: string): TaskStatusType => 
-  status as TaskStatusType;
+**Line 125-126** - Update switch case:
+```typescript
+// Change from:
+case "Pending":
+  return "bg-pending/5";
 
-export const mapStatusToUi = (status: string): TaskStatusType => 
-  status as TaskStatusType;
+// To:
+case "Backlog":
+  return "bg-muted/5";
+```
+
+**Line 133** - Update statusColors object:
+```typescript
+// Change from:
+Pending: "bg-pending/15 text-pending border-pending/30",
+
+// To:
+Backlog: "bg-muted/15 text-muted-foreground border-border",
+```
+
+**Line 295** - Update SelectItem:
+```typescript
+// Change from:
+<SelectItem value="Pending">Pending</SelectItem>
+
+// To:
+<SelectItem value="Backlog">Backlog</SelectItem>
+```
+
+### 3. Profile.tsx
+
+**Line 463** - Update tab label:
+```typescript
+// Change from:
+<TabsTrigger value="pending" className="rounded-md text-body-sm">Pending ({tasks.pending.length})</TabsTrigger>
+
+// To:
+<TabsTrigger value="backlog" className="rounded-md text-body-sm">Backlog ({tasks.backlog.length})</TabsTrigger>
+```
+
+**Line 468** - Update the mapping array:
+```typescript
+// Change from:
+{(["all", "ongoing", "completed", "pending", "blocked", "failed"] as const).map((status) => (
+
+// To:
+{(["all", "ongoing", "completed", "backlog", "blocked", "failed"] as const).map((status) => (
+```
+
+### 4. useProfileData.ts
+
+**Line 165** - Update filter and property name:
+```typescript
+// Change from:
+pending: visibleTasks.filter((t) => t.status === "Pending"),
+
+// To:
+backlog: visibleTasks.filter((t) => t.status === "Backlog"),
+```
+
+### 5. CreateTaskDialog.tsx - Fix Collaborative Flag
+
+**Lines 217-232** - Add `is_collaborative` to first instance creation:
+```typescript
+const { data: firstInstance, error: instanceError } = await supabase
+  .from('tasks')
+  .insert({
+    title: title.trim(),
+    description: description || null,
+    priority,
+    status: mapStatusToDb(status),
+    due_at: firstOccurrenceDate.toISOString(),
+    created_by: user!.id,
+    entity: entities.length > 0 ? entities : [],
+    labels: tags.length > 0 ? tags : [],
+    task_type: 'recurring',
+    visibility: 'global',
+    project_id: projectId || null,
+    template_task_id: createdTask.id,
+    occurrence_date: instanceDateStr,
+    is_recurrence_template: false,
+    is_collaborative: createdTask.is_collaborative ?? false, // ADD THIS LINE
+  })
 ```
 
 ---
 
 ## Files to Modify
 
-| Category | Files |
-|----------|-------|
-| **Database** | Migration to add `Backlog` enum value and update data |
-| **Domain** | `src/domain/tasks/constants.ts`, `src/domain/tasks/index.ts`, `src/domain/tasks/actions.ts` |
-| **Components** | `src/components/CreateTaskDialog.tsx`, `src/components/tasks/TaskListView.tsx`, `src/components/tasks/TaskBoardView.tsx`, `src/components/tasks/UnifiedTaskBoard.tsx`, `src/components/sprints/SprintKanban.tsx`, `src/components/tasks/TaskRow.tsx`, `src/components/projects/ProjectTasksSection.tsx`, `src/components/dashboard/OverdueTasks.tsx`, `src/components/admin/TaskAnalyticsDashboard.tsx` |
-| **Hooks** | `src/hooks/useSubtasks.ts`, `src/hooks/useTaskMutations.ts` |
-| **Pages** | `src/pages/Tasks.tsx` |
-| **Lib** | `src/lib/overdueHelpers.ts`, `src/lib/constants.ts` |
-| **Edge Functions** | `supabase/functions/generate-recurring-tasks/index.ts`, `supabase/functions/daily-notification-scheduler/index.ts` |
+| File | Changes |
+|------|---------|
+| `src/components/tasks/TaskBoardView.tsx` | Replace 'Pending' with 'Backlog' (2 locations) |
+| `src/components/TasksTableVirtualized.tsx` | Replace 'Pending' with 'Backlog' (3 locations) |
+| `src/pages/Profile.tsx` | Update tab value and label from 'pending' to 'backlog' |
+| `src/hooks/useProfileData.ts` | Rename property and filter to 'backlog' |
+| `src/components/CreateTaskDialog.tsx` | Add `is_collaborative` to first instance |
 
 ---
 
 ## Outcome After Implementation
 
 ```text
-Database enum:  'Backlog' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed'
-                         ↑
-                    (Pending still exists in enum but unused)
+Status System:
+  Database:  Backlog | Ongoing | Blocked | Completed | Failed
+  UI:        Backlog | Ongoing | Blocked | Completed | Failed
+  All code:  Uses 'Backlog' consistently everywhere
 
-UI labels:      'Backlog' | 'Ongoing' | 'Blocked' | 'Completed' | 'Failed'
-                         ↑
-                    (Perfect match!)
-
-Mapping layer:  Simplified to pass-through (no conversion needed)
+Collaborative Tasks:
+  Template created -> is_collaborative = true
+  First instance -> is_collaborative = true (copied from template)
+  Cron instances -> is_collaborative = true (already works)
 ```
-
-**Benefits:**
-- No more confusion between Pending/Backlog
-- No mapping bugs
-- Cleaner, simpler code
-- UI and DB speak the same language
 
 ---
 
 ## Technical Notes
 
-1. **Enum values can't be removed** - `Pending` stays in the PostgreSQL enum but won't be used
-2. **The migration is safe** - PostgreSQL allows adding enum values without table rewrites
-3. **Backward compatibility** - Keep `mapStatusToDb`/`mapStatusToUi` as pass-through functions to avoid breaking existing imports
-4. **Edge functions** - Must be redeployed after changes
-
+1. The database already has correct data (no more 'Pending' status in any tasks)
+2. The mappers in `src/domain/tasks/constants.ts` handle legacy 'Pending' values as fallback
+3. After this fix, no UI component will reference 'Pending' for task status
+4. All recurring collaborative tasks will correctly propagate the is_collaborative flag
