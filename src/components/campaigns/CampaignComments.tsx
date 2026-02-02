@@ -11,6 +11,19 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { format, formatDistanceToNow } from "date-fns";
 import { CommentText } from "@/components/CommentText";
 
+interface UtmCampaignComment {
+  id: string;
+  utm_campaign_id: string;
+  comment_text: string;
+  request_type?: string | null;
+  author_name: string | null;
+  author_email: string | null;
+  author_id: string | null;
+  is_external?: boolean | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
 interface CampaignCommentsProps {
   campaignId: string;
 }
@@ -36,7 +49,7 @@ export function CampaignComments({ campaignId }: CampaignCommentsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-xs">
           <MessageSquare className="h-5 w-5" />
           Comments ({comments.length})
         </CardTitle>
@@ -51,7 +64,7 @@ export function CampaignComments({ campaignId }: CampaignCommentsProps) {
             </div>
           ) : (
             <div className="space-y-md">
-              {comments.map((comment: any) => (
+              {comments.map((comment: UtmCampaignComment) => (
                 <div key={comment.id} className="border-b pb-sm last:border-0 group">
                   <div className="flex items-start justify-between mb-xs">
                     <div className="flex flex-col gap-xs">
