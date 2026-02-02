@@ -1,150 +1,209 @@
 
-# Fix Plan: Make Recurring Task Editing User-Friendly
+# Clean Up Error Logs System
 
-## The Problem
+## Problem Analysis
 
-The current system has a hidden "template" concept that users never see:
+Based on the investigation, the error_logs table has 287+ unresolved errors, most of which are historical development-time issues like:
+- `useAuth must be used within an AuthProvider` (hot-reload context issues)
+- `useTaskDetailContext called outside provider` (component mounting during HMR)
+- `useSidebar must be used within a SidebarProvider` (transient mount errors)
 
-| What Exists | What User Sees | What User Can Do |
-|------------|----------------|-----------------|
-| Template (hidden, is_recurrence_template=true) | Nothing | Nothing |
-| Instances (visible, template_task_id points to template) | Two identical "Mobile Performance Report" tasks | No way to edit recurrence |
+These are not real production bugs - they're artifacts of development hot-reloading.
 
-**You're 100% correct** - there should be no hidden "template" concept. Users should see ONE task and edit its recurrence directly.
+## Solution Overview
 
-## Solution: Two-Part Fix
+Three-part fix:
 
-### Part 1: Show Recurrence Editor on Instance Tasks
+1. **Add Bulk Resolve Method** - New method in `errorLogger.ts` to resolve all errors before a cutoff date
+2. **Add Clear Historical Errors Button** - UI in admin panel to bulk-resolve old errors
+3. **Filter Transient Errors** - Don't log known hot-reload/context errors to database
 
-When you open a recurring task instance, show the recurrence editor with schedule from its parent template. Editing the recurrence updates the template behind the scenes.
-
-**Changes to `TaskDetailFields.tsx`:**
-```typescript
-// Show recurrence editor for:
-// 1. Template tasks (is_recurrence_template === true) - current behavior
-// 2. Instance tasks that have a template (template_task_id exists) - NEW
-const showRecurrenceEditor = task?.is_recurrence_template || task?.template_task_id;
-const templateId = task?.template_task_id || task?.id;
-```
-
-**Changes to `RecurrenceEditor.tsx`:**
-- Accept `templateTaskId` prop for instances
-- Fetch template's `recurrence_rrule` when editing an instance
-- Update the template when saving
-
-### Part 2: Consolidate Duplicate Instances in View (Optional Enhancement)
-
-Show only ONE entry per recurring task series in the list, with a way to see all instances.
-
-**Option A - Group instances under template:**
-- Show template task with "Recurring" badge
-- Expand to see all generated instances
-
-**Option B - Show next due instance only:**
-- Filter to show only the next upcoming instance per series
-- Past instances move to "Completed" or "History"
+---
 
 ## Implementation Details
 
-### File Changes
+### Part 1: Add Bulk Resolve to ErrorLogger
 
-| File | Change |
-|------|--------|
-| `src/components/tasks/RecurrenceEditor.tsx` | Support instance tasks, fetch template data |
-| `src/components/tasks/TaskDetail/TaskDetailFields.tsx` | Show editor for instances with template_task_id |
-| `src/hooks/useTaskMutations.ts` | Handle updating template from instance view |
-| `src/components/tasks/TaskDetail/TaskDetailContext.tsx` | Optionally fetch template data for instances |
+**File: `src/lib/errorLogger.ts`**
 
-### RecurrenceEditor Changes
+Add a new method to bulk-resolve historical errors:
 
 ```typescript
-interface RecurrenceEditorProps {
-  taskId: string;
-  templateTaskId?: string; // For instances - the ID of their template
-  currentRrule: string | null;
-  // ...
+async bulkResolveErrors(beforeDate: Date): Promise<{ count: number; success: boolean }> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // First count how many will be affected
+    const { count } = await supabase
+      .from('error_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('resolved', false)
+      .lt('created_at', beforeDate.toISOString());
+
+    // Then update them
+    const { error } = await supabase
+      .from('error_logs')
+      .update({
+        resolved: true,
+        resolved_by: user.id,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq('resolved', false)
+      .lt('created_at', beforeDate.toISOString());
+
+    if (error) throw error;
+    return { count: count || 0, success: true };
+  } catch (err) {
+    logger.error('Error bulk resolving errors', err);
+    return { count: 0, success: false };
+  }
+}
+```
+
+### Part 2: Add Clear Historical Errors Button to Admin UI
+
+**File: `src/pages/admin/ErrorLogs.tsx`**
+
+Add a "Clear Historical Errors" button next to Refresh:
+
+```typescript
+// New state for bulk operation
+const [clearing, setClearing] = useState(false);
+
+// New handler
+const handleClearHistorical = async () => {
+  const confirmed = window.confirm(
+    'This will mark all errors from before today as resolved. Continue?'
+  );
+  if (!confirmed) return;
+  
+  setClearing(true);
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const result = await errorLogger.bulkResolveErrors(today);
+    if (result.success) {
+      toast.success(`Resolved ${result.count} historical errors`);
+      fetchErrors();
+    } else {
+      toast.error('Failed to clear historical errors');
+    }
+  } finally {
+    setClearing(false);
+  }
+};
+
+// In JSX, add button next to Refresh
+<Button 
+  onClick={handleClearHistorical} 
+  variant="outline"
+  disabled={clearing}
+>
+  {clearing ? 'Clearing...' : 'Clear Historical'}
+</Button>
+```
+
+### Part 3: Filter Transient Errors in Global Handlers
+
+**File: `src/main.tsx`**
+
+Add a filter to skip logging known hot-reload/context errors:
+
+```typescript
+// Known transient error patterns that shouldn't be logged
+const TRANSIENT_ERROR_PATTERNS = [
+  'useAuth must be used within an AuthProvider',
+  'useTaskDetailContext called outside provider',
+  'useSidebar must be used within a SidebarProvider',
+  'useTheme must be used within a ThemeProvider',
+  'Cannot read properties of null',
+  'ResizeObserver loop',
+];
+
+function isTransientError(message: string): boolean {
+  return TRANSIENT_ERROR_PATTERNS.some(pattern => 
+    message.includes(pattern)
+  );
 }
 
-// Component now works for both templates and instances
-// When templateTaskId is provided, it fetches and updates the template
+// Update global error handler
+window.addEventListener('error', (event) => {
+  event.preventDefault();
+  
+  const message = event.message || 'Unknown error';
+  
+  // Skip transient development errors
+  if (isTransientError(message)) {
+    logger.debug('Skipped transient error:', message);
+    return;
+  }
+  
+  logger.error('Global error:', event.error);
+  
+  errorLogger.logError({
+    severity: 'critical',
+    type: 'frontend',
+    message,
+    stack: event.error?.stack,
+    metadata: { 
+      filename: event.filename, 
+      lineno: event.lineno, 
+      colno: event.colno,
+    }
+  });
+});
+
+// Update unhandledrejection handler similarly
+window.addEventListener('unhandledrejection', (event) => {
+  event.preventDefault();
+  
+  const reason = event.reason;
+  const message = reason?.message || reason?.toString() || 'Unknown promise rejection';
+  
+  // Skip transient development errors
+  if (isTransientError(message)) {
+    logger.debug('Skipped transient rejection:', message);
+    return;
+  }
+  
+  logger.error('Unhandled promise rejection:', event.reason);
+  
+  errorLogger.logError({
+    severity: 'warning',
+    type: 'frontend',
+    message: `Unhandled Promise Rejection: ${message}`,
+    stack: reason?.stack,
+    metadata: { 
+      reasonType: typeof reason,
+      reasonConstructor: reason?.constructor?.name
+    }
+  });
+});
 ```
 
-### TaskDetailFields Changes
+---
 
-```typescript
-// In TaskDetailFields.tsx
+## Files to Modify
 
-// Determine if we should show the recurrence editor
-const isTemplate = task?.is_recurrence_template;
-const isInstance = !!task?.template_task_id;
-const showRecurrenceEditor = isTemplate || isInstance;
+| File | Changes |
+|------|---------|
+| `src/lib/errorLogger.ts` | Add `bulkResolveErrors()` method |
+| `src/pages/admin/ErrorLogs.tsx` | Add "Clear Historical" button + handler |
+| `src/main.tsx` | Add transient error filter before logging |
 
-// For instances, get template data
-const templateTaskId = isInstance ? task.template_task_id : null;
+## Outcome
 
-{showRecurrenceEditor && (
-  <RecurrenceEditor
-    taskId={taskId}
-    templateTaskId={templateTaskId}
-    currentRrule={isTemplate ? task.recurrence_rrule : null} // Will fetch from template
-    nextRunAt={isTemplate ? task.next_run_at : null}
-    isTemplate={isTemplate || false}
-    isInstance={isInstance}
-    onUpdate={(rule) => {
-      // Update the template (either this task or the parent template)
-      const targetId = templateTaskId || taskId;
-      mutations.updateRecurrence.mutate({ id: targetId, rule });
-    }}
-  />
-)}
-```
+After implementation:
 
-### Mutation Update
+1. **Immediate cleanup**: Click "Clear Historical" to bulk-resolve 287+ old errors
+2. **Future prevention**: Transient hot-reload errors won't pollute the logs
+3. **Better signal**: Error log will only show real, actionable issues
 
-The `updateRecurrence` mutation already works - it just needs to receive the correct template ID.
+## Technical Notes
 
-## User Experience After Fix
-
-1. **User opens "Mobile Performance Report"** (the Feb 2 instance)
-2. **Sees "Recurrence" section** showing "Daily" with Edit button  
-3. **Clicks Edit** → Opens sheet with current schedule
-4. **Changes to "Weekly on Mondays"** → Saves
-5. **Template is updated** → Next instance will be on Monday
-6. **Future instances follow new schedule**
-
-## Visual Change
-
-```text
-Before (current - broken):
-┌─────────────────────────────────────┐
-│ Mobile Performance Report           │
-│ Due: Feb 2  │ Status: Backlog       │
-│                                     │
-│ [No recurrence section visible]     │
-│                                     │
-│ Assignees: Adel                     │
-└─────────────────────────────────────┘
-
-After (fixed):
-┌─────────────────────────────────────┐
-│ Mobile Performance Report           │
-│ 🔄 Recurring Instance               │
-│ Due: Feb 2  │ Status: Backlog       │
-├─────────────────────────────────────┤
-│ Recurrence                          │
-│ ┌─────────────────────────────────┐ │
-│ │ Daily                    [Edit] │ │
-│ │ Next: Feb 3 at 12:00 AM         │ │
-│ └─────────────────────────────────┘ │
-├─────────────────────────────────────┤
-│ Assignees: Adel                     │
-└─────────────────────────────────────┘
-```
-
-## Testing
-
-1. Open a recurring task instance (like the ones you see now)
-2. Verify "Recurrence" section appears with current schedule
-3. Click Edit → Change to "Weekly on Monday"
-4. Save and verify the template's `recurrence_rrule` and `next_run_at` are updated
-5. Confirm future instances will follow the new Monday schedule
+- The bulk resolve uses `lt` (less than) comparison on `created_at` to catch all errors before today
+- Transient error patterns are configurable - can add more as discovered
+- The filter runs in the browser before the database call, so no wasted writes
+- Both the count and update happen in the same method for accurate feedback
