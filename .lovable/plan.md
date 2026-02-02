@@ -1,83 +1,165 @@
 
-# Fix Plan: Collaborative Mode for Recurring Tasks
+# Fix Plan: Enable Recurrence Editing After Task Creation
 
-## Problem Identified
+## Problem Summary
 
-When recurring task instances are generated from templates, the **`is_collaborative` setting is not being inherited**. The Edge Function that generates recurring tasks copies most template fields but misses `is_collaborative`.
+You're absolutely right - **there is no way to edit recurrence settings after a task template is created**. This is a significant gap in the task system. Currently:
+
+1. Recurrence is only configurable in `CreateTaskDialog.tsx`
+2. `TaskDetailFields.tsx` and `TaskDetailDetails.tsx` have NO recurrence editing UI
+3. Once created, users are stuck with the original schedule (daily instead of weekly on Mondays)
 
 ## Root Cause
 
-In `supabase/functions/generate-recurring-tasks/index.ts` (lines 314-331), the task instance insert is missing:
+The recurring task system was built with a "create once, never modify" assumption. The template/instance architecture is solid, but the **editing capability was never implemented**.
+
+## Solution: Add Recurrence Editor to Task Detail
+
+### Component Architecture
+
+```text
+TaskDetailFields.tsx (existing)
+├── Title (editable) ✓
+├── Priority Card ✓
+├── Assignees ✓
+└── [NEW] RecurrenceEditor (only shows for templates)
+    ├── Current schedule display
+    ├── Edit button → opens RecurrenceEditSheet
+    └── RecurrenceEditSheet
+        ├── Type selector (Daily/Weekly/Monthly)
+        ├── Days of week (for weekly)
+        ├── Day of month (for monthly)
+        ├── End condition (never/after N/until date)
+        └── Save button → updates template
+```
+
+### Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/components/tasks/RecurrenceEditor.tsx` | **CREATE** | New component for editing recurrence |
+| `src/components/tasks/RecurrenceEditSheet.tsx` | **CREATE** | Sheet with full recurrence options |
+| `src/components/tasks/TaskDetail/TaskDetailFields.tsx` | **MODIFY** | Add RecurrenceEditor for templates |
+| `src/hooks/useTaskMutations.ts` | **MODIFY** | Add `updateRecurrence` mutation |
+| `src/lib/recurrenceUtils.ts` | **MODIFY** | Add helper to recalculate next_run_at |
+
+## Implementation Details
+
+### 1. New RecurrenceEditor Component
+
 ```typescript
-is_collaborative: template.is_collaborative
+// src/components/tasks/RecurrenceEditor.tsx
+interface RecurrenceEditorProps {
+  taskId: string;
+  currentRule: RecurrenceRule | null;
+  isTemplate: boolean;
+  onUpdate: (rule: RecurrenceRule) => void;
+}
+
+// Shows:
+// - Current schedule: "Weekly on Mon" with edit button
+// - Only visible for is_recurrence_template === true tasks
+// - Opens RecurrenceEditSheet on click
 ```
 
-## Solution
-
-### 1. Fix the Edge Function (Critical)
-Add `is_collaborative` to the fields copied from template to instance:
-
-**File:** `supabase/functions/generate-recurring-tasks/index.ts`
+### 2. New RecurrenceEditSheet Component
 
 ```typescript
-// Line ~316-332 - Add is_collaborative to insert
-.insert({
-  title: template.title,
-  description: template.description,
-  priority: template.priority,
-  status: 'Pending',
-  due_at: template.next_run_at,
-  entity: template.entity,
-  project_id: template.project_id,
-  labels: template.labels,
-  created_by: template.created_by,
-  template_task_id: template.id,
-  occurrence_date: occurrenceDateStr,
-  task_type: 'recurring',
-  jira_link: template.jira_link,
-  is_collaborative: template.is_collaborative ?? false, // ← ADD THIS
-})
+// src/components/tasks/RecurrenceEditSheet.tsx
+// Reuses the same UI from CreateTaskDialog:
+// - Type dropdown (none/daily/weekly/monthly)
+// - Days of week checkboxes (for weekly)
+// - Day of month input (for monthly)
+// - End condition (never/after N/until date)
 ```
 
-### 2. Backfill Existing Instances (Optional)
-For recurring tasks already generated without `is_collaborative`, provide a one-time update script (run in Cloud View):
+### 3. Add to TaskDetailFields
 
-```sql
--- Backfill is_collaborative from templates to existing instances
-UPDATE tasks AS instance
-SET is_collaborative = template.is_collaborative
-FROM tasks AS template
-WHERE instance.template_task_id = template.id
-  AND template.is_collaborative = true
-  AND instance.is_collaborative = false;
+```typescript
+// In TaskDetailFields.tsx, after Assignees section:
+{task?.is_recurrence_template && (
+  <RecurrenceEditor
+    taskId={taskId}
+    currentRule={task.recurrence_rrule ? JSON.parse(task.recurrence_rrule) : null}
+    isTemplate={true}
+    onUpdate={(rule) => mutations.updateRecurrence.mutate({ id: taskId, rule })}
+  />
+)}
 ```
 
-### 3. Audit Other Missing Template Fields
-While reviewing the Edge Function, these additional fields should also be considered for inheritance (future improvement):
+### 4. New Mutation in useTaskMutations
 
-| Field | Currently Copied? | Should Copy? |
-|-------|-------------------|--------------|
-| `is_collaborative` | ❌ No | ✅ Yes |
-| `estimated_hours` | ❌ No | ✅ Yes (if set) |
-| `teams` | ❌ No | ✅ Yes (if set) |
-| `is_external_dependency` | ❌ No | Maybe |
+```typescript
+// Add updateRecurrence mutation
+const updateRecurrence = useMutation({
+  mutationFn: async ({ id, rule }: { id: string; rule: RecurrenceRule }) => {
+    const nextRun = calculateFirstOccurrence(rule);
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({
+        recurrence_rrule: JSON.stringify(rule),
+        recurrence_end_type: rule.end_condition,
+        recurrence_end_value: rule.end_value?.toString() || null,
+        next_run_at: nextRun?.toISOString() || null,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  onSuccess: () => toast({ title: "Recurrence updated" }),
+  // ... optimistic updates
+});
+```
 
-## Technical Details
+## Technical Considerations
 
-### Files to Modify
-1. `supabase/functions/generate-recurring-tasks/index.ts` - Add `is_collaborative` to insert
+### What Happens to Existing Instances?
+- **Already generated instances** remain unchanged (they have their own due dates)
+- **Future instances** will follow the new schedule
+- The edge function uses `next_run_at` to determine when to generate the next instance
 
-### Why This Happened
-The Edge Function was written before collaborative mode was added. When `is_collaborative` was introduced, the recurring task generator wasn't updated to include it.
+### Edge Cases Handled
+1. Changing from daily to weekly: Recalculates `next_run_at` to next valid weekday
+2. Changing to "ends after N": Checks current `occurrence_count` 
+3. Removing recurrence: Sets `is_recurrence_template = false`, stops generating instances
 
-### Testing
-1. Create a recurring task template with multiple assignees
-2. Enable collaborative mode on the template
-3. Wait for/trigger the cron job to generate an instance
-4. Verify the instance has `is_collaborative: true`
-5. Confirm each assignee must mark complete before task completes
+## UI/UX Design
+
+The recurrence editor will appear in the TaskDetail panel:
+
+```text
+┌─────────────────────────────────────┐
+│ Task: Mobile Performance Report     │
+├─────────────────────────────────────┤
+│ Priority: High  │ Status: Ongoing   │
+│ Due: Feb 3      │ Sprint: Week 5    │
+├─────────────────────────────────────┤
+│ 🔄 Recurrence                       │
+│ ┌─────────────────────────────────┐ │
+│ │ Daily                    [Edit] │ │
+│ │ Next: Tomorrow at 9:00 AM       │ │
+│ └─────────────────────────────────┘ │
+├─────────────────────────────────────┤
+│ Assignees: ...                      │
+└─────────────────────────────────────┘
+```
+
+Clicking "Edit" opens a sheet with full recurrence options, matching the create dialog.
 
 ## Expected Outcome
-- New recurring task instances will inherit collaborative mode setting
-- Existing instances can be backfilled via SQL
-- Task completion rules apply consistently across regular and recurring tasks
+
+1. Users can **edit recurrence schedule** from task detail (daily → weekly on Mondays)
+2. Changes **immediately reflect** in next_run_at
+3. Future task instances follow the **new schedule**
+4. UI shows clear **current schedule** with easy edit access
+5. Works for both template tasks and legacy recurring tasks
+
+## Testing Steps
+
+1. Open a recurring task template
+2. Click "Edit" on recurrence section  
+3. Change from "Daily" to "Weekly on Mondays"
+4. Save and verify `recurrence_rrule` and `next_run_at` updated in database
+5. Wait for cron job or manually trigger - verify next instance is Monday
