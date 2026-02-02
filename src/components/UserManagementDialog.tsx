@@ -91,10 +91,10 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
       });
 
       await fetchMembers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error instanceof z.ZodError ? error.errors[0].message : error.message,
+        description: error instanceof z.ZodError ? error.errors[0].message : (error instanceof Error ? error.message : "An error occurred"),
         variant: "destructive",
       });
     }
@@ -119,10 +119,10 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
       });
 
       await fetchMembers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error instanceof z.ZodError ? error.errors[0].message : error.message,
+        description: error instanceof z.ZodError ? error.errors[0].message : (error instanceof Error ? error.message : "An error occurred"),
         variant: "destructive",
       });
     }
@@ -155,10 +155,10 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
       setMemberToRemove(null);
       setRemoveDialogOpen(false);
       await fetchMembers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to remove member",
+        description: error instanceof Error ? error.message : "Failed to remove member",
         variant: "destructive",
       });
     }

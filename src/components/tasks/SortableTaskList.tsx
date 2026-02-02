@@ -179,10 +179,10 @@ export function SortableTaskList({
       }
       
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to save order",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
       // Revert on error

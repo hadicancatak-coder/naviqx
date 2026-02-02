@@ -129,8 +129,8 @@ export const useVersionComments = (versionId: string | null) => {
       queryClient.invalidateQueries({ queryKey: ["version-comments"] });
       toast.success("Comment added");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add comment");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to add comment");
     },
   });
 
@@ -148,8 +148,8 @@ export const useVersionComments = (versionId: string | null) => {
       queryClient.invalidateQueries({ queryKey: ["version-comments"] });
       toast.success("Comment deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete comment");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
     },
   });
 
@@ -166,8 +166,8 @@ export const useVersionComments = (versionId: string | null) => {
       queryClient.invalidateQueries({ queryKey: ["version-comments"] });
       toast.success("External comment deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete external comment");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete external comment");
     },
   });
 
@@ -191,8 +191,8 @@ export const useVersionComments = (versionId: string | null) => {
       queryClient.invalidateQueries({ queryKey: ["version-comments"] });
       toast.success("All comments cleared");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to clear comments");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to clear comments");
     },
   });
 

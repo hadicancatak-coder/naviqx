@@ -62,7 +62,7 @@ export function UtmMediumManager() {
     })
   );
 
-  const handleOpenDialog = (medium: any = null) => {
+  const handleOpenDialog = (medium: { id: string; name: string; display_order: number } | null = null) => {
     if (medium) {
       setEditingMedium(medium);
       setMediumForm({ name: medium.name });
@@ -103,7 +103,7 @@ export function UtmMediumManager() {
     }
   };
 
-  const handleDeleteClick = async (medium: any) => {
+  const handleDeleteClick = async (medium: { id: string; name: string; display_order: number }) => {
     const dependencies = await checkMediumDependencies(medium.name);
     if (!dependencies.canDelete) {
       toast.error("Cannot delete medium", {

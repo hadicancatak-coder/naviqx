@@ -46,8 +46,8 @@ export const useCreateMedium = () => {
       queryClient.invalidateQueries({ queryKey: ["utm-mediums"] });
       toast.success("UTM medium created successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create UTM medium");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to create UTM medium");
     },
   });
 };
@@ -79,8 +79,8 @@ export const useUpdateMedium = () => {
       queryClient.invalidateQueries({ queryKey: ["utm-mediums"] });
       toast.success("UTM medium updated successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update UTM medium");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update UTM medium");
     },
   });
 };
@@ -99,8 +99,8 @@ export const useDeleteMedium = () => {
       queryClient.invalidateQueries({ queryKey: ["utm-mediums"] });
       toast.success("UTM medium deleted successfully");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete UTM medium");
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete UTM medium");
     },
   });
 };

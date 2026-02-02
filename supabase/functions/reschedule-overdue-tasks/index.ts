@@ -45,10 +45,10 @@ serve(async (req) => {
       JSON.stringify({ success: true, message: 'Overdue task notifications sent' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Function error:', error);
     return new Response(
-      JSON.stringify({ error: error?.message || 'Unknown error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
   }

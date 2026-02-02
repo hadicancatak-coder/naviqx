@@ -71,11 +71,11 @@ export const TasksTable = ({
       );
       return { previousTasks };
     },
-    onError: (error: any, _taskId, context) => {
+    onError: (error: unknown, _taskId, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
       }
-      toast({ title: "Error deleting task", description: error.message, variant: "destructive" });
+      toast({ title: "Error deleting task", description: error instanceof Error ? error.message : "An error occurred", variant: "destructive" });
     },
     onSuccess: () => {
       toast({ title: "Task deleted successfully" });
@@ -246,8 +246,8 @@ export const TasksTable = ({
       
       queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
       toast({ title: "Task duplicated successfully" });
-    } catch (error: any) {
-      toast({ title: "Error duplicating task", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error duplicating task", description: error instanceof Error ? error.message : "An error occurred", variant: "destructive" });
     } finally {
       setProcessingAction(null);
     }
