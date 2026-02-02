@@ -13,7 +13,7 @@ interface BulkUpdateParams {
 interface AdminActionParams {
   action: string;
   targetUserId?: string;
-  changes?: Record<string, any>;
+  changes?: Record<string, unknown>;
 }
 
 class AdminService {
@@ -24,7 +24,7 @@ class AdminService {
       for (const userId of userIds) {
         // Update profile if there are profile fields
         if (updates.working_days || updates.teams) {
-          const profileUpdates: any = {};
+          const profileUpdates: Record<string, unknown> = {};
           if (updates.working_days) profileUpdates.working_days = updates.working_days;
           if (updates.teams) profileUpdates.teams = updates.teams;
 
@@ -131,12 +131,12 @@ class AdminService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase.from('admin_audit_log').insert({
+      await supabase.from('admin_audit_log').insert([{
         admin_id: user.id,
         action,
         target_user_id: targetUserId,
-        changes,
-      });
+        changes: changes as unknown as import('@/integrations/supabase/types').Json,
+      }]);
     } catch (err) {
       logger.error('Error auditing admin action', err);
     }
