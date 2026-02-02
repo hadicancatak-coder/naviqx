@@ -328,6 +328,9 @@ serve(async (req) => {
               task_type: 'recurring',
               // Copy other relevant fields
               jira_link: template.jira_link,
+              is_collaborative: template.is_collaborative ?? false,
+              estimated_hours: template.estimated_hours,
+              teams: template.teams,
             })
             .select()
             .single();
