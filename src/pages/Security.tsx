@@ -90,7 +90,7 @@ export default function Security() {
     const hasMinLength = newPassword.length >= 9;
     const hasUppercase = /[A-Z]/.test(newPassword);
     const hasNumber = /[0-9]/.test(newPassword);
-    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(newPassword);
 
     if (!hasMinLength || !hasUppercase || !hasNumber || !hasSpecial) {
       toast({

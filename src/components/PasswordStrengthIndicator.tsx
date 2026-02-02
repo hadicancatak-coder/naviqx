@@ -14,7 +14,7 @@ export const PasswordStrengthIndicator = ({ password }: PasswordStrengthIndicato
     { label: "At least 9 characters", met: password.length >= 9 },
     { label: "One uppercase letter (A-Z)", met: /[A-Z]/.test(password) },
     { label: "One number (0-9)", met: /[0-9]/.test(password) },
-    { label: "One special character (!@#$%^&*()_+-=[]{}|;:,.<>?)", met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) },
+    { label: "One special character (!@#$%^&*()_+-=[]{}|;:,.<>?)", met: /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(password) },
   ];
 
   const metCount = requirements.filter(r => r.met).length;
