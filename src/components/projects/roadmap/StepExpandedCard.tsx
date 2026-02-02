@@ -9,9 +9,19 @@ import { ProjectTimeline } from "@/hooks/useProjects";
 import { PhaseDependency, PhaseTaskStats } from "@/hooks/useRoadmap";
 import { PhaseMilestones } from "./PhaseMilestones";
 
+// Extended step type with optional metadata
+interface ExtendedStep extends ProjectTimeline {
+  startDate: Date;
+  endDate: Date;
+  status?: string;
+  owner?: string | null;
+  system_name?: string | null;
+  expected_outcomes?: string[];
+}
+
 interface StepExpandedCardProps {
-  step: ProjectTimeline & { startDate: Date; endDate: Date };
-  steps: (ProjectTimeline & { startDate: Date; endDate: Date })[];
+  step: ExtendedStep;
+  steps: ExtendedStep[];
   dependencies: PhaseDependency[];
   taskStats: PhaseTaskStats | undefined;
   progress: number;
@@ -42,10 +52,10 @@ export function StepExpandedCard({
 }: StepExpandedCardProps) {
   const [showTasks, setShowTasks] = useState(false);
   
-  const status = (step as any).status || "not_started";
-  const owner = (step as any).owner;
-  const systemName = (step as any).system_name;
-  const expectedOutcomes: string[] = (step as any).expected_outcomes || [];
+  const status = step.status || "not_started";
+  const owner = step.owner;
+  const systemName = step.system_name;
+  const expectedOutcomes: string[] = step.expected_outcomes || [];
   const statusStyle = statusColors[status] || statusColors.not_started;
 
   // Find steps this one depends on
@@ -75,10 +85,11 @@ export function StepExpandedCard({
           <div className={cn("w-3 h-3 rounded-full shrink-0", colorClasses.bg.replace('/20', ''))} />
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-xs">
               <h4 className="text-heading-sm font-bold truncate text-foreground">
                 {step.phase_name}
               </h4>
+              {/* eslint-disable-next-line no-restricted-syntax -- px-2/py-0.5 fine-grained badge */}
               <span className={cn(
                 "px-2 py-0.5 rounded text-metadata font-medium capitalize shrink-0",
                 statusStyle.badge
@@ -86,16 +97,16 @@ export function StepExpandedCard({
                 {status.replace("_", " ")}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-metadata text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-sm text-metadata text-muted-foreground mt-xs">
               <span>{format(step.startDate, "MMM d")} – {format(step.endDate, "MMM d, yyyy")}</span>
               {owner && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-xs">
                   <User2 className="h-3 w-3" />
                   {owner}
                 </span>
               )}
               {systemName && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-xs">
                   <Layers className="h-3 w-3" />
                   {systemName}
                 </span>
@@ -113,7 +124,7 @@ export function StepExpandedCard({
         <div className="flex items-center gap-xs ml-md">
           {isAdmin && (
             <Button variant="ghost" size="sm" onClick={onEdit} className="hover:bg-card-hover">
-              <Edit2 className="h-4 w-4 mr-1" />
+              <Edit2 className="h-4 w-4 mr-xs" />
               Edit
             </Button>
           )}
@@ -134,12 +145,12 @@ export function StepExpandedCard({
 
         {/* Expected Outcomes - Primary Content */}
         {expectedOutcomes.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-foreground">
+          <div className="space-y-xs">
+            <div className="flex items-center gap-xs text-foreground">
               <Target className="h-4 w-4" />
               <span className="text-body-sm font-semibold">Expected Outcomes</span>
             </div>
-            <ul className="space-y-1.5 pl-6">
+            <ul className="space-y-xs pl-lg">
               {expectedOutcomes.map((outcome, idx) => (
                 <li key={idx} className="text-body-sm text-muted-foreground list-disc">
                   {outcome}
@@ -150,7 +161,7 @@ export function StepExpandedCard({
         )}
 
         {/* Milestones */}
-        <div className="space-y-2">
+        <div className="space-y-xs">
           <PhaseMilestones phaseId={step.id} isAdmin={isAdmin} />
         </div>
 
@@ -158,7 +169,7 @@ export function StepExpandedCard({
         <Collapsible open={showTasks} onOpenChange={setShowTasks}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-between hover:bg-card-hover">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-xs text-muted-foreground">
                 <ListTodo className="h-4 w-4" />
                 <span className="text-body-sm font-medium">Linked Tasks</span>
                 {taskStats && taskStats.total_tasks > 0 && (
@@ -173,9 +184,9 @@ export function StepExpandedCard({
               )} />
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
+          <CollapsibleContent className="pt-xs">
             {taskStats && taskStats.total_tasks > 0 ? (
-              <div className="flex items-center gap-sm pl-6">
+              <div className="flex items-center gap-sm pl-lg">
                 <div className="flex-1">
                   <Progress
                     value={(taskStats.completed_tasks / taskStats.total_tasks) * 100}
@@ -187,7 +198,7 @@ export function StepExpandedCard({
                 </span>
               </div>
             ) : (
-              <p className="text-metadata text-muted-foreground pl-6">No tasks linked to this step</p>
+              <p className="text-metadata text-muted-foreground pl-lg">No tasks linked to this step</p>
             )}
           </CollapsibleContent>
         </Collapsible>
@@ -195,7 +206,7 @@ export function StepExpandedCard({
         {/* Dependencies */}
         {(dependsOnSteps.length > 0 || blocksSteps.length > 0) && (
           <div className="pt-sm border-t border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <div className="flex items-center gap-xs text-muted-foreground mb-xs">
               <Link2 className="h-4 w-4" />
               <span className="text-body-sm font-medium">Dependencies</span>
             </div>
@@ -203,7 +214,7 @@ export function StepExpandedCard({
               {dependsOnSteps.map((dep) => (
                 <div
                   key={dep!.id}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-metadata"
+                  className="flex items-center gap-xs px-xs py-xs rounded-md bg-muted text-metadata"
                 >
                   <span className="text-muted-foreground">Depends on:</span>
                   <span className="font-medium text-foreground">{dep!.phase_name}</span>
@@ -212,7 +223,7 @@ export function StepExpandedCard({
               {blocksSteps.map((blocked) => (
                 <div
                   key={blocked!.id}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-warning/10 text-metadata"
+                  className="flex items-center gap-xs px-xs py-xs rounded-md bg-warning/10 text-metadata"
                 >
                   <span className="text-muted-foreground">Blocks:</span>
                   <span className="font-medium text-warning-text">{blocked!.phase_name}</span>
