@@ -17,12 +17,15 @@ import {
  * Logs warning if invalid status is passed.
  */
 const mapStatusToDbLocal = (status: string): TaskStatusDBType => {
+  // Handle legacy 'Pending' value
+  if (status === 'Pending') return 'Backlog';
+  
   const dbStatus = STATUS_UI_TO_DB[status as keyof typeof STATUS_UI_TO_DB] || 
-                   (status === 'Pending' ? 'Pending' : mapStatusToDbFromConstants(status));
+                   mapStatusToDbFromConstants(status);
   if (!dbStatus) {
     logger.error(`[Task Actions] Invalid status: "${status}". Valid values: ${Object.keys(STATUS_UI_TO_DB).join(', ')}`);
-    // Default to Pending rather than throwing to prevent complete failure
-    return 'Pending';
+    // Default to Backlog rather than throwing to prevent complete failure
+    return 'Backlog';
   }
   return dbStatus;
 };

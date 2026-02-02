@@ -16,7 +16,7 @@ interface UserStats {
   completedToday: number;
   completedThisWeek: number;
   completedThisMonth: number;
-  pendingCount: number;
+  backlogCount: number;
   ongoingCount: number;
   blockedCount: number;
   totalTasks: number;
@@ -24,7 +24,7 @@ interface UserStats {
 }
 
 interface StatusDistribution {
-  pending: number;
+  backlog: number;
   ongoing: number;
   completed: number;
   failed: number;
@@ -36,7 +36,7 @@ export const TaskAnalyticsDashboard = () => {
   const { user } = useAuth();
   const [userStats, setUserStats] = useState<UserStats[]>([]);
   const [statusDistribution, setStatusDistribution] = useState<StatusDistribution>({
-    pending: 0,
+    backlog: 0,
     ongoing: 0,
     completed: 0,
     failed: 0,
@@ -97,7 +97,7 @@ export const TaskAnalyticsDashboard = () => {
 
       // Calculate status distribution
       const distribution: StatusDistribution = {
-        pending: 0,
+        backlog: 0,
         ongoing: 0,
         completed: 0,
         failed: 0,
@@ -106,7 +106,7 @@ export const TaskAnalyticsDashboard = () => {
       };
 
       tasks?.forEach(task => {
-        const status = task.status?.toLowerCase() || 'pending';
+        const status = task.status?.toLowerCase() || 'backlog';
         if (status in distribution) {
           distribution[status as keyof StatusDistribution]++;
         }
@@ -140,7 +140,7 @@ export const TaskAnalyticsDashboard = () => {
           new Date(t.created_at) >= monthStart
         ).length;
 
-        const pendingCount = userTasks.filter(t => t.status === 'Pending').length;
+        const backlogCount = userTasks.filter(t => t.status === 'Backlog').length;
         const ongoingCount = userTasks.filter(t => t.status === 'Ongoing').length;
         const blockedCount = userTasks.filter(t => t.status === 'Blocked').length;
         const totalTasks = userTasks.length;
@@ -155,7 +155,7 @@ export const TaskAnalyticsDashboard = () => {
           completedToday,
           completedThisWeek,
           completedThisMonth,
-          pendingCount,
+          backlogCount,
           ongoingCount,
           blockedCount,
           totalTasks,
@@ -188,8 +188,8 @@ export const TaskAnalyticsDashboard = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-metadata">Pending</p>
-                <p className="text-heading-lg font-bold text-foreground">{statusDistribution.pending}</p>
+                <p className="text-metadata">Backlog</p>
+                <p className="text-heading-lg font-bold text-foreground">{statusDistribution.backlog}</p>
               </div>
               <Clock className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -302,7 +302,7 @@ export const TaskAnalyticsDashboard = () => {
 
                   <div className="flex gap-sm ml-lg">
                     <Badge variant="outline" className="status-pending">
-                      {stat.pendingCount} Pending
+                      {stat.backlogCount} Backlog
                     </Badge>
                     <Badge variant="outline" className="status-info">
                       {stat.ongoingCount} Ongoing

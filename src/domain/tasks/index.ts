@@ -11,12 +11,14 @@ import { z } from 'zod';
 // =============================================================================
 
 import {
+  TaskStatus,
   TaskStatusDB,
   TaskStatusUI,
   STATUS_UI_TO_DB,
   STATUS_DB_TO_UI,
   mapStatusToDb,
   mapStatusToUi,
+  type TaskStatusType,
   type TaskStatusDBType,
   type TaskStatusUIType,
 } from './constants';
@@ -26,12 +28,14 @@ import {
 // =============================================================================
 
 export {
+  TaskStatus,
   TaskStatusDB,
   TaskStatusUI,
   STATUS_UI_TO_DB,
   STATUS_DB_TO_UI,
   mapStatusToDb,
   mapStatusToUi,
+  type TaskStatusType,
   type TaskStatusDBType,
   type TaskStatusUIType,
 } from './constants';
@@ -161,11 +165,11 @@ export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 // =============================================================================
 
 export const TASK_STATUS_OPTIONS = [
-  { value: TaskStatusUI.Backlog, label: 'Backlog', dbValue: TaskStatusDB.Pending },
-  { value: TaskStatusUI.Ongoing, label: 'Ongoing', dbValue: TaskStatusDB.Ongoing },
-  { value: TaskStatusUI.Blocked, label: 'Blocked', dbValue: TaskStatusDB.Blocked },
-  { value: TaskStatusUI.Completed, label: 'Completed', dbValue: TaskStatusDB.Completed },
-  { value: TaskStatusUI.Failed, label: 'Failed', dbValue: TaskStatusDB.Failed },
+  { value: TaskStatus.Backlog, label: 'Backlog', dbValue: TaskStatus.Backlog },
+  { value: TaskStatus.Ongoing, label: 'Ongoing', dbValue: TaskStatus.Ongoing },
+  { value: TaskStatus.Blocked, label: 'Blocked', dbValue: TaskStatus.Blocked },
+  { value: TaskStatus.Completed, label: 'Completed', dbValue: TaskStatus.Completed },
+  { value: TaskStatus.Failed, label: 'Failed', dbValue: TaskStatus.Failed },
 ] as const;
 
 export const TASK_PRIORITY_OPTIONS = [
@@ -216,12 +220,6 @@ export const TASK_STATUS_CONFIG: Record<string, {
     label: 'Failed',
     className: 'bg-destructive-soft text-destructive-text border-destructive/30',
     dotColor: 'bg-destructive',
-  },
-  // DB value fallbacks
-  [TaskStatusDB.Pending]: {
-    label: 'Backlog',
-    className: 'bg-muted text-muted-foreground border-border',
-    dotColor: 'bg-muted-foreground',
   },
 };
 

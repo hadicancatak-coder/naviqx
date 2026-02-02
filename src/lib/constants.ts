@@ -44,11 +44,11 @@ export const TEAM_LABELS: Record<string, string> = {
 
 /**
  * Task Statuses - Single Source of Truth
- * UI uses these values, mapper converts to DB values when needed
+ * UI and DB now use the same values
  * @deprecated Import from '@/domain' instead for new code
  */
 export const TASK_STATUSES = [
-  { value: "Backlog", label: "Backlog", dbValue: "Pending" },
+  { value: "Backlog", label: "Backlog", dbValue: "Backlog" },
   { value: "Ongoing", label: "Ongoing", dbValue: "Ongoing" },
   { value: "Blocked", label: "Blocked", dbValue: "Blocked" },
   { value: "Completed", label: "Completed", dbValue: "Completed" },

@@ -28,7 +28,7 @@ interface SprintKanbanProps {
 
 const columns = [
   { 
-    id: 'Pending', 
+    id: 'Backlog', 
     label: 'To Do', 
     icon: Circle,
     color: 'text-muted-foreground',

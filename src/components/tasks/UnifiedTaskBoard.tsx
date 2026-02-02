@@ -49,7 +49,7 @@ interface ColumnConfig {
 
 const statusColumns: ColumnConfig[] = [
   { 
-    id: 'Pending', 
+    id: 'Backlog', 
     label: 'To Do', 
     icon: Circle,
     color: 'text-muted-foreground',
@@ -152,10 +152,6 @@ export function UnifiedTaskBoard({ tasks, onTaskClick, groupBy = 'status' }: Uni
 
   const getTasksByColumn = (columnId: string): Task[] => {
     if (groupBy === 'status') {
-      // Handle Backlog -> Pending mapping
-      if (columnId === 'Pending') {
-        return tasks.filter(t => t.status === 'Pending' || t.status === 'Backlog');
-      }
       return tasks.filter(t => t.status === columnId);
     } else if (groupBy === 'date') {
       return tasks.filter(t => getDateGroup(t) === columnId);

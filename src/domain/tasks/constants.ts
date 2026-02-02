@@ -1,27 +1,13 @@
 /**
- * Task Status Constants - Shared by index.ts and actions.ts
- * Extracted to avoid circular imports between domain/index and domain/actions
+ * Task Status Constants - Single Source of Truth
+ * UI and DB now use the same values: Backlog, Ongoing, Blocked, Completed, Failed
  */
 
 // =============================================================================
-// ENUMS - Database values (what gets stored)
+// UNIFIED STATUS ENUM - Same values for UI and DB
 // =============================================================================
 
-export const TaskStatusDB = {
-  Pending: 'Pending',
-  Ongoing: 'Ongoing',
-  Blocked: 'Blocked',
-  Completed: 'Completed',
-  Failed: 'Failed',
-} as const;
-
-export type TaskStatusDBType = typeof TaskStatusDB[keyof typeof TaskStatusDB];
-
-// =============================================================================
-// ENUMS - UI values (what users see)
-// =============================================================================
-
-export const TaskStatusUI = {
+export const TaskStatus = {
   Backlog: 'Backlog',
   Ongoing: 'Ongoing',
   Blocked: 'Blocked',
@@ -29,32 +15,56 @@ export const TaskStatusUI = {
   Failed: 'Failed',
 } as const;
 
-export type TaskStatusUIType = typeof TaskStatusUI[keyof typeof TaskStatusUI];
+export type TaskStatusType = typeof TaskStatus[keyof typeof TaskStatus];
 
 // =============================================================================
-// STATUS MAPPING - Bidirectional
+// LEGACY ALIASES - For backward compatibility during migration
 // =============================================================================
 
-export const STATUS_UI_TO_DB: Record<TaskStatusUIType, TaskStatusDBType> = {
-  [TaskStatusUI.Backlog]: TaskStatusDB.Pending,
-  [TaskStatusUI.Ongoing]: TaskStatusDB.Ongoing,
-  [TaskStatusUI.Blocked]: TaskStatusDB.Blocked,
-  [TaskStatusUI.Completed]: TaskStatusDB.Completed,
-  [TaskStatusUI.Failed]: TaskStatusDB.Failed,
+/** @deprecated Use TaskStatus instead */
+export const TaskStatusDB = TaskStatus;
+/** @deprecated Use TaskStatusType instead */
+export type TaskStatusDBType = TaskStatusType;
+
+/** @deprecated Use TaskStatus instead */
+export const TaskStatusUI = TaskStatus;
+/** @deprecated Use TaskStatusType instead */
+export type TaskStatusUIType = TaskStatusType;
+
+// =============================================================================
+// STATUS MAPPING - Now simple pass-through since UI = DB
+// =============================================================================
+
+export const STATUS_UI_TO_DB: Record<TaskStatusType, TaskStatusType> = {
+  [TaskStatus.Backlog]: TaskStatus.Backlog,
+  [TaskStatus.Ongoing]: TaskStatus.Ongoing,
+  [TaskStatus.Blocked]: TaskStatus.Blocked,
+  [TaskStatus.Completed]: TaskStatus.Completed,
+  [TaskStatus.Failed]: TaskStatus.Failed,
 };
 
-export const STATUS_DB_TO_UI: Record<TaskStatusDBType, TaskStatusUIType> = {
-  [TaskStatusDB.Pending]: TaskStatusUI.Backlog,
-  [TaskStatusDB.Ongoing]: TaskStatusUI.Ongoing,
-  [TaskStatusDB.Blocked]: TaskStatusUI.Blocked,
-  [TaskStatusDB.Completed]: TaskStatusUI.Completed,
-  [TaskStatusDB.Failed]: TaskStatusUI.Failed,
+export const STATUS_DB_TO_UI: Record<TaskStatusType, TaskStatusType> = {
+  [TaskStatus.Backlog]: TaskStatus.Backlog,
+  [TaskStatus.Ongoing]: TaskStatus.Ongoing,
+  [TaskStatus.Blocked]: TaskStatus.Blocked,
+  [TaskStatus.Completed]: TaskStatus.Completed,
+  [TaskStatus.Failed]: TaskStatus.Failed,
 };
 
-export const mapStatusToDb = (uiStatus: string): TaskStatusDBType => {
-  return STATUS_UI_TO_DB[uiStatus as TaskStatusUIType] || (uiStatus as TaskStatusDBType);
+/**
+ * Maps UI status to DB status (now identity function since they match)
+ */
+export const mapStatusToDb = (status: string): TaskStatusType => {
+  // Handle legacy 'Pending' values that might still exist
+  if (status === 'Pending') return TaskStatus.Backlog;
+  return (STATUS_UI_TO_DB[status as TaskStatusType] || status) as TaskStatusType;
 };
 
-export const mapStatusToUi = (dbStatus: string): TaskStatusUIType => {
-  return STATUS_DB_TO_UI[dbStatus as TaskStatusDBType] || (dbStatus as TaskStatusUIType);
+/**
+ * Maps DB status to UI status (now identity function since they match)
+ */
+export const mapStatusToUi = (status: string): TaskStatusType => {
+  // Handle legacy 'Pending' values that might still exist
+  if (status === 'Pending') return TaskStatus.Backlog;
+  return (STATUS_DB_TO_UI[status as TaskStatusType] || status) as TaskStatusType;
 };
