@@ -81,8 +81,12 @@ export function TagsMultiSelect({ value, onChange, disabled = false }: TagsMulti
                       role="button"
                       tabIndex={0}
                       onClick={(e) => removeTag(tag, e)}
-                      onKeyDown={(e) => e.key === 'Enter' && removeTag(tag, e as any)}
-                      className="ml-1 rounded-full hover:bg-foreground/10 p-0.5 transition-smooth cursor-pointer"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          removeTag(tag, e as unknown as React.MouseEvent);
+                        }
+                      }}
+                      className="ml-1 rounded-full hover:bg-foreground/10 p-xs transition-smooth cursor-pointer"
                     >
                       <X className="h-3 w-3" />
                     </span>
