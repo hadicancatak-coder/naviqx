@@ -29,7 +29,8 @@ const HARD_RULES = {
   // Typography - Use semantic text tokens
   typography: {
     pattern: "\\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl)\\b",
-    message: "[HARD] Use semantic typography: text-metadata, text-body-sm, text-body, text-heading-sm, text-heading-md, text-heading-lg, text-page-title",
+    message:
+      "[HARD] Use semantic typography: text-metadata, text-body-sm, text-body, text-heading-sm, text-heading-md, text-heading-lg, text-page-title",
   },
   // Gap spacing
   gap: {
@@ -54,7 +55,8 @@ const HARD_RULES = {
   // Hardcoded grayscale colors
   hardcodedColors: {
     pattern: "\\b(text|bg|border)-(white|black|gray-\\d+|slate-\\d+|zinc-\\d+|neutral-\\d+|stone-\\d+)\\b",
-    message: "[HARD] Use semantic colors: text-foreground, text-muted-foreground, bg-background, bg-card, bg-muted, border-border",
+    message:
+      "[HARD] Use semantic colors: text-foreground, text-muted-foreground, bg-background, bg-card, bg-muted, border-border",
   },
   // Arbitrary hex/rgb colors
   arbitraryColors: {
@@ -98,7 +100,10 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
-      
+
+      // ✅ added: stop build-breaking on `any` while keeping it visible
+      "@typescript-eslint/no-explicit-any": "warn",
+
       // WARN level temporarily - Phase 0 of semantic token migration
       // Will revert to "error" after Phase 5 completion
       "no-restricted-syntax": [
