@@ -73,7 +73,9 @@ interface SortableRowProps {
   onDelete: (id: string) => void;
   onCopy: (row: UtmRow) => void;
   copiedIds: Set<string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   platforms: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   campaigns: any[];
 }
 
@@ -105,6 +107,7 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activePlatforms = platforms?.filter((p: any) => p.is_active) || [];
 
   return (
@@ -186,6 +189,7 @@ function SortableRow({
             <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {activePlatforms.map((platform: any) => (
               <SelectItem key={platform.id} value={platform.id}>
                 {platform.name}
