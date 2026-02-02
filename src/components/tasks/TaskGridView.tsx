@@ -1,8 +1,8 @@
 import { TaskCard } from "./TaskCard";
+import type { TaskWithAssignees } from "@/types/tasks";
 
 interface TaskGridViewProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks: any[];
+  tasks: TaskWithAssignees[];
   onTaskClick: (taskId: string) => void;
 }
 

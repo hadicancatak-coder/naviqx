@@ -29,7 +29,9 @@ interface ProfileWithKPIs {
   name: string;
   avatar_url: string;
   email: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   kpis: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   quarterly_kpis: any;
 }
 
@@ -63,10 +65,10 @@ export function TeamKPIsManager() {
 
       if (error) throw error;
       setProfiles(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     } finally {
@@ -100,10 +102,10 @@ export function TeamKPIsManager() {
 
       setKpiDialogOpen(false);
       fetchTeamKPIs();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -113,7 +115,7 @@ export function TeamKPIsManager() {
     setLocalKPIs([...localKPIs, { id: crypto.randomUUID(), description: '', weight: 0, timeline: 'Q1' }]);
   };
 
-  const updateKPI = (id: string, field: keyof KPI, value: any) => {
+  const updateKPI = (id: string, field: keyof KPI, value: string | number) => {
     setLocalKPIs(localKPIs.map(kpi => kpi.id === id ? { ...kpi, [field]: value } : kpi));
   };
 

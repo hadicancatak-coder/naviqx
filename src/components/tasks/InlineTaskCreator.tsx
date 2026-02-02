@@ -38,12 +38,13 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
     setIsEditing(false);
     
     try {
-      const { error } = await supabase.from("tasks").insert({
+      const insertData = {
         title: taskTitle,
         status: "Ongoing" as const,
         priority: "Medium" as const,
         created_by: user.id,
-      } as any);
+      };
+      const { error } = await supabase.from("tasks").insert(insertData);
       
       if (error) throw error;
       
@@ -51,10 +52,10 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
       queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
       toast({ title: "Task created", duration: 2000 });
       onTaskCreated?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ 
         title: "Failed to create task", 
-        description: error.message, 
+        description: error instanceof Error ? error.message : "An error occurred", 
         variant: "destructive" 
       });
     }

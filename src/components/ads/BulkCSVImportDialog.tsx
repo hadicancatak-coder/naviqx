@@ -90,10 +90,10 @@ export function BulkCSVImportDialog({ open, onOpenChange, onImportComplete }: Bu
           variant: 'destructive' 
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ 
         title: 'Import Failed', 
-        description: error.message, 
+        description: error instanceof Error ? error.message : 'An error occurred', 
         variant: 'destructive' 
       });
     } finally {

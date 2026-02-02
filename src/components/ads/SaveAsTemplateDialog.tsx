@@ -6,6 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateAdTemplate } from '@/hooks/useAdTemplates';
 
+interface Sitelink {
+  text: string;
+  url: string;
+  desc1?: string;
+  desc2?: string;
+}
+
 interface SaveAsTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -14,8 +21,7 @@ interface SaveAsTemplateDialogProps {
     entity?: string;
     headlines: string[];
     descriptions: string[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sitelinks: any[];
+    sitelinks: Sitelink[];
     callouts: string[];
     landing_page?: string;
     ad_type: 'search' | 'display';

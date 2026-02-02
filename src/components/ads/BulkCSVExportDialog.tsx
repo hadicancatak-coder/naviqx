@@ -7,11 +7,17 @@ import { adToGoogleEditorRow, convertToCSV } from '@/lib/googleEditorMapper';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 
+interface Ad {
+  id: string;
+  name?: string;
+  approval_status?: string;
+  [key: string]: unknown;
+}
+
 interface BulkCSVExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ads: any[];
+  ads: Ad[];
 }
 
 export function BulkCSVExportDialog({ open, onOpenChange, ads }: BulkCSVExportDialogProps) {
@@ -49,10 +55,10 @@ export function BulkCSVExportDialog({ open, onOpenChange, ads }: BulkCSVExportDi
 
       toast({ title: `Exported ${adsToExport.length} ads to CSV` });
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ 
         title: 'Export Failed', 
-        description: error.message, 
+        description: error instanceof Error ? error.message : 'An error occurred', 
         variant: 'destructive' 
       });
     }

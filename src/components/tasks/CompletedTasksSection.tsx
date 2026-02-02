@@ -3,10 +3,10 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import type { TaskWithAssignees } from "@/types/tasks";
 
 interface CompletedTasksSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks: any[];
+  tasks: TaskWithAssignees[];
   onTaskClick: (taskId: string) => void;
   onTaskComplete: (taskId: string, completed: boolean) => void;
 }
