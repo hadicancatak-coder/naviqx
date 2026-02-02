@@ -7,10 +7,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 
+interface Campaign {
+  id: string;
+  name: string;
+}
+
 interface DeleteCampaignDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  campaign: any;
+  campaign: Campaign | null;
   adGroupsCount: number;
   adsCount: number;
   onSuccess: () => void;
@@ -65,8 +70,9 @@ export function DeleteCampaignDialog({ open, onOpenChange, campaign, adGroupsCou
       toast.success(`Campaign "${campaign.name}" deleted successfully (${adGroupsCount} ad groups, ${adsCount} ads)`);
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete campaign");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to delete campaign";
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
@@ -76,23 +82,23 @@ export function DeleteCampaignDialog({ open, onOpenChange, campaign, adGroupsCou
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-xs">
             <AlertCircle className="h-5 w-5 text-destructive" />
             Delete Campaign
           </DialogTitle>
           <DialogDescription>
             This is a destructive action that cannot be undone.
-            <span className="block mt-2 font-semibold text-destructive">
+            <span className="block mt-xs font-semibold text-destructive">
               This will delete:
             </span>
-            <ul className="list-disc list-inside mt-1 text-destructive">
+            <ul className="list-disc list-inside mt-xs text-destructive">
               <li>{adGroupsCount} ad group(s)</li>
               <li>{adsCount} ad(s)</li>
             </ul>
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-2">
+        <div className="space-y-xs">
           <Label htmlFor="confirm-campaign-name">
             Type <span className="font-mono font-semibold">{campaign?.name}</span> to confirm
           </Label>
