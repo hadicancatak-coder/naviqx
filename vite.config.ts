@@ -23,8 +23,9 @@ export default defineConfig(({ mode }) => ({
       failOnError: true,
       emitWarning: false, // Suppress warning output during build
       emitError: true,
-      cache: true,
+      cache: false, // Disable cache to prevent stale state
       include: ['src/**/*.ts', 'src/**/*.tsx'],
+      lintOnStart: false, // Skip initial lint to speed up build
     }),
   ].filter(Boolean),
   resolve: {
