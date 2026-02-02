@@ -158,18 +158,11 @@ export const useCampaignComments = () => {
     },
   });
 
-  // Get comment count for a tracking
-  const getCommentCount = (trackingId: string) => {
-    const { data: comments } = useComments(trackingId);
-    return comments?.length || 0;
-  };
-
   return {
     useComments,
     useUtmCampaignComments,
     addComment,
     addUtmCampaignComment,
     deleteUtmCampaignComment,
-    getCommentCount,
   };
 };
