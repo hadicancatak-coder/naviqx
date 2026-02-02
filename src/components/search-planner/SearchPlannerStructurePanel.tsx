@@ -42,12 +42,62 @@ import { DuplicateAdDialog } from "@/components/search/DuplicateAdDialog";
 import { DuplicateAdGroupDialog } from "@/components/search/DuplicateAdGroupDialog";
 import { DuplicateCampaignDialog } from "@/components/search/DuplicateCampaignDialog";
 
+// Local type definitions for this component
+interface SitelinkData {
+  description?: string;
+  text?: string;
+  link?: string;
+}
+
+interface CalloutData {
+  text?: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface AdData {
+  id?: string;
+  name: string;
+  ad_group_id?: string | null;
+  ad_group_name?: string;
+  campaign_name?: string;
+  entity?: string;
+  ad_type?: string;
+  // These are Json from Supabase, so we use any to allow compatibility
+  headlines: string[] | unknown;
+  descriptions: string[] | unknown;
+  sitelinks: { description: string; link: string }[] | unknown;
+  callouts: string[] | unknown;
+  landing_page: string;
+  business_name: string;
+  language?: string;
+  approval_status?: string;
+}
+
+interface AdGroupData {
+  id: string;
+  name: string;
+  campaign_id: string;
+}
+
+interface CampaignData {
+  id: string;
+  name: string;
+  entity?: string;
+}
+
 interface SearchPlannerStructurePanelProps {
-  onEditAd: (ad: any, adGroup: any, campaign: any, entity: string) => void;
-  onCreateAd: (adGroup: any, campaign: any, entity: string) => void;
-  onCampaignClick?: (campaign: any, entity: string) => void;
+  onEditAd: (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
+  onCreateAd: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
+  onCampaignClick?: (campaign: CampaignData, entity: string) => void;
   adType?: "search" | "display";
 }
+
+interface DeleteAdDialogState { ad: AdData }
+interface DeleteAdGroupDialogState { adGroup: AdGroupData; adsCount: number }
+interface DeleteCampaignDialogState { campaign: CampaignData; adGroupsCount: number; adsCount: number }
+interface DuplicateAdDialogState { ad: AdData }
+interface DuplicateAdGroupDialogState { adGroup: AdGroupData; adsCount: number }
+interface DuplicateCampaignDialogState { campaign: CampaignData; adGroupsCount: number; adsCount: number }
 
 export function SearchPlannerStructurePanel({
   onEditAd,
@@ -64,14 +114,14 @@ export function SearchPlannerStructurePanel({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Delete dialogs
-  const [deleteAdDialog, setDeleteAdDialog] = useState<{ad: any} | null>(null);
-  const [deleteAdGroupDialog, setDeleteAdGroupDialog] = useState<{adGroup: any; adsCount: number} | null>(null);
-  const [deleteCampaignDialog, setDeleteCampaignDialog] = useState<{campaign: any; adGroupsCount: number; adsCount: number} | null>(null);
+  const [deleteAdDialog, setDeleteAdDialog] = useState<DeleteAdDialogState | null>(null);
+  const [deleteAdGroupDialog, setDeleteAdGroupDialog] = useState<DeleteAdGroupDialogState | null>(null);
+  const [deleteCampaignDialog, setDeleteCampaignDialog] = useState<DeleteCampaignDialogState | null>(null);
 
   // Duplicate dialogs
-  const [duplicateAdDialog, setDuplicateAdDialog] = useState<{ad: any} | null>(null);
-  const [duplicateAdGroupDialog, setDuplicateAdGroupDialog] = useState<{adGroup: any; adsCount: number} | null>(null);
-  const [duplicateCampaignDialog, setDuplicateCampaignDialog] = useState<{campaign: any; adGroupsCount: number; adsCount: number} | null>(null);
+  const [duplicateAdDialog, setDuplicateAdDialog] = useState<DuplicateAdDialogState | null>(null);
+  const [duplicateAdGroupDialog, setDuplicateAdGroupDialog] = useState<DuplicateAdGroupDialogState | null>(null);
+  const [duplicateCampaignDialog, setDuplicateCampaignDialog] = useState<DuplicateCampaignDialogState | null>(null);
 
   // Fetch campaigns for selected entity
   const { data: campaigns = [] } = useQuery({
@@ -414,8 +464,8 @@ export function SearchPlannerStructurePanel({
                                   {adGroupAds.map(ad => {
                                         const headlinesArr = Array.isArray(ad.headlines) ? ad.headlines as string[] : [];
                                     const descriptionsArr = Array.isArray(ad.descriptions) ? ad.descriptions as string[] : [];
-                                    const sitelinksArr = Array.isArray(ad.sitelinks) ? (ad.sitelinks as any[]).map((s: any) => s?.description || s?.text || '') : [];
-                                    const calloutsArr = Array.isArray(ad.callouts) ? (ad.callouts as any[]).map((c: any) => c?.text || c || '') : [];
+                                    const sitelinksArr = Array.isArray(ad.sitelinks) ? (ad.sitelinks as SitelinkData[]).map((s) => s?.description || s?.text || '') : [];
+                                    const calloutsArr = Array.isArray(ad.callouts) ? (ad.callouts as (CalloutData | string)[]).map((c) => typeof c === 'string' ? c : c?.text || '') : [];
                                     const strengthResult = calculateAdStrength(headlinesArr, descriptionsArr, sitelinksArr, calloutsArr);
                                     const strength = typeof strengthResult === 'number' ? strengthResult : strengthResult.score;
 
