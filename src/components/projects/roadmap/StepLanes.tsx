@@ -2,7 +2,14 @@ import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { ProjectTimeline } from "@/hooks/useProjects";
 
-// Step Lane definitions - categories for organizing steps
+// Extended step type with lane metadata
+interface ExtendedStep extends ProjectTimeline {
+  startDate: Date;
+  endDate: Date;
+  step_lane?: string;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components -- shared constant
 export const STEP_LANES = [
   { id: "discovery", label: "Discovery & Analysis", color: "bg-purple-500/10 border-purple-500/30" },
   { id: "infrastructure", label: "Data & Infrastructure", color: "bg-blue-500/10 border-blue-500/30" },
@@ -15,21 +22,21 @@ export const STEP_LANES = [
 export type StepLaneId = typeof STEP_LANES[number]["id"];
 
 interface StepLanesProps {
-  steps: (ProjectTimeline & { startDate: Date; endDate: Date })[];
-  children: (lane: typeof STEP_LANES[number], laneSteps: (ProjectTimeline & { startDate: Date; endDate: Date })[]) => React.ReactNode;
+  steps: ExtendedStep[];
+  children: (lane: typeof STEP_LANES[number], laneSteps: ExtendedStep[]) => React.ReactNode;
 }
 
 export function StepLanes({ steps, children }: StepLanesProps) {
   // Group steps by lane
   const stepsByLane = useMemo(() => {
-    const grouped = new Map<string, (ProjectTimeline & { startDate: Date; endDate: Date })[]>();
+    const grouped = new Map<string, ExtendedStep[]>();
     
     STEP_LANES.forEach(lane => {
       grouped.set(lane.id, []);
     });
     
     steps.forEach(step => {
-      const laneId = (step as any).step_lane || "execution";
+      const laneId = step.step_lane || "execution";
       const laneSteps = grouped.get(laneId) || [];
       laneSteps.push(step);
       grouped.set(laneId, laneSteps);
@@ -50,7 +57,7 @@ export function StepLanes({ steps, children }: StepLanesProps) {
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-xs">
       {activeLanes.map(lane => {
         const laneSteps = stepsByLane.get(lane.id) || [];
         if (laneSteps.length === 0) return null;
@@ -62,8 +69,8 @@ export function StepLanes({ steps, children }: StepLanesProps) {
               "absolute left-0 top-0 bottom-0 w-1 rounded-full",
               lane.color.split(" ")[0].replace("/10", "/40")
             )} />
-            <div className="pl-4">
-              <span className="text-metadata font-medium text-muted-foreground mb-1 block">
+            <div className="pl-md">
+              <span className="text-metadata font-medium text-muted-foreground mb-xs block">
                 {lane.label}
               </span>
               {children(lane, laneSteps)}
@@ -75,7 +82,7 @@ export function StepLanes({ steps, children }: StepLanesProps) {
   );
 }
 
-// Helper to get lane info
+// eslint-disable-next-line react-refresh/only-export-components -- shared helper
 export function getStepLane(laneId: string) {
   return STEP_LANES.find(l => l.id === laneId) || STEP_LANES[5];
 }
