@@ -168,7 +168,7 @@ export function SavedCopiesTableView({
     }
   };
 
-  const handleUpdateField = async (id: string, field: string, value: any) => {
+  const handleUpdateField = async (id: string, field: string, value: string | string[] | number | null) => {
     try {
       await updateMutation.mutateAsync({
         id,
@@ -338,7 +338,7 @@ export function SavedCopiesTableView({
   const handleBulkSync = async () => {
     try {
       const selectedCopies = copies.filter(c => selected.includes(c.id));
-      await Promise.all(selectedCopies.map(copy => syncCopyToPlanners({ copy, languages: activeLanguages as any })));
+      await Promise.all(selectedCopies.map(copy => syncCopyToPlanners({ copy, languages: activeLanguages as ("en" | "ar" | "es" | "az")[] })));
       toast({ title: `Synced ${selected.length} copies to planners` });
       setSelected([]);
     } catch (error) {
