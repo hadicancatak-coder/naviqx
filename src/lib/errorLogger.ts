@@ -154,6 +154,37 @@ class ErrorLogger {
       return null;
     }
   }
+
+  async bulkResolveErrors(beforeDate: Date): Promise<{ count: number; success: boolean }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // First count how many will be affected
+      const { count } = await supabase
+        .from('error_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('resolved', false)
+        .lt('created_at', beforeDate.toISOString());
+
+      // Then update them
+      const { error } = await supabase
+        .from('error_logs')
+        .update({
+          resolved: true,
+          resolved_by: user.id,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq('resolved', false)
+        .lt('created_at', beforeDate.toISOString());
+
+      if (error) throw error;
+      return { count: count || 0, success: true };
+    } catch (err) {
+      logger.error('Error bulk resolving errors', err);
+      return { count: 0, success: false };
+    }
+  }
 }
 
 export const errorLogger = new ErrorLogger();

@@ -33,6 +33,7 @@ export default function ErrorLogs() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [resolvedFilter, setResolvedFilter] = useState<string>("unresolved");
   const [selectedError, setSelectedError] = useState<ErrorLog | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const fetchErrors = useCallback(async () => {
     setLoading(true);
@@ -96,6 +97,29 @@ export default function ErrorLogs() {
 
   const [timeRange, setTimeRange] = useState<string>("all");
 
+  const handleClearHistorical = async () => {
+    const confirmed = window.confirm(
+      'This will mark all errors from before today as resolved. Continue?'
+    );
+    if (!confirmed) return;
+    
+    setClearing(true);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const result = await errorLogger.bulkResolveErrors(today);
+      if (result.success) {
+        toast.success(`Resolved ${result.count} historical errors`);
+        fetchErrors();
+      } else {
+        toast.error('Failed to clear historical errors');
+      }
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="space-y-lg">
       <div className="flex items-center gap-md flex-wrap pb-md border-b border-border">
@@ -150,6 +174,13 @@ export default function ErrorLogs() {
 
         <Button onClick={fetchErrors} variant="outline">
           Refresh
+        </Button>
+        <Button 
+          onClick={handleClearHistorical} 
+          variant="outline"
+          disabled={clearing}
+        >
+          {clearing ? 'Clearing...' : 'Clear Historical'}
         </Button>
       </div>
 
