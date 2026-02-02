@@ -11,8 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Extended step type with optional roadmap metadata
+interface ExtendedStep extends ProjectTimeline {
+  startDate: Date;
+  endDate: Date;
+  status?: string;
+  owner?: string | null;
+  system_name?: string | null;
+  expected_outcomes?: string[];
+}
+
 interface StepCardProps {
-  step: ProjectTimeline & { startDate: Date; endDate: Date };
+  step: ExtendedStep;
   left: number;
   width: number;
   colorClasses: { bg: string; border: string; text: string };
@@ -51,10 +61,10 @@ export function StepCard({
   onDelete,
   onStatusChange,
 }: StepCardProps) {
-  const status = (step as any).status || "not_started";
-  const owner = (step as any).owner;
-  const systemName = (step as any).system_name;
-  const expectedOutcomes: string[] = (step as any).expected_outcomes || [];
+  const status = step.status || "not_started";
+  const owner = step.owner;
+  const systemName = step.system_name;
+  const expectedOutcomes: string[] = step.expected_outcomes || [];
   const statusStyle = statusColors[status] || statusColors.not_started;
 
   const durationDays = differenceInDays(step.endDate, step.startDate) + 1;
@@ -93,9 +103,9 @@ export function StepCard({
       }}
       onClick={onClick}
     >
-      <div className="h-full p-4 flex flex-col justify-between overflow-hidden">
+      <div className="h-full p-md flex flex-col justify-between overflow-hidden">
         {/* Header row: Title + Duration + Delete + Expand icon */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-sm">
           <div className="flex-1 min-w-0">
             {/* Step Title - Large and prominent */}
             <h4 className="text-body font-bold truncate leading-tight text-foreground">
@@ -103,15 +113,15 @@ export function StepCard({
             </h4>
             
             {/* Owner · System · Status row */}
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <div className="flex items-center gap-xs mt-xs flex-wrap">
               {owner && (
-                <span className="flex items-center gap-1 text-metadata text-muted-foreground">
+                <span className="flex items-center gap-xs text-metadata text-muted-foreground">
                   <User2 className="h-3 w-3" />
                   {owner}
                 </span>
               )}
               {systemName && (
-                <span className="flex items-center gap-1 text-metadata text-muted-foreground">
+                <span className="flex items-center gap-xs text-metadata text-muted-foreground">
                   <Layers className="h-3 w-3" />
                   {systemName}
                 </span>
@@ -122,6 +132,7 @@ export function StepCard({
               {isAdmin && onStatusChange ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={handleStatusClick}>
+                    {/* eslint-disable-next-line no-restricted-syntax -- px-1.5/py-0.5 are fine-grained badge sizing */}
                     <button className={cn(
                       "px-1.5 py-0.5 rounded text-metadata font-medium capitalize cursor-pointer",
                       "hover:ring-2 hover:ring-offset-1 hover:ring-primary/30 transition-all",
@@ -141,7 +152,7 @@ export function StepCard({
                         )}
                       >
                         <span className={cn(
-                          "w-2 h-2 rounded-full mr-2",
+                          "w-2 h-2 rounded-full mr-xs",
                           statusColors[s.value]?.badge.replace("text-", "bg-").split(" ")[0]
                         )} />
                         {s.label}
@@ -150,6 +161,7 @@ export function StepCard({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
+                // eslint-disable-next-line no-restricted-syntax -- px-1.5/py-0.5 are fine-grained badge sizing
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-metadata font-medium capitalize",
                   statusStyle.badge
@@ -161,7 +173,8 @@ export function StepCard({
           </div>
 
           {/* Duration badge + delete + expand icon */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-xs shrink-0">
+            {/* eslint-disable-next-line no-restricted-syntax -- px-2/py-0.5 are fine-grained badge sizing */}
             <span className="text-metadata font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
               {durationText}
             </span>
@@ -181,19 +194,19 @@ export function StepCard({
 
         {/* Expected Outcomes (truncated to 2 lines) */}
         {expectedOutcomes.length > 0 && (
-          <div className="text-metadata text-muted-foreground mt-1 space-y-0.5 flex-1 min-h-0 overflow-hidden">
-            <p className="font-medium text-foreground/70 mb-0.5">Expected Outcomes:</p>
+          <div className="text-metadata text-muted-foreground mt-xs space-y-xs flex-1 min-h-0 overflow-hidden">
+            <p className="font-medium text-foreground/70 mb-xs">Expected Outcomes:</p>
             {expectedOutcomes.slice(0, 2).map((outcome, idx) => (
-              <p key={idx} className="truncate pl-2">– {outcome}</p>
+              <p key={idx} className="truncate pl-xs">– {outcome}</p>
             ))}
             {expectedOutcomes.length > 2 && (
-              <p className="text-muted-foreground/60 pl-2">+{expectedOutcomes.length - 2} more</p>
+              <p className="text-muted-foreground/60 pl-xs">+{expectedOutcomes.length - 2} more</p>
             )}
           </div>
         )}
 
         {/* Progress bar - always at bottom */}
-        <div className="flex items-center gap-3 mt-auto pt-2">
+        <div className="flex items-center gap-sm mt-auto pt-xs">
           <Progress value={progress} className="h-2 flex-1" />
           <span className="text-metadata font-semibold min-w-[3ch] text-foreground">
             {progress}%
