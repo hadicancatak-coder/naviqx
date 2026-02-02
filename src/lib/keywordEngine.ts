@@ -201,7 +201,7 @@ export function normalizeTerm(term: string): NormalizedTerm {
   norm = normalizeArabic(norm);
   
   // ASCII normalization: strip punctuation
-  const asciiNorm = norm.replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ').replace(/\s+/g, ' ').trim();
+  const asciiNorm = norm.replace(/[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ').replace(/\s+/g, ' ').trim();
   
   // Detect language
   const hasArabic = containsArabic(term);
@@ -464,7 +464,7 @@ const REGULATION_PATTERN = /\b(regulated|license|scam|safe|legit|review|complain
 const LOGIN_ACCESS_PATTERN = /\b(login|log\s*in|sign\s*in|signin|account|portal|dashboard|password|reset|forgot|withdraw|deposit|kyc|verification)\b|تسجيل\s*الدخول|دخول|حساب|بوابة|كلمة\s*المرور|نسيت|اعادة\s*تعيين|سحب|ايداع|تحقق|توثيق/i;
 
 // Junk patterns
-const JUNK_PATTERN = /^[0-9\s\-\.]+$|^\s*$/;
+const JUNK_PATTERN = /^[0-9\s.\-]+$|^\s*$/;
 
 // =====================================================
 // NO-MONEY INTENT PATTERNS (EXPANDED - TOP PRIORITY)
@@ -507,7 +507,7 @@ function matchDictionary(
     if (!entry.enabled) continue;
     
     const aliasNorm = entry.alias.toLowerCase().trim();
-    const aliasAscii = aliasNorm.replace(/[.,/;:_\-()[\]{}\"'`!@#$%^&*+=<>?\\|~]/g, ' ').replace(/\s+/g, ' ').trim();
+    const aliasAscii = aliasNorm.replace(/[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ').replace(/\s+/g, ' ').trim();
     
     // Check boundary-aware matching
     // Create word boundary pattern
@@ -860,7 +860,7 @@ const STOPWORDS = new Set([
 ]);
 
 function extractTokens(text: string, language: 'ar' | 'en' | 'mixed'): string[] {
-  const norm = text.toLowerCase().replace(/[.,\/;:_\-\(\)\[\]\{\}\"'`!@#$%^&*+=<>?\\|~]/g, ' ').replace(/\s+/g, ' ').trim();
+  const norm = text.toLowerCase().replace(/[.,/;:_()[\]{}\"'`!@#$%^&*+=<>?\\|~-]/g, ' ').replace(/\s+/g, ' ').trim();
   const tokens = norm.split(' ').filter(t => t.length > 1 && !STOPWORDS.has(t));
   return tokens;
 }
