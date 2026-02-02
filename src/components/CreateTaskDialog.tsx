@@ -185,22 +185,92 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
 
       if (error) throw error;
 
-      // Assign users
-      if (selectedAssignees.length > 0) {
-        const { data: creatorProfile } = await supabase
+      // Get creator profile first - needed for both regular and recurring tasks
+      let creatorProfile: { id: string } | null = null;
+      if (selectedAssignees.length > 0 || isRecurring) {
+        const { data } = await supabase
           .from("profiles")
           .select("id")
           .eq("user_id", user!.id)
           .single();
+        creatorProfile = data;
+      }
 
-        if (creatorProfile) {
-          const assigneeInserts = selectedAssignees.map(profileId => ({
-            task_id: createdTask.id,
-            user_id: profileId,
-            assigned_by: creatorProfile.id,
-          }));
+      // Assign users to template (for non-recurring) or template (for recurring)
+      if (selectedAssignees.length > 0 && creatorProfile) {
+        const assigneeInserts = selectedAssignees.map(profileId => ({
+          task_id: createdTask.id,
+          user_id: profileId,
+          assigned_by: creatorProfile!.id,
+        }));
+        await supabase.from("task_assignees").insert(assigneeInserts);
+      }
 
-          await supabase.from("task_assignees").insert(assigneeInserts);
+      // For recurring templates: create the first visible instance immediately
+      // instead of waiting for the cron job
+      if (isRecurring && createdTask.id) {
+        const firstOccurrenceDate = nextRunAt || new Date();
+        const instanceDateStr = format(firstOccurrenceDate, 'yyyy-MM-dd');
+
+        const { data: firstInstance, error: instanceError } = await supabase
+          .from('tasks')
+          .insert({
+            title: title.trim(),
+            description: description || null,
+            priority,
+            status: 'Pending',
+            due_at: firstOccurrenceDate.toISOString(),
+            created_by: user!.id,
+            entity: entities.length > 0 ? entities : [],
+            labels: tags.length > 0 ? tags : [],
+            task_type: 'recurring',
+            visibility: 'global',
+            project_id: projectId || null,
+            template_task_id: createdTask.id,
+            occurrence_date: instanceDateStr,
+            is_recurrence_template: false,
+          })
+          .select()
+          .single();
+
+        if (!instanceError && firstInstance) {
+          // Copy assignees to first instance
+          if (selectedAssignees.length > 0 && creatorProfile) {
+            await supabase.from('task_assignees').insert(
+              selectedAssignees.map(profileId => ({
+                task_id: firstInstance.id,
+                user_id: profileId,
+                assigned_by: creatorProfile!.id,
+              }))
+            );
+          }
+
+          // Advance template to next occurrence
+          const rule: RecurrenceRule = {
+            type: recurrence,
+            interval: 1,
+            days_of_week: recurrence === 'weekly' ? recurrenceDaysOfWeek : undefined,
+            day_of_month: recurrence === 'monthly' ? (recurrenceDayOfMonth || undefined) : undefined,
+            end_condition: recurrenceEndType,
+            end_value: recurrenceEndType === 'after_n' 
+              ? parseInt(recurrenceEndValue) || 10 
+              : recurrenceEndType === 'until_date' 
+                ? recurrenceEndValue 
+                : undefined,
+          };
+
+          const { calculateNextOccurrence } = await import("@/lib/recurrenceUtils");
+          const nextOccurrence = calculateNextOccurrence(rule, firstOccurrenceDate, 1);
+
+          await supabase
+            .from('tasks')
+            .update({
+              next_run_at: nextOccurrence?.toISOString() || null,
+              occurrence_count: 1,
+            })
+            .eq('id', createdTask.id);
+        } else if (instanceError) {
+          logger.error("Failed to create first recurring instance:", instanceError);
         }
       }
       
@@ -213,8 +283,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: Creat
         });
       }
 
-      const toastMsg = isRecurring && nextRunAt
-        ? `Recurring template created. First task on ${format(nextRunAt, 'PP')}`
+      const toastMsg = isRecurring
+        ? `Recurring task created! First instance added for ${format(nextRunAt || new Date(), 'PP')}`
         : "Task created successfully";
       
       toast({
