@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ACCOUNT_STRUCTURE_KEYS } from "@/lib/queryKeys";
 import { toast } from "sonner";
 
 export interface CampaignVersion {
@@ -112,6 +113,7 @@ export const useCampaignVersions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
+      queryClient.invalidateQueries({ queryKey: ACCOUNT_STRUCTURE_KEYS.versionCounts });
       toast.success("Campaign version saved");
     },
     onError: (error: unknown) => {
@@ -151,6 +153,7 @@ export const useCampaignVersions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
+      queryClient.invalidateQueries({ queryKey: ACCOUNT_STRUCTURE_KEYS.versionCounts });
       toast.success("Version updated");
     },
     onError: (error: unknown) => {
@@ -170,6 +173,7 @@ export const useCampaignVersions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaign-versions"] });
+      queryClient.invalidateQueries({ queryKey: ACCOUNT_STRUCTURE_KEYS.versionCounts });
       toast.success("Version deleted");
     },
     onError: (error: unknown) => {
