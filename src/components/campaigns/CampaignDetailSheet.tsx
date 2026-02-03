@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ExternalLink, Copy, Check, Link2, ImageIcon, ZoomIn, Plus, Pencil, Trash2 } from "lucide-react";
+import { X, ExternalLink, Copy, Check, Link2, ImageIcon, ZoomIn, Plus, Pencil, Trash2, ChevronDown } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { VersionComments } from "./VersionComments";
 import { AddVersionDialog } from "./AddVersionDialog";
 import { EditVersionDialog } from "./EditVersionDialog";
@@ -144,7 +145,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
               )}
 
               {/* Versions Section */}
-              <div className="space-y-sm">
+              <div className="space-y-sm w-full overflow-hidden">
                 <div className="flex items-center justify-between">
                   <h3 className="text-body font-medium text-foreground">Versions</h3>
                   <Button variant="outline" size="sm" onClick={() => setAddVersionOpen(true)}>
@@ -163,157 +164,165 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-xs">
-                    {versions.map((version) => (
-                      <div
-                        key={version.id}
-                        onClick={() => setSelectedVersionId(version.id)}
-                        className={cn(
-                          "flex items-center gap-sm p-sm rounded-lg cursor-pointer transition-smooth overflow-hidden",
-                          selectedVersion?.id === version.id
-                            ? "bg-primary/10 border border-primary/30"
-                            : "bg-card border border-border hover:bg-card-hover"
-                        )}
-                      >
-                        {/* Thumbnail - always show fixed size */}
-                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                          {version.image_url || version.asset_link ? (
-                            <img
-                              src={version.image_url || version.asset_link || ""}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                e.currentTarget.parentElement?.classList.add("bg-muted");
-                              }}
-                            />
-                          ) : (
-                            <ImageIcon className="size-4 text-muted-foreground" />
-                          )}
-                        </div>
+                  <div className="space-y-sm w-full">
+                    {versions.map((version) => {
+                      const isExpanded = selectedVersionId === version.id;
+                      const versionImageUrl = version.image_url || version.asset_link;
+                      
+                      return (
+                        <Collapsible
+                          key={version.id}
+                          open={isExpanded}
+                          onOpenChange={(open) => setSelectedVersionId(open ? version.id : null)}
+                        >
+                          <div className={cn(
+                            "rounded-lg border transition-smooth w-full overflow-hidden",
+                            isExpanded
+                              ? "bg-primary/5 border-primary/30"
+                              : "bg-card border-border hover:bg-card-hover"
+                          )}>
+                            {/* Compact Row Header - Always Visible */}
+                            <CollapsibleTrigger asChild>
+                              <div className="flex items-center gap-sm p-sm cursor-pointer w-full overflow-hidden">
+                                {/* Thumbnail */}
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                                  {versionImageUrl ? (
+                                    <img
+                                      src={versionImageUrl}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    <ImageIcon className="size-4 text-muted-foreground" />
+                                  )}
+                                </div>
 
-                        {/* Version Info - fixed layout */}
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="flex items-center gap-xs">
-                            <Badge variant="outline" className="text-metadata shrink-0">
-                              V{version.version_number}
-                            </Badge>
-                            <span className="text-body-sm text-foreground truncate">
-                              {version.version_notes || "No notes"}
-                            </span>
+                                {/* Version Info */}
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="flex items-center gap-xs">
+                                    <Badge variant="outline" className="text-metadata shrink-0">
+                                      V{version.version_number}
+                                    </Badge>
+                                    <span className="text-body-sm text-foreground truncate">
+                                      {version.version_notes || "No notes"}
+                                    </span>
+                                  </div>
+                                  <p className="text-metadata text-muted-foreground truncate">
+                                    {format(new Date(version.created_at), "MMM d, yyyy")}
+                                    {version.creator_name && ` • ${version.creator_name}`}
+                                  </p>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-xs shrink-0">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingVersion(version);
+                                    }}
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7 text-destructive hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteVersionId(version.id);
+                                    }}
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                  <ChevronDown className={cn(
+                                    "size-4 text-muted-foreground transition-transform",
+                                    isExpanded && "rotate-180"
+                                  )} />
+                                </div>
+                              </div>
+                            </CollapsibleTrigger>
+
+                            {/* Expanded Details */}
+                            <CollapsibleContent>
+                              <div className="px-sm pb-sm space-y-sm w-full overflow-hidden">
+                                {/* Large Preview */}
+                                {versionImageUrl && (
+                                  <div
+                                    className="relative group cursor-pointer aspect-video w-full max-h-48 rounded-lg overflow-hidden border border-border"
+                                    onClick={() => setLightboxOpen(true)}
+                                  >
+                                    <img
+                                      src={versionImageUrl}
+                                      alt={`V${version.version_number}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => (e.currentTarget.style.display = "none")}
+                                    />
+                                    <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                      <ZoomIn className="size-8 text-foreground" />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Full Version Notes - WITH PROPER WRAPPING */}
+                                {version.version_notes && (
+                                  <div className="bg-muted/50 rounded-lg p-sm border border-border/50 w-full overflow-hidden">
+                                    <p 
+                                      className="text-body-sm break-words whitespace-pre-wrap"
+                                      style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                                    >
+                                      {version.version_notes}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Links */}
+                                {(version.asset_link || version.landing_page) && (
+                                  <div className="flex items-center gap-md flex-wrap">
+                                    {version.asset_link && (
+                                      <a
+                                        href={normalizeUrl(version.asset_link)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
+                                      >
+                                        <Link2 className="size-3.5" />
+                                        View Asset
+                                        <ExternalLink className="size-3" />
+                                      </a>
+                                    )}
+                                    {version.landing_page && (
+                                      <a
+                                        href={normalizeUrl(version.landing_page)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
+                                      >
+                                        <ExternalLink className="size-3.5" />
+                                        Landing Page
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Comments */}
+                                <div className="border-t border-border pt-sm">
+                                  <VersionComments versionId={version.id} campaignId={campaign.id} />
+                                </div>
+                              </div>
+                            </CollapsibleContent>
                           </div>
-                          <p className="text-metadata text-muted-foreground truncate">
-                            {format(new Date(version.created_at), "MMM d, yyyy")}
-                            {version.creator_name && ` • ${version.creator_name}`}
-                          </p>
-                        </div>
-
-                        {/* Actions - always visible */}
-                        <div className="flex items-center gap-xs shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingVersion(version);
-                            }}
-                          >
-                            <Pencil className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteVersionId(version.id);
-                            }}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                        </Collapsible>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-
-              {/* Selected Version Detail */}
-              {selectedVersion && (
-                <div className="space-y-sm border-t border-border pt-md overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-body font-medium text-foreground">
-                      Version {selectedVersion.version_number} Details
-                    </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingVersion(selectedVersion)}
-                    >
-                      <Pencil className="size-3.5 mr-1" />
-                      Edit
-                    </Button>
-                  </div>
-
-                  {/* Large Preview - Only if there's an image */}
-                  {imageUrl && (
-                    <div
-                      className="relative group cursor-pointer aspect-video w-full max-h-48 rounded-lg overflow-hidden border border-border"
-                      onClick={() => setLightboxOpen(true)}
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={`V${selectedVersion.version_number}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.currentTarget.style.display = "none")}
-                      />
-                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <ZoomIn className="size-8 text-foreground" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Version Notes */}
-                  {selectedVersion.version_notes && (
-                    <div className="bg-muted/50 rounded-lg p-sm border border-border/50">
-                      <p className="text-body-sm break-words whitespace-pre-wrap">{selectedVersion.version_notes}</p>
-                    </div>
-                  )}
-
-                  {/* Links */}
-                  <div className="flex items-center gap-md flex-wrap">
-                    {selectedVersion.asset_link && (
-                      <a
-                        href={normalizeUrl(selectedVersion.asset_link)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
-                      >
-                        <Link2 className="size-3.5" />
-                        View Asset
-                        <ExternalLink className="size-3" />
-                      </a>
-                    )}
-                    {selectedVersion.landing_page && (
-                      <a
-                        href={normalizeUrl(selectedVersion.landing_page)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
-                      >
-                        <ExternalLink className="size-3.5" />
-                        Landing Page
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Comments */}
-                  <div className="border-t border-border pt-md">
-                    <VersionComments versionId={selectedVersion.id} campaignId={campaign.id} />
-                  </div>
-                </div>
-              )}
             </div>
           </ScrollArea>
         </SheetContent>
