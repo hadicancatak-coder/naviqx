@@ -50,7 +50,7 @@ export function VersionComments({ versionId, campaignId, entity }: VersionCommen
   };
 
   return (
-    <div className="space-y-md">
+    <div className="space-y-md w-full max-w-full overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
       <div className="flex items-center gap-sm">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
         <h4 className="text-body font-medium text-foreground">Comments</h4>
