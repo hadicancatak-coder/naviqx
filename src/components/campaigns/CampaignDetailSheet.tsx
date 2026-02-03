@@ -140,7 +140,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
               {/* Description */}
               {campaign.description && (
-                <p className="text-body-sm text-muted-foreground break-words whitespace-pre-wrap">{campaign.description}</p>
+                <p className="text-body-sm text-muted-foreground break-all whitespace-normal">{campaign.description}</p>
               )}
 
               {/* Versions Section */}
@@ -276,8 +276,8 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
                   {/* Version Notes */}
                   {selectedVersion.version_notes && (
-                    <div className="bg-muted/50 rounded-lg p-sm border border-border/50">
-                      <p className="text-body-sm break-words whitespace-pre-wrap">{selectedVersion.version_notes}</p>
+                    <div className="bg-muted/50 rounded-lg p-sm border border-border/50 w-full overflow-hidden">
+                      <p className="text-body-sm break-all whitespace-normal">{selectedVersion.version_notes}</p>
                     </div>
                   )}
 
