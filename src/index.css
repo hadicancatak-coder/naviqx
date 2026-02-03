@@ -360,6 +360,17 @@ All colors MUST be HSL.
     scrollbar-color: hsl(var(--gray-400)) transparent;
   }
 
+  /* ========================================
+     RADIX SCROLLAREA FIX
+     Override internal table display that causes horizontal overflow
+     Radix applies inline styles: { minWidth: "100%", display: "table" }
+     which causes content to expand beyond viewport bounds
+     ======================================== */
+  [data-radix-scroll-area-viewport] > div {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
   html {
     scrollbar-gutter: stable;
   }
