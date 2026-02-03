@@ -91,7 +91,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col overflow-hidden">
+        <SheetContent side="right" className="!w-full sm:!max-w-xl !p-0 flex flex-col !overflow-hidden">
           <SheetHeader className="p-md border-b border-border shrink-0">
             <div className="flex items-start justify-between gap-md pr-8">
               <div className="space-y-xs min-w-0">
@@ -121,8 +121,8 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
             </div>
           </SheetHeader>
 
-          <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="p-md space-y-md w-full overflow-hidden">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-md space-y-md max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
               {/* Landing Page - Prominent */}
               {campaign.landing_page && (
                 <div className="flex items-center gap-sm p-sm bg-muted/50 rounded-lg border border-border">
@@ -145,7 +145,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
               )}
 
               {/* Versions Section */}
-              <div className="space-y-sm w-full overflow-hidden">
+              <div className="space-y-sm max-w-full">
                 <div className="flex items-center justify-between">
                   <h3 className="text-body font-medium text-foreground">Versions</h3>
                   <Button variant="outline" size="sm" onClick={() => setAddVersionOpen(true)}>
@@ -164,7 +164,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-sm w-full">
+                  <div className="space-y-sm max-w-full">
                     {versions.map((version) => {
                       const isExpanded = selectedVersionId === version.id;
                       const versionImageUrl = version.image_url || version.asset_link;
@@ -176,7 +176,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                           onOpenChange={(open) => setSelectedVersionId(open ? version.id : null)}
                         >
                           <div className={cn(
-                            "rounded-lg border transition-smooth w-full overflow-hidden",
+                            "rounded-lg border transition-smooth max-w-full",
                             isExpanded
                               ? "bg-primary/5 border-primary/30"
                               : "bg-card border-border hover:bg-card-hover"
@@ -250,7 +250,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
                             {/* Expanded Details */}
                             <CollapsibleContent>
-                              <div className="px-sm pb-sm space-y-sm w-full overflow-hidden">
+                              <div className="px-sm pb-sm space-y-sm max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                 {/* Large Preview */}
                                 {versionImageUrl && (
                                   <div
@@ -271,7 +271,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
                                 {/* Full Version Notes - WITH PROPER WRAPPING */}
                                 {version.version_notes && (
-                                  <div className="bg-muted/50 rounded-lg p-sm border border-border/50 w-full overflow-hidden">
+                                  <div className="bg-muted/50 rounded-lg p-sm border border-border/50 max-w-full">
                                     <p 
                                       className="text-body-sm break-words whitespace-pre-wrap"
                                       style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
