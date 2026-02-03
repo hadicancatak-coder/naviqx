@@ -1,139 +1,93 @@
 
+## Fix: Sidebar Content Overflow in Campaign Detail Sheet
 
-## Complete Rebuild: Version Section in CampaignDetailSheet
+### Root Cause Analysis
 
-### Problem Analysis
+The text is overflowing the sidebar boundary because of a cascading constraint failure:
 
-Looking at the current code and screenshot, there are two critical issues:
+1. **Sheet base styles issue**: In `sheet.tsx` line 32, the `sheetVariants` includes `overflow-y-auto` but NOT `overflow-x-hidden`, allowing horizontal content expansion
+2. **ScrollArea viewport issue**: In `scroll-area.tsx` line 11, the `ScrollAreaPrimitive.Viewport` has `w-full` but no explicit overflow constraint, allowing children to expand beyond bounds
+3. **Flexbox intrinsic sizing**: When using `flex flex-col` without explicit width constraints, flex items can size to their content, pushing beyond the container
 
-1. **Duplicate version display**: The version list shows the version row, AND then below it shows "Version 1 Details" with the same content again - this is redundant
-2. **Text overflow**: Long version notes are not wrapping properly in the version list row, causing the entire row to overflow outside the sidebar
+### Solution
 
-The root cause is the current architecture shows versions twice:
-- Once in the compact list view (lines 166-239)  
-- Again in the expanded detail section (lines 242-316)
+Fix at two strategic levels:
 
-This is confusing and wastes space. When there's only one version, showing the same content twice is redundant.
+**1. Fix the Sheet component base styles** (`src/components/ui/sheet.tsx`)
+- Add `overflow-x-hidden` to the base variant to prevent ANY horizontal overflow from sheets
+- This is the systemic fix that prevents this issue in ALL sheets
 
----
+**2. Fix the ScrollArea viewport** (`src/components/ui/scroll-area.tsx`)  
+- Add `!overflow-x-hidden` to the viewport to ensure it clips horizontal content
+- This ensures scroll areas properly constrain their children
 
-### Solution: Single Unified Version Display
+### Technical Changes
 
-Rebuild the versions section with these principles:
-1. **Single source of truth** - show version content ONCE, not twice
-2. **Proper text wrapping from the start** - use `word-break: break-word` and `overflow-wrap: anywhere` 
-3. **Clean compact design** - version list rows stay compact and clickable
-4. **Expandable details inline** - when clicked, expand details within the same row context
+#### File 1: `src/components/ui/sheet.tsx`
 
----
-
-### Technical Implementation
-
-**File: `src/components/campaigns/CampaignDetailSheet.tsx`**
-
-**Step 1: Remove the duplicate "Selected Version Detail" section entirely** (lines 242-316)
-
-The current code has:
-- Version list (compact rows with thumbnail, version number, truncated notes)
-- Then a SEPARATE "Version N Details" section that repeats the same information
-
-This redundancy will be removed. Instead, we'll have:
-- Version list where clicking a version expands its details INLINE below that row
-
-**Step 2: Rebuild version list with proper overflow handling**
-
-The version list will have:
-- **Version row container**: Use `w-full` (not relying on flex to constrain)
-- **Text wrapping**: Apply `word-break: break-word` and `overflow-wrap: break-word` to ALL text elements
-- **Expand behavior**: Clicking a version expands details below it (collapsible pattern)
-
-**Step 3: Use Collapsible pattern from existing components**
-
-Looking at `VersionCard.tsx` (lines 249-253), it already uses the Collapsible pattern correctly for comments. We'll use the same pattern for version details.
-
----
-
-### New Structure
+Update line 32 - add `overflow-x-hidden` to the base sheetVariants:
 
 ```tsx
-{/* Versions Section */}
-<div className="space-y-sm">
-  <div className="flex items-center justify-between">
-    <h3>Versions</h3>
-    <Button>Add Version</Button>
-  </div>
+// BEFORE (line 32):
+"!fixed z-modal flex flex-col gap-md liquid-glass-elevated p-lg overflow-y-auto hide-scrollbar shadow-2xl..."
 
-  {versions.map((version) => (
-    <Collapsible 
-      key={version.id}
-      open={selectedVersionId === version.id}
-      onOpenChange={() => setSelectedVersionId(prev => prev === version.id ? null : version.id)}
-    >
-      {/* Compact row header - always visible */}
-      <CollapsibleTrigger asChild>
-        <div className="version-row cursor-pointer">
-          <Thumbnail />
-          <VersionInfo (truncated) />
-          <EditDeleteButtons />
-        </div>
-      </CollapsibleTrigger>
-
-      {/* Expanded details - only when selected */}
-      <CollapsibleContent>
-        <div className="version-details">
-          <LargeImagePreview />
-          <FullVersionNotes (WRAPPED) />
-          <Links />
-          <Comments />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  ))}
-</div>
+// AFTER:
+"!fixed z-modal flex flex-col gap-md liquid-glass-elevated p-lg overflow-x-hidden overflow-y-auto hide-scrollbar shadow-2xl..."
 ```
 
----
+#### File 2: `src/components/ui/scroll-area.tsx`
 
-### Specific Text Wrapping Rules
+Update line 11 - add `!overflow-x-hidden` to the ScrollArea Viewport:
 
-All text elements will use these classes:
-- **Container**: `w-full overflow-hidden` - constrain the container width
-- **Text blocks**: `break-words whitespace-pre-wrap` - standard wrapping
-- **Long URLs/text**: Add `overflow-wrap: anywhere` via inline style if needed
-
-For the version notes in the expanded section:
 ```tsx
-<div className="bg-muted/50 rounded-lg p-sm border border-border/50">
-  <p className="text-body-sm break-words whitespace-pre-wrap" 
-     style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-    {version.version_notes}
-  </p>
-</div>
+// BEFORE (line 11):
+<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+
+// AFTER:
+<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] !overflow-x-hidden">
 ```
 
----
+#### File 3: `src/components/campaigns/CampaignDetailSheet.tsx`
 
-### Changes Summary
+Clean up the over-engineered inline styles and `!important` modifiers now that the base components are fixed:
 
-1. **Add imports**: `Collapsible, CollapsibleContent, CollapsibleTrigger` from `@/components/ui/collapsible`
+**Line 94** - Simplify SheetContent classes:
+```tsx
+// BEFORE:
+<SheetContent side="right" className="!w-full sm:!max-w-xl !p-0 flex flex-col !overflow-hidden">
 
-2. **Rewrite versions section** (lines 146-316):
-   - Replace the separate list + detail sections with a single Collapsible-based list
-   - Each version is a collapsible item
-   - Clicking opens/closes the detail view INLINE
-   - No more duplicate display
+// AFTER:
+<SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
+```
 
-3. **Apply text wrapping consistently**:
-   - All text in compact row: `truncate` (shows ellipsis)
-   - All text in expanded view: `break-words whitespace-pre-wrap` with inline `overflowWrap: 'anywhere'`
+**Line 125** - Remove redundant inline styles:
+```tsx
+// BEFORE:
+<div className="p-md space-y-md max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
 
----
+// AFTER:
+<div className="p-md space-y-md">
+```
+
+**Line 253** - Remove redundant inline styles from CollapsibleContent:
+```tsx
+// BEFORE:
+<div className="px-sm pb-sm space-y-sm max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+
+// AFTER:
+<div className="px-sm pb-sm space-y-sm">
+```
+
+**Keep the version notes** at lines 275-280 with proper text wrapping since that's actual content that needs to wrap:
+```tsx
+<p className="text-body-sm whitespace-pre-wrap break-words">
+  {version.version_notes}
+</p>
+```
 
 ### Result
 
-- **One version, one display** - no more showing the same info twice
-- **Proper text wrapping** - long notes wrap within the sidebar bounds
-- **Clickable rows** - the entire row becomes a toggle trigger
-- **Cleaner UX** - expand to see details, collapse to hide
-- **Edit/Delete buttons** - remain in the row header, accessible without expansion
-
+- **System-level fix**: All sheets and scroll areas now properly clip horizontal overflow
+- **No more workarounds**: No need for `!important` modifiers or inline styles
+- **Consistent behavior**: Matches how TaskDetail and other working sidebars behave
+- **Proper text wrapping**: Long text wraps naturally within bounds
