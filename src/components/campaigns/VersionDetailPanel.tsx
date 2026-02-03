@@ -17,13 +17,13 @@ export function VersionDetailPanel({ version, campaignId }: VersionDetailPanelPr
   const imageUrl = version.image_url || version.asset_link;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg bg-card rounded-xl p-lg border border-border/50">
-      {/* Left Column: Image + Meta */}
-      <div className="space-y-md">
+    <div className="flex flex-col lg:flex-row gap-lg w-full">
+      {/* Left Column: Image + Meta - Fixed width */}
+      <div className="w-full lg:w-[400px] lg:shrink-0 space-y-md">
         {/* Large Image */}
         {imageUrl ? (
           <div 
-            className="relative group cursor-pointer aspect-[4/3] w-full max-w-[500px]"
+            className="relative group cursor-pointer aspect-[4/3] w-full"
             onClick={() => setLightboxOpen(true)}
           >
             <img 
@@ -40,7 +40,7 @@ export function VersionDetailPanel({ version, campaignId }: VersionDetailPanelPr
             </div>
           </div>
         ) : (
-          <div className="aspect-[4/3] w-full max-w-[500px] rounded-lg bg-muted flex items-center 
+          <div className="aspect-[4/3] w-full rounded-lg bg-muted flex items-center 
                           justify-center border border-border">
             <ImageIcon className="size-16 text-muted-foreground" />
           </div>
@@ -118,8 +118,8 @@ export function VersionDetailPanel({ version, campaignId }: VersionDetailPanelPr
         </div>
       </div>
 
-      {/* Right Column: Comments (full height) */}
-      <div className="border-t lg:border-t-0 lg:border-l border-border/50 pt-md lg:pt-0 lg:pl-lg">
+      {/* Right Column: Comments - Takes remaining space */}
+      <div className="flex-1 min-w-0 border-t lg:border-t-0 lg:border-l border-border/50 pt-md lg:pt-0 lg:pl-lg">
         <VersionComments versionId={version.id} campaignId={campaignId} />
       </div>
       
