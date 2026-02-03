@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, Upload, FileSpreadsheet, CheckCircle2, XCircle, RefreshCw, Loader2 } from "lucide-react";
-import { useUpsertUtmCampaigns } from "@/hooks/useUtmCampaigns";
+import { Download, Upload, FileSpreadsheet, CheckCircle2, XCircle, RefreshCw, Loader2, Zap } from "lucide-react";
+import { useCampaignBulkActions } from "@/hooks/useCampaignBulkActions";
 import { CAMPAIGN_TYPES, CAMPAIGN_STATUSES, type CampaignType, type CampaignStatus } from "@/domain/campaigns";
 import { toast } from "sonner";
 
@@ -95,17 +95,17 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
   const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
   const [existingNames, setExistingNames] = useState<Set<string>>(new Set());
   
-  const upsertMutation = useUpsertUtmCampaigns();
+  const { bulkImport } = useCampaignBulkActions();
 
   const downloadTemplate = () => {
-    const headers = ["Campaign Name", "LP Link", "Campaign Type", "Campaign Status", "Platform", "Entity", "Launch Date", "Campaign Link", "Hubspot UTM Campaign", "Version", "Description"];
+    const headers = ["Campaign Name", "LP Link", "Entity", "Campaign Type", "Campaign Status", "Platform", "Launch Date", "Campaign Link", "Hubspot UTM Campaign", "Version", "Description"];
     const exampleRow = [
       "Summer Sale 2025",
       "https://example.com/promo",
+      "Kuwait",
       "Performance",
       "Active",
       "META",
-      "Kuwait",
       "22/12/2026",
       "https://ads.facebook.com/...",
       "Summer_Sale_2025",
@@ -139,15 +139,10 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
     
     // Check required columns
     const hasName = Object.values(headerMapping).includes("name");
-    const hasLandingPage = Object.values(headerMapping).includes("landing_page");
     const hasEntity = Object.values(headerMapping).includes("entity");
     
     if (!hasName) {
       toast.error("CSV must have a 'Campaign Name' or 'name' column");
-      return [];
-    }
-    if (!hasLandingPage) {
-      toast.error("CSV must have a 'LP Link' or 'landing_page' column");
       return [];
     }
     if (!hasEntity) {
@@ -206,10 +201,6 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
         errors.push("Campaign Name is required");
       } else if (seenNames.has(name.toLowerCase())) {
         errors.push("Duplicate name in file");
-      }
-      
-      if (!landing_page) {
-        errors.push("LP Link is required");
       }
       
       if (!entity) {
@@ -308,22 +299,21 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
       return;
     }
     
+    // Use the new atomic edge function
     try {
-      await upsertMutation.mutateAsync(validRows.map(r => ({
-        name: r.name,
-        landing_page: r.landing_page || undefined,
-        campaign_type: r.campaign_type || undefined,
-        description: r.description || undefined,
-        asset_link: r.asset_link || undefined,
-        version_number: r.version_number ? parseInt(r.version_number, 10) : undefined,
-        version_notes: r.version_notes || undefined,
-        status: r.status || undefined,
-        platform: r.platform || undefined,
-        entity: r.entity || undefined,
-        launch_date: r.launch_date || undefined,
-        campaign_link: r.campaign_link || undefined,
-        hubspot_utm_campaign: r.hubspot_utm_campaign || undefined,
-      })));
+      await bulkImport.mutateAsync({ 
+        campaigns: validRows.map(r => ({
+          name: r.name,
+          landing_page: r.landing_page || undefined,
+          campaign_type: r.campaign_type || undefined,
+          description: r.description || undefined,
+          asset_link: r.asset_link || undefined,
+          version_number: r.version_number ? parseInt(r.version_number, 10) : undefined,
+          version_notes: r.version_notes || undefined,
+          status: r.status || "Draft",
+          entity: r.entity,
+        }))
+      });
       handleClose();
     } catch {
       // Error handled by mutation
@@ -357,10 +347,17 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
 
         {step === "upload" && (
           <div className="space-y-md py-md">
+            <Alert className="border-primary/30 bg-primary/5">
+              <Zap className="size-4 text-primary" />
+              <AlertDescription className="text-body-sm space-y-1">
+                <div className="font-medium text-primary">Atomic Import - Fast & Reliable</div>
+                <div>All campaigns are imported in a single transaction. Either all succeed or none do.</div>
+              </AlertDescription>
+            </Alert>
             <Alert>
               <AlertDescription className="text-body-sm space-y-1">
-                <div><strong>Required columns:</strong> Campaign Name, LP Link, Entity</div>
-                <div><strong>Optional columns:</strong> Campaign Type, Campaign Status, Platform, Launch Date, Campaign Link, Hubspot UTM Campaign, Version, Description</div>
+                <div><strong>Required columns:</strong> Campaign Name, Entity</div>
+                <div><strong>Optional columns:</strong> LP Link, Campaign Type, Campaign Status, Platform, Launch Date, Campaign Link, Hubspot UTM Campaign, Version, Description</div>
                 <div><strong>Valid types:</strong> {CAMPAIGN_TYPES.join(", ")}</div>
                 <div><strong>Valid statuses:</strong> {CAMPAIGN_STATUSES.join(", ")}</div>
               </AlertDescription>
@@ -505,15 +502,18 @@ export function CampaignBulkImportDialog({ open, onOpenChange }: CampaignBulkImp
           {step === "preview" && (
             <Button 
               onClick={handleImport} 
-              disabled={validCount === 0 || upsertMutation.isPending}
+              disabled={validCount === 0 || bulkImport.isPending}
             >
-              {upsertMutation.isPending ? (
+              {bulkImport.isPending ? (
                 <>
                   <Loader2 className="animate-spin" />
                   Importing...
                 </>
               ) : (
-                <>Import {validCount} Campaigns</>
+                <>
+                  <Zap className="size-4" />
+                  Import {validCount} Campaigns
+                </>
               )}
             </Button>
           )}

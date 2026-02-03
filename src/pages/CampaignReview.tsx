@@ -461,17 +461,49 @@ export default function CampaignReview() {
 
   return (
     <GlassBackground variant="full">
-      {/* Header */}
+      {/* Header with integrated identification */}
       <div className="border-b liquid-glass sticky top-0 z-40">
         <div className="container mx-auto py-md px-md">
-          <div className="flex items-center gap-sm">
+          <div className="flex items-center gap-sm flex-wrap">
             <Eye className="h-6 w-6 text-primary" />
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h1 className="text-heading-lg font-semibold">Campaign Review</h1>
               <p className="text-body-sm text-muted-foreground">
-                {accessData?.entity} {isIdentified && `• Reviewing as ${name}`}
+                {accessData?.entity} • {sortedCampaigns.length} campaigns
               </p>
             </div>
+            
+            {/* Compact identification in header */}
+            {!isIdentified ? (
+              <div className="flex items-center gap-xs flex-wrap">
+                <span className="text-metadata text-muted-foreground hidden sm:inline">To comment:</span>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name"
+                  className="w-28 h-8 text-body-sm"
+                />
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@cfi.trade"
+                  className="w-40 h-8 text-body-sm"
+                />
+                <Button 
+                  size="sm" 
+                  onClick={handleEmailVerification} 
+                  disabled={verifying || !name.trim() || !email.trim()}
+                  className="h-8"
+                >
+                  {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : "Verify"}
+                </Button>
+              </div>
+            ) : (
+              <Badge variant="secondary" className="text-metadata">
+                Reviewing as {name}
+              </Badge>
+            )}
+            
             <Badge variant="outline" className="text-metadata">
               <ExternalLink className="h-3 w-3 mr-xs" />
               External Review
@@ -481,42 +513,6 @@ export default function CampaignReview() {
       </div>
 
       <div className="container mx-auto py-lg px-md space-y-lg">
-        {/* Inline Identification Bar - shown when not identified */}
-        {!isIdentified && (
-          <Card className="mb-md border-primary/30">
-            <CardContent className="py-sm px-md">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-sm sm:gap-md">
-                <span className="text-body-sm text-muted-foreground">To leave feedback:</span>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  className="w-full sm:w-40 h-8"
-                />
-                <Input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@cfi.trade"
-                  className="w-full sm:w-48 h-8"
-                />
-                <Button 
-                  size="sm" 
-                  onClick={handleEmailVerification} 
-                  disabled={verifying || !name.trim() || !email.trim()}
-                >
-                  {verifying ? (
-                    <>
-                      <Loader2 className="h-3 w-3 mr-xs animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Start Reviewing"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Reviewer Guidance */}
         <Card className="bg-muted/30 border-border/50">
