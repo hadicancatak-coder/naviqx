@@ -175,37 +175,40 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                             : "bg-card border border-border hover:bg-card-hover"
                         )}
                       >
-                        {/* Thumbnail */}
-                        {version.image_url || version.asset_link ? (
-                          <img
-                            src={version.image_url || version.asset_link || ""}
-                            alt=""
-                            className="w-12 h-12 rounded object-cover shrink-0"
-                            onError={(e) => (e.currentTarget.style.display = "none")}
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0">
-                            <ImageIcon className="size-5 text-muted-foreground" />
-                          </div>
-                        )}
+                        {/* Thumbnail - always show fixed size */}
+                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                          {version.image_url || version.asset_link ? (
+                            <img
+                              src={version.image_url || version.asset_link || ""}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                e.currentTarget.parentElement?.classList.add("bg-muted");
+                              }}
+                            />
+                          ) : (
+                            <ImageIcon className="size-4 text-muted-foreground" />
+                          )}
+                        </div>
 
-                        {/* Version Info */}
-                        <div className="flex-1 min-w-0">
+                        {/* Version Info - fixed layout */}
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center gap-xs">
                             <Badge variant="outline" className="text-metadata shrink-0">
                               V{version.version_number}
                             </Badge>
-                            <span className="text-body-sm text-foreground truncate">
+                            <span className="text-body-sm text-foreground truncate block">
                               {version.version_notes || "No notes"}
                             </span>
                           </div>
-                          <p className="text-metadata text-muted-foreground">
+                          <p className="text-metadata text-muted-foreground truncate">
                             {format(new Date(version.created_at), "MMM d, yyyy")}
                             {version.creator_name && ` • ${version.creator_name}`}
                           </p>
                         </div>
 
-                        {/* Actions */}
+                        {/* Actions - always visible */}
                         <div className="flex items-center gap-xs shrink-0">
                           <Button
                             variant="ghost"
