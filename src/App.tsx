@@ -70,6 +70,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* PUBLIC ROUTES - Outside AuthProvider to prevent MFA redirects */}
+            <Route path="/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
             <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
             <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><CampaignsLogExternal /></Suspense>} />
             <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />

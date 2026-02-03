@@ -101,7 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const lastActivityTime = useRef<number>(Date.now());
   
   // Check for public access pages - must be after hooks
-  const isPublicAccessPage = location.pathname.startsWith('/campaigns-log/review/') || 
+  const isPublicAccessPage = location.pathname.startsWith('/review/') ||
+                             location.pathname.startsWith('/campaigns-log/review/') || 
                              location.pathname.startsWith('/campaigns-log/external/') ||
                              location.pathname.startsWith('/knowledge/public/') ||
                              location.pathname.startsWith('/projects/public/') ||
