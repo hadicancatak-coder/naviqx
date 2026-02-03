@@ -24,6 +24,7 @@ export function EditVersionDialog({
   onOpenChange,
 }: EditVersionDialogProps) {
   const [notes, setNotes] = useState("");
+  const [description, setDescription] = useState("");
   const [assetLink, setAssetLink] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -32,6 +33,7 @@ export function EditVersionDialog({
   useEffect(() => {
     if (version) {
       setNotes(version.version_notes || "");
+      setDescription(version.description || "");
       setAssetLink(version.asset_link || "");
     }
   }, [version]);
@@ -44,6 +46,7 @@ export function EditVersionDialog({
       await updateVersion.mutateAsync({
         versionId: version.id,
         versionNotes: notes.trim() || undefined,
+        description: description.trim() || undefined,
         assetLink: assetLink.trim() || undefined,
       });
       onOpenChange(false);
@@ -64,6 +67,17 @@ export function EditVersionDialog({
         </DialogHeader>
 
         <div className="space-y-md py-md">
+          <div className="space-y-sm">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Version description..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+            />
+          </div>
+
           <div className="space-y-sm">
             <Label htmlFor="notes">Version Notes</Label>
             <Textarea

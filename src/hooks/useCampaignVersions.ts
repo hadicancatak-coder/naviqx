@@ -126,12 +126,14 @@ export const useCampaignVersions = () => {
     mutationFn: async ({
       versionId,
       versionNotes,
+      description,
       imageUrl,
       imageFileSize,
       assetLink,
     }: {
       versionId: string;
       versionNotes?: string;
+      description?: string;
       imageUrl?: string;
       imageFileSize?: number;
       assetLink?: string;
@@ -140,6 +142,7 @@ export const useCampaignVersions = () => {
         .from("utm_campaign_versions")
         .update({
           version_notes: versionNotes,
+          description: description,
           image_url: imageUrl,
           image_file_size: imageFileSize,
           asset_link: assetLink,

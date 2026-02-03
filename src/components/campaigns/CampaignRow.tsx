@@ -394,6 +394,7 @@ export function CampaignRow({
                 <VersionSubRow
                   key={version.id}
                   version={version}
+                  campaignId={campaign.id}
                   onEdit={setEditingVersion}
                   onDelete={setDeleteVersionId}
                 />
