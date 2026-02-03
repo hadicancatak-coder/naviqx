@@ -17,109 +17,110 @@ export function VersionDetailPanel({ version, campaignId }: VersionDetailPanelPr
   const imageUrl = version.image_url || version.asset_link;
 
   return (
-    <div className="flex gap-lg bg-card rounded-lg p-md border border-border/50">
-      {/* Image Section */}
-      <div className="shrink-0">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg bg-card rounded-xl p-lg border border-border/50">
+      {/* Left Column: Image + Meta */}
+      <div className="space-y-md">
+        {/* Large Image */}
         {imageUrl ? (
           <div 
-            className="relative group cursor-pointer"
+            className="relative group cursor-pointer aspect-[4/3] w-full max-w-[500px]"
             onClick={() => setLightboxOpen(true)}
           >
             <img 
               src={imageUrl} 
               alt={`V${version.version_number}`}
-              className="w-[250px] h-[180px] object-cover rounded-lg border border-border"
+              className="w-full h-full object-cover rounded-lg border border-border"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
             <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 
                             transition-opacity flex items-center justify-center rounded-lg">
-              <ZoomIn className="size-8 text-foreground" />
+              <ZoomIn className="size-10 text-foreground" />
             </div>
           </div>
         ) : (
-          <div className="w-[250px] h-[180px] rounded-lg bg-muted flex items-center 
+          <div className="aspect-[4/3] w-full max-w-[500px] rounded-lg bg-muted flex items-center 
                           justify-center border border-border">
-            <ImageIcon className="size-12 text-muted-foreground" />
+            <ImageIcon className="size-16 text-muted-foreground" />
           </div>
         )}
-      </div>
-      
-      {/* Content Section */}
-      <div className="flex-1 space-y-md min-w-0">
-        {/* Header */}
-        <div className="flex items-center gap-sm flex-wrap">
-          <Badge variant="outline" className="text-metadata">
-            Version {version.version_number}
-          </Badge>
-          <span className="text-metadata text-muted-foreground">
-            Created {format(new Date(version.created_at), "MMM d, yyyy 'at' h:mm a")}
-          </span>
-          {version.creator_name && (
+
+        {/* Meta Info */}
+        <div className="space-y-sm">
+          <div className="flex items-center gap-sm flex-wrap">
+            <Badge variant="outline" className="text-metadata">
+              Version {version.version_number}
+            </Badge>
             <span className="text-metadata text-muted-foreground">
-              by {version.creator_name}
+              Created {format(new Date(version.created_at), "MMM d, yyyy 'at' h:mm a")}
             </span>
+            {version.creator_name && (
+              <span className="text-metadata text-muted-foreground">
+                by {version.creator_name}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          {version.description && (
+            <div className="space-y-xs">
+              <div className="flex items-center gap-xs text-muted-foreground">
+                <FileText className="size-3.5" />
+                <span className="text-body-sm font-medium">Description</span>
+              </div>
+              <p className="text-body">{version.description}</p>
+            </div>
           )}
-        </div>
+          
+          {/* Notes */}
+          {version.version_notes && (
+            <div className="space-y-xs">
+              <div className="flex items-center gap-xs text-muted-foreground">
+                <StickyNote className="size-3.5" />
+                <span className="text-body-sm font-medium">Notes</span>
+              </div>
+              <div className="bg-muted/50 rounded-md p-sm border border-border/50">
+                <p className="text-body">{version.version_notes}</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Links */}
+          <div className="flex items-center gap-md flex-wrap">
+            {version.asset_link && (
+              <a 
+                href={version.asset_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Link2 className="size-3.5" />
+                View Asset
+                <ExternalLink className="size-3" />
+              </a>
+            )}
 
-        {/* Description */}
-        {version.description && (
-          <div className="space-y-xs">
-            <div className="flex items-center gap-xs text-muted-foreground">
-              <FileText className="size-3" />
-              <span className="text-metadata font-medium">Description</span>
-            </div>
-            <p className="text-body-sm">{version.description}</p>
+            {version.landing_page && (
+              <a 
+                href={version.landing_page.startsWith("http") ? version.landing_page : `https://${version.landing_page}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="size-3.5" />
+                Landing Page
+              </a>
+            )}
           </div>
-        )}
-        
-        {/* Notes */}
-        {version.version_notes && (
-          <div className="space-y-xs">
-            <div className="flex items-center gap-xs text-muted-foreground">
-              <StickyNote className="size-3" />
-              <span className="text-metadata font-medium">Notes</span>
-            </div>
-            <div className="bg-muted/50 rounded-md p-sm border border-border/50">
-              <p className="text-body-sm">{version.version_notes}</p>
-            </div>
-          </div>
-        )}
-        
-        {/* Asset Link */}
-        {version.asset_link && (
-          <a 
-            href={version.asset_link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Link2 className="size-3" />
-            View Asset
-            <ExternalLink className="size-3" />
-          </a>
-        )}
-
-        {/* Landing Page */}
-        {version.landing_page && (
-          <a 
-            href={version.landing_page.startsWith("http") ? version.landing_page : `https://${version.landing_page}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-primary hover:underline text-body-sm ml-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ExternalLink className="size-3" />
-            Landing Page
-          </a>
-        )}
-        
-        {/* Comments */}
-        <div className="pt-sm border-t border-border/50">
-          <VersionComments versionId={version.id} campaignId={campaignId} />
         </div>
+      </div>
+
+      {/* Right Column: Comments (full height) */}
+      <div className="border-t lg:border-t-0 lg:border-l border-border/50 pt-md lg:pt-0 lg:pl-lg">
+        <VersionComments versionId={version.id} campaignId={campaignId} />
       </div>
       
       {/* Lightbox */}
