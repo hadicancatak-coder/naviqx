@@ -43,6 +43,7 @@ export function CampaignTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignRowData | null>(null);
 
   const { data: campaigns = [], isLoading } = useUtmCampaigns({ withTracking: true });
   const { data: entities = [] } = useSystemEntities();
@@ -223,7 +224,6 @@ export function CampaignTable({
     );
   }
 
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignRowData | null>(null);
 
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
