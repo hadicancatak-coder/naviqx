@@ -121,7 +121,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
           </SheetHeader>
 
           <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="p-md space-y-md">
+            <div className="p-md space-y-md w-full overflow-hidden">
               {/* Landing Page - Prominent */}
               {campaign.landing_page && (
                 <div className="flex items-center gap-sm p-sm bg-muted/50 rounded-lg border border-border">
@@ -241,7 +241,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
               {/* Selected Version Detail */}
               {selectedVersion && (
-                <div className="space-y-sm border-t border-border pt-md">
+                <div className="space-y-sm border-t border-border pt-md overflow-hidden">
                   <div className="flex items-center justify-between">
                     <h3 className="text-body font-medium text-foreground">
                       Version {selectedVersion.version_number} Details
@@ -276,8 +276,8 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
                   {/* Version Notes */}
                   {selectedVersion.version_notes && (
-                    <div className="bg-muted/50 rounded-lg p-sm border border-border/50 w-full overflow-hidden">
-                      <p className="text-body-sm break-all whitespace-normal">{selectedVersion.version_notes}</p>
+                    <div className="bg-muted/50 rounded-lg p-sm border border-border/50">
+                      <p className="text-body-sm break-words whitespace-pre-wrap">{selectedVersion.version_notes}</p>
                     </div>
                   )}
 
