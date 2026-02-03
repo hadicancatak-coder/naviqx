@@ -1,65 +1,139 @@
 
-## Fix: Version Row Overflow in Campaign Detail Sheet
 
-### Problem
-The version row in the sidebar is overflowing because the flex container structure does not properly constrain the width. The `truncate` class on the version notes requires every parent in the chain to have proper width constraints. Currently, the text pushes out of the sidebar boundary.
+## Complete Rebuild: Version Section in CampaignDetailSheet
 
-### Root Cause
-1. The outer version row (`flex items-center gap-sm`) lacks `overflow-hidden`
-2. The inner version info container structure allows content to expand beyond bounds
-3. The flex items are not properly constrained to allow truncation to work
+### Problem Analysis
 
-### Solution
-Add `overflow-hidden` to the version row container AND ensure the nested flex structure properly constrains width at every level.
+Looking at the current code and screenshot, there are two critical issues:
 
-### Technical Changes
+1. **Duplicate version display**: The version list shows the version row, AND then below it shows "Version 1 Details" with the same content again - this is redundant
+2. **Text overflow**: Long version notes are not wrapping properly in the version list row, causing the entire row to overflow outside the sidebar
+
+The root cause is the current architecture shows versions twice:
+- Once in the compact list view (lines 166-239)  
+- Again in the expanded detail section (lines 242-316)
+
+This is confusing and wastes space. When there's only one version, showing the same content twice is redundant.
+
+---
+
+### Solution: Single Unified Version Display
+
+Rebuild the versions section with these principles:
+1. **Single source of truth** - show version content ONCE, not twice
+2. **Proper text wrapping from the start** - use `word-break: break-word` and `overflow-wrap: anywhere` 
+3. **Clean compact design** - version list rows stay compact and clickable
+4. **Expandable details inline** - when clicked, expand details within the same row context
+
+---
+
+### Technical Implementation
 
 **File: `src/components/campaigns/CampaignDetailSheet.tsx`**
 
-Update the version row structure (lines 168-236):
+**Step 1: Remove the duplicate "Selected Version Detail" section entirely** (lines 242-316)
+
+The current code has:
+- Version list (compact rows with thumbnail, version number, truncated notes)
+- Then a SEPARATE "Version N Details" section that repeats the same information
+
+This redundancy will be removed. Instead, we'll have:
+- Version list where clicking a version expands its details INLINE below that row
+
+**Step 2: Rebuild version list with proper overflow handling**
+
+The version list will have:
+- **Version row container**: Use `w-full` (not relying on flex to constrain)
+- **Text wrapping**: Apply `word-break: break-word` and `overflow-wrap: break-word` to ALL text elements
+- **Expand behavior**: Clicking a version expands details below it (collapsible pattern)
+
+**Step 3: Use Collapsible pattern from existing components**
+
+Looking at `VersionCard.tsx` (lines 249-253), it already uses the Collapsible pattern correctly for comments. We'll use the same pattern for version details.
+
+---
+
+### New Structure
 
 ```tsx
-<div
-  key={version.id}
-  onClick={() => setSelectedVersionId(version.id)}
-  className={cn(
-    "flex items-center gap-sm p-sm rounded-lg cursor-pointer transition-smooth overflow-hidden",  // ADD overflow-hidden
-    selectedVersion?.id === version.id
-      ? "bg-primary/10 border border-primary/30"
-      : "bg-card border border-border hover:bg-card-hover"
-  )}
->
-  {/* Thumbnail - no changes */}
-  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-    ...
+{/* Versions Section */}
+<div className="space-y-sm">
+  <div className="flex items-center justify-between">
+    <h3>Versions</h3>
+    <Button>Add Version</Button>
   </div>
 
-  {/* Version Info - add overflow-hidden */}
-  <div className="flex-1 min-w-0 overflow-hidden">
-    <div className="flex items-center gap-xs">
-      <Badge variant="outline" className="text-metadata shrink-0">
-        V{version.version_number}
-      </Badge>
-      <span className="text-body-sm text-foreground truncate">
-        {version.version_notes || "No notes"}
-      </span>
-    </div>
-    <p className="text-metadata text-muted-foreground truncate">
-      {format(new Date(version.created_at), "MMM d, yyyy")}
-      {version.creator_name && ` • ${version.creator_name}`}
-    </p>
-  </div>
+  {versions.map((version) => (
+    <Collapsible 
+      key={version.id}
+      open={selectedVersionId === version.id}
+      onOpenChange={() => setSelectedVersionId(prev => prev === version.id ? null : version.id)}
+    >
+      {/* Compact row header - always visible */}
+      <CollapsibleTrigger asChild>
+        <div className="version-row cursor-pointer">
+          <Thumbnail />
+          <VersionInfo (truncated) />
+          <EditDeleteButtons />
+        </div>
+      </CollapsibleTrigger>
 
-  {/* Actions - no changes */}
-  <div className="flex items-center gap-xs shrink-0">
-    ...
-  </div>
+      {/* Expanded details - only when selected */}
+      <CollapsibleContent>
+        <div className="version-details">
+          <LargeImagePreview />
+          <FullVersionNotes (WRAPPED) />
+          <Links />
+          <Comments />
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  ))}
 </div>
 ```
 
-### Key Fixes
-1. Add `overflow-hidden` to the main version row container (line 172)
-2. Add `overflow-hidden` to the version info container (line 196)
-3. Simplify the span class to just `truncate` (the parent constraints will do the work)
+---
 
-This ensures the entire flex chain properly constrains width so truncation works as expected.
+### Specific Text Wrapping Rules
+
+All text elements will use these classes:
+- **Container**: `w-full overflow-hidden` - constrain the container width
+- **Text blocks**: `break-words whitespace-pre-wrap` - standard wrapping
+- **Long URLs/text**: Add `overflow-wrap: anywhere` via inline style if needed
+
+For the version notes in the expanded section:
+```tsx
+<div className="bg-muted/50 rounded-lg p-sm border border-border/50">
+  <p className="text-body-sm break-words whitespace-pre-wrap" 
+     style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+    {version.version_notes}
+  </p>
+</div>
+```
+
+---
+
+### Changes Summary
+
+1. **Add imports**: `Collapsible, CollapsibleContent, CollapsibleTrigger` from `@/components/ui/collapsible`
+
+2. **Rewrite versions section** (lines 146-316):
+   - Replace the separate list + detail sections with a single Collapsible-based list
+   - Each version is a collapsible item
+   - Clicking opens/closes the detail view INLINE
+   - No more duplicate display
+
+3. **Apply text wrapping consistently**:
+   - All text in compact row: `truncate` (shows ellipsis)
+   - All text in expanded view: `break-words whitespace-pre-wrap` with inline `overflowWrap: 'anywhere'`
+
+---
+
+### Result
+
+- **One version, one display** - no more showing the same info twice
+- **Proper text wrapping** - long notes wrap within the sidebar bounds
+- **Clickable rows** - the entire row becomes a toggle trigger
+- **Cleaner UX** - expand to see details, collapse to hide
+- **Edit/Delete buttons** - remain in the row header, accessible without expansion
+
