@@ -193,12 +193,12 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                         </div>
 
                         {/* Version Info - fixed layout */}
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="flex items-center gap-xs">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-xs min-w-0">
                             <Badge variant="outline" className="text-metadata shrink-0">
                               V{version.version_number}
                             </Badge>
-                            <span className="text-body-sm text-foreground truncate block">
+                            <span className="text-body-sm text-foreground truncate flex-1 min-w-0">
                               {version.version_notes || "No notes"}
                             </span>
                           </div>
