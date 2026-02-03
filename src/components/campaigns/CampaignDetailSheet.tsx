@@ -90,66 +90,58 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col">
-          <SheetHeader className="p-lg border-b border-border shrink-0">
+        <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col overflow-hidden">
+          <SheetHeader className="p-md border-b border-border shrink-0">
             <div className="flex items-start justify-between gap-md pr-8">
-              <div className="space-y-xs">
-                <SheetTitle className="text-heading-md font-semibold">
+              <div className="space-y-xs min-w-0">
+                <SheetTitle className="text-heading-sm font-semibold truncate">
                   {campaign.name}
                 </SheetTitle>
-                {campaign.campaign_type && (
-                  <Badge variant="outline" className="text-metadata">
-                    {campaign.campaign_type}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-xs flex-wrap">
+                  {campaign.campaign_type && (
+                    <Badge variant="outline" className="text-metadata">
+                      {campaign.campaign_type}
+                    </Badge>
+                  )}
+                  {campaign.entities.map((e) => {
+                    const config = ENTITY_STATUS_CONFIG[e.status] || ENTITY_STATUS_CONFIG.Draft;
+                    return (
+                      <Badge
+                        key={e.trackingId}
+                        variant="outline"
+                        className={cn("text-metadata", config.bgColor)}
+                      >
+                        {e.entity}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </SheetHeader>
 
-          <ScrollArea className="flex-1">
-            <div className="p-lg space-y-lg">
-              {/* Campaign Info */}
-              <div className="space-y-sm">
-                {/* Landing Page */}
-                {campaign.landing_page && (
-                  <div className="flex items-center gap-sm">
-                    <Link2 className="size-4 text-muted-foreground shrink-0" />
-                    <span className="text-body-sm text-muted-foreground truncate flex-1">
-                      {campaign.landing_page}
-                    </span>
-                    <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={handleCopyLP}>
-                      {copiedLP ? <Check className="size-3.5 text-success-text" /> : <Copy className="size-3.5" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={handleOpenLP}>
-                      <ExternalLink className="size-3.5" />
-                    </Button>
-                  </div>
-                )}
+          <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="p-md space-y-md">
+              {/* Landing Page - Prominent */}
+              {campaign.landing_page && (
+                <div className="flex items-center gap-sm p-sm bg-muted/50 rounded-lg border border-border">
+                  <Link2 className="size-4 text-muted-foreground shrink-0" />
+                  <span className="text-body-sm text-muted-foreground truncate flex-1 min-w-0">
+                    {campaign.landing_page}
+                  </span>
+                  <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={handleCopyLP}>
+                    {copiedLP ? <Check className="size-3.5 text-success-text" /> : <Copy className="size-3.5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={handleOpenLP}>
+                    <ExternalLink className="size-3.5" />
+                  </Button>
+                </div>
+              )}
 
-                {/* Entities */}
-                {campaign.entities.length > 0 && (
-                  <div className="flex items-center gap-sm flex-wrap">
-                    {campaign.entities.map((e) => {
-                      const config = ENTITY_STATUS_CONFIG[e.status] || ENTITY_STATUS_CONFIG.Draft;
-                      return (
-                        <Badge
-                          key={e.trackingId}
-                          variant="outline"
-                          className={cn("text-metadata", config.bgColor)}
-                        >
-                          {e.entity}
-                          <span className={cn("ml-1", config.color)}>• {e.status}</span>
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Description */}
-                {campaign.description && (
-                  <p className="text-body-sm text-muted-foreground">{campaign.description}</p>
-                )}
-              </div>
+              {/* Description */}
+              {campaign.description && (
+                <p className="text-body-sm text-muted-foreground">{campaign.description}</p>
+              )}
 
               {/* Versions Section */}
               <div className="space-y-sm">
@@ -246,15 +238,25 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
               {/* Selected Version Detail */}
               {selectedVersion && (
-                <div className="space-y-md border-t border-border pt-lg">
-                  <h3 className="text-body font-medium text-foreground">
-                    Version {selectedVersion.version_number} Details
-                  </h3>
+                <div className="space-y-sm border-t border-border pt-md">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-body font-medium text-foreground">
+                      Version {selectedVersion.version_number} Details
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingVersion(selectedVersion)}
+                    >
+                      <Pencil className="size-3.5 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
 
-                  {/* Large Preview */}
-                  {imageUrl ? (
+                  {/* Large Preview - Only if there's an image */}
+                  {imageUrl && (
                     <div
-                      className="relative group cursor-pointer aspect-video w-full rounded-lg overflow-hidden border border-border"
+                      className="relative group cursor-pointer aspect-video w-full max-h-48 rounded-lg overflow-hidden border border-border"
                       onClick={() => setLightboxOpen(true)}
                     >
                       <img
@@ -264,12 +266,8 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                         onError={(e) => (e.currentTarget.style.display = "none")}
                       />
                       <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <ZoomIn className="size-10 text-foreground" />
+                        <ZoomIn className="size-8 text-foreground" />
                       </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-video w-full rounded-lg bg-muted flex items-center justify-center border border-border">
-                      <ImageIcon className="size-16 text-muted-foreground" />
                     </div>
                   )}
 
