@@ -109,21 +109,29 @@ export function useRichTextEditor({
 /**
  * Sync external content into an existing editor instance.
  * Only syncs when content actually differs and editor is not focused.
+ * 
+ * CRITICAL: Uses refs to avoid dependency-triggered infinite loops.
  */
 export function useSyncEditorContent(
   editor: Editor | null,
   externalValue: string
 ) {
-  const isInternalChange = useRef(false);
+  // Track the last synced value to prevent redundant updates
+  const lastSyncedValueRef = useRef<string>(externalValue);
+  // Track if user is actively editing
   const lastEditTimeRef = useRef(0);
+  // Flag to skip sync right after setContent
+  const isSyncingRef = useRef(false);
 
-  // Track internal changes via transaction
+  // Track user edits via transaction (but ignore our own setContent calls)
   useEffect(() => {
     if (!editor) return;
 
-    const handleTransaction = () => {
-      isInternalChange.current = true;
-      lastEditTimeRef.current = Date.now();
+    const handleTransaction = ({ transaction }: { transaction: { docChanged: boolean } }) => {
+      // Only track if document actually changed and we're not syncing
+      if (transaction.docChanged && !isSyncingRef.current) {
+        lastEditTimeRef.current = Date.now();
+      }
     };
 
     editor.on('transaction', handleTransaction);
@@ -136,18 +144,17 @@ export function useSyncEditorContent(
   useEffect(() => {
     if (!editor) return;
 
-    // Skip if this was triggered by our own change
-    if (isInternalChange.current) {
-      isInternalChange.current = false;
+    // Skip if value hasn't actually changed
+    if (externalValue === lastSyncedValueRef.current) {
       return;
     }
 
-    // Skip sync if editor was recently edited (within 1 second)
-    if (Date.now() - lastEditTimeRef.current < 1000) {
+    // Skip sync if editor was recently edited (within 1.5 seconds) - user is typing
+    if (Date.now() - lastEditTimeRef.current < 1500) {
       return;
     }
 
-    // Skip if editor is focused
+    // Skip if editor is focused - user is actively editing
     if (editor.isFocused) {
       return;
     }
@@ -160,8 +167,17 @@ export function useSyncEditorContent(
     const valueStripped = stripNormalization(externalValue || '');
 
     if (currentStripped !== valueStripped) {
+      isSyncingRef.current = true;
       const desiredHtml = (externalValue || '').trim() ? externalValue : '<p></p>';
       editor.commands.setContent(desiredHtml, { emitUpdate: false });
+      lastSyncedValueRef.current = externalValue;
+      // Reset syncing flag after a tick
+      requestAnimationFrame(() => {
+        isSyncingRef.current = false;
+      });
+    } else {
+      // Content is same, just update our tracking ref
+      lastSyncedValueRef.current = externalValue;
     }
   }, [externalValue, editor]);
 }
