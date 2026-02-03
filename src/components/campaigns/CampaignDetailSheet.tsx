@@ -169,7 +169,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                         key={version.id}
                         onClick={() => setSelectedVersionId(version.id)}
                         className={cn(
-                          "flex items-center gap-sm p-sm rounded-lg cursor-pointer transition-smooth",
+                          "flex items-center gap-sm p-sm rounded-lg cursor-pointer transition-smooth overflow-hidden",
                           selectedVersion?.id === version.id
                             ? "bg-primary/10 border border-primary/30"
                             : "bg-card border border-border hover:bg-card-hover"
@@ -193,12 +193,12 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
                         </div>
 
                         {/* Version Info - fixed layout */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-xs min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-xs">
                             <Badge variant="outline" className="text-metadata shrink-0">
                               V{version.version_number}
                             </Badge>
-                            <span className="text-body-sm text-foreground truncate flex-1 min-w-0">
+                            <span className="text-body-sm text-foreground truncate">
                               {version.version_notes || "No notes"}
                             </span>
                           </div>
