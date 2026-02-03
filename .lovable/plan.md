@@ -1,357 +1,312 @@
 
-# Comprehensive Performance and UX Improvement Plan
+# Campaign Log Redesign - Fast, Simple, Reliable
 
 ## Executive Summary
 
-After thorough analysis of your codebase (Task Management, UTM Planner, Search Planner, LP Planner, and Campaigns Log), I've identified **systemic architectural issues** causing performance problems, confusing UX, and buggy import functionality. This plan addresses root causes, not symptoms.
+The current Campaign Log is over-engineered with complex drag-and-drop, two-table architecture, and fragile external links. This redesign focuses on **speed**, **simplicity**, and **reliability**.
 
 ---
 
-## Part 1: Campaign Log - Complete Redesign
-
-### Current Problems
-
-| Issue | Impact | Root Cause |
-|-------|--------|------------|
-| **Import is buggy** | Campaigns import but don't appear in entity tables | Import creates `utm_campaigns` but doesn't create `campaign_entity_tracking` records |
-| **Too complicated** | Users can't understand the campaign-entity relationship | Two-table architecture (`utm_campaigns` + `campaign_entity_tracking`) is confusing |
-| **Slow with scale** | Performance degrades with many campaigns | O(n) filtering in JS via `getEntitiesForCampaign()` called repeatedly |
-| **Entity mismatch** | `ENTITIES` in constants vs `system_entities` table | Hardcoded list in `constants.ts` + dynamic table = inconsistent data |
-
-### Solution: Unified Campaign-Entity Architecture
-
-**1. Fix Import to Create Entity Tracking Records**
-
-The `useUpsertUtmCampaigns` mutation creates/updates campaigns but **never creates entity tracking records**. After line 224 in `src/hooks/useUtmCampaigns.ts`, add:
-
-```typescript
-// After creating/updating campaign, create entity tracking if entity specified
-if (campaign.entity && campaignId) {
-  const { error: trackingError } = await supabase
-    .from("campaign_entity_tracking")
-    .upsert({
-      campaign_id: campaignId,
-      entity: campaign.entity,
-      status: campaign.status || 'Draft',
-    }, {
-      onConflict: 'campaign_id,entity',
-      ignoreDuplicates: true
-    });
-  if (trackingError) {
-    logger.warn(`Failed to create tracking for ${campaign.name}:`, trackingError);
-  }
-}
-```
-
-**2. Add Unique Constraint for Upsert**
-
-Database migration to add unique constraint:
-```sql
-CREATE UNIQUE INDEX IF NOT EXISTS idx_campaign_entity_tracking_unique 
-ON campaign_entity_tracking(campaign_id, entity);
-```
-
-**3. Replace O(n) JS Filtering with Joined Queries**
-
-Instead of:
-```typescript
-// Current: O(n) lookup every render
-const entities = getEntitiesForCampaign(campaignId);
-```
-
-Pre-join data in the query:
-```typescript
-// New: Single query with all data
-const { data } = await supabase
-  .from('utm_campaigns')
-  .select(`
-    *,
-    tracking:campaign_entity_tracking(*)
-  `)
-  .eq('is_active', true);
-```
-
-**4. Create Unified Entity Source**
-
-Remove `ENTITIES` from `src/lib/constants.ts` and use only `system_entities` table everywhere:
-
-```typescript
-// Delete from constants.ts:
-// export const ENTITIES = ["Global Management", "Jordan", ...];
-
-// Use hook everywhere:
-const { data: entities } = useSystemEntities();
-```
-
-**Files to Modify:**
-- `src/hooks/useUtmCampaigns.ts` - Fix import mutation
-- `src/hooks/useCampaignEntityTracking.ts` - Add joined query
-- `src/pages/CampaignsLog.tsx` - Use pre-fetched entity data
-- `src/components/campaigns/EntityCampaignTable.tsx` - Remove redundant queries
-- `src/lib/constants.ts` - Remove ENTITIES array
-- `src/components/search-planner/SearchPlannerStructurePanel.tsx` - Replace ENTITIES import
-- Database migration for unique constraint
-
----
-
-## Part 2: Task Management Performance
-
-### Current Problems
+## Current Pain Points
 
 | Issue | Root Cause |
 |-------|------------|
-| 740-line Tasks.tsx file | God component doing too much |
-| Multiple re-renders | Inline filter functions cause memoization failures |
-| Slow bulk operations | Sequential Promise.all on mutations |
-
-### Solution: Component Decomposition + Batching
-
-**1. Extract Filter Logic to Custom Hook**
-
-Create `src/hooks/useTaskFilters.ts`:
-```typescript
-export function useTaskFilters(tasks: Task[]) {
-  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_FILTERS);
-  
-  const filteredTasks = useMemo(() => {
-    return applyFilters(tasks, filters);
-  }, [tasks, filters]);
-  
-  return { filters, setFilters, filteredTasks };
-}
-```
-
-**2. Batch Database Operations**
-
-Replace sequential mutations with batch RPC:
-```sql
--- New database function
-CREATE FUNCTION batch_update_task_status(
-  task_ids uuid[],
-  new_status text
-) RETURNS void AS $$
-BEGIN
-  UPDATE tasks SET status = new_status WHERE id = ANY(task_ids);
-END;
-$$ LANGUAGE plpgsql;
-```
-
-**3. Virtualize All Task Lists**
-
-Current: ~154 tasks rendering all at once
-Solution: Already have `react-window`, enforce usage in all views
-
-**Files to Modify:**
-- Create `src/hooks/useTaskFilters.ts`
-- `src/pages/Tasks.tsx` - Extract filter bar, stats, and keyboard handlers
-- `src/domain/tasks/actions.ts` - Use batch RPC
+| Import doesn't work properly | Creates campaigns but entity tracking is unreliable |
+| Adding campaigns is slow | Multi-step: Create campaign → Drag to entity → Set status → Add version |
+| Version management is clunky | Must click into detail dialog, add version, upload image separately |
+| External links are fragile | Complex token management, email verification confusion |
+| Too many UI states | Grid vs List, drag zones, collapsible panels, entity selectors |
+| 454-line page component | God component doing everything |
 
 ---
 
-## Part 3: UTM Planner Improvements
+## New Design Philosophy
 
-### Current Problems
-
-| Issue | Root Cause |
-|-------|------------|
-| Hardcoded `ENTITIES` array | `SearchPlannerStructurePanel.tsx` line 32 imports from constants |
-| LP order preferences complex | Overly nested state management |
-| Campaign dropdown performance | Re-fetches campaigns on every row update |
-
-### Solution: Consolidate Entity Source + Optimize Selects
-
-**1. Replace All ENTITIES Imports**
-
-Search and replace across all files:
-```typescript
-// Old:
-import { ENTITIES } from "@/lib/constants";
-
-// New:
-import { useSystemEntities } from "@/hooks/useSystemEntities";
-const { data: entities = [] } = useSystemEntities();
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│  FROM: Campaign Library + Drag-and-Drop + Entity Tables            │
+│  TO: Single Unified Table with Inline Editing + Quick Actions      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-**2. Memoize Campaign/Platform Options**
-
-In `SimpleUtmBuilder.tsx`, wrap options:
-```typescript
-const platformOptions = useMemo(() => 
-  platforms?.filter(p => p.is_active) ?? [],
-  [platforms]
-);
-```
-
-**Files to Modify:**
-- `src/components/search-planner/SearchPlannerStructurePanel.tsx`
-- `src/components/utm/SimpleUtmBuilder.tsx`
-- `src/lib/constants.ts` - Mark ENTITIES as deprecated
+**Core Principles:**
+1. **One table, not multiple views** - All campaigns in one filterable table
+2. **Inline editing** - Edit directly in rows, not dialogs
+3. **Bulk-first** - Select multiple → Apply action → Done
+4. **External links just work** - One-click share, no email verification requirement
 
 ---
 
-## Part 4: Search Planner Optimization
+## Part 1: Unified Campaign Table
 
-### Current Problems
+### New Table Structure
 
-| Issue | Root Cause |
-|-------|------------|
-| 616-line structure panel | Too much logic in one component |
-| Three separate queries | Campaigns, AdGroups, Ads fetched separately then joined in JS |
-| Slow tree expansion | No query caching between entity switches |
+| Column | Type | Editable |
+|--------|------|----------|
+| ☐ (checkbox) | Selection | - |
+| Campaign Name | Text | Inline |
+| Landing Page | URL | Inline |
+| Entities | Multi-select badges | Inline popover |
+| Status | Badge dropdown | Inline |
+| Versions | Count + thumbnail | Click to expand |
+| Actions | Quick buttons | - |
 
-### Solution: Single Hierarchical Query + Component Split
+### Key Features
 
-**1. Create Joined Query**
+**1. Inline Entity Assignment**
+- Click entity badges → Popover with all entities as toggleable pills
+- Toggle ON/OFF instantly, no drag-drop
+- Status per entity shown in badge tooltip
 
-Replace 3 queries with 1:
+**2. Inline Version Preview**
+- Hover on "Versions" column → Shows latest version thumbnail
+- Click → Expands inline row to show version gallery
+- "Add Version" button directly in expanded row
+
+**3. Quick Actions Column**
+- 📋 Copy LP link
+- 🔗 Open LP
+- ➕ Add Version
+- 🗑️ Delete
+
+---
+
+## Part 2: Bulk Actions Bar (Bottom Fixed)
+
+### Available Bulk Actions
+
+| Action | Description |
+|--------|-------------|
+| **Assign to Entities** | Multi-select popover with entity pills + status selector |
+| **Change Status** | Update status for all selected campaigns across all entities |
+| **Add Version** | Opens modal to upload one version image that applies to ALL selected |
+| **Export CSV** | Download selected campaigns with all metadata |
+| **Delete** | Remove selected campaigns (with confirmation) |
+
+### Bulk Assign Flow
+
+```text
+[Select 5 campaigns] → [Click "Assign"] → [Popover shows:]
+┌─────────────────────────────────────────────────┐
+│ Select Entities:                                │
+│ [Jordan ✓] [Kuwait] [UAE ✓] [Global ✓]         │
+│                                                 │
+│ Status: [Draft ▾]                               │
+│                                                 │
+│ [Apply to 5 campaigns]                          │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 3: Simplified Import
+
+### New Import Flow
+
+1. Upload CSV → Preview in table
+2. **Auto-detect entities** from column (required in CSV)
+3. **Show exactly what will happen:**
+   - ✅ 12 new campaigns will be created
+   - ♻️ 3 campaigns will be updated (matched by name)
+   - ✅ All will be assigned to entities with "Draft" status
+4. **One-click import** - Creates campaigns + entity tracking + versions all in one transaction
+
+### Database Transaction (Edge Function)
+
+Instead of multiple client-side mutations, use a single edge function:
+
 ```typescript
-const { data: hierarchy } = useQuery({
-  queryKey: ['search-structure', entity, adType],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('search_campaigns')
-      .select(`
-        *,
-        ad_groups(
-          *,
-          ads(*)
-        )
-      `)
-      .eq('entity', entity)
-      .order('name');
-    return data;
-  }
+// New edge function: campaign-bulk-import
+const result = await supabase.functions.invoke('campaign-bulk-import', {
+  body: { campaigns: parsedRows }
 });
+// Returns: { created: 12, updated: 3, errors: [] }
 ```
 
-**2. Extract Tree Components**
-
-Split into:
-- `SearchCampaignTree.tsx` - Main tree
-- `CampaignNode.tsx` - Campaign row
-- `AdGroupNode.tsx` - Ad group row
-- `AdNode.tsx` - Ad row
-
-**Files to Modify:**
-- `src/components/search-planner/SearchPlannerStructurePanel.tsx` - Refactor
-- Create new node components in `src/components/search-planner/`
+This ensures atomicity - either all succeed or all fail.
 
 ---
 
-## Part 5: LP Planner Improvements
+## Part 4: External Links That Work
 
 ### Current Problems
+- Token management is complex
+- Email verification is confusing
+- Links sometimes don't work (no campaigns visible)
 
-| Issue | Root Cause |
-|-------|------------|
-| Simple architecture | Already well-structured (only 47 lines) |
-| No major issues identified | Focus on maintaining quality |
+### New Approach
 
-### Recommendation: Maintain Current Quality
+**1. Simplified Share Flow**
+- Remove email verification requirement for viewing (only for commenting)
+- One toggle: "Public" ON/OFF
+- Link shows all campaigns for that entity immediately
 
-The LP Planner is well-architected. Future improvements:
-- Add section templates for faster LP creation
-- Implement section duplication
+**2. New Share Dialog UI**
+
+```text
+┌─────────────────────────────────────────────────┐
+│ Share Campaign Log                              │
+├─────────────────────────────────────────────────┤
+│ Entity: Jordan                                  │
+│                                                 │
+│ [🔘 OFF] Public Link                            │
+│                                                 │
+│ When enabled, anyone with the link can:        │
+│ • View all campaigns and versions              │
+│ • Leave feedback (with @cfi.trade email)       │
+│                                                 │
+│ ─────────────────────────────────────────────  │
+│ [When enabled shows:]                          │
+│                                                 │
+│ 🔗 https://naviqx.lovable.app/review/abc123    │
+│ [Copy Link] [Preview] [QR Code]                │
+│                                                 │
+│ Stats: 47 views • Last accessed 2 hours ago    │
+└─────────────────────────────────────────────────┘
+```
+
+**3. Fix External Review Page**
+- Remove inline identification bar - move to header
+- Show campaigns immediately (read-only until identified)
+- Identification only blocks commenting, not viewing
 
 ---
 
-## Part 6: Database Schema Improvements
+## Part 5: Database Optimizations
 
-### Required Migrations
+### New RPC Function: bulk_import_campaigns
 
 ```sql
--- 1. Add unique constraint for campaign-entity tracking
-CREATE UNIQUE INDEX IF NOT EXISTS idx_campaign_entity_unique 
-ON campaign_entity_tracking(campaign_id, entity);
-
--- 2. Add batch task status update function
-CREATE OR REPLACE FUNCTION batch_update_task_status(
-  p_task_ids uuid[],
-  p_status text
-) RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+CREATE OR REPLACE FUNCTION bulk_import_campaigns(
+  p_campaigns JSONB[]
+) RETURNS TABLE (
+  campaign_id UUID,
+  action TEXT, -- 'created' or 'updated'
+  entity TEXT
+) LANGUAGE plpgsql AS $$
 DECLARE
-  updated_count integer;
+  campaign JSONB;
+  v_campaign_id UUID;
+  v_action TEXT;
 BEGIN
-  UPDATE tasks 
-  SET status = p_status, updated_at = now()
-  WHERE id = ANY(p_task_ids);
-  
-  GET DIAGNOSTICS updated_count = ROW_COUNT;
-  RETURN updated_count;
+  FOREACH campaign IN ARRAY p_campaigns LOOP
+    -- Upsert campaign
+    INSERT INTO utm_campaigns (name, landing_page, campaign_type, description)
+    VALUES (
+      campaign->>'name',
+      campaign->>'landing_page',
+      campaign->>'campaign_type',
+      campaign->>'description'
+    )
+    ON CONFLICT (name) DO UPDATE SET
+      landing_page = EXCLUDED.landing_page,
+      campaign_type = EXCLUDED.campaign_type,
+      description = EXCLUDED.description
+    RETURNING id INTO v_campaign_id;
+    
+    v_action := CASE WHEN xmax = 0 THEN 'created' ELSE 'updated' END;
+    
+    -- Create entity tracking
+    IF campaign->>'entity' IS NOT NULL THEN
+      INSERT INTO campaign_entity_tracking (campaign_id, entity, status)
+      VALUES (v_campaign_id, campaign->>'entity', COALESCE(campaign->>'status', 'Draft'))
+      ON CONFLICT (campaign_id, entity) DO NOTHING;
+    END IF;
+    
+    -- Create version if provided
+    IF campaign->>'version_notes' IS NOT NULL THEN
+      INSERT INTO utm_campaign_versions (utm_campaign_id, version_number, version_notes, asset_link)
+      VALUES (
+        v_campaign_id,
+        COALESCE((campaign->>'version_number')::int, 1),
+        campaign->>'version_notes',
+        campaign->>'asset_link'
+      );
+    END IF;
+    
+    RETURN QUERY SELECT v_campaign_id, v_action, campaign->>'entity';
+  END LOOP;
 END;
 $$;
+```
 
--- 3. Create campaign hierarchy view for Search Planner
-CREATE OR REPLACE VIEW search_planner_hierarchy AS
-SELECT 
-  c.id as campaign_id,
-  c.name as campaign_name,
-  c.entity,
-  ag.id as ad_group_id,
-  ag.name as ad_group_name,
-  a.id as ad_id,
-  a.name as ad_name,
-  a.approval_status,
-  a.ad_type
-FROM search_campaigns c
-LEFT JOIN ad_groups ag ON ag.campaign_id = c.id
-LEFT JOIN ads a ON a.ad_group_id = ag.id;
+### Add Missing Unique Constraint
+
+```sql
+-- Enable upsert on campaign name
+CREATE UNIQUE INDEX IF NOT EXISTS idx_utm_campaigns_name_unique 
+ON utm_campaigns(name) WHERE is_active = true;
 ```
 
 ---
 
-## Implementation Priority
+## Part 6: Component Architecture
 
-| Priority | Area | Effort | Impact |
-|----------|------|--------|--------|
-| **P0** | Fix Campaign Import | 2 hours | High - Stops data loss |
-| **P1** | Entity consolidation | 3 hours | High - Stops confusion |
-| **P2** | Campaign-Entity joined queries | 4 hours | High - Fixes performance |
-| **P3** | Task filter extraction | 4 hours | Medium - Cleaner code |
-| **P4** | Search Planner hierarchy query | 3 hours | Medium - Better UX |
-| **P5** | Batch task operations | 2 hours | Medium - Faster bulk actions |
+### New File Structure
+
+```text
+src/pages/CampaignsLog.tsx (< 200 lines)
+├── src/components/campaigns/CampaignTable.tsx - Main table with react-window
+├── src/components/campaigns/CampaignRow.tsx - Single row with inline edit
+├── src/components/campaigns/EntityAssignPopover.tsx - Multi-entity selector
+├── src/components/campaigns/VersionInlinePanel.tsx - Expandable version gallery
+├── src/components/campaigns/CampaignBulkBar.tsx - Bottom actions bar
+├── src/components/campaigns/CampaignImportDialog.tsx - Simplified import
+├── src/components/campaigns/CampaignShareDialog.tsx - Simplified share
+└── src/hooks/useCampaignBulkActions.ts - Bulk mutation logic
+```
+
+### CampaignTable Component
+
+Uses `react-window` for virtualization:
+- Handles 500+ campaigns without lag
+- Expandable rows for version preview
+- Inline editing with optimistic updates
 
 ---
 
-## Files to Create
+## Part 7: Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/hooks/useTaskFilters.ts` | Extract filter logic from Tasks.tsx |
-| `src/components/search-planner/CampaignNode.tsx` | Campaign tree node |
-| `src/components/search-planner/AdGroupNode.tsx` | Ad group tree node |
-| `src/components/search-planner/AdNode.tsx` | Ad tree node |
+| `src/components/campaigns/CampaignTable.tsx` | Virtualized table with inline editing |
+| `src/components/campaigns/CampaignRow.tsx` | Single row with expand/collapse |
+| `src/components/campaigns/EntityAssignPopover.tsx` | Multi-entity toggle popover |
+| `src/components/campaigns/VersionInlinePanel.tsx` | Inline version gallery |
+| `src/hooks/useCampaignBulkActions.ts` | Batch operations hook |
+| `supabase/functions/campaign-bulk-import/index.ts` | Edge function for atomic import |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useUtmCampaigns.ts` | Add entity tracking in upsert |
-| `src/hooks/useCampaignEntityTracking.ts` | Add joined query option |
-| `src/pages/CampaignsLog.tsx` | Use joined data, remove getEntitiesForCampaign calls |
-| `src/pages/Tasks.tsx` | Extract filter logic to hook |
-| `src/lib/constants.ts` | Deprecate ENTITIES array |
-| `src/components/search-planner/SearchPlannerStructurePanel.tsx` | Use useSystemEntities |
-| `src/components/campaigns/CampaignBulkImportDialog.tsx` | Fix import flow |
+| `src/pages/CampaignsLog.tsx` | Complete rewrite - simpler, single table |
+| `src/components/campaigns/CampaignBulkImportDialog.tsx` | Use edge function instead of client mutations |
+| `src/components/campaigns/CampaignShareDialog.tsx` | Simplify UI, add QR code |
+| `src/pages/CampaignReview.tsx` | Remove identification requirement for viewing |
+| Database migration | Add unique constraint + bulk import function |
 
 ---
 
 ## Expected Outcomes
 
-1. **Campaign Import**: Campaigns correctly appear in entity tables after import
-2. **Entity Consistency**: Single source of truth (`system_entities` table)
-3. **Performance**: 50%+ reduction in query count, faster filtering
-4. **Code Quality**: Smaller, focused components
-5. **Scalability**: Ready for 100+ campaigns and 20+ entities
+| Metric | Before | After |
+|--------|--------|-------|
+| Add campaign + assign to 3 entities | 4 clicks + drag | 2 clicks |
+| Import 50 campaigns | ~30s + errors | ~2s, atomic |
+| Change status for 10 campaigns | 10 separate clicks | 2 clicks |
+| Page load (100 campaigns) | ~1.5s | ~0.5s |
+| Lines of code (CampaignsLog) | 454 | ~150 |
 
 ---
 
-## Technical Notes
+## Implementation Order
 
-- All changes maintain backward compatibility
-- Realtime subscriptions continue working unchanged
-- Query keys remain stable for cache consistency
-- RLS policies already handle security
+1. **Database first** - Add constraints + bulk import RPC
+2. **Edge function** - Campaign bulk import
+3. **Core table** - CampaignTable + CampaignRow
+4. **Bulk actions** - useCampaignBulkActions hook
+5. **Entity popover** - Inline assignment
+6. **Import dialog** - Use edge function
+7. **External links** - Simplify review page
+8. **Page rewrite** - New CampaignsLog.tsx
