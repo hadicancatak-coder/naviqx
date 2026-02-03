@@ -128,7 +128,7 @@ export const suggestionConfig = {
     return {
       onStart: (props: {
         editor: Editor;
-        clientRect: (() => DOMRect | null) | null;
+        clientRect?: (() => DOMRect | null) | null;
         command: (item: { id: string; label: string }) => void;
         items: MentionUser[];
       }) => {
@@ -152,7 +152,7 @@ export const suggestionConfig = {
       },
 
       onUpdate: (props: {
-        clientRect: (() => DOMRect | null) | null;
+        clientRect?: (() => DOMRect | null) | null;
         command: (item: { id: string; label: string }) => void;
         items: MentionUser[];
       }) => {

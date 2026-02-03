@@ -59,6 +59,7 @@
     "@tiptap/extension-underline": "^3.10.1",
     "@tiptap/react": "^3.10.1",
     "@tiptap/starter-kit": "^3.10.1",
+    "@tiptap/suggestion": "^3.18.0",
     "@types/dompurify": "^3.2.0",
     "@types/react-window": "^2.0.0",
     "@vitest/ui": "^4.0.8",
