@@ -1,93 +1,96 @@
 
-## Fix: Sidebar Content Overflow in Campaign Detail Sheet
+## Fix: Radix ScrollArea Internal Content Wrapper Causing Overflow
 
-### Root Cause Analysis
+### Root Cause Analysis (FINAL)
 
-The text is overflowing the sidebar boundary because of a cascading constraint failure:
+After deep investigation of the Radix UI source code, the **actual** root cause has been identified:
 
-1. **Sheet base styles issue**: In `sheet.tsx` line 32, the `sheetVariants` includes `overflow-y-auto` but NOT `overflow-x-hidden`, allowing horizontal content expansion
-2. **ScrollArea viewport issue**: In `scroll-area.tsx` line 11, the `ScrollAreaPrimitive.Viewport` has `w-full` but no explicit overflow constraint, allowing children to expand beyond bounds
-3. **Flexbox intrinsic sizing**: When using `flex flex-col` without explicit width constraints, flex items can size to their content, pushing beyond the container
+**Radix's ScrollAreaPrimitive.Viewport** internally wraps all children in a div with these inline styles:
+```javascript
+style: { minWidth: "100%", display: "table" }
+```
+
+This is hardcoded in `@radix-ui/react-scroll-area` (line 130 of their source).
+
+**Why this causes overflow:**
+1. `display: table` makes the element size to fit its content (like an HTML table)
+2. When text content is long and doesn't break, the "table" expands to fit it
+3. `min-width: 100%` prevents it from shrinking below 100%, but doesn't prevent expanding
+4. The parent viewport's `overflow-x: hidden` clips what you can SEE, but the child still expands and creates the overflow visual issue we're seeing
+
+The previous fixes (adding `overflow-x-hidden` to ScrollArea Viewport and Sheet) didn't work because they only affect clipping, not the internal sizing behavior of the `display: table` child.
+
+---
 
 ### Solution
 
-Fix at two strategic levels:
+Add a **global CSS rule** in `src/index.css` to override Radix's internal wrapper styling:
 
-**1. Fix the Sheet component base styles** (`src/components/ui/sheet.tsx`)
-- Add `overflow-x-hidden` to the base variant to prevent ANY horizontal overflow from sheets
-- This is the systemic fix that prevents this issue in ALL sheets
+```css
+/* Fix Radix ScrollArea internal content wrapper expanding beyond bounds */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-width: 0 !important;
+}
+```
 
-**2. Fix the ScrollArea viewport** (`src/components/ui/scroll-area.tsx`)  
-- Add `!overflow-x-hidden` to the viewport to ensure it clips horizontal content
-- This ensures scroll areas properly constrain their children
+This targets the direct child div of the Radix viewport (which has the data attribute) and:
+1. Changes `display: table` to `display: block` - block elements don't expand to fit content horizontally
+2. Sets `min-width: 0` - allows the element to shrink as needed
+
+---
 
 ### Technical Changes
 
-#### File 1: `src/components/ui/sheet.tsx`
+**File: `src/index.css`**
 
-Update line 32 - add `overflow-x-hidden` to the base sheetVariants:
+Add the following CSS rule in the `@layer base` section (around line 280, after other base styles):
 
-```tsx
-// BEFORE (line 32):
-"!fixed z-modal flex flex-col gap-md liquid-glass-elevated p-lg overflow-y-auto hide-scrollbar shadow-2xl..."
-
-// AFTER:
-"!fixed z-modal flex flex-col gap-md liquid-glass-elevated p-lg overflow-x-hidden overflow-y-auto hide-scrollbar shadow-2xl..."
+```css
+/* ========================================
+   RADIX SCROLLAREA FIX
+   Override internal table display that causes horizontal overflow
+   ======================================== */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-width: 0 !important;
+}
 ```
 
-#### File 2: `src/components/ui/scroll-area.tsx`
+---
 
-Update line 11 - add `!overflow-x-hidden` to the ScrollArea Viewport:
+### Cleanup (Optional but Recommended)
 
-```tsx
-// BEFORE (line 11):
-<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+The previous workarounds in the base components can now be reverted since they weren't addressing the actual issue:
 
-// AFTER:
-<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] !overflow-x-hidden">
-```
+**File: `src/components/ui/scroll-area.tsx`** (line 11)
+- The `!overflow-x-hidden` addition was correct and should be kept as a defensive measure
+- No changes needed
 
-#### File 3: `src/components/campaigns/CampaignDetailSheet.tsx`
+**File: `src/components/ui/sheet.tsx`** (line 32)
+- The `overflow-x-hidden` addition is correct and should be kept
+- No changes needed
 
-Clean up the over-engineered inline styles and `!important` modifiers now that the base components are fixed:
+---
 
-**Line 94** - Simplify SheetContent classes:
-```tsx
-// BEFORE:
-<SheetContent side="right" className="!w-full sm:!max-w-xl !p-0 flex flex-col !overflow-hidden">
+### Why This Will Work
 
-// AFTER:
-<SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
-```
+1. **Targets the actual problem**: The internal Radix wrapper div, not the outer containers
+2. **Global fix**: Applies to ALL ScrollAreas in the app, preventing this issue anywhere
+3. **Safe override**: `display: block` is the expected behavior for content containers
+4. **`!important` is necessary**: Radix applies inline styles which have higher specificity than CSS classes
 
-**Line 125** - Remove redundant inline styles:
-```tsx
-// BEFORE:
-<div className="p-md space-y-md max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+---
 
-// AFTER:
-<div className="p-md space-y-md">
-```
+### Files to Modify
 
-**Line 253** - Remove redundant inline styles from CollapsibleContent:
-```tsx
-// BEFORE:
-<div className="px-sm pb-sm space-y-sm max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+1. **`src/index.css`** - Add the CSS rule to fix Radix ScrollArea internal wrapper
 
-// AFTER:
-<div className="px-sm pb-sm space-y-sm">
-```
+---
 
-**Keep the version notes** at lines 275-280 with proper text wrapping since that's actual content that needs to wrap:
-```tsx
-<p className="text-body-sm whitespace-pre-wrap break-words">
-  {version.version_notes}
-</p>
-```
+### Expected Result
 
-### Result
-
-- **System-level fix**: All sheets and scroll areas now properly clip horizontal overflow
-- **No more workarounds**: No need for `!important` modifiers or inline styles
-- **Consistent behavior**: Matches how TaskDetail and other working sidebars behave
-- **Proper text wrapping**: Long text wraps naturally within bounds
+- All sidebar content will respect container boundaries
+- Long text will wrap naturally within the ScrollArea
+- No horizontal overflow in CampaignDetailSheet or any other Sheet/ScrollArea
+- TaskDetail will continue working as before (this is a safe, additive change)
