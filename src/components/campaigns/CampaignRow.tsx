@@ -1,27 +1,14 @@
 import { useState, memo } from "react";
-import { ChevronDown, ChevronRight, ExternalLink, Copy, Trash2, Plus, Check, ImageIcon } from "lucide-react";
+import { ExternalLink, Copy, Trash2, Plus, Check, ImageIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { VersionSubRow } from "./VersionSubRow";
-import { AddVersionRow } from "./AddVersionRow";
-import { EditVersionDialog } from "./EditVersionDialog";
 import { ENTITY_STATUS_CONFIG, ENTITY_TRACKING_STATUSES, EntityTrackingStatus } from "@/domain/campaigns";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
-import { useCampaignVersions, CampaignVersion } from "@/hooks/useCampaignVersions";
+import { useCampaignVersions } from "@/hooks/useCampaignVersions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -49,6 +36,7 @@ interface CampaignRowProps {
   onRemoveFromEntity: (trackingId: string) => void;
   onUpdateEntityStatus: (trackingId: string, status: EntityTrackingStatus) => void;
   onDelete: (id: string) => void;
+  onOpenDetail: (campaign: CampaignRowData) => void;
 }
 
 // Separate component for version thumbnail to optimize re-renders
@@ -88,31 +76,25 @@ export function CampaignRow({
   onRemoveFromEntity,
   onUpdateEntityStatus,
   onDelete,
+  onOpenDetail,
 }: CampaignRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingLP, setIsEditingLP] = useState(false);
   const [editName, setEditName] = useState(campaign.name);
   const [editLP, setEditLP] = useState(campaign.landing_page || "");
   const [entityPopoverOpen, setEntityPopoverOpen] = useState(false);
   const [copiedLP, setCopiedLP] = useState(false);
-  
-  // Version CRUD state
-  const [editingVersion, setEditingVersion] = useState<CampaignVersion | null>(null);
-  const [deleteVersionId, setDeleteVersionId] = useState<string | null>(null);
 
   const { data: allEntities = [] } = useSystemEntities();
-  const { useVersions, deleteVersion } = useCampaignVersions();
-  const { data: versions = [], isLoading: versionsLoading } = useVersions(campaign.id);
 
-  // Handle row click - expand/collapse unless clicking interactive elements
+  // Handle row click - open detail sheet unless clicking interactive elements
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const isInteractive = target.closest(
       'input, button, [role="button"], [role="checkbox"], a, [data-radix-collection-item]'
     );
     if (isInteractive) return;
-    setIsExpanded((prev) => !prev);
+    onOpenDetail(campaign);
   };
 
   const handleNameSave = () => {
@@ -151,31 +133,20 @@ export function CampaignRow({
     }
   };
 
-  const handleDeleteVersion = async () => {
-    if (!deleteVersionId) return;
-    try {
-      await deleteVersion.mutateAsync(deleteVersionId);
-      setDeleteVersionId(null);
-    } catch (error) {
-      console.error("Failed to delete version:", error);
-    }
-  };
-
   // Entities not yet assigned
   const availableEntities = allEntities.filter(
     (e) => !campaign.entities.some((ce) => ce.entity === e.name)
   );
 
   return (
-    <>
-      <tr
-        onClick={handleRowClick}
-        className={cn(
-          "border-b border-border transition-smooth cursor-pointer",
-          isSelected && "bg-primary/5",
-          "hover:bg-card-hover"
-        )}
-      >
+    <tr
+      onClick={handleRowClick}
+      className={cn(
+        "border-b border-border transition-smooth cursor-pointer",
+        isSelected && "bg-primary/5",
+        "hover:bg-card-hover"
+      )}
+    >
         {/* Checkbox */}
         <td className="p-sm w-10">
           <Checkbox
@@ -184,41 +155,34 @@ export function CampaignRow({
           />
         </td>
 
-        {/* Expand indicator + Thumbnail + Name */}
-        <td className="p-sm">
-          <div className="flex items-center gap-sm">
-            <span className="text-muted-foreground">
-              {isExpanded ? (
-                <ChevronDown className="size-4" />
-              ) : (
-                <ChevronRight className="size-4" />
-              )}
+      {/* Thumbnail + Name */}
+      <td className="p-sm">
+        <div className="flex items-center gap-sm">
+          <VersionThumbnail campaignId={campaign.id} />
+          {isEditingName ? (
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={handleNameSave}
+              onKeyDown={(e) => e.key === "Enter" && handleNameSave()}
+              autoFocus
+              className="h-8 max-w-[200px]"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span
+              className="font-medium cursor-pointer hover:text-primary transition-colors line-clamp-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditingName(true);
+              }}
+              title="Click to edit"
+            >
+              {campaign.name}
             </span>
-            <VersionThumbnail campaignId={campaign.id} />
-            {isEditingName ? (
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onBlur={handleNameSave}
-                onKeyDown={(e) => e.key === "Enter" && handleNameSave()}
-                autoFocus
-                className="h-8 max-w-[200px]"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span
-                className="font-medium cursor-pointer hover:text-primary transition-colors line-clamp-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditingName(true);
-                }}
-                title="Click to edit"
-              >
-                {campaign.name}
-              </span>
-            )}
-          </div>
-        </td>
+          )}
+        </div>
+      </td>
 
         {/* Landing Page */}
         <td className="p-sm max-w-[200px]">
@@ -372,69 +336,6 @@ export function CampaignRow({
             </Button>
           </div>
         </td>
-      </tr>
-
-      {/* Expanded Version Sub-Rows */}
-      {isExpanded && (
-        <>
-          {versionsLoading ? (
-            <tr className="bg-muted/20 border-b border-border/50">
-              <td colSpan={6} className="p-sm text-center text-muted-foreground">
-                Loading versions...
-              </td>
-            </tr>
-          ) : versions.length === 0 ? (
-            <AddVersionRow
-              campaignId={campaign.id}
-              campaignName={campaign.name}
-            />
-          ) : (
-            <>
-              {versions.map((version) => (
-                <VersionSubRow
-                  key={version.id}
-                  version={version}
-                  campaignId={campaign.id}
-                  onEdit={setEditingVersion}
-                  onDelete={setDeleteVersionId}
-                />
-              ))}
-              <AddVersionRow
-                campaignId={campaign.id}
-                campaignName={campaign.name}
-              />
-            </>
-          )}
-        </>
-      )}
-
-      {/* Edit Version Dialog */}
-      <EditVersionDialog
-        version={editingVersion}
-        open={!!editingVersion}
-        onOpenChange={(open) => !open && setEditingVersion(null)}
-      />
-
-      {/* Delete Version Confirmation */}
-      <AlertDialog open={!!deleteVersionId} onOpenChange={() => setDeleteVersionId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Version?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this version. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDeleteVersion}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    </tr>
   );
 }

@@ -48,7 +48,7 @@ export const CampaignShareDialog = ({
   }, [isPublic, publicToken]);
 
   const shareUrl = localToken
-    ? `${getProductionUrl()}/campaigns-log/review/${localToken}`
+    ? `${getProductionUrl()}/review/${localToken}`
     : "";
 
   const handleTogglePublic = async () => {

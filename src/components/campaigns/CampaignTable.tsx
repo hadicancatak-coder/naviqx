@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { CampaignRow, CampaignRowData } from "./CampaignRow";
+import { CampaignDetailSheet } from "./CampaignDetailSheet";
 import { useUtmCampaigns, useUpdateUtmCampaign, useDeleteUtmCampaign } from "@/hooks/useUtmCampaigns";
 import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
@@ -223,68 +223,76 @@ export function CampaignTable({
     );
   }
 
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignRowData | null>(null);
+
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
-        <ScrollArea className="h-[600px]">
-          <table className="w-full">
-            <thead className="bg-muted/50 sticky top-0 z-10">
-              <tr className="border-b border-border">
-                <th className="p-sm w-10">
-                  <Checkbox
-                    checked={isAllSelected}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </th>
-                <th className="p-sm text-left">
-                  <Button variant="ghost" size="sm" className="h-7 -ml-2" onClick={() => toggleSort("name")}>
-                    Campaign
-                    <ArrowUpDown className="size-3 ml-1" />
-                  </Button>
-                </th>
-                <th className="p-sm text-left text-body-sm font-medium text-muted-foreground">
-                  Landing Page
-                </th>
-                <th className="p-sm text-left">
-                  <Button variant="ghost" size="sm" className="h-7 -ml-2" onClick={() => toggleSort("entities")}>
-                    Entities
-                    <ArrowUpDown className="size-3 ml-1" />
-                  </Button>
-                </th>
-                <th className="p-sm text-left">
-                  <Button variant="ghost" size="sm" className="h-7 -ml-2" onClick={() => toggleSort("versions")}>
-                    Versions
-                    <ArrowUpDown className="size-3 ml-1" />
-                  </Button>
-                </th>
-                <th className="p-sm text-left text-body-sm font-medium text-muted-foreground w-20">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((campaign) => (
-                <CampaignRow
-                  key={campaign.id}
-                  campaign={campaign}
-                  isSelected={selectedCampaigns.includes(campaign.id)}
-                  onSelect={handleSelectOne}
-                  onUpdateName={handleUpdateName}
-                  onUpdateLandingPage={handleUpdateLP}
-                  onAddToEntity={handleAddToEntity}
-                  onRemoveFromEntity={handleRemoveFromEntity}
-                  onUpdateEntityStatus={handleUpdateEntityStatus}
-                  onDelete={handleDeleteRequest}
-                />
-              ))}
-            </tbody>
-          </table>
+      <table className="w-full">
+        <thead className="bg-muted/50 sticky top-0 z-10">
+          <tr className="border-b border-border">
+            <th className="p-sm w-10">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={handleSelectAll}
+              />
+            </th>
+            <th className="p-sm text-left">
+              <Button variant="ghost" size="sm" className="h-7 -ml-2" onClick={() => toggleSort("name")}>
+                Campaign
+                <ArrowUpDown className="size-3 ml-1" />
+              </Button>
+            </th>
+            <th className="p-sm text-left text-body-sm font-medium text-muted-foreground">
+              Landing Page
+            </th>
+            <th className="p-sm text-left">
+              <Button variant="ghost" size="sm" className="h-7 -ml-2" onClick={() => toggleSort("entities")}>
+                Entities
+                <ArrowUpDown className="size-3 ml-1" />
+              </Button>
+            </th>
+            <th className="p-sm text-left">
+              <Button variant="ghost" size="sm" className="h-7 -ml-2" onClick={() => toggleSort("versions")}>
+                Versions
+                <ArrowUpDown className="size-3 ml-1" />
+              </Button>
+            </th>
+            <th className="p-sm text-left text-body-sm font-medium text-muted-foreground w-20">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredData.map((campaign) => (
+            <CampaignRow
+              key={campaign.id}
+              campaign={campaign}
+              isSelected={selectedCampaigns.includes(campaign.id)}
+              onSelect={handleSelectOne}
+              onUpdateName={handleUpdateName}
+              onUpdateLandingPage={handleUpdateLP}
+              onAddToEntity={handleAddToEntity}
+              onRemoveFromEntity={handleRemoveFromEntity}
+              onUpdateEntityStatus={handleUpdateEntityStatus}
+              onDelete={handleDeleteRequest}
+              onOpenDetail={setSelectedCampaign}
+            />
+          ))}
+        </tbody>
+      </table>
 
-          {filteredData.length === 0 && (
-            <div className="flex items-center justify-center h-40 text-muted-foreground">
-              {searchTerm ? "No campaigns match your search" : "No campaigns yet"}
-            </div>
-          )}
-        </ScrollArea>
+      {filteredData.length === 0 && (
+        <div className="flex items-center justify-center h-40 text-muted-foreground">
+          {searchTerm ? "No campaigns match your search" : "No campaigns yet"}
+        </div>
+      )}
+
+      {/* Campaign Detail Sheet */}
+      <CampaignDetailSheet
+        open={!!selectedCampaign}
+        onOpenChange={(open) => !open && setSelectedCampaign(null)}
+        campaign={selectedCampaign}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

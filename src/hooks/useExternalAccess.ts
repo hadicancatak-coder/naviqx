@@ -60,7 +60,7 @@ export const useExternalAccess = () => {
       
       return {
         ...data,
-        url: `${getProductionUrl()}/campaigns-log/review/${token}`,
+        url: `${getProductionUrl()}/review/${token}`,
       };
     },
     onSuccess: () => {
