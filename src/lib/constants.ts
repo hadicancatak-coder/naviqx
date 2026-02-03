@@ -9,6 +9,11 @@
  */
 export const APP_BASE_URL = 'https://naviqx.lovable.app';
 
+/**
+ * @deprecated Use useSystemEntities hook instead for dynamic entity list from database.
+ * This constant is kept for backward compatibility but will be removed in future.
+ * All new code should use: const { data: entities } = useSystemEntities();
+ */
 export const ENTITIES = [
   "Global Management",
   "Jordan",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { ENTITIES } from "@/lib/constants";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 
 interface CreateCampaignDialogProps {
   open: boolean;
@@ -19,10 +19,18 @@ interface CreateCampaignDialogProps {
 }
 
 export function CreateCampaignDialog({ open, onOpenChange, defaultEntity, defaultAdType = "search", onSuccess }: CreateCampaignDialogProps) {
+  const { data: systemEntities = [] } = useSystemEntities();
   const [name, setName] = useState("");
-  const [entity, setEntity] = useState(defaultEntity || "UAE");
+  const [entity, setEntity] = useState(defaultEntity || "");
   const [languages, setLanguages] = useState<string[]>(["EN"]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Set default entity when entities load
+  useEffect(() => {
+    if (!entity && systemEntities.length > 0 && !defaultEntity) {
+      setEntity(systemEntities.find(e => e.name === "UAE")?.name || systemEntities[0].name);
+    }
+  }, [systemEntities, entity, defaultEntity]);
 
   const toggleLanguage = (lang: string) => {
     setLanguages(prev =>
@@ -94,8 +102,8 @@ export function CreateCampaignDialog({ open, onOpenChange, defaultEntity, defaul
                 <SelectValue placeholder="Select entity" />
               </SelectTrigger>
               <SelectContent>
-                {ENTITIES.map(ent => (
-                  <SelectItem key={ent} value={ent}>{ent}</SelectItem>
+                {systemEntities.map(ent => (
+                  <SelectItem key={ent.name} value={ent.name}>{ent.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

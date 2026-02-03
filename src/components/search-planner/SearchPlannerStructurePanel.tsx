@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { calculateAdStrength } from "@/lib/adQualityScore";
-import { ENTITIES } from "@/lib/constants";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -107,12 +107,22 @@ export function SearchPlannerStructurePanel({
   adType = "search",
 }: SearchPlannerStructurePanelProps) {
   const queryClient = useQueryClient();
-  const [selectedEntity, setSelectedEntity] = useState<string>("UAE");
+  const { data: systemEntities = [] } = useSystemEntities();
+  const entityNames = useMemo(() => systemEntities.map(e => e.name), [systemEntities]);
+  
+  const [selectedEntity, setSelectedEntity] = useState<string>("");
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
   const [expandedAdGroups, setExpandedAdGroups] = useState<Set<string>>(new Set());
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [showCreateAdGroup, setShowCreateAdGroup] = useState<{campaignId: string; campaignName: string} | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Set default entity when data loads
+  useEffect(() => {
+    if (entityNames.length > 0 && !selectedEntity) {
+      setSelectedEntity(entityNames.includes("UAE") ? "UAE" : entityNames[0]);
+    }
+  }, [entityNames, selectedEntity]);
 
   // Delete dialogs
   const [deleteAdDialog, setDeleteAdDialog] = useState<DeleteAdDialogState | null>(null);
@@ -245,7 +255,7 @@ export function SearchPlannerStructurePanel({
               <SelectValue placeholder="Select entity" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border shadow-lg">
-              {ENTITIES.map(entity => (
+              {entityNames.map(entity => (
                 <SelectItem 
                   key={entity} 
                   value={entity}
