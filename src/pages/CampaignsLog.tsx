@@ -196,6 +196,7 @@ export default function CampaignsLog() {
         selectedCampaigns={selectedCampaigns}
         onSelectionChange={setSelectedCampaigns}
         entityFilter={entityFilter}
+        searchTerm={searchTerm}
       />
 
       {/* Bulk Actions Bar */}

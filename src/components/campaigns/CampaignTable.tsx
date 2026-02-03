@@ -1,15 +1,16 @@
 import { useState, useMemo, useCallback } from "react";
-import { Search, ArrowUpDown, Filter } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CampaignRow, CampaignRowData } from "./CampaignRow";
 import { useUtmCampaigns, useUpdateUtmCampaign, useDeleteUtmCampaign } from "@/hooks/useUtmCampaigns";
 import { useCampaignEntityTracking } from "@/hooks/useCampaignEntityTracking";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { EntityTrackingStatus } from "@/domain/campaigns";
+import { supabase } from "@/integrations/supabase/client";
+import { ACCOUNT_STRUCTURE_KEYS } from "@/lib/queryKeys";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -29,14 +30,15 @@ interface CampaignTableProps {
   selectedCampaigns: string[];
   onSelectionChange: (ids: string[]) => void;
   entityFilter?: string;
+  searchTerm?: string;
 }
 
 export function CampaignTable({
   selectedCampaigns,
   onSelectionChange,
   entityFilter,
+  searchTerm = "",
 }: CampaignTableProps) {
-  const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -48,8 +50,23 @@ export function CampaignTable({
   const updateCampaign = useUpdateUtmCampaign();
   const deleteCampaign = useDeleteUtmCampaign();
 
-  // Transform campaigns to row data
-  // Note: versionCount is fetched per-row in CampaignRow component to avoid N+1 here
+  // Fetch all version counts in one query
+  const { data: versionCounts = {} } = useQuery({
+    queryKey: ACCOUNT_STRUCTURE_KEYS.versionCounts,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('utm_campaign_versions')
+        .select('utm_campaign_id');
+      
+      const counts: Record<string, number> = {};
+      data?.forEach(v => {
+        counts[v.utm_campaign_id] = (counts[v.utm_campaign_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  // Transform campaigns to row data with version counts
   const rowData = useMemo((): CampaignRowData[] => {
     return campaigns.map((campaign) => {
       const campaignTracking = trackingRecords.filter(t => t.campaign_id === campaign.id);
@@ -64,10 +81,10 @@ export function CampaignTable({
           entity: t.entity,
           status: t.status as EntityTrackingStatus,
         })),
-        versionCount: 0, // Will be fetched by VersionThumbnail component
+        versionCount: versionCounts[campaign.id] || 0,
       };
     });
-  }, [campaigns, trackingRecords]);
+  }, [campaigns, trackingRecords, versionCounts]);
 
   // Filter and sort
   const filteredData = useMemo(() => {
@@ -207,39 +224,7 @@ export function CampaignTable({
   }
 
   return (
-    <div className="space-y-md">
-      {/* Filters */}
-      <div className="flex items-center gap-sm flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search campaigns..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={entityFilter || "all"}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="size-4 mr-2" />
-            <SelectValue placeholder="All entities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Entities</SelectItem>
-            {entities.map(e => (
-              <SelectItem key={e.name} value={e.name}>
-                {e.emoji} {e.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="text-body-sm text-muted-foreground">
-          {filteredData.length} campaign{filteredData.length !== 1 ? "s" : ""}
-        </span>
-      </div>
-
-      {/* Table */}
-      <div className="border rounded-lg overflow-hidden bg-card">
+    <div className="border rounded-lg overflow-hidden bg-card">
         <ScrollArea className="h-[600px]">
           <table className="w-full">
             <thead className="bg-muted/50 sticky top-0 z-10">
@@ -300,7 +285,6 @@ export function CampaignTable({
             </div>
           )}
         </ScrollArea>
-      </div>
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
