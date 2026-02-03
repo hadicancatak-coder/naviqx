@@ -6,7 +6,9 @@ import TextAlign from '@tiptap/extension-text-align';
 import Color from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Placeholder from '@tiptap/extension-placeholder';
+import Mention from '@tiptap/extension-mention';
 import { useEffect, useRef } from 'react';
+import { suggestionConfig } from './MentionSuggestion';
 
 interface UseRichTextEditorOptions {
   initialContent?: string;
@@ -60,6 +62,12 @@ export function useRichTextEditor({
       TextStyle,
       Placeholder.configure({
         placeholder,
+      }),
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'mention',
+        },
+        suggestion: suggestionConfig,
       }),
     ],
     content: initialContent || '',

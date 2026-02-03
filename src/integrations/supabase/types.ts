@@ -1359,6 +1359,38 @@ export type Database = {
           },
         ]
       }
+      description_mentions: {
+        Row: {
+          created_at: string | null
+          id: string
+          mentioned_by: string
+          mentioned_user_id: string
+          task_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mentioned_by: string
+          mentioned_user_id: string
+          task_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mentioned_by?: string
+          mentioned_user_id?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "description_mentions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_ad_rules: {
         Row: {
           competitor_names: string[] | null

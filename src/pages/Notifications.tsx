@@ -256,6 +256,7 @@ export default function Notifications() {
       case "task_assigned":
         return `Assigned: ${taskTitle}`;
       case "comment_mention":
+      case "description_mention":
         return `Mentioned in: ${taskTitle}`;
       case "task_new_comment":
         return `New comment on: ${taskTitle}`;
@@ -307,6 +308,7 @@ export default function Notifications() {
       case "task_assigned":
         return data.assignedByName ? `by ${data.assignedByName}` : "";
       case "comment_mention":
+      case "description_mention":
         return data.mentionedByName ? `by ${data.mentionedByName}` : "";
       case "task_new_comment":
         return payload.commenter_name ? `by ${payload.commenter_name}` : "";

@@ -998,3 +998,19 @@ All colors MUST be HSL.
   position: fixed !important;
   isolation: auto !important;
 }
+
+/* TipTap Mention Chip Styles */
+.mention {
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: default;
+}
+
+.dark .mention {
+  background-color: hsl(var(--primary) / 0.25);
+  color: hsl(var(--primary));
+}
