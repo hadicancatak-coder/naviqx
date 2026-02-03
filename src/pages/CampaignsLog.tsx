@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Upload, BookOpen, Share2, Download } from "lucide-react";
+import { Search, Plus, Upload, BookOpen, Share2, Download, MessageSquare } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CampaignTable } from "@/components/campaigns/CampaignTable";
@@ -9,6 +10,7 @@ import { CreateUtmCampaignDialog } from "@/components/campaigns/CreateUtmCampaig
 import { CampaignBulkImportDialog } from "@/components/campaigns/CampaignBulkImportDialog";
 import { CampaignShareDialog } from "@/components/campaigns/CampaignShareDialog";
 import { CampaignBulkBar } from "@/components/campaigns/CampaignBulkBar";
+import { EntityCommentsDialog } from "@/components/campaigns/EntityCommentsDialog";
 import { useUtmCampaigns } from "@/hooks/useUtmCampaigns";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +27,7 @@ export default function CampaignsLog() {
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareEntity, setShareEntity] = useState<string>("");
+  const [entityCommentsOpen, setEntityCommentsOpen] = useState(false);
   const [entityShareInfo, setEntityShareInfo] = useState<{
     isPublic: boolean;
     publicToken: string | null;
@@ -33,6 +36,21 @@ export default function CampaignsLog() {
 
   const { data: entities = [] } = useSystemEntities();
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useUtmCampaigns({ withTracking: true });
+  
+  // Fetch entity comment count for badge
+  const { data: entityCommentCount = 0 } = useQuery({
+    queryKey: ["entity-comment-count", entityFilter],
+    queryFn: async () => {
+      if (!entityFilter || entityFilter === "all") return 0;
+      const { count } = await supabase
+        .from("external_campaign_review_comments")
+        .select("*", { count: "exact", head: true })
+        .eq("entity", entityFilter)
+        .eq("comment_type", "entity_feedback");
+      return count || 0;
+    },
+    enabled: !!entityFilter && entityFilter !== "all",
+  });
   
   // Fetch entity share info when opening share dialog
   const fetchEntityShareInfo = useCallback(async (entity: string) => {
@@ -174,14 +192,29 @@ export default function CampaignsLog() {
         </Select>
         
         {entityFilter !== "all" && (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleOpenShareDialog(entityFilter)}
-          >
-            <Share2 className="size-4" />
-            Share {entityFilter}
-          </Button>
+          <>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setEntityCommentsOpen(true)}
+            >
+              <MessageSquare className="size-4" />
+              Entity Feedback
+              {entityCommentCount > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {entityCommentCount}
+                </Badge>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleOpenShareDialog(entityFilter)}
+            >
+              <Share2 className="size-4" />
+              Share {entityFilter}
+            </Button>
+          </>
         )}
         
         {selectedCampaigns.length > 0 && (
@@ -224,6 +257,11 @@ export default function CampaignsLog() {
         publicToken={entityShareInfo.publicToken}
         clickCount={entityShareInfo.clickCount}
         onRefresh={() => fetchEntityShareInfo(shareEntity)}
+      />
+      <EntityCommentsDialog
+        open={entityCommentsOpen}
+        onOpenChange={setEntityCommentsOpen}
+        entityName={entityFilter}
       />
     </PageContainer>
   );
