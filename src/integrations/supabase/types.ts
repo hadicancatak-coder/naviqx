@@ -5288,6 +5288,14 @@ export type Database = {
         Args: { p_status: string; p_task_ids: string[] }
         Returns: number
       }
+      bulk_import_campaigns: {
+        Args: { p_campaigns: Json[] }
+        Returns: {
+          action: string
+          campaign_id: string
+          entity: string
+        }[]
+      }
       calculate_actual_hours: { Args: { task_uuid: string }; Returns: number }
       cleanup_expired_mfa_sessions: { Args: never; Returns: undefined }
       cleanup_old_mfa_attempts: { Args: never; Returns: undefined }
