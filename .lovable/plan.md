@@ -1,166 +1,248 @@
 
-# Fix Plan: Complete Status Unification and Collaborative Task Bug
+# Add @Mention Support to Task Descriptions
 
-## Problem Summary
+## Problem
 
-The previous migration added "Backlog" to the database and migrated data, but **several UI components still reference "Pending"**. Additionally, when creating recurring tasks, the `is_collaborative` flag is NOT being copied to the first instance.
+Currently, you can only tag people in **comments** but NOT in task **descriptions**. The description editor (TipTap-based) doesn't have mention functionality, while the comment input (plain textarea) does.
 
-## Issues Found
+## Current Architecture
 
-| File | Line(s) | Issue |
-|------|---------|-------|
-| `src/components/tasks/TaskBoardView.tsx` | 76, 88 | Filters for `'Pending'`, toggles uncomplete to `'Pending'` |
-| `src/components/TasksTableVirtualized.tsx` | 125-126, 133, 295 | `'Pending'` in color maps and SelectItem |
-| `src/pages/Profile.tsx` | 463 | Tab labeled "Pending" instead of "Backlog" |
-| `src/hooks/useProfileData.ts` | 165 | Filters `status === "Pending"` |
-| `src/components/CreateTaskDialog.tsx` | 217-232 | First recurring instance missing `is_collaborative` |
+| Feature | Comments | Descriptions |
+|---------|----------|--------------|
+| Editor | `MentionAutocomplete` (textarea) | `RichTextEditor` (TipTap) |
+| Mention UI | ✅ Dropdown with @ trigger | ❌ None |
+| Storage | `comment_mentions` table | ❌ None |
+| Notifications | `notify_comment_mention()` trigger | ❌ None |
 
-## Fix Details
+---
 
-### 1. TaskBoardView.tsx
+## Implementation Plan
 
-**Line 76** - Remove Pending fallback, use Backlog only:
-```typescript
-// Change from:
-if (group === 'Backlog') {
-  return tasks.filter(t => t.status === 'Pending' || t.status === 'Backlog');
-}
+### Step 1: Install TipTap Mention Extension
 
-// To:
-if (group === 'Backlog') {
-  return tasks.filter(t => t.status === 'Backlog');
-}
-```
+Add the official TipTap mention extension package.
 
-**Line 88** - Use Backlog when uncompleting:
-```typescript
-// Change from:
-const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+**Package**: `@tiptap/extension-mention`
 
-// To:
-const newStatus = task.status === 'Completed' ? 'Backlog' : 'Completed';
-```
+---
 
-### 2. TasksTableVirtualized.tsx
+### Step 2: Database - Create Description Mentions Table
 
-**Line 125-126** - Update switch case:
-```typescript
-// Change from:
-case "Pending":
-  return "bg-pending/5";
+Create a new table to store description mentions (mirrors `comment_mentions`):
 
-// To:
-case "Backlog":
-  return "bg-muted/5";
-```
+```sql
+CREATE TABLE public.description_mentions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID REFERENCES public.tasks(id) ON DELETE CASCADE,
+  mentioned_user_id UUID NOT NULL,
+  mentioned_by UUID NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
-**Line 133** - Update statusColors object:
-```typescript
-// Change from:
-Pending: "bg-pending/15 text-pending border-pending/30",
+ALTER TABLE public.description_mentions ENABLE ROW LEVEL SECURITY;
 
-// To:
-Backlog: "bg-muted/15 text-muted-foreground border-border",
-```
+CREATE POLICY "Authenticated users can view mentions"
+  ON public.description_mentions FOR SELECT
+  USING (true);
 
-**Line 295** - Update SelectItem:
-```typescript
-// Change from:
-<SelectItem value="Pending">Pending</SelectItem>
-
-// To:
-<SelectItem value="Backlog">Backlog</SelectItem>
-```
-
-### 3. Profile.tsx
-
-**Line 463** - Update tab label:
-```typescript
-// Change from:
-<TabsTrigger value="pending" className="rounded-md text-body-sm">Pending ({tasks.pending.length})</TabsTrigger>
-
-// To:
-<TabsTrigger value="backlog" className="rounded-md text-body-sm">Backlog ({tasks.backlog.length})</TabsTrigger>
-```
-
-**Line 468** - Update the mapping array:
-```typescript
-// Change from:
-{(["all", "ongoing", "completed", "pending", "blocked", "failed"] as const).map((status) => (
-
-// To:
-{(["all", "ongoing", "completed", "backlog", "blocked", "failed"] as const).map((status) => (
-```
-
-### 4. useProfileData.ts
-
-**Line 165** - Update filter and property name:
-```typescript
-// Change from:
-pending: visibleTasks.filter((t) => t.status === "Pending"),
-
-// To:
-backlog: visibleTasks.filter((t) => t.status === "Backlog"),
-```
-
-### 5. CreateTaskDialog.tsx - Fix Collaborative Flag
-
-**Lines 217-232** - Add `is_collaborative` to first instance creation:
-```typescript
-const { data: firstInstance, error: instanceError } = await supabase
-  .from('tasks')
-  .insert({
-    title: title.trim(),
-    description: description || null,
-    priority,
-    status: mapStatusToDb(status),
-    due_at: firstOccurrenceDate.toISOString(),
-    created_by: user!.id,
-    entity: entities.length > 0 ? entities : [],
-    labels: tags.length > 0 ? tags : [],
-    task_type: 'recurring',
-    visibility: 'global',
-    project_id: projectId || null,
-    template_task_id: createdTask.id,
-    occurrence_date: instanceDateStr,
-    is_recurrence_template: false,
-    is_collaborative: createdTask.is_collaborative ?? false, // ADD THIS LINE
-  })
+CREATE POLICY "Task creators and assignees can create mentions"
+  ON public.description_mentions FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
 ```
 
 ---
+
+### Step 3: Database - Create Notification Trigger
+
+Create trigger function to send notifications when someone is mentioned:
+
+```sql
+CREATE OR REPLACE FUNCTION public.notify_description_mention()
+RETURNS TRIGGER AS $$
+DECLARE
+  task_record RECORD;
+  mentioner_name TEXT;
+BEGIN
+  -- Get task details
+  SELECT id, title INTO task_record FROM tasks WHERE id = NEW.task_id;
+  
+  -- Get mentioner's name
+  SELECT name INTO mentioner_name FROM profiles WHERE user_id = NEW.mentioned_by;
+  
+  -- Don't notify if user mentions themselves
+  IF NEW.mentioned_user_id = NEW.mentioned_by THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Check if notification is enabled
+  IF is_notification_enabled(NEW.mentioned_user_id, 'mention') THEN
+    INSERT INTO notifications (user_id, type, payload_json)
+    VALUES (
+      NEW.mentioned_user_id,
+      'description_mention',
+      jsonb_build_object(
+        'task_id', task_record.id,
+        'task_title', task_record.title,
+        'mentioned_by', NEW.mentioned_by,
+        'mentioner_name', mentioner_name
+      )
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trigger_notify_description_mention
+  AFTER INSERT ON public.description_mentions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_description_mention();
+```
+
+---
+
+### Step 4: Create Mention Suggestion Component
+
+New file: `src/components/editor/MentionSuggestion.tsx`
+
+This component provides the popup UI when user types `@`:
+- Fetches all users from profiles
+- Filters based on query
+- Handles keyboard navigation
+- Inserts mention node on selection
+
+---
+
+### Step 5: Update TipTap Editor Configuration
+
+Modify `src/components/editor/useRichTextEditor.ts`:
+
+```typescript
+import { Mention } from '@tiptap/extension-mention';
+import { suggestionConfig } from './MentionSuggestion';
+
+// Add to extensions array:
+Mention.configure({
+  HTMLAttributes: {
+    class: 'mention',
+  },
+  suggestion: suggestionConfig,
+}),
+```
+
+---
+
+### Step 6: Add Mention Styles
+
+Add CSS for mention nodes in `src/index.css`:
+
+```css
+.mention {
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+```
+
+---
+
+### Step 7: Update Description Mutation
+
+Modify `src/hooks/useTaskMutations.ts` `updateDescription`:
+
+1. Parse HTML for mention nodes: `<span data-mention data-id="user-id">@name</span>`
+2. Extract user IDs from mention nodes
+3. Compare with existing mentions (delete removed, insert new)
+4. Insert new mentions into `description_mentions` table
+
+```typescript
+const updateDescription = useMutation({
+  mutationFn: async ({ id, description }: { id: string; description: string }) => {
+    // 1. Update the task description
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ description })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    
+    // 2. Parse mentions from HTML
+    const mentionPattern = /data-id="([^"]+)"/g;
+    const matches = [...description.matchAll(mentionPattern)];
+    const mentionedUserIds = matches.map(m => m[1]);
+    
+    // 3. Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // 4. Clear old mentions and insert new ones
+    if (mentionedUserIds.length > 0 && user) {
+      await supabase.from('description_mentions').delete().eq('task_id', id);
+      await supabase.from('description_mentions').insert(
+        mentionedUserIds.map(userId => ({
+          task_id: id,
+          mentioned_user_id: userId,
+          mentioned_by: user.id
+        }))
+      );
+    }
+    
+    return data;
+  },
+  // ... rest of mutation config
+});
+```
+
+---
+
+### Step 8: Update Notifications Page
+
+Modify `src/pages/Notifications.tsx` to handle `description_mention` type:
+
+```typescript
+case "description_mention":
+  return `Mentioned in: ${taskTitle}`;
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/editor/MentionSuggestion.tsx` | TipTap mention suggestion popup |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/tasks/TaskBoardView.tsx` | Replace 'Pending' with 'Backlog' (2 locations) |
-| `src/components/TasksTableVirtualized.tsx` | Replace 'Pending' with 'Backlog' (3 locations) |
-| `src/pages/Profile.tsx` | Update tab value and label from 'pending' to 'backlog' |
-| `src/hooks/useProfileData.ts` | Rename property and filter to 'backlog' |
-| `src/components/CreateTaskDialog.tsx` | Add `is_collaborative` to first instance |
+| `package.json` | Add `@tiptap/extension-mention` |
+| `src/components/editor/useRichTextEditor.ts` | Add Mention extension |
+| `src/index.css` | Add `.mention` styles |
+| `src/hooks/useTaskMutations.ts` | Parse mentions in `updateDescription` |
+| `src/pages/Notifications.tsx` | Handle `description_mention` type |
+| Database migration | Create `description_mentions` table + trigger |
 
 ---
 
-## Outcome After Implementation
+## User Experience After Implementation
 
-```text
-Status System:
-  Database:  Backlog | Ongoing | Blocked | Completed | Failed
-  UI:        Backlog | Ongoing | Blocked | Completed | Failed
-  All code:  Uses 'Backlog' consistently everywhere
-
-Collaborative Tasks:
-  Template created -> is_collaborative = true
-  First instance -> is_collaborative = true (copied from template)
-  Cron instances -> is_collaborative = true (already works)
-```
+1. User opens task description editor
+2. Types `@` → mention popup appears with user list
+3. Filters as user types (e.g., `@joh` filters to "John")
+4. Selects user → mention chip inserted: `@John`
+5. Saves description → mention stored in `description_mentions`
+6. Database trigger fires → notification sent to mentioned user
+7. Mentioned user sees notification: "Mentioned in: Task Title"
+8. Click notification → opens task detail
 
 ---
 
 ## Technical Notes
 
-1. The database already has correct data (no more 'Pending' status in any tasks)
-2. The mappers in `src/domain/tasks/constants.ts` handle legacy 'Pending' values as fallback
-3. After this fix, no UI component will reference 'Pending' for task status
-4. All recurring collaborative tasks will correctly propagate the is_collaborative flag
+1. **TipTap Mention Extension** stores mentions as special nodes with `data-id` attribute containing user ID
+2. **Parsing Strategy**: Extract user IDs from HTML using regex on `data-id` attributes
+3. **Mention Comparison**: On each save, we clear and re-insert all mentions (simpler than diffing)
+4. **Same notification type**: Uses existing `'mention'` preference for consistency
