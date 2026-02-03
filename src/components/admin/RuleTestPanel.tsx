@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle, Search } from "lucide-react";
 import { useEntityAdRules } from "@/hooks/useEntityAdRules";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ENTITIES } from "@/lib/constants";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 
 export function RuleTestPanel() {
-  const [testEntity, setTestEntity] = useState("UAE");
+  const { data: systemEntities = [] } = useSystemEntities();
+  const entityNames = useMemo(() => systemEntities.map(e => e.name), [systemEntities]);
+  const [testEntity, setTestEntity] = useState("");
   const [testText, setTestText] = useState("");
   const { rules, isLoading } = useEntityAdRules(testEntity);
+  
+  // Set default entity when entities load
+  useEffect(() => {
+    if (!testEntity && entityNames.length > 0) {
+      setTestEntity(entityNames.includes("UAE") ? "UAE" : entityNames[0]);
+    }
+  }, [entityNames, testEntity]);
 
   const testResult = () => {
     if (!testText.trim() || !rules) {
@@ -65,7 +74,7 @@ export function RuleTestPanel() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="GLOBAL">GLOBAL (fallback)</SelectItem>
-              {ENTITIES.map(entity => (
+              {entityNames.map(entity => (
                 <SelectItem key={entity} value={entity}>{entity}</SelectItem>
               ))}
             </SelectContent>

@@ -5284,6 +5284,10 @@ export type Database = {
       }
     }
     Functions: {
+      batch_update_task_status: {
+        Args: { p_status: string; p_task_ids: string[] }
+        Returns: number
+      }
       calculate_actual_hours: { Args: { task_uuid: string }; Returns: number }
       cleanup_expired_mfa_sessions: { Args: never; Returns: undefined }
       cleanup_old_mfa_attempts: { Args: never; Returns: undefined }

@@ -1,10 +1,10 @@
 import { UtmLinkFilters } from "@/hooks/useUtmLinks";
 import { useUtmCampaigns } from "@/hooks/useUtmCampaigns";
 import { useUtmPlatforms } from "@/hooks/useUtmPlatforms";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { ENTITIES } from "@/lib/constants";
 
 const LP_TYPES = [
   { value: "static", label: "Static" },
@@ -19,6 +19,7 @@ interface UtmInlineFiltersProps {
 export const UtmInlineFilters = ({ filters, onFiltersChange }: UtmInlineFiltersProps) => {
   const { data: campaigns = [] } = useUtmCampaigns();
   const { data: platforms = [] } = useUtmPlatforms();
+  const { data: entities = [] } = useSystemEntities();
 
   const hasActiveFilters = Object.values(filters).some(v => v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : true));
 
@@ -76,9 +77,9 @@ export const UtmInlineFilters = ({ filters, onFiltersChange }: UtmInlineFiltersP
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Entities</SelectItem>
-          {ENTITIES.map((entity) => (
-            <SelectItem key={entity} value={entity}>
-              {entity}
+          {entities.map((entity) => (
+            <SelectItem key={entity.name} value={entity.name}>
+              {entity.name}
             </SelectItem>
           ))}
         </SelectContent>

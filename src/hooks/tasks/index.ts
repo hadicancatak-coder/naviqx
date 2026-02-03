@@ -10,3 +10,5 @@ export { useTaskComments } from "../useTaskComments";
 export { useTaskWatchers } from "../useTaskWatchers";
 export { useParentTask } from "../useParentTask";
 export { useCollaborativeTask } from "../useCollaborativeTask";
+export { useTaskFilters, QUICK_FILTERS } from "../useTaskFilters";
+export type { TaskFilters, DateFilter, QuickFilter } from "../useTaskFilters";

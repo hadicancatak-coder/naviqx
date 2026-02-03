@@ -6,10 +6,65 @@ import { logger } from "@/lib/logger";
 
 type UtmCampaignRow = Database["public"]["Tables"]["utm_campaigns"]["Row"];
 type UtmCampaignInsert = Database["public"]["Tables"]["utm_campaigns"]["Insert"];
+type TrackingRow = Database["public"]["Tables"]["campaign_entity_tracking"]["Row"];
+
+export interface UtmCampaignWithTracking extends UtmCampaignRow {
+  tracking?: TrackingRow[];
+}
 
 export type UtmCampaign = UtmCampaignRow;
 
-export const useUtmCampaigns = () => {
+/**
+ * Fetches UTM campaigns with optional pre-joined tracking records
+ * Using joined query eliminates O(n) filtering in components
+ */
+export const useUtmCampaigns = (options?: { withTracking?: boolean }) => {
+  const withTracking = options?.withTracking ?? false;
+  
+  return useQuery({
+    queryKey: ["utm-campaigns", { withTracking }],
+    queryFn: async (): Promise<UtmCampaignWithTracking[]> => {
+      if (withTracking) {
+        const { data, error } = await supabase
+          .from("utm_campaigns")
+          .select(`
+            *,
+            tracking:campaign_entity_tracking(*)
+          `)
+          .eq("is_active", true)
+          .order("display_order", { ascending: true })
+          .order("created_at", { ascending: false })
+          .order("last_used_at", { ascending: false, nullsFirst: false })
+          .order("usage_count", { ascending: false })
+          .order("name");
+
+        if (error) throw error;
+        return data as unknown as UtmCampaignWithTracking[];
+      } else {
+        const { data, error } = await supabase
+          .from("utm_campaigns")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true })
+          .order("created_at", { ascending: false })
+          .order("last_used_at", { ascending: false, nullsFirst: false })
+          .order("usage_count", { ascending: false })
+          .order("name");
+
+        if (error) throw error;
+        return data as UtmCampaignWithTracking[];
+      }
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - reduces refetches significantly
+    gcTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
+};
+
+/**
+ * @deprecated Use useUtmCampaigns({ withTracking: true }) for pre-joined data
+ */
+export const useUtmCampaignsLegacy = () => {
   return useQuery({
     queryKey: ["utm-campaigns"],
     queryFn: async () => {
@@ -26,7 +81,7 @@ export const useUtmCampaigns = () => {
       if (error) throw error;
       return data as UtmCampaign[];
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes - reduces refetches significantly
+    staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
@@ -221,6 +276,23 @@ export const useUpsertUtmCampaigns = () => {
           if (error) throw error;
           campaignId = data.id;
           created++;
+        }
+
+        // FIX: Create entity tracking record if entity is specified
+        if (campaign.entity && campaignId) {
+          const { error: trackingError } = await supabase
+            .from("campaign_entity_tracking")
+            .upsert({
+              campaign_id: campaignId,
+              entity: campaign.entity,
+              status: campaign.status || 'Draft',
+            }, {
+              onConflict: 'campaign_id,entity',
+              ignoreDuplicates: true
+            });
+          if (trackingError) {
+            logger.warn(`Failed to create tracking for ${campaign.name}:`, trackingError);
+          }
         }
 
         // Create version if version data is provided
