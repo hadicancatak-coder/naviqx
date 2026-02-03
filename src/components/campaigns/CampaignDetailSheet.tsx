@@ -91,7 +91,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="!w-full sm:!max-w-xl !p-0 flex flex-col !overflow-hidden">
+        <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
           <SheetHeader className="p-md border-b border-border shrink-0">
             <div className="flex items-start justify-between gap-md pr-8">
               <div className="space-y-xs min-w-0">
@@ -122,7 +122,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
           </SheetHeader>
 
           <ScrollArea className="flex-1 min-h-0">
-            <div className="p-md space-y-md max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+            <div className="p-md space-y-md">
               {/* Landing Page - Prominent */}
               {campaign.landing_page && (
                 <div className="flex items-center gap-sm p-sm bg-muted/50 rounded-lg border border-border">
@@ -250,7 +250,7 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
                             {/* Expanded Details */}
                             <CollapsibleContent>
-                              <div className="px-sm pb-sm space-y-sm max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                              <div className="px-sm pb-sm space-y-sm">
                                 {/* Large Preview */}
                                 {versionImageUrl && (
                                   <div
@@ -271,11 +271,8 @@ export function CampaignDetailSheet({ open, onOpenChange, campaign }: CampaignDe
 
                                 {/* Full Version Notes - WITH PROPER WRAPPING */}
                                 {version.version_notes && (
-                                  <div className="bg-muted/50 rounded-lg p-sm border border-border/50 max-w-full">
-                                    <p 
-                                      className="text-body-sm break-words whitespace-pre-wrap"
-                                      style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                                    >
+                                  <div className="bg-muted/50 rounded-lg p-sm border border-border/50">
+                                    <p className="text-body-sm whitespace-pre-wrap break-words">
                                       {version.version_notes}
                                     </p>
                                   </div>
