@@ -78,7 +78,7 @@ const VersionThumbnail = memo(function VersionThumbnail({ campaignId }: { campai
   );
 });
 
-export const CampaignRow = memo(function CampaignRow({
+export function CampaignRow({
   campaign,
   isSelected,
   onSelect,
@@ -436,4 +436,4 @@ export const CampaignRow = memo(function CampaignRow({
       </AlertDialog>
     </>
   );
-});
+}
