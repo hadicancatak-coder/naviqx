@@ -208,9 +208,10 @@ export const useTaskMutations = () => {
     onSettled: (_, __, { id }) => invalidateBothCaches(queryClient, id)
   });
 
-  // Update description (silent - no success toast)
+  // Update description (silent - no success toast) + sync mentions
   const updateDescription = useMutation({
     mutationFn: async ({ id, description }: { id: string; description: string }) => {
+      // 1. Update the task description
       const { data, error } = await supabase
         .from('tasks')
         .update({ description })
@@ -218,6 +219,29 @@ export const useTaskMutations = () => {
         .select()
         .single();
       if (error) throw error;
+      
+      // 2. Parse mentions from HTML (data-id attribute contains user_id)
+      const mentionPattern = /data-id="([^"]+)"/g;
+      const matches = [...(description || '').matchAll(mentionPattern)];
+      const mentionedUserIds = [...new Set(matches.map(m => m[1]))]; // Dedupe
+      
+      // 3. Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // 4. Delete old mentions for this task
+      await supabase.from('description_mentions').delete().eq('task_id', id);
+      
+      // 5. Insert new mentions if any
+      if (mentionedUserIds.length > 0 && user) {
+        await supabase.from('description_mentions').insert(
+          mentionedUserIds.map(userId => ({
+            task_id: id,
+            mentioned_user_id: userId,
+            mentioned_by: user.id
+          }))
+        );
+      }
+      
       return data;
     },
     onMutate: async ({ id, description }) => {
