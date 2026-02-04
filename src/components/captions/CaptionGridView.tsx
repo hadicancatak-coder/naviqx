@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Copy, Edit, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,8 +21,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getStatusColor } from "@/lib/constants";
 import { getContentForDisplay, getContentForCopy } from "@/lib/captionHelpers";
+
+// Apple Liquid Glass styles
+const glassStyles = {
+  surface: {
+    background: "rgba(20,20,20,0.55)",
+    backdropFilter: "blur(28px) saturate(140%)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+    borderRadius: "16px",
+  },
+  highlight: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0))",
+};
 
 interface CaptionGridViewProps {
   captions: Caption[];
@@ -69,50 +78,49 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
     queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
   };
 
-  // Status color now centralized in constants.ts
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "headline":
-        return "bg-primary/10 text-primary";
-      case "description":
-        return "status-info";
-      case "primary_text":
-        return "status-purple";
-      case "sitelink":
-        return "status-orange";
-      case "callout":
-        return "status-success";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
-
   return (
     <TooltipProvider>
-      <div className="grid gap-md p-md md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {captions.map((caption) => {
           const enContent = getContentForDisplay(caption.content, "en");
           const arContent = getContentForDisplay(caption.content, "ar");
 
           return (
-            <Card 
+            <div 
               key={caption.id} 
-              className="bg-card border-border hover:border-primary/30 transition-smooth group"
+              className="relative overflow-hidden transition-all hover:scale-[1.02]"
+              style={glassStyles.surface}
             >
-              <CardContent className="p-md space-y-sm">
-                <div className="flex items-start justify-between gap-sm">
-                  <Badge className={getTypeColor(caption.element_type)}>
+              {/* Highlight overlay */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: glassStyles.highlight }}
+              />
+              
+              <div className="relative z-10 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span 
+                    className="px-3 py-1 text-xs font-medium rounded-full capitalize"
+                    style={{ 
+                      background: "rgba(255,255,255,0.1)",
+                      color: "rgba(235,235,235,0.95)",
+                    }}
+                  >
                     {caption.element_type}
-                  </Badge>
+                  </span>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
-                      size="icon-xs"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-white/10"
                       onClick={() => handleToggleFavorite(caption)}
                     >
                       <Star 
-                        className={caption.is_favorite ? "fill-amber text-amber" : ""} 
+                        className="h-4 w-4"
+                        style={{ 
+                          color: caption.is_favorite ? "#fbbf24" : "rgba(180,180,180,0.7)",
+                          fill: caption.is_favorite ? "#fbbf24" : "none",
+                        }}
                       />
                     </Button>
                   </div>
@@ -120,15 +128,26 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
 
                 {/* EN Content - Click to copy */}
                 <div className="space-y-1">
-                  <span className="text-metadata text-muted-foreground">EN</span>
+                  <span 
+                    className="text-xs"
+                    style={{ color: "rgba(180,180,180,0.7)" }}
+                  >
+                    EN
+                  </span>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => handleCopyContent(caption.content, "en")}
-                        className="w-full text-left p-sm rounded-md bg-muted/50 hover:bg-muted transition-smooth cursor-pointer"
+                        className="w-full text-left p-3 rounded-lg transition-all hover:bg-white/10"
+                        style={{ 
+                          background: "rgba(255,255,255,0.05)",
+                        }}
                       >
-                        <p className="text-body-sm line-clamp-2">
-                          {enContent || <span className="text-muted-foreground italic">No EN content</span>}
+                        <p 
+                          className="text-sm line-clamp-2"
+                          style={{ color: enContent ? "rgba(235,235,235,0.95)" : "rgba(180,180,180,0.5)" }}
+                        >
+                          {enContent || "No EN content"}
                         </p>
                       </button>
                     </TooltipTrigger>
@@ -140,16 +159,27 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
 
                 {/* AR Content - Click to copy */}
                 <div className="space-y-1">
-                  <span className="text-metadata text-muted-foreground">AR</span>
+                  <span 
+                    className="text-xs"
+                    style={{ color: "rgba(180,180,180,0.7)" }}
+                  >
+                    AR
+                  </span>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => handleCopyContent(caption.content, "ar")}
-                        className="w-full text-right p-sm rounded-md bg-muted/50 hover:bg-muted transition-smooth cursor-pointer"
+                        className="w-full text-right p-3 rounded-lg transition-all hover:bg-white/10"
+                        style={{ 
+                          background: "rgba(255,255,255,0.05)",
+                        }}
                         dir="rtl"
                       >
-                        <p className="text-body-sm line-clamp-2">
-                          {arContent || <span className="text-muted-foreground italic">No AR content</span>}
+                        <p 
+                          className="text-sm line-clamp-2"
+                          style={{ color: arContent ? "rgba(235,235,235,0.95)" : "rgba(180,180,180,0.5)" }}
+                        >
+                          {arContent || "No AR content"}
                         </p>
                       </button>
                     </TooltipTrigger>
@@ -161,45 +191,71 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
 
                 <div className="flex flex-wrap gap-1.5">
                   {caption.entity?.map((e) => (
-                    <Badge key={e} variant="outline" className="text-metadata">
+                    <span 
+                      key={e} 
+                      className="px-2 py-0.5 text-xs rounded-full"
+                      style={{ 
+                        background: "rgba(255,255,255,0.08)",
+                        color: "rgba(235,235,235,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    >
                       {e}
-                    </Badge>
+                    </span>
                   ))}
                   {caption.language && (
-                    <Badge variant="secondary" className="text-metadata">
+                    <span 
+                      className="px-2 py-0.5 text-xs rounded-full"
+                      style={{ 
+                        background: "rgba(255,255,255,0.08)",
+                        color: "rgba(180,180,180,0.7)",
+                      }}
+                    >
                       {caption.language}
-                    </Badge>
+                    </span>
                   )}
-                  <Badge className={`text-metadata ${getStatusColor(caption.google_status)}`}>
+                  <span 
+                    className="px-2 py-0.5 text-xs rounded-full capitalize"
+                    style={{ 
+                      background: "rgba(255,255,255,0.08)",
+                      color: "rgba(180,180,180,0.7)",
+                    }}
+                  >
                     {caption.google_status || "pending"}
-                  </Badge>
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <span className="text-metadata text-muted-foreground">
+                <div 
+                  className="flex items-center justify-between pt-3"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <span 
+                    className="text-xs"
+                    style={{ color: "rgba(180,180,180,0.7)" }}
+                  >
                     {caption.use_count || 0} uses
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 hover:bg-white/10"
                       onClick={() => onEdit(caption)}
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4" style={{ color: "rgba(235,235,235,0.95)" }} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      className="h-8 w-8 hover:bg-red-500/20"
                       onClick={() => setDeleteConfirmId(caption.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" style={{ color: "#ef4444" }} />
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>
