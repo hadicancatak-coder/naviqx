@@ -1,96 +1,108 @@
 
-## Fix: Radix ScrollArea Internal Content Wrapper Causing Overflow
+## Fix: Popup Components Overflow Beyond Boundaries
 
-### Root Cause Analysis (FINAL)
+### Problem Analysis
 
-After deep investigation of the Radix UI source code, the **actual** root cause has been identified:
+Looking at the screenshot, text content inside the "Create Page" dialog is expanding freely beyond the dialog boundaries. This is happening because:
 
-**Radix's ScrollAreaPrimitive.Viewport** internally wraps all children in a div with these inline styles:
-```javascript
-style: { minWidth: "100%", display: "table" }
-```
+1. **Dialog uses `grid` layout** (line 66 of `dialog.tsx`): Grid children can expand based on content if not constrained
+2. **No horizontal overflow clipping**: The dialog has `overflow-y-auto` for vertical scroll but no `overflow-x-hidden` to prevent horizontal expansion
+3. **Missing aggressive word-break**: Long strings without spaces (like "sfghsdfgdfhd" repeated) need `word-break: break-all` or `overflow-wrap: anywhere` to force breaking
 
-This is hardcoded in `@radix-ui/react-scroll-area` (line 130 of their source).
-
-**Why this causes overflow:**
-1. `display: table` makes the element size to fit its content (like an HTML table)
-2. When text content is long and doesn't break, the "table" expands to fit it
-3. `min-width: 100%` prevents it from shrinking below 100%, but doesn't prevent expanding
-4. The parent viewport's `overflow-x: hidden` clips what you can SEE, but the child still expands and creates the overflow visual issue we're seeing
-
-The previous fixes (adding `overflow-x-hidden` to ScrollArea Viewport and Sheet) didn't work because they only affect clipping, not the internal sizing behavior of the `display: table` child.
+This affects all popup components: Dialogs, Popovers, Sheets, Drawers, Dropdowns.
 
 ---
 
 ### Solution
 
-Add a **global CSS rule** in `src/index.css` to override Radix's internal wrapper styling:
+Fix at two levels:
 
-```css
-/* Fix Radix ScrollArea internal content wrapper expanding beyond bounds */
-[data-radix-scroll-area-viewport] > div {
-  display: block !important;
-  min-width: 0 !important;
-}
-```
+**1. Global CSS: Add text wrapping rules for popup content**
 
-This targets the direct child div of the Radix viewport (which has the data attribute) and:
-1. Changes `display: table` to `display: block` - block elements don't expand to fit content horizontally
-2. Sets `min-width: 0` - allows the element to shrink as needed
-
----
-
-### Technical Changes
-
-**File: `src/index.css`**
-
-Add the following CSS rule in the `@layer base` section (around line 280, after other base styles):
+Add to `src/index.css` a rule that forces all popup content to wrap text and respect boundaries:
 
 ```css
 /* ========================================
-   RADIX SCROLLAREA FIX
-   Override internal table display that causes horizontal overflow
+   POPUP CONTENT OVERFLOW FIX
+   Force text wrapping inside dialogs, popovers, sheets, drawers
+   Prevents long unbroken strings from expanding containers
    ======================================== */
-[data-radix-scroll-area-viewport] > div {
-  display: block !important;
-  min-width: 0 !important;
+[data-radix-dialog-content],
+[data-radix-alert-dialog-content],
+[data-radix-popover-content],
+[data-radix-popper-content-wrapper] {
+  overflow-x: hidden !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
 }
+
+/* Ensure all child text elements also respect boundaries */
+[data-radix-dialog-content] *,
+[data-radix-alert-dialog-content] *,
+[data-radix-popover-content] * {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+```
+
+**2. Component Level: Update base Dialog component**
+
+Update `src/components/ui/dialog.tsx` line 66 to add `overflow-x-hidden`:
+
+```tsx
+// BEFORE:
+"fixed left-[50%] top-[50%] z-[10002] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-md liquid-glass-dialog p-lg pb-sm duration-200 max-h-[90vh] overflow-y-auto hide-scrollbar rounded-2xl"
+
+// AFTER:
+"fixed left-[50%] top-[50%] z-[10002] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-md liquid-glass-dialog p-lg pb-sm duration-200 max-h-[90vh] overflow-x-hidden overflow-y-auto hide-scrollbar rounded-2xl"
+```
+
+**3. Component Level: Update Popover component**
+
+Update `src/components/ui/popover.tsx` to add `overflow-x-hidden`:
+
+```tsx
+// BEFORE (line 19):
+"z-popover min-w-[200px] max-h-[400px] overflow-y-auto hide-scrollbar rounded-xl..."
+
+// AFTER:
+"z-popover min-w-[200px] max-h-[400px] overflow-x-hidden overflow-y-auto hide-scrollbar rounded-xl..."
+```
+
+**4. TipTap Editor: Strengthen word-breaking**
+
+Update `src/components/editor/RichTextEditor.tsx` line 109 to use more aggressive word-breaking:
+
+```tsx
+// BEFORE:
+'break-words [word-break:break-word] [overflow-wrap:break-word]'
+
+// AFTER (use break-all for unbreakable strings):
+'break-all [word-break:break-all] [overflow-wrap:anywhere]'
+```
+
+Also add to the `.ProseMirror` selector:
+```tsx
+'[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px] [&_.ProseMirror]:break-all [&_.ProseMirror]:[word-break:break-all]'
 ```
 
 ---
 
-### Cleanup (Optional but Recommended)
+### Technical Details
 
-The previous workarounds in the base components can now be reverted since they weren't addressing the actual issue:
-
-**File: `src/components/ui/scroll-area.tsx`** (line 11)
-- The `!overflow-x-hidden` addition was correct and should be kept as a defensive measure
-- No changes needed
-
-**File: `src/components/ui/sheet.tsx`** (line 32)
-- The `overflow-x-hidden` addition is correct and should be kept
-- No changes needed
-
----
-
-### Why This Will Work
-
-1. **Targets the actual problem**: The internal Radix wrapper div, not the outer containers
-2. **Global fix**: Applies to ALL ScrollAreas in the app, preventing this issue anywhere
-3. **Safe override**: `display: block` is the expected behavior for content containers
-4. **`!important` is necessary**: Radix applies inline styles which have higher specificity than CSS classes
-
----
-
-### Files to Modify
-
-1. **`src/index.css`** - Add the CSS rule to fix Radix ScrollArea internal wrapper
+| File | Change |
+|------|--------|
+| `src/index.css` | Add global CSS rules for all Radix popup components |
+| `src/components/ui/dialog.tsx` | Add `overflow-x-hidden` to DialogContent classes |
+| `src/components/ui/popover.tsx` | Add `overflow-x-hidden` to PopoverContent classes |
+| `src/components/editor/RichTextEditor.tsx` | Strengthen word-breaking to `break-all` |
 
 ---
 
 ### Expected Result
 
-- All sidebar content will respect container boundaries
-- Long text will wrap naturally within the ScrollArea
-- No horizontal overflow in CampaignDetailSheet or any other Sheet/ScrollArea
-- TaskDetail will continue working as before (this is a safe, additive change)
+- All popup components (dialogs, popovers, sheets) will clip horizontal overflow
+- Long unbroken text strings will break at any character to stay within boundaries
+- The "Create Page" dialog and all similar dialogs will properly contain their content
+- TipTap editor content will wrap correctly inside dialogs
