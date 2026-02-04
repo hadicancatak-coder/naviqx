@@ -101,14 +101,15 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
           <div 
             className="sticky top-0 z-10 flex items-center gap-4 px-4 py-2"
             style={{ 
-              background: "rgba(20,20,20,0.8)",
-              backdropFilter: "blur(10px)",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(18,18,18,0.6)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >
             <span 
               className="text-sm font-medium"
-              style={{ color: "rgba(235,235,235,0.95)" }}
+              style={{ color: "rgba(235,235,235,0.9)" }}
             >
               {selectedIds.size} selected
             </span>
@@ -116,7 +117,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
               variant="ghost"
               size="sm"
               onClick={() => setBulkDeleteConfirm(true)}
-              className="hover:bg-red-500/20"
+              className="hover:bg-red-500/15"
               style={{ color: "#ef4444" }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
@@ -127,7 +128,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
 
         <table className="w-full">
           <thead>
-            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <th className="w-12 p-4 text-left">
                 <Checkbox
                   checked={selectedIds.size === captions.length && captions.length > 0}
@@ -136,43 +137,43 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
               </th>
               <th 
                 className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 Type
               </th>
               <th 
                 className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 EN Content
               </th>
               <th 
                 className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 AR Content
               </th>
               <th 
                 className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 Entity
               </th>
               <th 
                 className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 Status
               </th>
               <th 
                 className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 Uses
               </th>
               <th 
                 className="w-24 p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.7)" }}
+                style={{ color: "rgba(180,180,180,0.6)" }}
               >
                 Actions
               </th>
@@ -186,8 +187,8 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
               return (
                 <tr
                   key={caption.id}
-                  className="transition-colors hover:bg-white/5"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                  className="transition-colors hover:bg-white/04"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
                 >
                   <td className="p-4">
                     <Checkbox
@@ -199,8 +200,8 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                     <span 
                       className="px-2 py-1 text-xs rounded-full capitalize"
                       style={{ 
-                        background: "rgba(255,255,255,0.1)",
-                        color: "rgba(235,235,235,0.95)",
+                        background: "rgba(255,255,255,0.08)",
+                        color: "rgba(235,235,235,0.9)",
                       }}
                     >
                       {caption.element_type}
@@ -214,13 +215,13 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                         <button
                           onClick={() => handleCopyContent(caption.content, "en")}
                           className={cn(
-                            "text-left text-sm truncate w-full px-2 py-1 rounded transition-all",
+                            "text-left text-sm truncate w-full px-2 py-1 rounded-lg transition-all",
                             enContent 
-                              ? "hover:bg-white/10 cursor-pointer" 
+                              ? "hover:bg-white/08 cursor-pointer" 
                               : "cursor-default"
                           )}
                           style={{ 
-                            color: enContent ? "rgba(235,235,235,0.95)" : "rgba(180,180,180,0.5)",
+                            color: enContent ? "rgba(235,235,235,0.9)" : "rgba(180,180,180,0.4)",
                           }}
                         >
                           {enContent || "—"}
@@ -243,13 +244,13 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                           onClick={() => handleCopyContent(caption.content, "ar")}
                           dir="rtl"
                           className={cn(
-                            "text-right text-sm truncate w-full px-2 py-1 rounded transition-all",
+                            "text-right text-sm truncate w-full px-2 py-1 rounded-lg transition-all",
                             arContent 
-                              ? "hover:bg-white/10 cursor-pointer" 
+                              ? "hover:bg-white/08 cursor-pointer" 
                               : "cursor-default"
                           )}
                           style={{ 
-                            color: arContent ? "rgba(235,235,235,0.95)" : "rgba(180,180,180,0.5)",
+                            color: arContent ? "rgba(235,235,235,0.9)" : "rgba(180,180,180,0.4)",
                           }}
                         >
                           {arContent || "—"}
@@ -271,8 +272,8 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                           key={e} 
                           className="px-2 py-0.5 text-xs rounded-full"
                           style={{ 
-                            background: "rgba(255,255,255,0.08)",
-                            color: "rgba(235,235,235,0.95)",
+                            background: "rgba(255,255,255,0.06)",
+                            color: "rgba(235,235,235,0.85)",
                           }}
                         >
                           {e}
@@ -282,8 +283,8 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                         <span 
                           className="px-2 py-0.5 text-xs rounded-full"
                           style={{ 
-                            background: "rgba(255,255,255,0.08)",
-                            color: "rgba(180,180,180,0.7)",
+                            background: "rgba(255,255,255,0.06)",
+                            color: "rgba(180,180,180,0.6)",
                           }}
                         >
                           +{caption.entity.length - 2}
@@ -295,7 +296,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                     <span 
                       className="px-2 py-0.5 text-xs rounded-full capitalize"
                       style={{ 
-                        background: "rgba(255,255,255,0.08)",
+                        background: "rgba(255,255,255,0.06)",
                         color: "rgba(180,180,180,0.7)",
                       }}
                     >
@@ -305,13 +306,13 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                   <td className="p-4">
                     <span 
                       className="text-sm"
-                      style={{ color: "rgba(180,180,180,0.7)" }}
+                      style={{ color: "rgba(180,180,180,0.6)" }}
                     >
                       {caption.use_count || 0}
                     </span>
                   </td>
                   
-                  {/* Actions - Always visible */}
+                  {/* Actions */}
                   <td className="p-4">
                     <div className="flex items-center gap-1">
                       <Button
@@ -325,7 +326,7 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-red-500/20"
+                        className="h-8 w-8 hover:bg-red-500/15"
                         onClick={() => setDeleteConfirmId(caption.id)}
                       >
                         <Trash2 className="h-4 w-4" style={{ color: "#ef4444" }} />

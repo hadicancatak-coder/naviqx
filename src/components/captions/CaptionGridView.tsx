@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit, Star, Trash2 } from "lucide-react";
+import { Edit, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,16 +23,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getContentForDisplay, getContentForCopy } from "@/lib/captionHelpers";
 
-// Apple Liquid Glass styles
+// True Apple Liquid Glass styles
 const glassStyles = {
   surface: {
-    background: "rgba(20,20,20,0.55)",
-    backdropFilter: "blur(28px) saturate(140%)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+    background: "rgba(18,18,18,0.45)",
+    backdropFilter: "blur(32px) saturate(150%)",
+    WebkitBackdropFilter: "blur(32px) saturate(150%)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.65)",
     borderRadius: "16px",
-  },
-  highlight: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0))",
+  } as React.CSSProperties,
+  highlight: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0))",
 };
 
 interface CaptionGridViewProps {
@@ -88,12 +89,12 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
           return (
             <div 
               key={caption.id} 
-              className="relative overflow-hidden transition-all hover:scale-[1.02]"
+              className="relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
               style={glassStyles.surface}
             >
               {/* Highlight overlay */}
               <div 
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-0 pointer-events-none rounded-[16px]"
                 style={{ background: glassStyles.highlight }}
               />
               
@@ -102,8 +103,8 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                   <span 
                     className="px-3 py-1 text-xs font-medium rounded-full capitalize"
                     style={{ 
-                      background: "rgba(255,255,255,0.1)",
-                      color: "rgba(235,235,235,0.95)",
+                      background: "rgba(255,255,255,0.08)",
+                      color: "rgba(235,235,235,0.9)",
                     }}
                   >
                     {caption.element_type}
@@ -118,7 +119,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                       <Star 
                         className="h-4 w-4"
                         style={{ 
-                          color: caption.is_favorite ? "#fbbf24" : "rgba(180,180,180,0.7)",
+                          color: caption.is_favorite ? "#fbbf24" : "rgba(180,180,180,0.5)",
                           fill: caption.is_favorite ? "#fbbf24" : "none",
                         }}
                       />
@@ -130,7 +131,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                 <div className="space-y-1">
                   <span 
                     className="text-xs"
-                    style={{ color: "rgba(180,180,180,0.7)" }}
+                    style={{ color: "rgba(180,180,180,0.6)" }}
                   >
                     EN
                   </span>
@@ -138,14 +139,14 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => handleCopyContent(caption.content, "en")}
-                        className="w-full text-left p-3 rounded-lg transition-all hover:bg-white/10"
+                        className="w-full text-left p-3 rounded-xl transition-all hover:bg-white/08"
                         style={{ 
-                          background: "rgba(255,255,255,0.05)",
+                          background: "rgba(255,255,255,0.04)",
                         }}
                       >
                         <p 
                           className="text-sm line-clamp-2"
-                          style={{ color: enContent ? "rgba(235,235,235,0.95)" : "rgba(180,180,180,0.5)" }}
+                          style={{ color: enContent ? "rgba(235,235,235,0.9)" : "rgba(180,180,180,0.4)" }}
                         >
                           {enContent || "No EN content"}
                         </p>
@@ -161,7 +162,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                 <div className="space-y-1">
                   <span 
                     className="text-xs"
-                    style={{ color: "rgba(180,180,180,0.7)" }}
+                    style={{ color: "rgba(180,180,180,0.6)" }}
                   >
                     AR
                   </span>
@@ -169,15 +170,15 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => handleCopyContent(caption.content, "ar")}
-                        className="w-full text-right p-3 rounded-lg transition-all hover:bg-white/10"
+                        className="w-full text-right p-3 rounded-xl transition-all hover:bg-white/08"
                         style={{ 
-                          background: "rgba(255,255,255,0.05)",
+                          background: "rgba(255,255,255,0.04)",
                         }}
                         dir="rtl"
                       >
                         <p 
                           className="text-sm line-clamp-2"
-                          style={{ color: arContent ? "rgba(235,235,235,0.95)" : "rgba(180,180,180,0.5)" }}
+                          style={{ color: arContent ? "rgba(235,235,235,0.9)" : "rgba(180,180,180,0.4)" }}
                         >
                           {arContent || "No AR content"}
                         </p>
@@ -195,9 +196,9 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                       key={e} 
                       className="px-2 py-0.5 text-xs rounded-full"
                       style={{ 
-                        background: "rgba(255,255,255,0.08)",
-                        color: "rgba(235,235,235,0.95)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(255,255,255,0.06)",
+                        color: "rgba(235,235,235,0.85)",
+                        border: "1px solid rgba(255,255,255,0.04)",
                       }}
                     >
                       {e}
@@ -207,7 +208,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                     <span 
                       className="px-2 py-0.5 text-xs rounded-full"
                       style={{ 
-                        background: "rgba(255,255,255,0.08)",
+                        background: "rgba(255,255,255,0.06)",
                         color: "rgba(180,180,180,0.7)",
                       }}
                     >
@@ -217,7 +218,7 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                   <span 
                     className="px-2 py-0.5 text-xs rounded-full capitalize"
                     style={{ 
-                      background: "rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.06)",
                       color: "rgba(180,180,180,0.7)",
                     }}
                   >
@@ -227,11 +228,11 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
 
                 <div 
                   className="flex items-center justify-between pt-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
                 >
                   <span 
                     className="text-xs"
-                    style={{ color: "rgba(180,180,180,0.7)" }}
+                    style={{ color: "rgba(180,180,180,0.6)" }}
                   >
                     {caption.use_count || 0} uses
                   </span>
@@ -242,12 +243,12 @@ export function CaptionGridView({ captions, onEdit }: CaptionGridViewProps) {
                       className="h-8 w-8 hover:bg-white/10"
                       onClick={() => onEdit(caption)}
                     >
-                      <Edit className="h-4 w-4" style={{ color: "rgba(235,235,235,0.95)" }} />
+                      <Edit className="h-4 w-4" style={{ color: "rgba(235,235,235,0.8)" }} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 hover:bg-red-500/20"
+                      className="h-8 w-8 hover:bg-red-500/15"
                       onClick={() => setDeleteConfirmId(caption.id)}
                     >
                       <Trash2 className="h-4 w-4" style={{ color: "#ef4444" }} />
