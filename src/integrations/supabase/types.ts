@@ -2068,6 +2068,7 @@ export type Database = {
       }
       knowledge_pages: {
         Row: {
+          category: string | null
           click_count: number | null
           content: string | null
           created_at: string | null
@@ -2078,6 +2079,7 @@ export type Database = {
           last_accessed_at: string | null
           order_index: number | null
           parent_id: string | null
+          project_id: string | null
           public_token: string | null
           reviewer_email: string | null
           reviewer_name: string | null
@@ -2087,6 +2089,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          category?: string | null
           click_count?: number | null
           content?: string | null
           created_at?: string | null
@@ -2097,6 +2100,7 @@ export type Database = {
           last_accessed_at?: string | null
           order_index?: number | null
           parent_id?: string | null
+          project_id?: string | null
           public_token?: string | null
           reviewer_email?: string | null
           reviewer_name?: string | null
@@ -2106,6 +2110,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          category?: string | null
           click_count?: number | null
           content?: string | null
           created_at?: string | null
@@ -2116,6 +2121,7 @@ export type Database = {
           last_accessed_at?: string | null
           order_index?: number | null
           parent_id?: string | null
+          project_id?: string | null
           public_token?: string | null
           reviewer_email?: string | null
           reviewer_name?: string | null
@@ -2130,6 +2136,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "knowledge_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_pages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
