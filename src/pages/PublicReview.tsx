@@ -3,9 +3,12 @@ import { ExternalReviewPage } from "@/components/external/ExternalReviewPage";
 import { SearchAdsReviewContent } from "@/components/external/SearchAdsReviewContent";
 import { LpMapReviewContent } from "@/components/external/LpMapReviewContent";
 import { CampaignReviewContent } from "@/components/external/CampaignReviewContent";
+import { KnowledgeReviewContent } from "@/components/external/KnowledgeReviewContent";
+import { ProjectReviewContent } from "@/components/external/ProjectReviewContent";
 import { usePublicAccess, ResourceType } from "@/hooks/usePublicAccess";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PhaseMilestone, PhaseTaskStats } from "@/hooks/useRoadmap";
 
 interface PublicReviewProps {
   resourceType: ResourceType;
@@ -137,6 +140,134 @@ function useCampaignData(accessData: { resource_id: string | null; entity: strin
   });
 }
 
+// Fetch Knowledge page data
+function useKnowledgeData(accessData: { resource_id: string | null } | null, resourceType: ResourceType) {
+  return useQuery({
+    queryKey: ['knowledge-review-data', accessData?.resource_id],
+    queryFn: async () => {
+      if (!accessData?.resource_id) return null;
+
+      const { data, error } = await supabase
+        .from("knowledge_pages")
+        .select("id, title, content, icon, updated_at")
+        .eq("id", accessData.resource_id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accessData?.resource_id && resourceType === 'knowledge',
+  });
+}
+
+// Fetch Project data with timelines, milestones, and assignees
+function useProjectData(accessData: { resource_id: string | null } | null, resourceType: ResourceType) {
+  const projectQuery = useQuery({
+    queryKey: ['project-review-data', accessData?.resource_id],
+    queryFn: async () => {
+      if (!accessData?.resource_id) return null;
+
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, status, icon, due_date, updated_at, description")
+        .eq("id", accessData.resource_id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accessData?.resource_id && resourceType === 'project',
+  });
+
+  const timelinesQuery = useQuery({
+    queryKey: ['project-timelines-review', projectQuery.data?.id],
+    queryFn: async () => {
+      if (!projectQuery.data?.id) return [];
+      const { data, error } = await supabase
+        .from("project_timelines")
+        .select("*")
+        .eq("project_id", projectQuery.data.id)
+        .order("order_index", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectQuery.data?.id,
+  });
+
+  const phaseIds = timelinesQuery.data?.map((t) => t.id) || [];
+
+  const milestonesQuery = useQuery({
+    queryKey: ['project-milestones-review', phaseIds],
+    queryFn: async () => {
+      if (phaseIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("phase_milestones")
+        .select("*")
+        .in("phase_id", phaseIds)
+        .order("order_index", { ascending: true });
+
+      if (error) throw error;
+      return data as PhaseMilestone[];
+    },
+    enabled: phaseIds.length > 0,
+  });
+
+  const taskStatsQuery = useQuery({
+    queryKey: ['project-task-stats-review', projectQuery.data?.id],
+    queryFn: async () => {
+      if (!projectQuery.data?.id) return [];
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, phase_id, status")
+        .eq("project_id", projectQuery.data.id)
+        .not("phase_id", "is", null);
+
+      if (error) throw error;
+
+      const statsMap = new Map<string, PhaseTaskStats>();
+      for (const task of data || []) {
+        if (!task.phase_id) continue;
+        const existing = statsMap.get(task.phase_id) || {
+          phase_id: task.phase_id,
+          total_tasks: 0,
+          completed_tasks: 0,
+        };
+        existing.total_tasks++;
+        if (task.status === "Completed") {
+          existing.completed_tasks++;
+        }
+        statsMap.set(task.phase_id, existing);
+      }
+      return Array.from(statsMap.values());
+    },
+    enabled: !!projectQuery.data?.id,
+  });
+
+  const assigneesQuery = useQuery({
+    queryKey: ['project-assignees-review', projectQuery.data?.id],
+    queryFn: async () => {
+      if (!projectQuery.data?.id) return [];
+      const { data, error } = await supabase
+        .from("project_assignees")
+        .select(`id, user_id, profiles:user_id (id, name, email)`)
+        .eq("project_id", projectQuery.data.id);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectQuery.data?.id,
+  });
+
+  return {
+    project: projectQuery.data,
+    timelines: timelinesQuery.data,
+    milestones: milestonesQuery.data,
+    taskStats: taskStatsQuery.data,
+    assignees: assigneesQuery.data,
+  };
+}
+
 /**
  * Unified public review page for all resource types.
  * Routes to appropriate content component based on resourceType.
@@ -158,6 +289,18 @@ export default function PublicReview({ resourceType }: PublicReviewProps) {
   // Fetch campaign data if needed
   const { data: campaignData } = useCampaignData(
     resourceType === 'campaign' ? accessData || null : null,
+    resourceType
+  );
+
+  // Fetch knowledge data if needed
+  const { data: knowledgeData } = useKnowledgeData(
+    resourceType === 'knowledge' ? accessData || null : null,
+    resourceType
+  );
+
+  // Fetch project data if needed
+  const projectData = useProjectData(
+    resourceType === 'project' ? accessData || null : null,
     resourceType
   );
 
@@ -200,12 +343,26 @@ export default function PublicReview({ resourceType }: PublicReviewProps) {
                 versions={campaignData?.versions || []}
               />
             );
-          
-          // TODO: Add other content components as we migrate
-          // case 'knowledge':
-          //   return <KnowledgeReviewContent ... />;
-          // case 'project':
-          //   return <ProjectReviewContent ... />;
+
+          case 'knowledge':
+            return (
+              <KnowledgeReviewContent
+                accessData={accessDataFromShell}
+                pageData={knowledgeData}
+              />
+            );
+
+          case 'project':
+            return (
+              <ProjectReviewContent
+                accessData={accessDataFromShell}
+                projectData={projectData.project}
+                timelines={projectData.timelines}
+                milestones={projectData.milestones}
+                taskStats={projectData.taskStats}
+                assignees={projectData.assignees}
+              />
+            );
           
           default:
             return (

@@ -18,6 +18,8 @@
 - ✅ **Search Ads** - `SearchAdsReviewContent.tsx` + `SearchAdsShareDialog.tsx`
 - ✅ **LP Planner** - `LpMapReviewContent.tsx` + `LpMapShareDialog.tsx`
 - ✅ **Campaigns** - `CampaignReviewContent.tsx` + `CampaignShareDialogUnified.tsx`
+- ✅ **Knowledge Pages** - `KnowledgeReviewContent.tsx` (read-only, no comments)
+- ✅ **Projects** - `ProjectReviewContent.tsx` (read-only, roadmap display)
 
 ### Phase 4: Admin Management
 - ✅ Updated `ExternalLinksManagement.tsx` to use unified `public_access_links` table
@@ -26,12 +28,14 @@
 - ✅ `/ads/search/review/:token` → Search Ads unified review
 - ✅ `/ads/lp/review/:token` → LP Planner unified review  
 - ✅ `/campaigns/review/:token` → Campaigns unified review
+- ✅ `/knowledge/review/:token` → Knowledge unified review
+- ✅ `/projects/review/:token` → Projects unified review
 
 ## Remaining Work
 
-### Phase 6: Remaining Migrations
-- ⬚ **Knowledge Pages** - Create `KnowledgeReviewContent.tsx`, update share dialog
-- ⬚ **Projects** - Create `ProjectReviewContent.tsx`, update share dialog
+### Phase 6: Share Dialog Integration
+- ⬚ Update Knowledge share dialog to use unified system
+- ⬚ Update Projects share dialog to use unified system
 
 ### Phase 7: Data Migration
 - ⬚ SQL migration to copy existing tokens from legacy tables to `public_access_links`
@@ -43,6 +47,7 @@
 - ⬚ Remove legacy `CampaignReview.tsx` page
 - ⬚ Remove legacy `CampaignShareDialog.tsx` component
 - ⬚ Remove legacy `useExternalAccess.ts` hook
+- ⬚ Remove legacy `KnowledgePublic.tsx` and `ProjectsPublic.tsx` pages
 
 ---
 
@@ -61,8 +66,8 @@ src/
 │       ├── CampaignReviewContent.tsx    # Campaign-specific ✅
 │       ├── LpMapReviewContent.tsx       # LP-specific ✅
 │       ├── SearchAdsReviewContent.tsx   # Search ads-specific ✅
-│       ├── KnowledgeReviewContent.tsx   # Knowledge-specific ⬚
-│       └── ProjectReviewContent.tsx     # Project-specific ⬚
+│       ├── KnowledgeReviewContent.tsx   # Knowledge-specific ✅
+│       └── ProjectReviewContent.tsx     # Project-specific ✅
 ├── pages/
 │   └── PublicReview.tsx                 # Single page, routes by type ✅
 ```

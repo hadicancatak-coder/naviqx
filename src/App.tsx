@@ -81,6 +81,8 @@ const App = () => (
             <Route path="/ads/search/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="search_ads" /></Suspense>} />
             <Route path="/ads/lp/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="lp_map" /></Suspense>} />
             <Route path="/campaigns/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />
+            <Route path="/knowledge/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="knowledge" /></Suspense>} />
+            <Route path="/projects/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="project" /></Suspense>} />
             
             {/* AUTHENTICATED ROUTES - Inside AuthProvider */}
             <Route path="/*" element={
