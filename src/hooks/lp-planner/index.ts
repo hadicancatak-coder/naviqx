@@ -1,4 +1,4 @@
-// LP Planner hooks
+// Brief Planner hooks
 export * from "../useLpComments";
 export * from "../useLpLinks";
 export * from "../useLpMaps";
