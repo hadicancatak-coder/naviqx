@@ -101,10 +101,10 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
           <div 
             className="sticky top-0 z-10 flex items-center gap-4 px-4 py-2"
             style={{ 
-              background: "rgba(18,18,18,0.6)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(18,18,18,0.38)",
+              backdropFilter: "blur(40px) saturate(160%)",
+              WebkitBackdropFilter: "blur(40px) saturate(160%)",
+              borderBottom: "1px solid rgba(255,255,255,0.04)",
             }}
           >
             <span 
