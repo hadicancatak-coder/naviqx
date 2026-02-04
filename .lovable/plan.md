@@ -39,9 +39,13 @@
 - ✅ Updated Projects page to use ProjectShareDialog
 - ✅ Updated KnowledgePageContent to use KnowledgeShareDialog
 
-### Phase 7: Data Migration
-- ⬚ SQL migration to copy existing tokens from legacy tables to `public_access_links`
-- ⬚ SQL migration to copy existing comments to `public_access_comments`
+### Phase 7: Data Migration ✅
+- ✅ SQL migration to copy existing tokens from legacy tables to `public_access_links`
+- ✅ SQL migration to copy existing comments to `public_access_comments`
+- ✅ Migrated: campaign_external_access → public_access_links (resource_type: campaign)
+- ✅ Migrated: external_campaign_review_comments → public_access_comments
+- ✅ Migrated: knowledge_pages.public_token → public_access_links (resource_type: knowledge)
+- ✅ Migrated: projects.public_token → public_access_links (resource_type: project)
 
 ### Phase 8: Cleanup (Post-Validation)
 - ⬚ Remove old `campaign_external_access` table usage
