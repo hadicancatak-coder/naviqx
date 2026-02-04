@@ -17,10 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useExternalAccess } from "@/hooks/useExternalAccess";
+import { usePublicAccessManagement } from "@/hooks/usePublicAccess";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { Copy, ExternalLink, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getProductionUrl } from "@/lib/urlHelpers";
 
 interface ExternalAccessDialogProps {
   open: boolean;
@@ -35,7 +36,7 @@ export function ExternalAccessDialog({
   campaignId,
   campaignName,
 }: ExternalAccessDialogProps) {
-  const { generateLink } = useExternalAccess();
+  const { generateLink } = usePublicAccessManagement();
   const { data: entities = [] } = useSystemEntities();
   const [selectedEntity, setSelectedEntity] = useState("");
   const [reviewerName, setReviewerName] = useState("");
@@ -77,14 +78,17 @@ export function ExternalAccessDialog({
       }
 
       const result = await generateLink.mutateAsync({
+        resourceType: 'campaign',
         entity: selectedEntity,
+        resourceId: campaignId,
         reviewerName,
         reviewerEmail,
-        expiresAt,
-        campaignId,
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
       });
 
-      setGeneratedLink(result.url);
+      // Build URL using unified pattern
+      const url = `${getProductionUrl()}/campaigns/review/${result.access_token}`;
+      setGeneratedLink(url);
       setLinkGenerated(true);
     } catch (error) {
       // Error handled by hook

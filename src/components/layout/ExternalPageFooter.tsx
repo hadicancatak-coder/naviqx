@@ -6,7 +6,7 @@ interface ExternalPageFooterProps {
 
 /**
  * Standardized footer for all external-facing pages
- * Used on: LpMapPublic, KnowledgePublic, CampaignsLogExternal, CampaignReview
+ * Used by the unified PublicReview system
  */
 export function ExternalPageFooter({ className }: ExternalPageFooterProps) {
   return (
