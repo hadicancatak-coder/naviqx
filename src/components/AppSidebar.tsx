@@ -32,9 +32,7 @@ import {
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { prefetchTasksData } from "@/lib/taskPrefetch";
 import { 
-  prefetchKnowledgeData, 
-  prefetchProjectsData, 
-  prefetchTechStackData,
+  prefetchProjectsData,
   prefetchCampaignTrackingData,
   prefetchKPIsData,
 } from "@/lib/resourcesPrefetch";
@@ -63,9 +61,8 @@ const operationsItems = [
 ];
 
 const resourcesItems = [
-  { title: "Knowledge", url: "/knowledge", icon: BookOpen },
+  { title: "Library", url: "/library", icon: BookOpen },
   { title: "Projects", url: "/projects", icon: FolderKanban },
-  { title: "Tech Stack", url: "/tech-stack", icon: Server },
 ];
 
 export function AppSidebar() {
@@ -250,16 +247,11 @@ export function AppSidebar() {
                       className={getNavLinkClass}
                       onMouseEnter={() => {
                         prefetchRoute(item.url);
-                        // Prefetch resource data for instant loading
-                        if (item.url === '/knowledge') prefetchKnowledgeData();
                         if (item.url === '/projects') prefetchProjectsData();
-                        if (item.url === '/tech-stack') prefetchTechStackData();
                       }}
                       onFocus={() => {
                         prefetchRoute(item.url);
-                        if (item.url === '/knowledge') prefetchKnowledgeData();
                         if (item.url === '/projects') prefetchProjectsData();
-                        if (item.url === '/tech-stack') prefetchTechStackData();
                       }}
                     >
                       <item.icon className="h-5 w-5 shrink-0" strokeWidth={2.5} />

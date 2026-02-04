@@ -27,8 +27,7 @@ import Notifications from "./pages/Notifications";
 import KPIs from "./pages/KPIs";
 import CampaignsLog from "./pages/CampaignsLog";
 import Projects from "./pages/Projects";
-import Knowledge from "./pages/Knowledge";
-import TechStack from "./pages/TechStack";
+import Library from "./pages/Library";
 import KeywordIntel from "./pages/KeywordIntel";
 import SearchPlanner from "./pages/SearchPlanner";
 import LpPlanner from "./pages/LpPlanner";
@@ -133,9 +132,10 @@ const App = () => (
                       <Route path="/keyword-intel" element={<KeywordIntel />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/how-to" element={<HowTo />} />
-                      <Route path="/knowledge" element={<Knowledge />} />
+                      <Route path="/library" element={<Library />} />
+                      <Route path="/knowledge" element={<Navigate to="/library" replace />} />
+                      <Route path="/tech-stack" element={<Navigate to="/library" replace />} />
                       <Route path="/projects" element={<Projects />} />
-                      <Route path="/tech-stack" element={<TechStack />} />
                       <Route path="/performance" element={<Performance />} />
                     </Route>
                     <Route path="*" element={<NotFound />} />
