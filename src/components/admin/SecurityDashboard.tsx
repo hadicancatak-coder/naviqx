@@ -105,6 +105,32 @@ export function SecurityDashboard() {
     }
   };
 
+  const cleanupExpiredSessions = async () => {
+    try {
+      const { error } = await supabase
+        .from("mfa_sessions")
+        .delete()
+        .lt("expires_at", new Date().toISOString());
+
+      if (error) throw error;
+
+      toast({
+        title: "Cleanup complete",
+        description: "Expired MFA sessions have been removed",
+      });
+
+      // Refresh data and run a new scan
+      fetchData();
+    } catch (error: unknown) {
+      logger.error("Error cleaning up sessions:", error);
+      toast({
+        title: "Cleanup failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
   const resolveSuspiciousActivity = async (activityId: string) => {
     try {
       const { error } = await supabase
@@ -163,6 +189,9 @@ export function SecurityDashboard() {
       details: f.details ? JSON.stringify(f.details, null, 2) : undefined,
       source: "scanner" as const,
       fixUrl: "https://supabase.com/docs/guides/database/database-linter",
+      onCleanup: f.type === "expired_mfa_sessions" || f.type === "stale_mfa_sessions" 
+        ? cleanupExpiredSessions 
+        : undefined,
     }));
   };
 
