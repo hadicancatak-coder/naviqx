@@ -15,12 +15,10 @@ import {
 import { PageContainer, PageHeader } from "@/components/layout";
 import { Project, useProjects } from "@/hooks/useProjects";
 import { ProjectPageContent, ProjectPageEditor, ProjectCard } from "@/components/projects";
+import { ProjectShareDialog } from "@/components/projects/ProjectShareDialog";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { APP_BASE_URL } from "@/lib/constants";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 
 export default function Projects() {
@@ -138,25 +136,7 @@ export default function Projects() {
     setShareDialogOpen(true);
   };
 
-  const handleTogglePublic = async (isPublic: boolean) => {
-    if (!selectedProject) return;
-
-    if (isPublic) {
-      await ensurePublicToken.mutateAsync(selectedProject.id);
-      // State sync handled by useEffect after query invalidation
-    } else {
-      await togglePublic.mutateAsync({ id: selectedProject.id, isPublic: false });
-      // State sync handled by useEffect after query invalidation
-    }
-  };
-
-  const copyPublicLink = () => {
-    if (selectedProject?.public_token) {
-      const url = `${APP_BASE_URL}/projects/public/${selectedProject.public_token}`;
-      navigator.clipboard.writeText(url);
-      toast({ title: "Link copied to clipboard" });
-    }
-  };
+  // Share dialog is now handled by ProjectShareDialog component
 
   // Wait for auth to resolve first
   if (authLoading) {
@@ -243,49 +223,14 @@ export default function Projects() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Share Dialog */}
-        <AlertDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Share Project</AlertDialogTitle>
-              <AlertDialogDescription>
-                Control external access to this project page.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-md space-y-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-body font-medium">Public Access</Label>
-                  <p className="text-metadata text-muted-foreground">
-                    Anyone with the link can view this project
-                  </p>
-                </div>
-                <Switch
-                  checked={selectedProject?.is_public || false}
-                  onCheckedChange={handleTogglePublic}
-                />
-              </div>
-              {selectedProject?.is_public && selectedProject.public_token && (
-                <div className="space-y-xs">
-                  <Label className="text-body-sm">Public Link</Label>
-                  <div className="flex gap-xs">
-                    <Input
-                      readOnly
-                      value={`${APP_BASE_URL}/projects/public/${selectedProject.public_token}`}
-                      className="text-body-sm"
-                    />
-                    <Button variant="outline" onClick={copyPublicLink}>
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Close</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Share Dialog - Using unified system */}
+        {selectedProject && (
+          <ProjectShareDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            project={selectedProject}
+          />
+        )}
       </PageContainer>
     );
   }

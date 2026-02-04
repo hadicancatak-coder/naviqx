@@ -1,18 +1,15 @@
 import { useState } from "react";
 import { KnowledgePage } from "@/hooks/useKnowledgePages";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, ChevronRight, Share2, Copy, Check, Globe } from "lucide-react";
+import { Edit, Trash2, ChevronRight, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import DOMPurify from "dompurify";
 import * as LucideIcons from "lucide-react";
 import { FileText } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { getProductionUrl } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { KnowledgeShareDialog } from "./KnowledgeShareDialog";
 
 // Type-safe icon resolver
 type LucideIconRecord = Record<string, LucideIcon>;
@@ -43,8 +40,7 @@ export function KnowledgePageContent({
   onNavigate,
   isAdmin,
 }: KnowledgePageContentProps) {
-  const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
   // Fetch updated_by profile
   const { data: updatedByUser } = useQuery({
@@ -67,21 +63,6 @@ export function KnowledgePageContent({
   // Get icon component
   const iconName = page.icon || 'file-text';
   const IconComponent = resolveIcon(iconName);
-
-  const publicUrl = page.public_token 
-    ? `${getProductionUrl()}/knowledge/public/${page.public_token}`
-    : '';
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(publicUrl);
-      setCopied(true);
-      toast({ title: "Link copied to clipboard" });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: "Failed to copy link", variant: "destructive" });
-    }
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -124,45 +105,11 @@ export function KnowledgePageContent({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Share Button - shows link directly */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-96">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-body-sm">Share this page</span>
-                </div>
-                <p className="text-metadata text-muted-foreground">
-                  Anyone with the link can view this page without signing in.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={publicUrl || 'Generating link...'}
-                    className="text-body-sm font-mono"
-                  />
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    onClick={handleCopyLink}
-                    disabled={!publicUrl}
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-success" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Share Button */}
+          <Button variant="outline" size="sm" onClick={() => setShareDialogOpen(true)}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
 
           {/* Edit button - for all authenticated users */}
           {onEdit && (
@@ -179,6 +126,13 @@ export function KnowledgePageContent({
             </Button>
           )}
         </div>
+
+        {/* Share Dialog - Using unified system */}
+        <KnowledgeShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          page={page}
+        />
       </div>
 
       {/* Content */}
