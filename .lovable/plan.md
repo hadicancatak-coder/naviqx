@@ -1,108 +1,268 @@
 
-## Fix: Popup Components Overflow Beyond Boundaries
 
-### Problem Analysis
+## Unified External Access System
 
-Looking at the screenshot, text content inside the "Create Page" dialog is expanding freely beyond the dialog boundaries. This is happening because:
+### Problem Statement
 
-1. **Dialog uses `grid` layout** (line 66 of `dialog.tsx`): Grid children can expand based on content if not constrained
-2. **No horizontal overflow clipping**: The dialog has `overflow-y-auto` for vertical scroll but no `overflow-x-hidden` to prevent horizontal expansion
-3. **Missing aggressive word-break**: Long strings without spaces (like "sfghsdfgdfhd" repeated) need `word-break: break-all` or `overflow-wrap: anywhere` to force breaking
+The current external/public page system is fragmented across 4+ implementations with:
+- 3 different ways to store public tokens (dedicated table vs column on entity)
+- 2 different external comment tables with nearly identical schemas
+- Duplicated verification, session, and click-tracking logic in each page
+- No unified management - admins must check multiple places
 
-This affects all popup components: Dialogs, Popovers, Sheets, Drawers, Dropdowns.
+### Solution: Single Unified System
+
+Create **one external access system** that works for ALL features:
+- Campaigns Log
+- Knowledge Pages  
+- Projects
+- LP Planner
+- Search Planner (new)
 
 ---
 
-### Solution
+## Database Architecture
 
-Fix at two levels:
+### 1. Unified Access Table: `public_access_links`
 
-**1. Global CSS: Add text wrapping rules for popup content**
+Single table for ALL external access tokens:
 
-Add to `src/index.css` a rule that forces all popup content to wrap text and respect boundaries:
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| access_token | text | Unique URL token |
+| resource_type | text | 'campaign', 'knowledge', 'project', 'lp_map', 'search_ads' |
+| resource_id | uuid | NULL for entity-wide access |
+| entity | text | Entity filter (UAE, KSA, etc.) |
+| reviewer_name | text | Optional pre-filled name |
+| reviewer_email | text | Optional pre-filled email |
+| email_verified | boolean | Whether identity confirmed |
+| expires_at | timestamptz | Optional expiration |
+| is_active | boolean | Link active status |
+| is_public | boolean | Whether publicly accessible without verification |
+| created_by | uuid | User who created link |
+| created_at | timestamptz | Creation time |
+| click_count | integer | Access tracking |
+| last_accessed_at | timestamptz | Last access time |
+| metadata | jsonb | Flexible extra data per resource type |
 
-```css
-/* ========================================
-   POPUP CONTENT OVERFLOW FIX
-   Force text wrapping inside dialogs, popovers, sheets, drawers
-   Prevents long unbroken strings from expanding containers
-   ======================================== */
-[data-radix-dialog-content],
-[data-radix-alert-dialog-content],
-[data-radix-popover-content],
-[data-radix-popper-content-wrapper] {
-  overflow-x: hidden !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
+**Unique Index**: `(access_token)` + partial index on `(entity, resource_type)` where `is_active = true`
+
+### 2. Unified Comments Table: `public_access_comments`
+
+Single table for ALL external feedback:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| access_link_id | uuid | FK to public_access_links |
+| resource_type | text | Match parent |
+| resource_id | uuid | Specific item being commented on (campaign, ad, section, etc.) |
+| parent_id | uuid | For threaded comments (optional) |
+| reviewer_name | text | Commenter name |
+| reviewer_email | text | Commenter email |
+| comment_text | text | The feedback |
+| comment_type | text | 'general', 'entity_feedback', 'version_feedback', etc. |
+| metadata | jsonb | Extra context (ad_id, version_id, section_id, etc.) |
+| created_at | timestamptz | Timestamp |
+
+**RLS**: Allow anonymous INSERT if valid access_token provided, SELECT if token matches
+
+---
+
+## Core Hook: `usePublicAccess`
+
+Single hook replaces `useExternalAccess`, `useLpMapByToken`, etc:
+
+```typescript
+interface UsePublicAccessOptions {
+  token: string;
+  resourceType: 'campaign' | 'knowledge' | 'project' | 'lp_map' | 'search_ads';
 }
 
-/* Ensure all child text elements also respect boundaries */
-[data-radix-dialog-content] *,
-[data-radix-alert-dialog-content] *,
-[data-radix-popover-content] * {
-  max-width: 100%;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+export function usePublicAccess({ token, resourceType }: UsePublicAccessOptions) {
+  // Token verification
+  // Click tracking
+  // Resource data fetching
+  // Comment fetching/submission
+  // Session management via useReviewerSession
+  
+  return {
+    accessData,      // Access link info
+    resourceData,    // The actual content (campaigns, pages, ads, etc.)
+    comments,        // All comments for this access
+    isLoading,
+    error,
+    isIdentified,
+    submitComment,   // Unified comment submission
+    identify,        // Reviewer identification
+  };
 }
 ```
 
-**2. Component Level: Update base Dialog component**
+---
 
-Update `src/components/ui/dialog.tsx` line 66 to add `overflow-x-hidden`:
+## Unified Public Page Component
 
-```tsx
-// BEFORE:
-"fixed left-[50%] top-[50%] z-[10002] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-md liquid-glass-dialog p-lg pb-sm duration-200 max-h-[90vh] overflow-y-auto hide-scrollbar rounded-2xl"
+### `ExternalReviewPage.tsx` (New Shared Shell)
 
-// AFTER:
-"fixed left-[50%] top-[50%] z-[10002] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-md liquid-glass-dialog p-lg pb-sm duration-200 max-h-[90vh] overflow-x-hidden overflow-y-auto hide-scrollbar rounded-2xl"
+A single wrapper component that handles:
+1. Token verification
+2. Loading/error states
+3. Header with identification bar
+4. Footer (ExternalPageFooter)
+5. Glass background
+
+Child components render the resource-specific content:
+
+```typescript
+<ExternalReviewPage token={token} resourceType="campaign">
+  {(data, comments, actions) => (
+    <CampaignReviewContent 
+      campaigns={data.campaigns} 
+      comments={comments}
+      onComment={actions.submitComment}
+    />
+  )}
+</ExternalReviewPage>
 ```
 
-**3. Component Level: Update Popover component**
+This eliminates 500+ lines of duplicated boilerplate across pages.
 
-Update `src/components/ui/popover.tsx` to add `overflow-x-hidden`:
+---
 
-```tsx
-// BEFORE (line 19):
-"z-popover min-w-[200px] max-h-[400px] overflow-y-auto hide-scrollbar rounded-xl..."
+## Resource-Specific Content Components
 
-// AFTER:
-"z-popover min-w-[200px] max-h-[400px] overflow-x-hidden overflow-y-auto hide-scrollbar rounded-xl..."
+Keep these lean - just the rendering logic:
+
+| Component | Purpose |
+|-----------|---------|
+| `CampaignReviewContent` | Grid of campaign cards with version gallery |
+| `KnowledgeReviewContent` | Rendered knowledge page content |
+| `ProjectReviewContent` | Project roadmap timeline |
+| `LpMapReviewContent` | LP sections with images |
+| `SearchAdsReviewContent` | Campaign hierarchy with ad previews |
+
+---
+
+## Admin Management: Enhanced `ExternalLinksManagement`
+
+Update to query single `public_access_links` table with `resource_type` filter tabs:
+
+- All Links (default)
+- Campaigns
+- Knowledge
+- Projects
+- LP Planner
+- Search Ads
+
+Actions per link:
+- Toggle active
+- Extend expiration
+- View click stats
+- Delete
+
+---
+
+## Migration Path
+
+### Phase 1: Create New Tables
+- `public_access_links` with RLS
+- `public_access_comments` with RLS
+
+### Phase 2: Data Migration (SQL)
+```sql
+-- Migrate campaign_external_access
+INSERT INTO public_access_links (access_token, resource_type, resource_id, entity, ...)
+SELECT access_token, 'campaign', campaign_id, entity, ...
+FROM campaign_external_access;
+
+-- Migrate lp_maps tokens
+INSERT INTO public_access_links (access_token, resource_type, resource_id, ...)
+SELECT public_token, 'lp_map', id, ...
+FROM lp_maps WHERE public_token IS NOT NULL;
+
+-- Similar for knowledge_pages, projects
 ```
 
-**4. TipTap Editor: Strengthen word-breaking**
+### Phase 3: Create Hook & Components
+- `usePublicAccess.ts`
+- `ExternalReviewPage.tsx`
+- Resource content components
 
-Update `src/components/editor/RichTextEditor.tsx` line 109 to use more aggressive word-breaking:
+### Phase 4: Update Routes
+- Keep existing URLs for backward compatibility
+- All point to unified page with different resourceType
 
-```tsx
-// BEFORE:
-'break-words [word-break:break-word] [overflow-wrap:break-word]'
+### Phase 5: Cleanup (Later)
+- Remove old tables after validation
+- Remove old hooks and components
 
-// AFTER (use break-all for unbreakable strings):
-'break-all [word-break:break-all] [overflow-wrap:anywhere]'
-```
+---
 
-Also add to the `.ProseMirror` selector:
-```tsx
-'[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px] [&_.ProseMirror]:break-all [&_.ProseMirror]:[word-break:break-all]'
+## File Structure
+
+```text
+src/
+├── hooks/
+│   └── usePublicAccess.ts              # Unified access hook
+├── components/
+│   └── external/                        # New folder
+│       ├── ExternalReviewPage.tsx       # Shared shell
+│       ├── ExternalReviewHeader.tsx     # Header with ID bar
+│       ├── ExternalCommentForm.tsx      # Unified comment input
+│       ├── ExternalCommentFeed.tsx      # Comment display
+│       ├── CampaignReviewContent.tsx    # Campaign-specific
+│       ├── KnowledgeReviewContent.tsx   # Knowledge-specific
+│       ├── ProjectReviewContent.tsx     # Project-specific
+│       ├── LpMapReviewContent.tsx       # LP-specific
+│       └── SearchAdsReviewContent.tsx   # Search ads-specific
+├── pages/
+│   └── PublicReview.tsx                 # Single page, routes by type
 ```
 
 ---
 
-### Technical Details
+## Technical Benefits
 
-| File | Change |
-|------|--------|
-| `src/index.css` | Add global CSS rules for all Radix popup components |
-| `src/components/ui/dialog.tsx` | Add `overflow-x-hidden` to DialogContent classes |
-| `src/components/ui/popover.tsx` | Add `overflow-x-hidden` to PopoverContent classes |
-| `src/components/editor/RichTextEditor.tsx` | Strengthen word-breaking to `break-all` |
+1. **Single source of truth**: One table for all access tokens
+2. **Unified RLS**: One set of policies to maintain
+3. **Consistent admin view**: All links in one place
+4. **Less code**: ~2000 lines removed, ~500 lines added
+5. **Easy to extend**: Add new resource types without new tables/hooks
+6. **Search Planner support**: Just add content component
 
 ---
 
-### Expected Result
+## Files to Create/Modify
 
-- All popup components (dialogs, popovers, sheets) will clip horizontal overflow
-- Long unbroken text strings will break at any character to stay within boundaries
-- The "Create Page" dialog and all similar dialogs will properly contain their content
-- TipTap editor content will wrap correctly inside dialogs
+| Action | File | Description |
+|--------|------|-------------|
+| **Database Migration** | - | Create `public_access_links` and `public_access_comments` |
+| **Create** | `src/hooks/usePublicAccess.ts` | Unified access hook |
+| **Create** | `src/components/external/ExternalReviewPage.tsx` | Shared shell |
+| **Create** | `src/components/external/ExternalReviewHeader.tsx` | Header component |
+| **Create** | `src/components/external/ExternalCommentForm.tsx` | Comment input |
+| **Create** | `src/components/external/ExternalCommentFeed.tsx` | Comment display |
+| **Create** | `src/components/external/CampaignReviewContent.tsx` | Campaign content |
+| **Create** | `src/components/external/SearchAdsReviewContent.tsx` | Search ads content |
+| **Create** | `src/pages/PublicReview.tsx` | Unified public page |
+| **Modify** | `src/App.tsx` | Update routes to use PublicReview |
+| **Modify** | `src/pages/admin/ExternalLinksManagement.tsx` | Query unified table |
+| **Modify** | `src/components/campaigns/CampaignShareDialog.tsx` | Use new hook |
+| **Keep** | `src/hooks/useReviewerSession.ts` | Already reusable |
+
+---
+
+## Implementation Order
+
+1. Database migration (create new tables)
+2. `usePublicAccess` hook
+3. `ExternalReviewPage` shell component
+4. `SearchAdsReviewContent` (the new feature)
+5. Update routes for search ads
+6. Migrate existing pages one at a time (campaigns → LP → knowledge → projects)
+7. Update admin management
+8. Data migration SQL
+9. Cleanup old code
+
