@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Search, FolderKanban, ArrowLeft } from "lucide-react";
+import { Plus, Search, FolderKanban, ArrowLeft, Share2, Edit2, Trash2 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,45 +15,68 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { Project, useProjects } from "@/hooks/useProjects";
-import { ProjectPageContent, ProjectPageEditor, ProjectCard } from "@/components/projects";
-import { ProjectShareDialog } from "@/components/projects/ProjectShareDialog";
+import { Project, useProjects, useProjectTimelines, useProjectAssignees } from "@/hooks/useProjects";
+import { usePhaseMilestones, usePhaseTaskStats, useAllProjectMilestones } from "@/hooks/useRoadmap";
+import { useTasks } from "@/hooks/useTasks";
+import { 
+  ProjectCard, 
+  ProjectBrief, 
+  ProjectBriefEditor, 
+  ProjectRoadmap, 
+  ProjectSummaryStats,
+  ProjectPhaseEditor,
+  ProjectShareDialog,
+  ProjectCreateDialog,
+} from "@/components/projects";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+// Status configuration
+const statusConfig: Record<string, { label: string; className: string }> = {
+  planning: { label: "Planning", className: "status-info" },
+  active: { label: "Active", className: "status-success" },
+  "on-hold": { label: "On Hold", className: "status-warning" },
+  completed: { label: "Completed", className: "status-neutral" },
+};
 
 export default function Projects() {
   const { user, loading: authLoading } = useAuth();
-  const { toast } = useToast();
-  const { projects, tree, isLoading, error: projectsError, createProject, updateProject, deleteProject, ensurePublicToken, togglePublic } =
-    useProjects();
+  const { projects, isLoading, error: projectsError, createProject, updateProject, deleteProject } = useProjects();
+  const { data: allTasks } = useTasks();
 
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
+  
+  // Dialog states
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isBriefEditorOpen, setIsBriefEditorOpen] = useState(false);
+  const [isPhaseEditorOpen, setIsPhaseEditorOpen] = useState(false);
+  const [editingPhase, setEditingPhase] = useState<ReturnType<typeof useProjectTimelines>['timelines'] extends (infer T)[] ? T : never>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [phaseDeleteConfirmOpen, setPhaseDeleteConfirmOpen] = useState(false);
+  const [phaseToDelete, setPhaseToDelete] = useState<string | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const isAdmin = true;
+
+  // Project-specific data hooks
+  const { timelines, createTimeline, updateTimeline, deleteTimeline } = useProjectTimelines(selectedProject?.id || null);
+  const { assignees } = useProjectAssignees(selectedProject?.id || null);
+  const phaseIds = timelines?.map((t) => t.id) || [];
+  const { milestones } = useAllProjectMilestones(selectedProject?.id || null, phaseIds);
+  const { taskStats } = usePhaseTaskStats(selectedProject?.id || null);
 
   // Keep selectedProject in sync with query data
   useEffect(() => {
     if (selectedProject && projects) {
       const freshProject = projects.find(p => p.id === selectedProject.id);
-      if (freshProject && (
-        freshProject.is_public !== selectedProject.is_public ||
-        freshProject.public_token !== selectedProject.public_token ||
-        freshProject.name !== selectedProject.name ||
-        freshProject.status !== selectedProject.status
-      )) {
+      if (freshProject) {
         setSelectedProject(freshProject);
       }
     }
-  }, [projects, selectedProject]);
+  }, [projects]);
 
   // Filter projects based on search
   const filteredProjects = useMemo(() => {
@@ -64,81 +89,79 @@ export default function Projects() {
     );
   }, [projects, searchQuery]);
 
-  // Build breadcrumbs for selected project
-  const breadcrumbs = useMemo(() => {
-    if (!selectedProject || !projects) return [];
-
-    const crumbs: Project[] = [];
-    let current: Project | undefined = selectedProject;
-
-    while (current) {
-      crumbs.unshift(current);
-      current = projects.find((p) => p.id === current!.parent_id);
+  // Get timelines and task counts for project cards
+  const projectCardData = useMemo(() => {
+    const data: Record<string, { taskCount: number; completedTasks: number }> = {};
+    
+    if (allTasks && projects) {
+      for (const project of projects) {
+        const projectTasks = allTasks.filter((t) => t.project_id === project.id);
+        data[project.id] = {
+          taskCount: projectTasks.length,
+          completedTasks: projectTasks.filter((t) => t.status === "Completed").length,
+        };
+      }
     }
+    
+    return data;
+  }, [allTasks, projects]);
 
-    return crumbs;
-  }, [selectedProject, projects]);
-
-  const handleCreateProject = (parentId: string | null = null) => {
-    setEditingProject(null);
-    setParentIdForNew(parentId);
-    setIsEditorOpen(true);
+  // Handlers
+  const handleCreateProject = async (data: Partial<Project>) => {
+    const result = await createProject.mutateAsync(data as Project & { name: string });
+    setSelectedProject(result as Project);
+    setIsCreateDialogOpen(false);
   };
 
-  const handleEditProject = () => {
+  const handleUpdateProject = async (data: Partial<Project>) => {
+    if (data.id) {
+      await updateProject.mutateAsync(data as Project & { id: string });
+    }
+    setIsBriefEditorOpen(false);
+  };
+
+  const handleDeleteProject = async () => {
     if (selectedProject) {
-      setEditingProject(selectedProject);
-      setParentIdForNew(null);
-      setIsEditorOpen(true);
-    }
-  };
-
-  const handleDeleteProject = () => {
-    if (selectedProject) {
-      setProjectToDelete(selectedProject);
-      setDeleteConfirmOpen(true);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (projectToDelete) {
-      await deleteProject.mutateAsync(projectToDelete.id);
+      await deleteProject.mutateAsync(selectedProject.id);
       setSelectedProject(null);
-      setProjectToDelete(null);
       setDeleteConfirmOpen(false);
     }
   };
 
-  const handleSave = async (data: Partial<Project>) => {
-    if (data.id) {
-      await updateProject.mutateAsync(data as Project & { id: string });
-      const updated = projects?.find((p) => p.id === data.id);
-      if (updated) setSelectedProject({ ...updated, ...data });
+  const handleAddPhase = () => {
+    setEditingPhase(null);
+    setIsPhaseEditorOpen(true);
+  };
+
+  const handleEditPhase = (phase: NonNullable<typeof timelines>[number]) => {
+    setEditingPhase(phase);
+    setIsPhaseEditorOpen(true);
+  };
+
+  const handleSavePhase = async (data: Parameters<typeof createTimeline.mutateAsync>[0]) => {
+    if (editingPhase) {
+      await updateTimeline.mutateAsync({ id: editingPhase.id, ...data });
     } else {
-      const newProject = await createProject.mutateAsync(data as Project & { name: string });
-      setSelectedProject(newProject as Project);
+      await createTimeline.mutateAsync(data);
+    }
+    setIsPhaseEditorOpen(false);
+    setEditingPhase(null);
+  };
+
+  const handleDeletePhase = (phaseId: string) => {
+    setPhaseToDelete(phaseId);
+    setPhaseDeleteConfirmOpen(true);
+  };
+
+  const confirmDeletePhase = async () => {
+    if (phaseToDelete) {
+      await deleteTimeline.mutateAsync(phaseToDelete);
+      setPhaseToDelete(null);
+      setPhaseDeleteConfirmOpen(false);
     }
   };
 
-  const handleNavigate = async (project: Project) => {
-    setSelectedProject(project);
-    if (project.is_public && !project.public_token) {
-      await ensurePublicToken.mutateAsync(project.id);
-    }
-  };
-
-  const handleBackToList = () => {
-    setSelectedProject(null);
-  };
-
-  const handleShare = async () => {
-    if (!selectedProject) return;
-    setShareDialogOpen(true);
-  };
-
-  // Share dialog is now handled by ProjectShareDialog component
-
-  // Wait for auth to resolve first
+  // Loading states
   if (authLoading) {
     return (
       <PageContainer>
@@ -149,7 +172,6 @@ export default function Projects() {
     );
   }
 
-  // Handle error state
   if (projectsError) {
     return (
       <PageContainer>
@@ -170,72 +192,154 @@ export default function Projects() {
     );
   }
 
-  // PROJECT DETAIL VIEW
+  // =============================================
+  // PROJECT DETAIL VIEW (Roadmap-First)
+  // =============================================
   if (selectedProject) {
+    const iconName = selectedProject.icon || "folder-kanban";
+    const iconKey = iconName.split("-").map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join("");
+    const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconKey] || LucideIcons.FolderKanban;
+    const status = statusConfig[selectedProject.status] || statusConfig.planning;
+
     return (
       <PageContainer size="wide">
-        {/* Back button header */}
-        <div className="flex items-center gap-md mb-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-lg">
           <Button 
             variant="ghost" 
-            onClick={handleBackToList}
+            onClick={() => setSelectedProject(null)}
             className="gap-xs"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Projects
           </Button>
+          
+          <div className="flex items-center gap-sm">
+            <Button variant="outline" size="sm" onClick={() => setShareDialogOpen(true)} className="gap-xs">
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsBriefEditorOpen(true)} className="gap-xs">
+              <Edit2 className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmOpen(true)} className="gap-xs text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <ProjectPageContent
+        {/* Project Title Bar */}
+        <div className="flex items-center gap-md mb-lg">
+          <div className="p-md bg-primary/10 rounded-xl">
+            <IconComponent className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <div className="flex items-center gap-sm">
+              <h1 className="text-heading-lg font-bold text-foreground">{selectedProject.name}</h1>
+              <Badge className={cn("text-metadata", status.className)}>{status.label}</Badge>
+            </div>
+            {selectedProject.purpose && (
+              <p className="text-body text-muted-foreground mt-xs">{selectedProject.purpose}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="mb-lg">
+          <ProjectSummaryStats
+            timelines={timelines || []}
+            milestones={milestones || []}
+            taskStats={taskStats || []}
+            dueDate={selectedProject.due_date}
+          />
+        </div>
+
+        {/* Brief Section */}
+        <div className="mb-lg">
+          <ProjectBrief
+            project={selectedProject}
+            assignees={assignees}
+            onEdit={() => setIsBriefEditorOpen(true)}
+          />
+        </div>
+
+        {/* Roadmap Timeline */}
+        <ProjectRoadmap
+          projectId={selectedProject.id}
+          timelines={timelines || []}
+          milestones={milestones || []}
+          taskStats={taskStats || []}
+          onAddPhase={handleAddPhase}
+          onEditPhase={handleEditPhase}
+          onDeletePhase={handleDeletePhase}
+        />
+
+        {/* Dialogs */}
+        <ProjectBriefEditor
+          open={isBriefEditorOpen}
+          onOpenChange={setIsBriefEditorOpen}
           project={selectedProject}
-          breadcrumbs={breadcrumbs}
-          onEdit={handleEditProject}
-          onDelete={handleDeleteProject}
-          onShare={handleShare}
-          isAdmin={isAdmin}
+          onSave={handleUpdateProject}
         />
 
-        {/* Editor Dialog */}
-        <ProjectPageEditor
-          open={isEditorOpen}
-          onOpenChange={setIsEditorOpen}
-          project={editingProject}
-          parentId={parentIdForNew}
-          onSave={handleSave}
+        <ProjectPhaseEditor
+          open={isPhaseEditorOpen}
+          onOpenChange={setIsPhaseEditorOpen}
+          phase={editingPhase}
+          projectId={selectedProject.id}
+          onSave={handleSavePhase}
         />
 
-        {/* Delete Confirmation */}
+        <ProjectShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          project={selectedProject}
+        />
+
+        {/* Delete Project Confirmation */}
         <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Project</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
-                Any child projects will become top-level projects.
+                Are you sure you want to delete "{selectedProject.name}"? This action cannot be undone.
+                All phases and milestones will be permanently deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+              <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground">
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Share Dialog - Using unified system */}
-        {selectedProject && (
-          <ProjectShareDialog
-            open={shareDialogOpen}
-            onOpenChange={setShareDialogOpen}
-            project={selectedProject}
-          />
-        )}
+        {/* Delete Phase Confirmation */}
+        <AlertDialog open={phaseDeleteConfirmOpen} onOpenChange={setPhaseDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Phase</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this phase? All milestones in this phase will also be deleted.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeletePhase} className="bg-destructive text-destructive-foreground">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </PageContainer>
     );
   }
 
+  // =============================================
   // PROJECT LIST VIEW
+  // =============================================
   return (
     <PageContainer size="wide">
       <PageHeader
@@ -243,7 +347,7 @@ export default function Projects() {
         description="Manage projects with roadmaps and linked tasks"
         actions={
           isAdmin ? (
-            <Button onClick={() => handleCreateProject()} className="gap-xs">
+            <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-xs">
               <Plus className="h-4 w-4" />
               New Project
             </Button>
@@ -271,7 +375,9 @@ export default function Projects() {
             <ProjectCard
               key={project.id}
               project={project}
-              onClick={() => handleNavigate(project)}
+              taskCount={projectCardData[project.id]?.taskCount || 0}
+              completedTasks={projectCardData[project.id]?.completedTasks || 0}
+              onClick={() => setSelectedProject(project)}
             />
           ))}
           
@@ -279,7 +385,7 @@ export default function Projects() {
           {isAdmin && (
             <Card
               interactive
-              onClick={() => handleCreateProject()}
+              onClick={() => setIsCreateDialogOpen(true)}
               className="flex flex-col items-center justify-center p-lg min-h-[200px] border-dashed cursor-pointer group hover-lift"
             >
               <div className="flex items-center justify-center h-12 w-12 rounded-full bg-muted group-hover:bg-primary/10 transition-smooth mb-md">
@@ -315,20 +421,18 @@ export default function Projects() {
             isAdmin
               ? {
                   label: "Create First Project",
-                  onClick: () => handleCreateProject(),
+                  onClick: () => setIsCreateDialogOpen(true),
                 }
               : undefined
           }
         />
       )}
 
-      {/* Editor Dialog */}
-      <ProjectPageEditor
-        open={isEditorOpen}
-        onOpenChange={setIsEditorOpen}
-        project={editingProject}
-        parentId={parentIdForNew}
-        onSave={handleSave}
+      {/* Create Project Dialog */}
+      <ProjectCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSave={handleCreateProject}
       />
     </PageContainer>
   );

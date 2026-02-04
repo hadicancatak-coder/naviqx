@@ -1,22 +1,14 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Copy, Check, ExternalLink, Globe, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Globe, Link2, MousePointerClick, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
-import { getUniversalReviewUrl } from "@/lib/urlHelpers";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { usePublicAccessManagement } from "@/hooks/usePublicAccess";
 import { Project } from "@/hooks/useProjects";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectShareDialogProps {
   open: boolean;
@@ -24,180 +16,156 @@ interface ProjectShareDialogProps {
   project: Project;
 }
 
+const PUBLIC_URL = "https://naviqx.lovable.app";
+
 export function ProjectShareDialog({ open, onOpenChange, project }: ProjectShareDialogProps) {
-  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isPublic, setIsPublic] = useState(project.is_public);
+  const [shareToken, setShareToken] = useState<string | null>(null);
 
-  // Fetch existing unified access link
-  const { data: accessLink, isLoading } = useQuery({
-    queryKey: ['project-access-link', project.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('public_access_links')
-        .select('*')
-        .eq('resource_type', 'project')
-        .eq('resource_id', project.id)
-        .eq('is_active', true)
-        .maybeSingle();
+  const { generateLink, deleteLink } = usePublicAccessManagement();
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: open,
-  });
+  // Sync with project state when it changes
+  useEffect(() => {
+    setIsPublic(project.is_public);
+    setShareToken(null);
+  }, [project.is_public, project.public_token]);
 
-  // Generate or toggle access link
-  const toggleAccess = useMutation({
-    mutationFn: async (enable: boolean) => {
-      if (enable) {
-        // Generate new unified token
-        const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24);
+  // Generate share URL
+  const shareUrl = shareToken 
+    ? `${PUBLIC_URL}/r/${shareToken}`
+    : project.public_token 
+      ? `${PUBLIC_URL}/r/${project.public_token}`
+      : null;
 
+  const handleTogglePublic = async (checked: boolean) => {
+    setIsUpdating(true);
+    try {
+      if (checked) {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from('public_access_links') as any)
-          .insert({
-            access_token: token,
-            resource_type: 'project',
-            resource_id: project.id,
-            entity: project.name,
-            is_public: true,
-            is_active: true,
-            created_by: user?.id,
-            metadata: { project_status: project.status },
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Also update legacy columns for backward compatibility
-        await supabase
-          .from('projects')
-          .update({ 
-            is_public: true, 
-            public_token: token,
-          })
-          .eq('id', project.id);
-
-        return data;
-      } else {
-        // Deactivate unified link
-        if (accessLink?.id) {
-          await supabase
-            .from('public_access_links')
-            .update({ is_active: false })
-            .eq('id', accessLink.id);
+        if (!user) {
+          toast({ title: "You must be logged in to share", variant: "destructive" });
+          setIsUpdating(false);
+          return;
         }
 
-        // Also update legacy columns
-        await supabase
-          .from('projects')
-          .update({ is_public: false })
-          .eq('id', project.id);
-
-        return null;
+        // Create access link using unified system
+        const result = await generateLink.mutateAsync({
+          resourceType: "project",
+          resourceId: project.id,
+          entity: "CFI Group",
+          isPublic: true,
+        });
+        
+        setShareToken(result.access_token);
+        setIsPublic(true);
+        
+        // Update project to mark as public
+        await supabase.from("projects").update({ 
+          is_public: true, 
+          public_token: result.access_token 
+        }).eq("id", project.id);
+        
+        toast({ title: "Project is now public" });
+      } else {
+        // Find and delete the access link
+        const tokenToDelete = shareToken || project.public_token;
+        if (tokenToDelete) {
+          const { data: link } = await supabase
+            .from("public_access_links")
+            .select("id")
+            .eq("access_token", tokenToDelete)
+            .single();
+          
+          if (link) {
+            await deleteLink.mutateAsync(link.id);
+          }
+        }
+        
+        // Update project to mark as private
+        await supabase.from("projects").update({ 
+          is_public: false, 
+          public_token: null 
+        }).eq("id", project.id);
+        
+        setShareToken(null);
+        setIsPublic(false);
+        toast({ title: "Project is now private" });
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project-access-link', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['public-access-links'] });
-    },
-    onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : 'Failed to update sharing settings';
-      toast.error(message);
-    },
-  });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      toast({ title: "Failed to update sharing settings", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-  const isEnabled = !!accessLink;
-  const shareUrl = accessLink?.access_token 
-    ? getUniversalReviewUrl(accessLink.access_token)
-    : '';
-
-  const handleCopy = async () => {
+  const handleCopyLink = async () => {
     if (!shareUrl) return;
+    
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success('Link copied to clipboard');
+      toast({ title: "Link copied to clipboard" });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Failed to copy link');
+      toast({ title: "Failed to copy link", variant: "destructive" });
     }
   };
-
-  const handleOpenPreview = () => {
-    if (shareUrl) {
-      window.open(shareUrl, '_blank');
-    }
-  };
-
-  // Reset copied state when dialog closes
-  useEffect(() => {
-    if (!open) setCopied(false);
-  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-primary" />
+          <DialogTitle className="text-heading-md flex items-center gap-sm">
+            {isPublic ? <Globe className="h-5 w-5 text-primary" /> : <Lock className="h-5 w-5 text-muted-foreground" />}
             Share Project
           </DialogTitle>
           <DialogDescription>
-            Share "{project.name}" with external stakeholders via a public link.
+            Share your project roadmap with stakeholders
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-md py-md">
-          {/* Enable Toggle */}
-          <div className="flex items-center justify-between p-md bg-muted/50 rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-body font-medium">Public Access</Label>
+        <div className="space-y-lg py-md">
+          {/* Public toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-xs">
+              <Label htmlFor="public-toggle" className="text-body font-medium">
+                Public Access
+              </Label>
               <p className="text-metadata text-muted-foreground">
-                Anyone with the link can view the project roadmap
+                Anyone with the link can view this project
               </p>
             </div>
             <Switch
-              checked={isEnabled}
-              onCheckedChange={(checked) => toggleAccess.mutate(checked)}
-              disabled={toggleAccess.isPending || isLoading}
+              id="public-toggle"
+              checked={isPublic}
+              onCheckedChange={handleTogglePublic}
+              disabled={isUpdating}
             />
           </div>
 
-          {/* Share Link */}
-          {isEnabled && accessLink && (
+          {/* Share link */}
+          {isPublic && shareUrl && (
             <div className="space-y-sm">
-              <div className="flex items-center justify-between">
-                <Label className="text-body-sm font-medium flex items-center gap-xs">
-                  <Link2 className="h-4 w-4" />
-                  Share Link
-                </Label>
-                {accessLink.click_count > 0 && (
-                  <Badge variant="secondary" className="gap-xs">
-                    <MousePointerClick className="h-3 w-3" />
-                    {accessLink.click_count} views
-                  </Badge>
-                )}
-              </div>
-              <div className="flex gap-xs">
+              <Label className="text-body-sm font-medium">Share Link</Label>
+              <div className="flex gap-sm">
                 <Input
-                  readOnly
                   value={shareUrl}
-                  className="text-body-sm font-mono bg-muted/30"
+                  readOnly
+                  className="text-body-sm"
                 />
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={handleCopy}
-                  disabled={!shareUrl}
+                  onClick={handleCopyLink}
+                  className="shrink-0"
                 >
                   {copied ? (
-                    <Check className="h-4 w-4 text-success" />
+                    <Check className="h-4 w-4 text-success-text" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -205,8 +173,8 @@ export function ProjectShareDialog({ open, onOpenChange, project }: ProjectShare
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={handleOpenPreview}
-                  disabled={!shareUrl}
+                  onClick={() => window.open(shareUrl, "_blank")}
+                  className="shrink-0"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
@@ -214,10 +182,14 @@ export function ProjectShareDialog({ open, onOpenChange, project }: ProjectShare
             </div>
           )}
 
-          {/* Info Note */}
-          <p className="text-metadata text-muted-foreground text-center">
-            External viewers see the project roadmap, phases, and progress. No authentication required.
-          </p>
+          {/* Info message */}
+          {!isPublic && (
+            <div className="bg-muted/50 rounded-lg p-md">
+              <p className="text-body-sm text-muted-foreground">
+                Enable public access to generate a shareable link. Viewers will see the project brief and roadmap timeline.
+              </p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
