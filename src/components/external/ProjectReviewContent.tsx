@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { format, parseISO, differenceInDays, addDays, startOfDay, isWithinInterval } from "date-fns";
-import { FolderKanban, Clock, Users } from "lucide-react";
+import { FolderKanban, Clock, Users, CheckCircle2, Target } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -8,9 +8,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { PublicAccessLink } from "@/hooks/usePublicAccess";
-import { PublicRoadmapSummary } from "@/components/projects/roadmap";
 import { PhaseMilestone, PhaseTaskStats } from "@/hooks/useRoadmap";
 import { calculatePhaseProgress } from "@/hooks/usePhaseProgress";
+import DOMPurify from "dompurify";
 
 // Types
 interface TimelinePhase {
@@ -33,6 +33,8 @@ interface ProjectData {
   due_date: string | null;
   updated_at: string;
   description?: string | null;
+  purpose?: string | null;
+  outcomes?: string | null;
 }
 
 interface Assignee {
@@ -73,15 +75,15 @@ const phaseColors: Record<string, { bg: string; border: string; text: string; gl
 };
 
 const statusLabels: Record<string, { label: string; className: string }> = {
-  planning: { label: "Planning", className: "bg-muted text-muted-foreground" },
-  active: { label: "Active", className: "bg-success/20 text-success-text" },
-  "on-hold": { label: "On Hold", className: "bg-warning/20 text-warning-text" },
-  completed: { label: "Completed", className: "bg-primary/20 text-primary" },
+  planning: { label: "Planning", className: "status-info" },
+  active: { label: "Active", className: "status-success" },
+  "on-hold": { label: "On Hold", className: "status-warning" },
+  completed: { label: "Completed", className: "status-neutral" },
 };
 
 /**
  * Project roadmap content for external review.
- * Read-only display of project phases and timeline.
+ * Read-only display of project brief, phases, and timeline.
  */
 export function ProjectReviewContent({
   accessData,
@@ -144,6 +146,22 @@ export function ProjectReviewContent({
   const todayPosition = getPosition(today);
   const isTodayVisible = todayPosition >= 0 && todayPosition <= 100;
 
+  // Calculate overall stats
+  const stats = useMemo(() => {
+    const totalMilestones = milestones.length;
+    const completedMilestones = milestones.filter((m) => m.is_completed).length;
+    
+    let totalProgress = 0;
+    if (phases.length > 0) {
+      const progressSum = phases.reduce((sum, p) => {
+        return sum + getPhaseProgress(p.id, p.progress).calculatedProgress;
+      }, 0);
+      totalProgress = Math.round(progressSum / phases.length);
+    }
+
+    return { totalMilestones, completedMilestones, totalProgress };
+  }, [phases, milestones, getPhaseProgress]);
+
   if (!projectData) {
     return (
       <div className="text-center py-16">
@@ -166,6 +184,13 @@ export function ProjectReviewContent({
 
   const statusInfo = statusLabels[projectData.status] || statusLabels.planning;
 
+  // Parse outcomes
+  const outcomes = projectData.outcomes 
+    ? (projectData.outcomes.startsWith('[') 
+        ? JSON.parse(projectData.outcomes) as string[]
+        : projectData.outcomes.split('\n').filter(Boolean))
+    : [];
+
   return (
     <div className="max-w-5xl mx-auto space-y-lg">
       {/* Project Header */}
@@ -179,6 +204,11 @@ export function ProjectReviewContent({
               <h1 className="text-heading-lg font-bold text-foreground">{projectData.name}</h1>
               <Badge className={cn("text-metadata", statusInfo.className)}>{statusInfo.label}</Badge>
             </div>
+            
+            {projectData.purpose && (
+              <p className="text-body text-muted-foreground mt-sm">{projectData.purpose}</p>
+            )}
+            
             <div className="flex items-center gap-md text-metadata text-muted-foreground mt-sm">
               {projectData.due_date && (
                 <span>Due {format(new Date(projectData.due_date), "MMMM d, yyyy")}</span>
@@ -222,13 +252,50 @@ export function ProjectReviewContent({
         </div>
       </div>
 
+      {/* Brief Section */}
+      {(projectData.description || outcomes.length > 0) && (
+        <div className="liquid-glass-elevated rounded-xl p-lg">
+          <h2 className="text-heading-sm font-semibold text-foreground mb-md">Project Brief</h2>
+          
+          {projectData.description && (
+            <div 
+              className="text-body text-foreground prose prose-sm max-w-none mb-md [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(projectData.description) }}
+            />
+          )}
+          
+          {outcomes.length > 0 && (
+            <div>
+              <h3 className="text-body-sm font-medium text-muted-foreground mb-sm">Expected Outcomes</h3>
+              <ul className="space-y-xs">
+                {outcomes.map((outcome, idx) => (
+                  <li key={idx} className="flex items-start gap-xs text-body text-foreground">
+                    <span className="text-success-text mt-1">•</span>
+                    <span>{outcome}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Summary Metrics */}
       {phases.length > 0 && (
-        <PublicRoadmapSummary
-          phases={phases.map((p: TimelinePhase) => ({ ...p, progress: getPhaseProgress(p.id, p.progress).calculatedProgress }))}
-          milestones={milestones}
-          projectDueDate={projectData.due_date}
-        />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-md">
+          <div className="liquid-glass rounded-xl p-md text-center">
+            <div className="text-heading-lg font-bold text-foreground">{stats.totalProgress}%</div>
+            <div className="text-metadata text-muted-foreground">Overall Progress</div>
+          </div>
+          <div className="liquid-glass rounded-xl p-md text-center">
+            <div className="text-heading-lg font-bold text-foreground">{phases.length}</div>
+            <div className="text-metadata text-muted-foreground">Phases</div>
+          </div>
+          <div className="liquid-glass rounded-xl p-md text-center">
+            <div className="text-heading-lg font-bold text-foreground">{stats.completedMilestones}/{stats.totalMilestones}</div>
+            <div className="text-metadata text-muted-foreground">Milestones</div>
+          </div>
+        </div>
       )}
 
       {/* Timeline */}
@@ -250,7 +317,7 @@ export function ProjectReviewContent({
         ) : (
           <div className="liquid-glass rounded-xl p-md overflow-x-auto">
             {/* Month markers */}
-            <div className="relative h-8 mb-sm border-b border-border/50">
+            <div className="relative h-8 mb-sm border-b border-border/50" style={{ minWidth: "600px" }}>
               {monthMarkers.map((marker, idx) => (
                 <div
                   key={idx}
@@ -263,7 +330,7 @@ export function ProjectReviewContent({
             </div>
 
             {/* Timeline bars */}
-            <div className="relative min-h-[180px]" style={{ minWidth: "600px" }}>
+            <div className="relative" style={{ minWidth: "600px", minHeight: `${phases.length * 56 + 40}px` }}>
               {/* Today marker */}
               {isTodayVisible && (
                 <div
@@ -284,6 +351,8 @@ export function ProjectReviewContent({
                   const width = getWidth(phase.startDate, phase.endDate);
                   const isActive = isWithinInterval(today, { start: phase.startDate, end: phase.endDate });
                   const { calculatedProgress } = getPhaseProgress(phase.id, phase.progress);
+                  const phaseMilestones = milestones.filter((m) => m.phase_id === phase.id);
+                  const completedMilestones = phaseMilestones.filter((m) => m.is_completed).length;
 
                   return (
                     <div key={phase.id} className="relative h-12">
@@ -291,9 +360,7 @@ export function ProjectReviewContent({
                         <TooltipTrigger asChild>
                           <div
                             className={cn(
-                              "absolute h-full rounded-lg cursor-pointer",
-                              "transition-all duration-200",
-                              "hover:scale-[1.02] hover:shadow-md hover:z-10",
+                              "absolute h-full rounded-lg",
                               "backdrop-blur-sm border",
                               colors.glass,
                               colors.border,
@@ -302,9 +369,19 @@ export function ProjectReviewContent({
                             style={{ left: `${left}%`, width: `${width}%`, minWidth: "100px" }}
                           >
                             <div className="h-full px-sm py-xs flex flex-col justify-between overflow-hidden">
-                              <span className="text-body-sm font-semibold truncate !text-foreground">
-                                {phase.phase_name}
-                              </span>
+                              <div className="flex items-center justify-between">
+                                <span className="text-body-sm font-semibold truncate !text-foreground">
+                                  {phase.phase_name}
+                                </span>
+                                {phaseMilestones.length > 0 && (
+                                  <div className="flex items-center gap-0.5 shrink-0">
+                                    <CheckCircle2 className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-metadata text-muted-foreground">
+                                      {completedMilestones}/{phaseMilestones.length}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                               <div className="flex items-center gap-sm">
                                 <Progress value={calculatedProgress} className="h-1.5 flex-1" />
                                 <span className="text-metadata font-medium !text-foreground">
@@ -341,6 +418,13 @@ export function ProjectReviewContent({
           Shared by <span className="font-medium text-foreground">{accessData.entity}</span>
         </div>
       )}
+
+      {/* Footer */}
+      <div className="text-center text-metadata text-muted-foreground border-t border-border pt-lg">
+        Proudly presented by the Performance Marketing Team at CFI Group.
+        <br />
+        This page was built internally with AI. Do not share with third parties; internal use only.
+      </div>
     </div>
   );
 }

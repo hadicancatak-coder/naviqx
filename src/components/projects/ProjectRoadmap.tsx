@@ -1,801 +1,223 @@
-import { useMemo, useState, useCallback } from "react";
-import { format, differenceInDays, addDays, startOfDay, isWithinInterval, parseISO } from "date-fns";
-import { Plus, Trash2, Layers, User2, Target } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import { format, parseISO, differenceInDays, addDays, startOfDay, isWithinInterval } from "date-fns";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { ProjectTimeline, useProjectTimelines } from "@/hooks/useProjects";
-import { useAllProjectMilestones, usePhaseDependencies, usePhaseTaskStats } from "@/hooks/useRoadmap";
-import { calculatePhaseProgress } from "@/hooks/usePhaseProgress";
-import { RoadmapSummary, StepExpandedCard, StepCard, DependencyLines, QuickMilestoneDialog, STEP_LANES } from "./roadmap";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { ProjectTimeline } from "@/hooks/useProjects";
+import { PhaseMilestone, PhaseTaskStats } from "@/hooks/useRoadmap";
+import { ProjectPhaseCard } from "./ProjectPhaseCard";
+import { ProjectPhaseExpanded } from "./ProjectPhaseExpanded";
+import { cn } from "@/lib/utils";
 
 interface ProjectRoadmapProps {
   projectId: string;
-  isAdmin?: boolean;
-  projectDueDate?: string | null;
+  timelines: ProjectTimeline[];
+  milestones?: PhaseMilestone[];
+  taskStats?: PhaseTaskStats[];
+  onAddPhase?: () => void;
+  onEditPhase?: (phase: ProjectTimeline) => void;
+  onDeletePhase?: (phaseId: string) => void;
+  isReadOnly?: boolean;
 }
 
-// Extended type for timeline with extra fields
-interface ExtendedTimeline extends ProjectTimeline {
-  owner?: string | null;
-  system_name?: string | null;
-  status?: string;
-  step_lane?: string;
-  expected_outcomes?: string[];
-  auto_progress?: boolean;
-}
+export function ProjectRoadmap({
+  projectId,
+  timelines,
+  milestones = [],
+  taskStats = [],
+  onAddPhase,
+  onEditPhase,
+  onDeletePhase,
+  isReadOnly = false,
+}: ProjectRoadmapProps) {
+  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null);
 
-// Status-based colors (not priority)
-const stepColors: Record<string, { bg: string; border: string; text: string }> = {
-  primary: { bg: "bg-primary/20", border: "border-primary/40", text: "text-primary" },
-  success: { bg: "bg-success/20", border: "border-success/40", text: "text-success-text" },
-  warning: { bg: "bg-warning/20", border: "border-warning/40", text: "text-warning-text" },
-  info: { bg: "bg-info/20", border: "border-info/40", text: "text-info-text" },
-  destructive: { bg: "bg-destructive/20", border: "border-destructive/40", text: "text-destructive-text" },
-  purple: { bg: "bg-purple-500/20", border: "border-purple-500/40", text: "text-purple-600 dark:text-purple-400" },
-  cyan: { bg: "bg-cyan-500/20", border: "border-cyan-500/40", text: "text-cyan-600 dark:text-cyan-400" },
-};
-
-// Step status options
-const stepStatuses = [
-  { value: "not_started", label: "Not Started" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "blocked", label: "Blocked" },
-  { value: "completed", label: "Completed" },
-];
-
-export function ProjectRoadmap({ projectId, isAdmin, projectDueDate }: ProjectRoadmapProps) {
-  const { timelines, createTimeline, updateTimeline, deleteTimeline } = useProjectTimelines(projectId);
-  const [isAddingStep, setIsAddingStep] = useState(false);
-  const [editingStep, setEditingStep] = useState<ExtendedTimeline | null>(null);
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
-  const [quickMilestoneStep, setQuickMilestoneStep] = useState<{ id: string; name: string } | null>(null);
-  const [newStep, setNewStep] = useState({
-    phase_name: "",
-    start_date: "",
-    end_date: "",
-    description: "",
-    color: "primary",
-    progress: 0,
-    owner: "",
-    system_name: "",
-    status: "not_started",
-    step_lane: "execution",
-    expected_outcomes: [""],
-    depends_on: [] as string[],
-  });
-
-  // Fetch all users for the owner dropdown
-  const { data: users = [] } = useQuery({
-    queryKey: ["all-profiles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, avatar_url")
-        .order("name");
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 5 * 60 * 1000,
-    placeholderData: (previousData) => previousData,
-  });
-
-  const getInitials = (name: string) => {
-    return name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-  };
-
-  const { minDate, maxDate, totalDays, today, steps } = useMemo(() => {
-    if (!timelines || timelines.length === 0) {
+  // Timeline calculations
+  const { minDate, maxDate, totalDays, today, monthMarkers } = useMemo(() => {
+    if (timelines.length === 0) {
       const now = new Date();
-      return {
-        minDate: now,
-        maxDate: addDays(now, 90),
-        totalDays: 90,
-        today: now,
-        steps: [] as Array<ExtendedTimeline & { startDate: Date; endDate: Date }>,
+      return { 
+        minDate: now, 
+        maxDate: addDays(now, 30), 
+        totalDays: 30, 
+        today: now, 
+        monthMarkers: [] 
       };
     }
 
     const dates = timelines.flatMap((t) => [parseISO(t.start_date), parseISO(t.end_date)]);
     const min = startOfDay(new Date(Math.min(...dates.map((d) => d.getTime()))));
     const max = startOfDay(new Date(Math.max(...dates.map((d) => d.getTime()))));
-    const paddedMin = addDays(min, -7);
-    const paddedMax = addDays(max, 14);
+    const paddedMin = addDays(min, -14);
+    const paddedMax = addDays(max, 21);
+    const total = differenceInDays(paddedMax, paddedMin);
 
-    return {
-      minDate: paddedMin,
-      maxDate: paddedMax,
-      totalDays: differenceInDays(paddedMax, paddedMin),
-      today: startOfDay(new Date()),
-      steps: timelines.map((t) => ({
-        ...t,
-        startDate: parseISO(t.start_date),
-        endDate: parseISO(t.end_date),
-      })) as Array<ExtendedTimeline & { startDate: Date; endDate: Date }>,
-    };
-  }, [timelines]);
-
-  const stepIds = useMemo(() => steps.map((p) => p.id), [steps]);
-  
-  // Fetch related data
-  const { milestones } = useAllProjectMilestones(projectId, stepIds);
-  const { dependencies, createDependency } = usePhaseDependencies(projectId, stepIds);
-  const { taskStats } = usePhaseTaskStats(projectId);
-
-  // Compute steps with calculated progress for summary/display
-  const stepsWithProgress = useMemo(() => {
-    return steps.map((step) => {
-      const stepMilestones = milestones?.filter((m) => m.phase_id === step.id) || [];
-      const stepTaskStat = taskStats?.find((s) => s.phase_id === step.id);
-      const { calculatedProgress } = calculatePhaseProgress(stepMilestones, stepTaskStat);
-      const autoProgress = step.auto_progress !== false; // Default true
-      const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
-      const effectiveProgress = (autoProgress && hasMilestonesOrTasks) 
-        ? calculatedProgress 
-        : (step.progress || 0);
-      return { ...step, progress: effectiveProgress };
-    });
-  }, [steps, milestones, taskStats]);
-
-  const getPosition = useCallback((date: Date) => {
-    const days = differenceInDays(date, minDate);
-    return (days / totalDays) * 100;
-  }, [minDate, totalDays]);
-
-  const getWidth = useCallback((start: Date, end: Date) => {
-    const days = differenceInDays(end, start) + 1;
-    return (days / totalDays) * 100;
-  }, [totalDays]);
-
-  const todayPosition = getPosition(today);
-  const isTodayVisible = todayPosition >= 0 && todayPosition <= 100;
-
-  const handleAddStep = async () => {
-    if (!newStep.phase_name || !newStep.start_date || !newStep.end_date) return;
-
-    // Filter empty outcomes
-    const outcomes = newStep.expected_outcomes.filter(o => o.trim() !== "");
-
-    const stepData: Partial<ExtendedTimeline> = {
-      project_id: projectId,
-      phase_name: newStep.phase_name,
-      start_date: newStep.start_date,
-      end_date: newStep.end_date,
-      description: newStep.description,
-      color: newStep.color,
-      progress: newStep.progress,
-      owner: newStep.owner || null,
-      system_name: newStep.system_name || null,
-      status: newStep.status,
-      step_lane: newStep.step_lane,
-      expected_outcomes: outcomes,
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const createdStep = await createTimeline.mutateAsync(stepData as any);
-
-    // Create dependencies
-    for (const depId of newStep.depends_on) {
-      await createDependency.mutateAsync({
-        phase_id: createdStep.id,
-        depends_on_phase_id: depId,
-      });
-    }
-
-    setNewStep({ 
-      phase_name: "", 
-      start_date: "", 
-      end_date: "", 
-      description: "", 
-      color: "primary", 
-      progress: 0,
-      owner: "",
-      system_name: "",
-      status: "not_started",
-      step_lane: "execution",
-      expected_outcomes: [""],
-      depends_on: [],
-    });
-    setIsAddingStep(false);
-  };
-
-  const handleUpdateStep = async () => {
-    if (!editingStep) return;
-    
-    const updateData: Partial<ExtendedTimeline> & { id: string } = {
-      id: editingStep.id,
-      phase_name: editingStep.phase_name,
-      start_date: editingStep.start_date,
-      end_date: editingStep.end_date,
-      description: editingStep.description,
-      color: editingStep.color,
-      progress: editingStep.progress,
-      owner: editingStep.owner || null,
-      system_name: editingStep.system_name || null,
-      status: editingStep.status || "not_started",
-      step_lane: editingStep.step_lane || "execution",
-      expected_outcomes: editingStep.expected_outcomes || [],
-    };
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateTimeline.mutateAsync(updateData as any);
-    setEditingStep(null);
-  };
-
-  const handleDeleteStep = async (id: string) => {
-    await deleteTimeline.mutateAsync(id);
-    if (expandedStepId === id) {
-      setExpandedStepId(null);
-    }
-  };
-
-  const handleQuickStatusChange = async (stepId: string, newStatus: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await updateTimeline.mutateAsync({ id: stepId, status: newStatus } as any);
-  };
-
-  // Generate month markers
-  const monthMarkers = useMemo(() => {
-    const markers: { date: Date; position: number }[] = [];
-    let current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-
-    while (current <= maxDate) {
-      if (current >= minDate) {
-        markers.push({ date: current, position: getPosition(current) });
+    // Generate month markers
+    const markers: { date: Date; position: number; label: string }[] = [];
+    let current = new Date(paddedMin.getFullYear(), paddedMin.getMonth(), 1);
+    while (current <= paddedMax) {
+      if (current >= paddedMin) {
+        markers.push({ 
+          date: current, 
+          position: (differenceInDays(current, paddedMin) / total) * 100,
+          label: format(current, "MMM yyyy"),
+        });
       }
       current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
     }
 
-    return markers;
-  }, [minDate, maxDate, getPosition]);
+    return {
+      minDate: paddedMin,
+      maxDate: paddedMax,
+      totalDays: total,
+      today: startOfDay(new Date()),
+      monthMarkers: markers,
+    };
+  }, [timelines]);
 
-  // Get milestones for a specific step
-  const getMilestonesForStep = (stepId: string) => {
-    return (milestones || []).filter((m) => m.phase_id === stepId);
+  const getPosition = (date: Date) => (differenceInDays(date, minDate) / totalDays) * 100;
+  const getWidth = (start: Date, end: Date) => ((differenceInDays(end, start) + 1) / totalDays) * 100;
+  
+  const todayPosition = getPosition(today);
+  const isTodayVisible = todayPosition >= 0 && todayPosition <= 100;
+
+  // Process phases with dates
+  const phases = useMemo(() => {
+    return timelines.map((t) => ({
+      ...t,
+      startDate: parseISO(t.start_date),
+      endDate: parseISO(t.end_date),
+      isActive: isWithinInterval(today, { 
+        start: parseISO(t.start_date), 
+        end: parseISO(t.end_date) 
+      }),
+    }));
+  }, [timelines, today]);
+
+  // Get milestones for a phase
+  const getPhaseMilestones = (phaseId: string) => {
+    return milestones.filter((m) => m.phase_id === phaseId);
   };
 
-  // Add/remove expected outcome fields
-  const addOutcomeField = () => {
-    setNewStep({ ...newStep, expected_outcomes: [...newStep.expected_outcomes, ""] });
+  // Get task stats for a phase
+  const getPhaseTaskStats = (phaseId: string) => {
+    return taskStats.find((s) => s.phase_id === phaseId);
   };
 
-  const updateOutcome = (index: number, value: string) => {
-    const updated = [...newStep.expected_outcomes];
-    updated[index] = value;
-    setNewStep({ ...newStep, expected_outcomes: updated });
-  };
-
-  const removeOutcome = (index: number) => {
-    const updated = newStep.expected_outcomes.filter((_, i) => i !== index);
-    setNewStep({ ...newStep, expected_outcomes: updated.length > 0 ? updated : [""] });
-  };
+  if (timelines.length === 0 && isReadOnly) {
+    return (
+      <div className="liquid-glass-elevated rounded-xl text-center py-xl">
+        <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-md">
+          <Plus className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-heading-sm font-semibold text-foreground mb-xs">No Roadmap Defined</h3>
+        <p className="text-body-sm text-muted-foreground">
+          This project doesn't have any phases yet.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-md">
-      {/* Header with title and add button */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-heading-sm font-semibold text-foreground">Project Roadmap</h3>
-        {isAdmin && (
-          <Button variant="outline" size="sm" onClick={() => setIsAddingStep(true)}>
-            <Plus className="h-4 w-4 mr-xs" />
-            Add Step
+        <h2 className="text-heading-sm font-semibold text-foreground">
+          Roadmap
+          {phases.length > 0 && (
+            <span className="text-metadata text-muted-foreground font-normal ml-sm">
+              ({phases.length} phase{phases.length !== 1 ? 's' : ''})
+            </span>
+          )}
+        </h2>
+        
+        {!isReadOnly && onAddPhase && (
+          <Button variant="outline" size="sm" onClick={onAddPhase} className="gap-xs">
+            <Plus className="h-4 w-4" />
+            Add Phase
           </Button>
         )}
       </div>
 
-      {/* Summary Metrics - Full Width */}
-      {stepsWithProgress.length > 0 && (
-        <RoadmapSummary
-          phases={stepsWithProgress}
-          milestones={milestones || []}
-          projectDueDate={projectDueDate}
-        />
-      )}
-
-      {steps.length === 0 ? (
-        <div className="liquid-glass-elevated text-center py-xl text-muted-foreground rounded-xl">
-          <Layers className="h-12 w-12 mx-auto mb-md text-muted-foreground/50" />
-          <p className="text-body font-medium mb-xs">No roadmap steps yet</p>
-          <p className="text-body-sm text-muted-foreground mb-md">
-            Add steps to visualize what must happen, in what order, and with what outcome
-          </p>
-          {isAdmin && (
-            <Button onClick={() => setIsAddingStep(true)}>
-              <Plus className="h-4 w-4 mr-xs" />
-              Add First Step
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="liquid-glass rounded-xl p-md overflow-x-auto min-h-[400px]">
+      {/* Timeline visualization */}
+      {phases.length > 0 && (
+        <div className="liquid-glass rounded-xl p-md overflow-x-auto">
           {/* Month markers */}
-          <div className="relative h-8 mb-sm border-b border-border/50">
+          <div className="relative h-8 mb-sm border-b border-border/50" style={{ minWidth: "700px" }}>
             {monthMarkers.map((marker, idx) => (
               <div
                 key={idx}
-                className="absolute top-0 text-metadata font-medium text-muted-foreground"
+                className="absolute top-0 text-metadata font-medium text-muted-foreground whitespace-nowrap"
                 style={{ left: `${marker.position}%` }}
               >
-                {format(marker.date, "MMM yyyy")}
+                {marker.label}
               </div>
             ))}
           </div>
 
-          {/* Timeline container - horizontal scroll canvas */}
-          <div className="relative" style={{ minWidth: "800px" }}>
-            {/* Dependency Lines */}
-            <DependencyLines
-              phases={steps}
-              dependencies={dependencies || []}
-              minDate={minDate}
-              totalDays={totalDays}
-              phaseRowHeight={120}
-              expandedPhaseId={expandedStepId}
-            />
-
+          {/* Timeline bars */}
+          <div className="relative" style={{ minWidth: "700px", minHeight: `${phases.length * 56 + 40}px` }}>
             {/* Today marker */}
             {isTodayVisible && (
               <div
                 className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-destructive via-destructive to-transparent z-10"
                 style={{ left: `${todayPosition}%` }}
               >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-xs py-xs bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-sm py-xs bg-destructive text-destructive-foreground rounded-md text-metadata font-medium whitespace-nowrap shadow-lg">
                   Today
                 </div>
               </div>
             )}
 
-            {/* Step cards */}
-            <div className="space-y-md pt-xs">
-              {steps.map((step) => {
-                const colors = stepColors[step.color] || stepColors.primary;
-                const left = getPosition(step.startDate);
-                const width = getWidth(step.startDate, step.endDate);
-                const isActive = isWithinInterval(today, { start: step.startDate, end: step.endDate });
-                const isExpanded = expandedStepId === step.id;
-                const stepMilestones = getMilestonesForStep(step.id);
-                const stepTaskStat = taskStats?.find((s) => s.phase_id === step.id);
-                
-                // Calculate auto-progress based on milestones and tasks
-                const progressResult = calculatePhaseProgress(stepMilestones, stepTaskStat);
-                const autoProgress = step.auto_progress !== false; // Default true
-                const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
-                // Use calculated if auto_progress is on AND there's something to calculate, else use manual
-                const displayProgress = (autoProgress && hasMilestonesOrTasks) 
-                  ? progressResult.calculatedProgress 
-                  : (step.progress || 0);
-
-                if (isExpanded) {
-                  return (
-                    <StepExpandedCard
-                      key={step.id}
-                      step={step}
-                      steps={steps}
-                      dependencies={dependencies || []}
-                      taskStats={stepTaskStat}
-                      progress={displayProgress}
-                      isAdmin={isAdmin}
-                      onEdit={() => setEditingStep(step)}
-                      onCollapse={() => setExpandedStepId(null)}
-                      colorClasses={colors}
-                    />
-                  );
-                }
-
-                return (
-                  <div key={step.id} className="relative h-28">
-                    <StepCard
-                      step={step}
-                      left={left}
-                      width={width}
-                      colorClasses={colors}
-                      progress={displayProgress}
-                      isActive={isActive}
-                      onClick={() => setExpandedStepId(step.id)}
-                      isAdmin={isAdmin}
-                      onDelete={() => handleDeleteStep(step.id)}
-                      onStatusChange={(newStatus) => handleQuickStatusChange(step.id, newStatus)}
-                    />
-                  </div>
-                );
-              })}
+            {/* Phase bars */}
+            <div className="space-y-sm pt-sm">
+              {phases.map((phase) => (
+                <ProjectPhaseCard
+                  key={phase.id}
+                  phase={phase}
+                  left={getPosition(phase.startDate)}
+                  width={getWidth(phase.startDate, phase.endDate)}
+                  isActive={phase.isActive}
+                  isExpanded={expandedPhaseId === phase.id}
+                  milestones={getPhaseMilestones(phase.id)}
+                  taskStats={getPhaseTaskStats(phase.id)}
+                  onClick={() => setExpandedPhaseId(expandedPhaseId === phase.id ? null : phase.id)}
+                />
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Step Dialog */}
-      <Dialog open={isAddingStep} onOpenChange={setIsAddingStep}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-xs">
-              <Layers className="h-5 w-5" />
-              Add Step
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-md">
-            {/* Step Name */}
-            <div className="space-y-xs">
-              <Label>Step Title</Label>
-              <Input
-                value={newStep.phase_name}
-                onChange={(e) => setNewStep({ ...newStep, phase_name: e.target.value })}
-                placeholder="e.g., Analyze current attribution setup"
-              />
-            </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-2 gap-md">
-              <div className="space-y-xs">
-                <Label>Start Date</Label>
-                <Input
-                  type="date"
-                  value={newStep.start_date}
-                  onChange={(e) => setNewStep({ ...newStep, start_date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-xs">
-                <Label>End Date</Label>
-                <Input
-                  type="date"
-                  value={newStep.end_date}
-                  onChange={(e) => setNewStep({ ...newStep, end_date: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Owner & System */}
-            <div className="grid grid-cols-2 gap-md">
-              <div className="space-y-xs">
-                <Label className="flex items-center gap-xs">
-                  <User2 className="h-3.5 w-3.5" />
-                  Owner (Team/Person)
-                </Label>
-                <Input
-                  value={newStep.owner}
-                  onChange={(e) => setNewStep({ ...newStep, owner: e.target.value })}
-                  placeholder="e.g., Data Team, Marketing"
-                />
-              </div>
-              <div className="space-y-xs">
-                <Label>System</Label>
-                <Input
-                  value={newStep.system_name}
-                  onChange={(e) => setNewStep({ ...newStep, system_name: e.target.value })}
-                  placeholder="e.g., GA4, Meta CAPI"
-                />
-              </div>
-            </div>
-
-            {/* Status & Lane */}
-            <div className="grid grid-cols-2 gap-md">
-              <div className="space-y-xs">
-                <Label>Status</Label>
-                <Select value={newStep.status} onValueChange={(v) => setNewStep({ ...newStep, status: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stepStatuses.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-xs">
-                <Label>Lane</Label>
-                <Select value={newStep.step_lane} onValueChange={(v) => setNewStep({ ...newStep, step_lane: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STEP_LANES.map((lane) => (
-                      <SelectItem key={lane.id} value={lane.id}>
-                        {lane.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Color */}
-            <div className="space-y-xs">
-              <Label>Color</Label>
-              <Select value={newStep.color} onValueChange={(v) => setNewStep({ ...newStep, color: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(stepColors).map((color) => (
-                    <SelectItem key={color} value={color}>
-                      <div className="flex items-center gap-xs">
-                        <div className={cn("w-3 h-3 rounded-full", stepColors[color].bg, stepColors[color].border)} />
-                        <span className="capitalize">{color}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Dependencies */}
-            {steps.length > 0 && (
-              <div className="space-y-xs">
-                <Label>Depends On (optional)</Label>
-                <Select
-                  value={newStep.depends_on[0] || "none"}
-                  onValueChange={(v) => setNewStep({ ...newStep, depends_on: v === "none" ? [] : [v] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a step..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {steps.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.phase_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Description */}
-            <div className="space-y-xs">
-              <Label>Description (optional)</Label>
-              <Textarea
-                value={newStep.description}
-                onChange={(e) => setNewStep({ ...newStep, description: e.target.value })}
-                placeholder="Brief description of this step..."
-                rows={2}
-              />
-            </div>
-
-            {/* Expected Outcomes */}
-            <div className="space-y-xs">
-              <Label className="flex items-center gap-xs">
-                <Target className="h-3.5 w-3.5" />
-                Expected Outcomes (mandatory for clarity)
-              </Label>
-              <div className="space-y-xs">
-                {newStep.expected_outcomes.map((outcome, idx) => (
-                  <div key={idx} className="flex items-center gap-xs">
-                    <span className="text-muted-foreground text-body-sm">–</span>
-                    <Input
-                      value={outcome}
-                      onChange={(e) => updateOutcome(idx, e.target.value)}
-                      placeholder="e.g., Clean attribution data flowing to dashboard"
-                    />
-                    {newStep.expected_outcomes.length > 1 && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => removeOutcome(idx)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={addOutcomeField} className="mt-xs">
-                  <Plus className="h-3.5 w-3.5 mr-xs" />
-                  Add Outcome
-                </Button>
-              </div>
-            </div>
+      {/* Empty state for editable */}
+      {phases.length === 0 && !isReadOnly && (
+        <div className="liquid-glass-elevated rounded-xl text-center py-xl">
+          <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-md">
+            <Plus className="h-8 w-8 text-muted-foreground" />
           </div>
-          <DialogFooter className="mt-md">
-            <Button variant="outline" onClick={() => setIsAddingStep(false)}>
-              Cancel
+          <h3 className="text-heading-sm font-semibold text-foreground mb-xs">Create Your Roadmap</h3>
+          <p className="text-body-sm text-muted-foreground mb-md">
+            Add phases to plan your project timeline
+          </p>
+          {onAddPhase && (
+            <Button onClick={onAddPhase} className="gap-xs">
+              <Plus className="h-4 w-4" />
+              Add First Phase
             </Button>
-            <Button onClick={handleAddStep} disabled={createTimeline.isPending}>
-              Add Step
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Step Dialog */}
-      <Dialog open={!!editingStep} onOpenChange={() => setEditingStep(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-xs">
-              <Layers className="h-5 w-5" />
-              Edit Step
-            </DialogTitle>
-          </DialogHeader>
-          {editingStep && (
-            <div className="space-y-md">
-              <div className="space-y-xs">
-                <Label>Step Title</Label>
-                <Input
-                  value={editingStep.phase_name}
-                  onChange={(e) => setEditingStep({ ...editingStep, phase_name: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-md">
-                <div className="space-y-xs">
-                  <Label>Start Date</Label>
-                  <Input
-                    type="date"
-                    value={editingStep.start_date}
-                    onChange={(e) => setEditingStep({ ...editingStep, start_date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-xs">
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={editingStep.end_date}
-                    onChange={(e) => setEditingStep({ ...editingStep, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-md">
-                <div className="space-y-xs">
-                  <Label>Owner</Label>
-                  <Select 
-                    value={editingStep.owner || "none"} 
-                    onValueChange={(v) => setEditingStep({ ...editingStep, owner: v === "none" ? "" : v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select owner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        <span className="text-muted-foreground">No owner</span>
-                      </SelectItem>
-                      {users.map((user) => (
-                        <SelectItem key={user.id} value={user.name || user.id}>
-                          <div className="flex items-center gap-xs">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage src={user.avatar_url || undefined} />
-                              <AvatarFallback className="text-[10px]">
-                                {getInitials(user.name || "")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{user.name || "Unknown"}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-xs">
-                  <Label>System</Label>
-                  <Input
-                    value={editingStep.system_name || ""}
-                    onChange={(e) => setEditingStep({ ...editingStep, system_name: e.target.value })}
-                    placeholder="e.g., GA4, Meta"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-md">
-                <div className="space-y-xs">
-                  <Label>Status</Label>
-                  <Select 
-                    value={editingStep.status || "not_started"} 
-                    onValueChange={(v) => setEditingStep({ ...editingStep, status: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stepStatuses.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-xs">
-                  {(() => {
-                    const stepMilestones = milestones?.filter((m) => m.phase_id === editingStep.id) || [];
-                    const stepTaskStat = taskStats?.find((s) => s.phase_id === editingStep.id);
-                    const autoProgress = editingStep.auto_progress !== false;
-                    const hasMilestonesOrTasks = stepMilestones.length > 0 || (stepTaskStat?.total_tasks || 0) > 0;
-                    const effectiveProgress = (autoProgress && hasMilestonesOrTasks) 
-                      ? calculatePhaseProgress(stepMilestones, stepTaskStat).calculatedProgress 
-                      : editingStep.progress;
-                    
-                    if (autoProgress && hasMilestonesOrTasks) {
-                      return (
-                        <>
-                          <Label>Progress ({effectiveProgress}%) <span className="text-muted-foreground text-metadata">– auto-calculated</span></Label>
-                          <div className="flex items-center gap-sm p-xs bg-muted/50 rounded-md">
-                            <Progress value={effectiveProgress} className="h-2 flex-1" />
-                            <span className="text-body-sm font-medium">{effectiveProgress}%</span>
-                          </div>
-                          <p className="text-metadata text-muted-foreground">
-                            Progress is calculated from milestones ({stepMilestones.filter(m => m.is_completed).length}/{stepMilestones.length}) and tasks ({stepTaskStat?.completed_tasks || 0}/{stepTaskStat?.total_tasks || 0}).
-                          </p>
-                        </>
-                      );
-                    }
-                    return (
-                      <>
-                        <Label>Progress ({editingStep.progress}%)</Label>
-                        <Input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={editingStep.progress}
-                          onChange={(e) => setEditingStep({ ...editingStep, progress: parseInt(e.target.value) })}
-                          className="w-full"
-                        />
-                        <p className="text-metadata text-muted-foreground">
-                          Add milestones or link tasks for automatic progress tracking.
-                        </p>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-              <div className="space-y-xs">
-                <Label>Color</Label>
-                <Select
-                  value={editingStep.color}
-                  onValueChange={(v) => setEditingStep({ ...editingStep, color: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(stepColors).map((color) => (
-                      <SelectItem key={color} value={color}>
-                        <div className="flex items-center gap-xs">
-                          <div className={cn("w-3 h-3 rounded-full", stepColors[color].bg, stepColors[color].border)} />
-                          <span className="capitalize">{color}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-xs">
-                <Label>Description</Label>
-                <Textarea
-                  value={editingStep.description || ""}
-                  onChange={(e) => setEditingStep({ ...editingStep, description: e.target.value })}
-                  rows={2}
-                />
-              </div>
-            </div>
           )}
-          <DialogFooter className="mt-md">
-            <Button variant="outline" onClick={() => setEditingStep(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateStep} disabled={updateTimeline.isPending}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
-      {/* Quick Milestone Dialog */}
-      {quickMilestoneStep && (
-        <QuickMilestoneDialog
-          phaseId={quickMilestoneStep.id}
-          phaseName={quickMilestoneStep.name}
-          open={!!quickMilestoneStep}
-          onOpenChange={(open) => {
-            if (!open) setQuickMilestoneStep(null);
-          }}
+      {/* Expanded phase details */}
+      {expandedPhaseId && (
+        <ProjectPhaseExpanded
+          phase={phases.find((p) => p.id === expandedPhaseId)!}
+          milestones={getPhaseMilestones(expandedPhaseId)}
+          taskStats={getPhaseTaskStats(expandedPhaseId)}
+          onClose={() => setExpandedPhaseId(null)}
+          onEdit={!isReadOnly && onEditPhase ? () => onEditPhase(phases.find((p) => p.id === expandedPhaseId)!) : undefined}
+          onDelete={!isReadOnly && onDeletePhase ? () => onDeletePhase(expandedPhaseId) : undefined}
+          isReadOnly={isReadOnly}
+          projectId={projectId}
         />
       )}
     </div>
