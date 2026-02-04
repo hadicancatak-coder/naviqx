@@ -33,9 +33,11 @@
 
 ## Remaining Work
 
-### Phase 6: Share Dialog Integration
-- ⬚ Update Knowledge share dialog to use unified system
-- ⬚ Update Projects share dialog to use unified system
+### Phase 6: Share Dialog Integration ✅
+- ✅ Created `ProjectShareDialog.tsx` using unified system
+- ✅ Created `KnowledgeShareDialog.tsx` using unified system
+- ✅ Updated Projects page to use ProjectShareDialog
+- ✅ Updated KnowledgePageContent to use KnowledgeShareDialog
 
 ### Phase 7: Data Migration
 - ⬚ SQL migration to copy existing tokens from legacy tables to `public_access_links`
