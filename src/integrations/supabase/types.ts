@@ -3138,6 +3138,123 @@ export type Database = {
           },
         ]
       }
+      public_access_comments: {
+        Row: {
+          access_link_id: string
+          comment_text: string
+          comment_type: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          parent_id: string | null
+          resource_id: string | null
+          resource_type: Database["public"]["Enums"]["external_resource_type"]
+          reviewer_email: string
+          reviewer_name: string
+        }
+        Insert: {
+          access_link_id: string
+          comment_text: string
+          comment_type?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          resource_id?: string | null
+          resource_type: Database["public"]["Enums"]["external_resource_type"]
+          reviewer_email: string
+          reviewer_name: string
+        }
+        Update: {
+          access_link_id?: string
+          comment_text?: string
+          comment_type?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          resource_id?: string | null
+          resource_type?: Database["public"]["Enums"]["external_resource_type"]
+          reviewer_email?: string
+          reviewer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_access_comments_access_link_id_fkey"
+            columns: ["access_link_id"]
+            isOneToOne: false
+            referencedRelation: "public_access_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_access_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "public_access_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_access_links: {
+        Row: {
+          access_token: string
+          click_count: number | null
+          created_at: string | null
+          created_by: string | null
+          email_verified: boolean | null
+          entity: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          is_public: boolean | null
+          last_accessed_at: string | null
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: Database["public"]["Enums"]["external_resource_type"]
+          reviewer_email: string | null
+          reviewer_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          click_count?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          email_verified?: boolean | null
+          entity?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: Database["public"]["Enums"]["external_resource_type"]
+          reviewer_email?: string | null
+          reviewer_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          click_count?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          email_verified?: boolean | null
+          entity?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: Database["public"]["Enums"]["external_resource_type"]
+          reviewer_email?: string | null
+          reviewer_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       recurring_task_completions: {
         Row: {
           completed_at: string | null
@@ -5340,6 +5457,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_access_link_clicks: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
       increment_board_access: {
         Args: { p_board_id: string; p_user_id: string }
         Returns: undefined
@@ -5415,6 +5536,12 @@ export type Database = {
         | "affiliate"
         | "referral"
         | "organic"
+      external_resource_type:
+        | "campaign"
+        | "knowledge"
+        | "project"
+        | "lp_map"
+        | "search_ads"
       location_type:
         | "Airport Media"
         | "LED Tower"
@@ -5596,6 +5723,13 @@ export const Constants = {
         "affiliate",
         "referral",
         "organic",
+      ],
+      external_resource_type: [
+        "campaign",
+        "knowledge",
+        "project",
+        "lp_map",
+        "search_ads",
       ],
       location_type: [
         "Airport Media",
