@@ -26,11 +26,11 @@ import { getContentForDisplay, getContentForCopy } from "@/lib/captionHelpers";
 // True Apple Liquid Glass styles
 const glassStyles = {
   surface: {
-    background: "rgba(18,18,18,0.45)",
-    backdropFilter: "blur(32px) saturate(150%)",
-    WebkitBackdropFilter: "blur(32px) saturate(150%)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    boxShadow: "0 10px 40px rgba(0,0,0,0.65)",
+    background: "rgba(18,18,18,0.38)",
+    backdropFilter: "blur(40px) saturate(160%)",
+    WebkitBackdropFilter: "blur(40px) saturate(160%)",
+    border: "1px solid rgba(255,255,255,0.04)",
+    boxShadow: "0 12px 48px rgba(0,0,0,0.65)",
     borderRadius: "16px",
   } as React.CSSProperties,
   highlight: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0))",
