@@ -371,6 +371,29 @@ All colors MUST be HSL.
     min-width: 0 !important;
   }
 
+  /* ========================================
+     POPUP CONTENT OVERFLOW FIX
+     Force text wrapping inside dialogs, popovers, sheets, drawers
+     Prevents long unbroken strings from expanding containers
+     ======================================== */
+  [data-radix-dialog-content],
+  [data-radix-alert-dialog-content],
+  [data-radix-popover-content],
+  [data-radix-popper-content-wrapper] {
+    overflow-x: hidden !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Ensure all child text elements also respect boundaries */
+  [data-radix-dialog-content] *,
+  [data-radix-alert-dialog-content] *,
+  [data-radix-popover-content] * {
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
   html {
     scrollbar-gutter: stable;
   }
