@@ -29,7 +29,7 @@ export function SecurityPosture({
 
   return (
     <div className="grid gap-md md:grid-cols-4">
-      <Card className={getScoreBg(securityScore)}>
+      <Card className={`liquid-glass-elevated rounded-xl hover-lift transition-smooth ${getScoreBg(securityScore)}`}>
         <CardContent className="p-card">
           <div className="flex items-center justify-between">
             <div>
@@ -43,7 +43,7 @@ export function SecurityPosture({
         </CardContent>
       </Card>
 
-      <Card className={criticalIssues > 0 ? "bg-destructive-soft" : "bg-success-soft"}>
+      <Card className={`liquid-glass-elevated rounded-xl hover-lift transition-smooth ${criticalIssues > 0 ? "bg-destructive-soft" : "bg-success-soft"}`}>
         <CardContent className="p-card">
           <div className="flex items-center justify-between">
             <div>
@@ -57,7 +57,7 @@ export function SecurityPosture({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="liquid-glass-elevated rounded-xl hover-lift transition-smooth">
         <CardContent className="p-card">
           <div className="flex items-center justify-between">
             <div>
@@ -74,7 +74,7 @@ export function SecurityPosture({
         </CardContent>
       </Card>
 
-      <Card className={unresolvedActivities > 0 ? "bg-warning-soft" : "bg-success-soft"}>
+      <Card className={`liquid-glass-elevated rounded-xl hover-lift transition-smooth ${unresolvedActivities > 0 ? "bg-warning-soft" : "bg-success-soft"}`}>
         <CardContent className="p-card">
           <div className="flex items-center justify-between">
             <div>

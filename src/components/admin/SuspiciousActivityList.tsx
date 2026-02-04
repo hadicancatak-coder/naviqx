@@ -46,15 +46,15 @@ export function SuspiciousActivityList({
 
   if (activities.length === 0) {
     return (
-      <Card>
-        <CardHeader>
+      <Card className="liquid-glass-elevated rounded-xl">
+        <CardHeader className="pb-sm">
           <CardTitle className="text-heading-sm">Suspicious Activities</CardTitle>
           <CardDescription>Real-time monitoring of unusual behavior</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-lg text-muted-foreground">
             <CheckCircle className="h-10 w-10 mx-auto mb-sm text-success-text" />
-            <p>No suspicious activities detected</p>
+            <p className="text-body-sm">No suspicious activities detected</p>
           </div>
         </CardContent>
       </Card>
@@ -62,8 +62,8 @@ export function SuspiciousActivityList({
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="liquid-glass-elevated rounded-xl">
+      <CardHeader className="pb-sm">
         <CardTitle className="text-heading-sm">Suspicious Activities</CardTitle>
         <CardDescription>
           {activities.length} unresolved activit{activities.length !== 1 ? "ies" : "y"}
