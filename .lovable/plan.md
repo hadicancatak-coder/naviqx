@@ -256,13 +256,27 @@ src/
 
 ## Implementation Order
 
-1. Database migration (create new tables)
-2. `usePublicAccess` hook
-3. `ExternalReviewPage` shell component
-4. `SearchAdsReviewContent` (the new feature)
-5. Update routes for search ads
+1. ✅ Database migration (create new tables)
+2. ✅ `usePublicAccess` hook
+3. ✅ `ExternalReviewPage` shell component
+4. ✅ `SearchAdsReviewContent` (the new feature)
+5. ✅ Update routes for search ads
 6. Migrate existing pages one at a time (campaigns → LP → knowledge → projects)
 7. Update admin management
 8. Data migration SQL
 9. Cleanup old code
+
+## Completed Components
+
+- `src/hooks/usePublicAccess.ts` - Unified access hook
+- `src/components/external/ExternalReviewPage.tsx` - Shared shell
+- `src/components/external/ExternalReviewHeader.tsx` - Header with ID form
+- `src/components/external/ExternalCommentForm.tsx` - Comment input
+- `src/components/external/ExternalCommentFeed.tsx` - Comment display
+- `src/components/external/SearchAdsReviewContent.tsx` - Search ads content
+- `src/pages/PublicReview.tsx` - Unified public page
+
+## Route Added
+
+`/ads/search/review/:token` - Search Ads external review
 

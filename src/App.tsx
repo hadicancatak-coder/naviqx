@@ -61,6 +61,7 @@ const CampaignReview = lazy(() => import("./pages/CampaignReview"));
 const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
 const KnowledgePublic = lazy(() => import("./pages/KnowledgePublic"));
 const ProjectsPublic = lazy(() => import("./pages/ProjectsPublic"));
+const PublicReview = lazy(() => import("./pages/PublicReview"));
 
 
 const App = () => (
@@ -69,13 +70,15 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <Routes>
-            {/* PUBLIC ROUTES - Outside AuthProvider to prevent MFA redirects */}
+          {/* PUBLIC ROUTES - Outside AuthProvider to prevent MFA redirects */}
             <Route path="/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
             <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
             <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><CampaignsLogExternal /></Suspense>} />
             <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />
             <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><ProjectsPublic /></Suspense>} />
             <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><LpMapPublic /></Suspense>} />
+            {/* Unified Public Review - Search Ads */}
+            <Route path="/ads/search/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="search_ads" /></Suspense>} />
             
             {/* AUTHENTICATED ROUTES - Inside AuthProvider */}
             <Route path="/*" element={
