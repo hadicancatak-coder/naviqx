@@ -1,75 +1,168 @@
 
-# Fix Security Findings - Session Cleanup and Fresh Scanning
+# Fix Security Dashboard - Cleanup Action and Design System Compliance
 
 ## Problem Summary
 
-The security dashboard is showing stale data from a scan run **3 months ago** (November 2025). I verified the current database state:
+Two issues exist with the Security Dashboard:
 
-| Finding | Old Scan Says | Actual Current State |
-|---------|---------------|---------------------|
-| Expired MFA Sessions | 18 | **228** (much worse!) |
-| Users without MFA | 6 users listed | **0** (all users now have MFA!) |
+1. **Clean Now button doesn't refresh findings**: The cleanup successfully deletes expired sessions (verified: 0 remain in database), but the UI still shows stale findings from November 2025 because it only re-fetches old scan results instead of running a new scan.
+
+2. **Design system violations**: The Security Dashboard components don't use the Prisma Design System's liquid glass effects or proper token usage.
 
 ## Solution
 
-### 1. Immediate Cleanup - Delete All Expired Sessions
-Run a one-time cleanup to remove the 228 expired MFA sessions from the database.
+### Part 1: Fix Clean Now Action
 
-```sql
-DELETE FROM mfa_sessions WHERE expires_at < NOW();
+**Current Flow (Broken):**
+```
+Click "Clean Now" → Delete expired sessions → Re-fetch old scan results → Still shows stale data
 ```
 
-### 2. Run a Fresh Security Scan
-Click the "Run Scan" button on the Security Dashboard to get current findings. After cleanup, the expired sessions finding should disappear.
-
-### 3. Set Up Automatic Cleanup (Scheduled Job)
-Create a cron job to run the security scanner daily, which will:
-- Auto-clean expired MFA sessions
-- Detect new security issues
-- Keep findings current
-
-```sql
--- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-
--- Schedule security scanner to run daily at 3 AM UTC
-SELECT cron.schedule(
-  'daily-security-scan',
-  '0 3 * * *',
-  $$
-  SELECT net.http_post(
-    url:='https://mwogxqonlzjrkktwbkma.supabase.co/functions/v1/security-scanner',
-    headers:='{"Content-Type": "application/json", "Authorization": "Bearer <ANON_KEY>"}'::jsonb,
-    body:='{}'::jsonb
-  ) as request_id;
-  $$
-);
+**Fixed Flow:**
+```
+Click "Clean Now" → Delete expired sessions → Trigger new security scan → Fetch fresh results
 ```
 
-### 4. Add One-Click "Clean Now" Actions
-Enhance the SecurityFindings component to include action buttons:
-- **Clean Expired Sessions** - Direct button to purge expired sessions
-- **Re-scan** - Already exists with "Run Scan" button
+**Change in `SecurityDashboard.tsx`:**
+```typescript
+const cleanupExpiredSessions = async () => {
+  try {
+    // 1. Delete expired sessions
+    const { error } = await supabase
+      .from("mfa_sessions")
+      .delete()
+      .lt("expires_at", new Date().toISOString());
+    if (error) throw error;
+
+    toast({
+      title: "Cleanup complete",
+      description: "Running fresh security scan...",
+    });
+
+    // 2. Trigger a new scan to refresh findings
+    await runManualScan();  // <-- ADD THIS
+  } catch (error) {
+    // ... error handling
+  }
+};
+```
+
+### Part 2: Apply Design System Tokens
+
+Update all Security Dashboard components to follow the Prisma Design System:
+
+**SecurityPosture.tsx Changes:**
+- Add `liquid-glass-elevated` to stat cards
+- Use proper border radius tokens (`rounded-xl`)
+- Add hover effects with `transition-smooth`
+
+**SecurityFindings.tsx Changes:**
+- Use `liquid-glass-elevated` for the main card
+- Apply `liquid-glass-dropdown` styles for details dropdowns
+- Use proper spacing tokens (`gap-md`, `p-card`)
+
+**SecurityControls.tsx Changes:**
+- Add `liquid-glass-elevated` to the panel
+- Ensure proper text tokens (`text-body-sm`, `text-metadata`)
+
+**SuspiciousActivityList.tsx Changes:**
+- Use `liquid-glass-elevated` for the card
+- Apply `hover:bg-card-hover` and `transition-smooth` to list items
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/admin/SecurityDashboard.tsx` | Add `cleanupExpiredSessions()` function |
-| `src/components/admin/SecurityFindings.tsx` | Add action buttons per finding type |
+| `src/components/admin/SecurityDashboard.tsx` | Call `runManualScan()` after cleanup |
+| `src/components/admin/SecurityPosture.tsx` | Add liquid glass styling |
+| `src/components/admin/SecurityFindings.tsx` | Add liquid glass styling |
+| `src/components/admin/SecurityControls.tsx` | Add liquid glass styling |
+| `src/components/admin/SuspiciousActivityList.tsx` | Add liquid glass styling |
 
-## Implementation Steps
+## Technical Implementation
 
-1. **Database cleanup** - Delete 228 expired sessions via SQL
-2. **Add cleanup action** - Add "Clean Now" button to expired sessions finding
-3. **Set up cron job** - Schedule daily scans to keep data fresh
-4. **UI enhancement** - Show "last scan was X ago" warning if stale
+### SecurityDashboard.tsx
+```typescript
+// Update cleanupExpiredSessions to trigger a new scan
+const cleanupExpiredSessions = async () => {
+  try {
+    const { error } = await supabase
+      .from("mfa_sessions")
+      .delete()
+      .lt("expires_at", new Date().toISOString());
+
+    if (error) throw error;
+
+    toast({
+      title: "Cleanup complete",
+      description: "Running fresh security scan...",
+    });
+
+    // Run a new scan to refresh findings
+    await runManualScan();
+  } catch (error: unknown) {
+    logger.error("Error cleaning up sessions:", error);
+    toast({
+      title: "Cleanup failed",
+      description: error instanceof Error ? error.message : "Unknown error",
+      variant: "destructive",
+    });
+  }
+};
+```
+
+### SecurityPosture.tsx
+```tsx
+// Stat cards with liquid glass
+<Card className={cn(
+  "liquid-glass-elevated rounded-xl hover-lift transition-smooth",
+  getScoreBg(securityScore)
+)}>
+  <CardContent className="p-card">
+    ...
+  </CardContent>
+</Card>
+```
+
+### SecurityFindings.tsx
+```tsx
+// Main card with liquid glass
+<Card className="liquid-glass-elevated rounded-xl">
+  ...
+  // Finding rows with proper hover
+  <div className="border border-border rounded-lg p-md hover:bg-card-hover transition-smooth">
+    ...
+  </div>
+</Card>
+```
+
+### SecurityControls.tsx
+```tsx
+<Card className="liquid-glass-elevated rounded-xl">
+  <CardHeader className="pb-sm">
+    <CardTitle className="text-heading-sm">Security Controls</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-md">
+    ...
+  </CardContent>
+</Card>
+```
+
+### SuspiciousActivityList.tsx
+```tsx
+<Card className="liquid-glass-elevated rounded-xl">
+  ...
+  // Activity rows
+  <div className="flex items-center justify-between p-sm border border-border rounded-lg hover:bg-card-hover transition-smooth">
+    ...
+  </div>
+</Card>
+```
 
 ## Expected Outcome
 
 After implementation:
-- Security score will increase (no stale findings)
-- MFA finding will disappear (all users have MFA)
-- Expired sessions finding will disappear (cleaned up)
-- Automatic daily scans will keep data current
+1. **"Clean Now" button** will delete sessions AND run a fresh scan, updating the display immediately
+2. **All components** will have the liquid glass styling consistent with the rest of the app
+3. **Design tokens** will be properly applied (spacing, typography, colors)
+4. **Hover effects** will be smooth and consistent
