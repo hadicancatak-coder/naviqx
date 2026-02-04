@@ -1,4 +1,4 @@
-// LP Section Types - Single source of truth
+// Brief Section Types - Single source of truth
 export const LP_SECTION_TYPES = [
   { value: "hero", label: "Hero" },
   { value: "feature", label: "Feature" },
@@ -8,6 +8,7 @@ export const LP_SECTION_TYPES = [
   { value: "sponsorships", label: "Sponsorships" },
   { value: "footers", label: "Footers" },
   { value: "graphs", label: "Graphs" },
+  { value: "creatives", label: "Creatives" },
   { value: "other", label: "Other" },
 ] as const;
 
@@ -23,6 +24,7 @@ export const sectionTypeBorderColors: Record<string, string> = {
   sponsorships: "border-l-pink-500",
   footers: "border-l-gray-500",
   graphs: "border-l-orange-500",
+  creatives: "border-l-rose-500",
   other: "border-l-slate-500",
 };
 
@@ -36,6 +38,7 @@ export const sectionTypeBadgeColors: Record<string, string> = {
   sponsorships: "bg-pink-500/15 text-pink-400",
   footers: "bg-gray-500/15 text-gray-400",
   graphs: "bg-orange-500/15 text-orange-400",
+  creatives: "bg-rose-500/15 text-rose-400",
   other: "bg-slate-500/15 text-slate-400",
 };
 
@@ -49,6 +52,7 @@ export const sectionTypeCardColors: Record<string, string> = {
   sponsorships: "bg-pink-500/20 text-pink-400 border-pink-500/30",
   footers: "bg-gray-500/20 text-gray-400 border-gray-500/30",
   graphs: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  creatives: "bg-rose-500/20 text-rose-400 border-rose-500/30",
   other: "bg-slate-500/20 text-slate-400 border-slate-500/30",
 };
 

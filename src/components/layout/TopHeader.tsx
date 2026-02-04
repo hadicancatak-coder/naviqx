@@ -23,7 +23,7 @@ export function TopHeader() {
     
     // Ads - specific paths first
     if (path === "/ads/search") return "Search Planner";
-    if (path === "/ads/lp") return "LP Planner";
+    if (path === "/ads/lp") return "Brief Planner";
     if (path.startsWith("/ads/captions")) return "Captions";
     if (path === "/utm-planner") return "UTM Planner";
     if (path.includes("/ads")) return "Ads";
