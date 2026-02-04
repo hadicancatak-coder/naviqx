@@ -39,10 +39,6 @@ export default function AdminLayout() {
             <Target className="h-4 w-4" />
             <span className="hidden sm:inline">KPIs</span>
           </TabsTrigger>
-          <TabsTrigger value="config" className="gap-sm">
-            <Database className="h-4 w-4" />
-            <span className="hidden sm:inline">Config</span>
-          </TabsTrigger>
           <TabsTrigger value="external-links" className="gap-sm">
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">Links</span>
