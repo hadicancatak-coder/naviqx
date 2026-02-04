@@ -36,6 +36,19 @@ interface CampaignWithAssignees {
   launch_campaign_assignees: CampaignAssignee[];
 }
 
+interface DigestTask {
+  id: string;
+  title: string;
+  due_at: string;
+  category: "overdue" | "tomorrow" | "three_days";
+  days_info: string;
+}
+
+interface UserDigestData {
+  user_id: string;
+  tasks: DigestTask[];
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -90,6 +103,17 @@ serve(async (req) => {
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
+    // ========== COLLECT ALL DEADLINE TASKS FOR EMAIL DIGEST ==========
+    const userDigestMap = new Map<string, UserDigestData>();
+
+    // Helper to add task to user's digest
+    const addToDigest = (userId: string, task: DigestTask) => {
+      if (!userDigestMap.has(userId)) {
+        userDigestMap.set(userId, { user_id: userId, tasks: [] });
+      }
+      userDigestMap.get(userId)!.tasks.push(task);
+    };
+
     // ========== 1. DEADLINE REMINDERS (3 days) ==========
     const { data: tasks3DaysRaw } = await supabase
       .from("tasks")
@@ -107,16 +131,29 @@ serve(async (req) => {
     
     for (const task of tasks3Days) {
       for (const assignee of task.task_assignees) {
-        await supabase.rpc("send_notification", {
-          p_user_id: assignee.profiles?.user_id,
-          p_type: "deadline_reminder_3days",
-          p_payload_json: {
-            task_id: task.id,
-            task_title: task.title,
+        const userId = assignee.profiles?.user_id;
+        if (userId) {
+          // In-app notification
+          await supabase.rpc("send_notification", {
+            p_user_id: userId,
+            p_type: "deadline_reminder_3days",
+            p_payload_json: {
+              task_id: task.id,
+              task_title: task.title,
+              due_at: task.due_at,
+              days_remaining: 3,
+            },
+          });
+          
+          // Add to email digest
+          addToDigest(userId, {
+            id: task.id,
+            title: task.title,
             due_at: task.due_at,
-            days_remaining: 3,
-          },
-        });
+            category: "three_days",
+            days_info: "in 3 days",
+          });
+        }
       }
     }
 
@@ -137,16 +174,29 @@ serve(async (req) => {
     
     for (const task of tasks1Day) {
       for (const assignee of task.task_assignees) {
-        await supabase.rpc("send_notification", {
-          p_user_id: assignee.profiles?.user_id,
-          p_type: "deadline_reminder_1day",
-          p_payload_json: {
-            task_id: task.id,
-            task_title: task.title,
+        const userId = assignee.profiles?.user_id;
+        if (userId) {
+          // In-app notification
+          await supabase.rpc("send_notification", {
+            p_user_id: userId,
+            p_type: "deadline_reminder_1day",
+            p_payload_json: {
+              task_id: task.id,
+              task_title: task.title,
+              due_at: task.due_at,
+              days_remaining: 1,
+            },
+          });
+          
+          // Add to email digest
+          addToDigest(userId, {
+            id: task.id,
+            title: task.title,
             due_at: task.due_at,
-            days_remaining: 1,
-          },
-        });
+            category: "tomorrow",
+            days_info: "tomorrow",
+          });
+        }
       }
     }
 
@@ -165,17 +215,81 @@ serve(async (req) => {
     const overdueTasks = (overdueTasksRaw ?? []) as unknown as TaskWithAssignees[];
     
     for (const task of overdueTasks) {
+      const daysOverdue = Math.floor((now.getTime() - new Date(task.due_at).getTime()) / (24 * 60 * 60 * 1000));
+      
       for (const assignee of task.task_assignees) {
-        await supabase.rpc("send_notification", {
-          p_user_id: assignee.profiles?.user_id,
-          p_type: "deadline_reminder_overdue",
-          p_payload_json: {
-            task_id: task.id,
-            task_title: task.title,
+        const userId = assignee.profiles?.user_id;
+        if (userId) {
+          // In-app notification
+          await supabase.rpc("send_notification", {
+            p_user_id: userId,
+            p_type: "deadline_reminder_overdue",
+            p_payload_json: {
+              task_id: task.id,
+              task_title: task.title,
+              due_at: task.due_at,
+              days_overdue: daysOverdue,
+            },
+          });
+          
+          // Add to email digest
+          addToDigest(userId, {
+            id: task.id,
+            title: task.title,
             due_at: task.due_at,
-            days_overdue: Math.floor((now.getTime() - new Date(task.due_at).getTime()) / (24 * 60 * 60 * 1000)),
+            category: "overdue",
+            days_info: daysOverdue === 1 ? "1 day overdue" : `${daysOverdue} days overdue`,
+          });
+        }
+      }
+    }
+
+    // ========== SEND EMAIL DIGESTS ==========
+    let emailsSent = 0;
+    let emailsSkipped = 0;
+
+    for (const [userId, digestData] of userDigestMap) {
+      if (digestData.tasks.length === 0) continue;
+
+      // Check if user has email digest enabled
+      const { data: prefData } = await supabase
+        .from("notification_preferences")
+        .select("email_enabled")
+        .eq("user_id", userId)
+        .eq("notification_type", "deadline_digest")
+        .single();
+
+      if (!prefData?.email_enabled) {
+        emailsSkipped++;
+        continue;
+      }
+
+      // Call the email function
+      try {
+        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
           },
+          body: JSON.stringify({
+            type: "deadline_digest",
+            user_id: userId,
+            payload: {
+              tasks: digestData.tasks,
+            },
+          }),
         });
+
+        if (emailResponse.ok) {
+          emailsSent++;
+          console.log(`Digest email sent to user ${userId} with ${digestData.tasks.length} tasks`);
+        } else {
+          const errorText = await emailResponse.text();
+          console.error(`Failed to send digest email to ${userId}:`, errorText);
+        }
+      } catch (emailError) {
+        console.error(`Error sending digest email to ${userId}:`, emailError);
       }
     }
 
@@ -253,6 +367,8 @@ serve(async (req) => {
           overdue: overdueTasks.length,
           campaigns: upcomingCampaigns.length,
           approvals: pendingApprovals.length,
+          digest_emails_sent: emailsSent,
+          digest_emails_skipped: emailsSkipped,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
