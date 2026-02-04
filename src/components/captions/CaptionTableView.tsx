@@ -1,12 +1,22 @@
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Copy, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Caption } from "@/pages/CaptionLibrary";
 import { cn } from "@/lib/utils";
+import { getStatusColor } from "@/lib/constants";
 import {
   Tooltip,
   TooltipContent,
@@ -94,31 +104,20 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
     setBulkDeleteConfirm(false);
   };
 
+  // Status color now centralized in constants.ts
+
   return (
     <TooltipProvider>
       <div className="relative">
         {selectedIds.size > 0 && (
-          <div 
-            className="sticky top-0 z-10 flex items-center gap-4 px-4 py-2"
-            style={{ 
-              background: "rgba(18,18,18,0.38)",
-              backdropFilter: "blur(40px) saturate(160%)",
-              WebkitBackdropFilter: "blur(40px) saturate(160%)",
-              borderBottom: "1px solid rgba(255,255,255,0.04)",
-            }}
-          >
-            <span 
-              className="text-sm font-medium"
-              style={{ color: "rgba(235,235,235,0.9)" }}
-            >
+          <div className="sticky top-0 z-10 flex items-center gap-md px-md py-xs bg-muted border-b border-border">
+            <span className="text-body-sm font-medium">
               {selectedIds.size} selected
             </span>
             <Button
-              variant="ghost"
+              variant="destructive"
               size="sm"
               onClick={() => setBulkDeleteConfirm(true)}
-              className="hover:bg-red-500/15"
-              style={{ color: "#ef4444" }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Selected
@@ -126,218 +125,148 @@ export function CaptionTableView({ captions, onEdit }: CaptionTableViewProps) {
           </div>
         )}
 
-        <table className="w-full">
-          <thead>
-            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <th className="w-12 p-4 text-left">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-elevated hover:bg-elevated">
+              <TableHead className="w-12">
                 <Checkbox
                   checked={selectedIds.size === captions.length && captions.length > 0}
                   onCheckedChange={toggleSelectAll}
                 />
-              </th>
-              <th 
-                className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                Type
-              </th>
-              <th 
-                className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                EN Content
-              </th>
-              <th 
-                className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                AR Content
-              </th>
-              <th 
-                className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                Entity
-              </th>
-              <th 
-                className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                Status
-              </th>
-              <th 
-                className="p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                Uses
-              </th>
-              <th 
-                className="w-24 p-4 text-left text-xs font-medium"
-                style={{ color: "rgba(180,180,180,0.6)" }}
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+              <TableHead className="text-metadata font-medium">Type</TableHead>
+              <TableHead className="text-metadata font-medium">EN Content</TableHead>
+              <TableHead className="text-metadata font-medium">AR Content</TableHead>
+              <TableHead className="text-metadata font-medium">Entity</TableHead>
+              <TableHead className="text-metadata font-medium">Status</TableHead>
+              <TableHead className="text-metadata font-medium">Uses</TableHead>
+              <TableHead className="w-24 text-metadata font-medium">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {captions.map((caption) => {
               const enContent = getContentForDisplay(caption.content, "en");
               const arContent = getContentForDisplay(caption.content, "ar");
 
               return (
-                <tr
+                <TableRow
                   key={caption.id}
-                  className="transition-colors hover:bg-white/04"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                  className="hover:bg-card-hover transition-smooth group"
                 >
-                  <td className="p-4">
+                  <TableCell>
                     <Checkbox
                       checked={selectedIds.has(caption.id)}
                       onCheckedChange={() => toggleSelect(caption.id)}
                     />
-                  </td>
-                  <td className="p-4">
-                    <span 
-                      className="px-2 py-1 text-xs rounded-full capitalize"
-                      style={{ 
-                        background: "rgba(255,255,255,0.08)",
-                        color: "rgba(235,235,235,0.9)",
-                      }}
-                    >
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-metadata capitalize">
                       {caption.element_type}
-                    </span>
-                  </td>
+                    </Badge>
+                  </TableCell>
                   
                   {/* EN Content - Click to copy */}
-                  <td className="p-4 max-w-[200px]">
+                  <TableCell className="max-w-[200px]">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => handleCopyContent(caption.content, "en")}
                           className={cn(
-                            "text-left text-sm truncate w-full px-2 py-1 rounded-lg transition-all",
+                            "text-left text-body-sm truncate w-full px-2 py-1 rounded transition-smooth",
                             enContent 
-                              ? "hover:bg-white/08 cursor-pointer" 
-                              : "cursor-default"
+                              ? "hover:bg-primary/10 cursor-pointer" 
+                              : "text-muted-foreground/50 cursor-default"
                           )}
-                          style={{ 
-                            color: enContent ? "rgba(235,235,235,0.9)" : "rgba(180,180,180,0.4)",
-                          }}
                         >
                           {enContent || "—"}
                         </button>
                       </TooltipTrigger>
                       {enContent && (
                         <TooltipContent side="top" className="max-w-sm">
-                          <p className="text-sm">{enContent}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Click to copy</p>
+                          <p className="text-body-sm">{enContent}</p>
+                          <p className="text-metadata text-muted-foreground mt-xs">Click to copy</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
-                  </td>
+                  </TableCell>
                   
                   {/* AR Content - Click to copy */}
-                  <td className="p-4 max-w-[200px]">
+                  <TableCell className="max-w-[200px]">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => handleCopyContent(caption.content, "ar")}
                           dir="rtl"
                           className={cn(
-                            "text-right text-sm truncate w-full px-2 py-1 rounded-lg transition-all",
+                            "text-right text-body-sm truncate w-full px-2 py-1 rounded transition-smooth",
                             arContent 
-                              ? "hover:bg-white/08 cursor-pointer" 
-                              : "cursor-default"
+                              ? "hover:bg-primary/10 cursor-pointer" 
+                              : "text-muted-foreground/50 cursor-default"
                           )}
-                          style={{ 
-                            color: arContent ? "rgba(235,235,235,0.9)" : "rgba(180,180,180,0.4)",
-                          }}
                         >
                           {arContent || "—"}
                         </button>
                       </TooltipTrigger>
                       {arContent && (
                         <TooltipContent side="top" className="max-w-sm">
-                          <p className="text-sm" dir="rtl">{arContent}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Click to copy</p>
+                          <p className="text-body-sm" dir="rtl">{arContent}</p>
+                          <p className="text-metadata text-muted-foreground mt-xs">Click to copy</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
-                  </td>
+                  </TableCell>
                   
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1">
+                  <TableCell>
+                    <div className="flex flex-wrap gap-xs">
                       {caption.entity?.slice(0, 2).map((e) => (
-                        <span 
-                          key={e} 
-                          className="px-2 py-0.5 text-xs rounded-full"
-                          style={{ 
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(235,235,235,0.85)",
-                          }}
-                        >
+                        <Badge key={e} variant="secondary" className="text-metadata">
                           {e}
-                        </span>
+                        </Badge>
                       ))}
                       {caption.entity?.length > 2 && (
-                        <span 
-                          className="px-2 py-0.5 text-xs rounded-full"
-                          style={{ 
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(180,180,180,0.6)",
-                          }}
-                        >
+                        <Badge variant="secondary" className="text-metadata">
                           +{caption.entity.length - 2}
-                        </span>
+                        </Badge>
                       )}
                     </div>
-                  </td>
-                  <td className="p-4">
-                    <span 
-                      className="px-2 py-0.5 text-xs rounded-full capitalize"
-                      style={{ 
-                        background: "rgba(255,255,255,0.06)",
-                        color: "rgba(180,180,180,0.7)",
-                      }}
-                    >
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`text-metadata ${getStatusColor(caption.google_status)}`}>
                       {caption.google_status || "pending"}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span 
-                      className="text-sm"
-                      style={{ color: "rgba(180,180,180,0.6)" }}
-                    >
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-body-sm text-muted-foreground">
                       {caption.use_count || 0}
                     </span>
-                  </td>
+                  </TableCell>
                   
-                  {/* Actions */}
-                  <td className="p-4">
-                    <div className="flex items-center gap-1">
+                  {/* Actions - Always visible */}
+                  <TableCell>
+                    <div className="flex items-center gap-xs">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-white/10"
+                        className="h-8 w-8"
                         onClick={() => onEdit(caption)}
                       >
-                        <Edit className="h-4 w-4" style={{ color: "rgba(180,180,180,0.7)" }} />
+                        <Edit className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-red-500/15"
+                        className="h-8 w-8 hover:bg-destructive/10"
                         onClick={() => setDeleteConfirmId(caption.id)}
                       >
-                        <Trash2 className="h-4 w-4" style={{ color: "#ef4444" }} />
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Single Delete Confirmation */}
