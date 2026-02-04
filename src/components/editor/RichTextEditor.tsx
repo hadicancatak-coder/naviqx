@@ -100,13 +100,13 @@ export function RichTextEditor({
             '[&_li>p]:my-0 [&_li>p]:inline', // Fix nested paragraphs in list items
             'prose-a:text-primary prose-a:underline prose-a:cursor-pointer hover:prose-a:text-primary/80',
             '[&_a]:break-all [&_a]:[word-break:break-all] [&_a]:[overflow-wrap:anywhere]',
-            '[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px]',
+            '[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px] [&_.ProseMirror]:break-all [&_.ProseMirror]:[word-break:break-all]',
             '[&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]',
             '[&_p.is-editor-empty:first-child]:before:text-muted-foreground',
             '[&_p.is-editor-empty:first-child]:before:float-left',
             '[&_p.is-editor-empty:first-child]:before:pointer-events-none',
             '[&_p.is-editor-empty:first-child]:before:h-0',
-            'break-words [word-break:break-word] [overflow-wrap:break-word]',
+            'break-all [word-break:break-all] [overflow-wrap:anywhere]',
           )}
         />
       </div>
