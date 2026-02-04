@@ -31,59 +31,59 @@ export function SecurityPosture({
     <div className="grid gap-md md:grid-cols-4">
       <Card className={`liquid-glass-elevated rounded-xl hover-lift transition-smooth ${getScoreBg(securityScore)}`}>
         <CardContent className="p-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-metadata font-medium text-muted-foreground">Security Score</p>
+          <div className="flex items-center justify-between gap-md">
+            <div className="min-w-0 flex-1">
+              <p className="text-metadata font-medium text-muted-foreground mb-xs">Security Score</p>
               <p className={`text-heading-lg font-bold ${getScoreColor(securityScore)}`}>
                 {securityScore}/100
               </p>
             </div>
-            <Shield className={`h-8 w-8 ${getScoreColor(securityScore)}`} />
+            <Shield className={`h-8 w-8 flex-shrink-0 ${getScoreColor(securityScore)}`} />
           </div>
         </CardContent>
       </Card>
 
       <Card className={`liquid-glass-elevated rounded-xl hover-lift transition-smooth ${criticalIssues > 0 ? "bg-destructive-soft" : "bg-success-soft"}`}>
         <CardContent className="p-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-metadata font-medium text-muted-foreground">Critical Issues</p>
+          <div className="flex items-center justify-between gap-md">
+            <div className="min-w-0 flex-1">
+              <p className="text-metadata font-medium text-muted-foreground mb-xs">Critical Issues</p>
               <p className={`text-heading-lg font-bold ${criticalIssues > 0 ? "text-destructive-text" : "text-success-text"}`}>
                 {criticalIssues}
               </p>
             </div>
-            <AlertTriangle className={`h-8 w-8 ${criticalIssues > 0 ? "text-destructive-text" : "text-success-text"}`} />
+            <AlertTriangle className={`h-8 w-8 flex-shrink-0 ${criticalIssues > 0 ? "text-destructive-text" : "text-success-text"}`} />
           </div>
         </CardContent>
       </Card>
 
       <Card className="liquid-glass-elevated rounded-xl hover-lift transition-smooth">
         <CardContent className="p-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-metadata font-medium text-muted-foreground">Last Scan</p>
-              <p className="text-heading-sm font-semibold text-foreground">
+          <div className="flex items-center justify-between gap-md">
+            <div className="min-w-0 flex-1">
+              <p className="text-metadata font-medium text-muted-foreground mb-xs">Last Scan</p>
+              <p className="text-heading-lg font-bold text-foreground">
                 {lastScanAt 
                   ? formatDistanceToNow(lastScanAt, { addSuffix: true })
                   : "Never"
                 }
               </p>
             </div>
-            <Clock className="h-8 w-8 text-muted-foreground" />
+            <Clock className="h-8 w-8 flex-shrink-0 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
 
       <Card className={`liquid-glass-elevated rounded-xl hover-lift transition-smooth ${unresolvedActivities > 0 ? "bg-warning-soft" : "bg-success-soft"}`}>
         <CardContent className="p-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-metadata font-medium text-muted-foreground">Suspicious Activity</p>
+          <div className="flex items-center justify-between gap-md">
+            <div className="min-w-0 flex-1">
+              <p className="text-metadata font-medium text-muted-foreground mb-xs">Suspicious Activity</p>
               <p className={`text-heading-lg font-bold ${unresolvedActivities > 0 ? "text-warning-text" : "text-success-text"}`}>
                 {unresolvedActivities}
               </p>
             </div>
-            <Activity className={`h-8 w-8 ${unresolvedActivities > 0 ? "text-warning-text" : "text-success-text"}`} />
+            <Activity className={`h-8 w-8 flex-shrink-0 ${unresolvedActivities > 0 ? "text-warning-text" : "text-success-text"}`} />
           </div>
         </CardContent>
       </Card>
