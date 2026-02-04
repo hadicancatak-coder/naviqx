@@ -7,3 +7,6 @@ generate_recurring = { schedule = "0 * * * *", function = "generate-recurring-ta
 
 [functions.sync-google-sheet]
 verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = false
