@@ -14,7 +14,7 @@ export function SecurityControls({
   permissivePoliciesCount,
 }: SecurityControlsProps) {
   return (
-    <Card>
+    <Card className="liquid-glass-elevated rounded-xl">
       <CardHeader className="pb-sm">
         <CardTitle className="text-heading-sm">Security Controls</CardTitle>
       </CardHeader>

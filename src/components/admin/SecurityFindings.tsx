@@ -67,15 +67,15 @@ export function SecurityFindings({ findings, onAcknowledge }: SecurityFindingsPr
 
   if (findings.length === 0) {
     return (
-      <Card>
-        <CardHeader>
+      <Card className="liquid-glass-elevated rounded-xl">
+        <CardHeader className="pb-sm">
           <CardTitle className="text-heading-sm">Active Findings</CardTitle>
           <CardDescription>Security issues requiring attention</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-xl text-muted-foreground">
             <CheckCircle className="h-12 w-12 mx-auto mb-sm text-success-text" />
-            <p>No active security findings</p>
+            <p className="text-body-sm">No active security findings</p>
           </div>
         </CardContent>
       </Card>
@@ -83,8 +83,8 @@ export function SecurityFindings({ findings, onAcknowledge }: SecurityFindingsPr
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="liquid-glass-elevated rounded-xl">
+      <CardHeader className="pb-sm">
         <CardTitle className="text-heading-sm">Active Findings</CardTitle>
         <CardDescription>
           {findings.length} security issue{findings.length !== 1 ? "s" : ""} requiring attention

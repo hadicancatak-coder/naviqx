@@ -116,11 +116,11 @@ export function SecurityDashboard() {
 
       toast({
         title: "Cleanup complete",
-        description: "Expired MFA sessions have been removed",
+        description: "Running fresh security scan...",
       });
 
-      // Refresh data and run a new scan
-      fetchData();
+      // Run a new scan to refresh findings with current data
+      await runManualScan();
     } catch (error: unknown) {
       logger.error("Error cleaning up sessions:", error);
       toast({
