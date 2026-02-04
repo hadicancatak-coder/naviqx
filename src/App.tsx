@@ -57,10 +57,6 @@ const HowTo = lazy(() => import("./pages/HowTo"));
 const CopyWriter = lazy(() => import("./pages/CopyWriter"));
 const CaptionLibrary = lazy(() => import("./pages/CaptionLibrary"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
-const CampaignReview = lazy(() => import("./pages/CampaignReview"));
-const CampaignsLogExternal = lazy(() => import("./pages/CampaignsLogExternal"));
-const KnowledgePublic = lazy(() => import("./pages/KnowledgePublic"));
-const ProjectsPublic = lazy(() => import("./pages/ProjectsPublic"));
 const PublicReview = lazy(() => import("./pages/PublicReview"));
 
 
@@ -71,12 +67,13 @@ const App = () => (
         <BrowserRouter>
           <Routes>
           {/* PUBLIC ROUTES - Outside AuthProvider to prevent MFA redirects */}
-            <Route path="/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
-            <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><CampaignReview /></Suspense>} />
-            <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><CampaignsLogExternal /></Suspense>} />
-            <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />
-            <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><ProjectsPublic /></Suspense>} />
-            <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><LpMapPublic /></Suspense>} />
+            {/* Legacy routes - redirect to unified */}
+            <Route path="/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />
+            <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />
+            <Route path="/campaigns-log/external/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />
+            <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="knowledge" /></Suspense>} />
+            <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="project" /></Suspense>} />
+            <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="lp_map" /></Suspense>} />
             {/* Unified Public Review Routes */}
             <Route path="/ads/search/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="search_ads" /></Suspense>} />
             <Route path="/ads/lp/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="lp_map" /></Suspense>} />

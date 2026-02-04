@@ -47,13 +47,16 @@
 - ✅ Migrated: knowledge_pages.public_token → public_access_links (resource_type: knowledge)
 - ✅ Migrated: projects.public_token → public_access_links (resource_type: project)
 
-### Phase 8: Cleanup (Post-Validation)
-- ⬚ Remove old `campaign_external_access` table usage
-- ⬚ Remove old `external_campaign_review_comments` table usage
-- ⬚ Remove legacy `CampaignReview.tsx` page
-- ⬚ Remove legacy `CampaignShareDialog.tsx` component
-- ⬚ Remove legacy `useExternalAccess.ts` hook
-- ⬚ Remove legacy `KnowledgePublic.tsx` and `ProjectsPublic.tsx` pages
+### Phase 8: Cleanup ✅
+- ✅ Removed `useExternalAccess.ts` hook (replaced by `usePublicAccess.ts`)
+- ✅ Removed legacy `CampaignReview.tsx` page
+- ✅ Removed legacy `CampaignsLogExternal.tsx` page
+- ✅ Removed legacy `KnowledgePublic.tsx` page
+- ✅ Removed legacy `ProjectsPublic.tsx` page
+- ✅ Removed legacy `CampaignShareDialog.tsx` component
+- ✅ Updated `ExternalAccessDialog.tsx` to use `usePublicAccessManagement`
+- ✅ Updated App.tsx routes to use unified `PublicReview` component
+- ✅ Legacy routes (`/review/:token`, `/campaigns-log/*`, etc.) now redirect to unified system
 
 ---
 
