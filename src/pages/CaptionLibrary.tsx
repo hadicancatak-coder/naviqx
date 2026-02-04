@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Grid, Table as TableIcon, Upload, Download } from "lucide-react";
-import { PageContainer, PageHeader, FilterBar, DataCard } from "@/components/layout";
+import { Plus, Grid, Table as TableIcon, Upload, Download, Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
@@ -15,6 +14,7 @@ import { CaptionDialog } from "@/components/captions/CaptionDialog";
 import { CaptionImportDialog } from "@/components/captions/CaptionImportDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
 
 const CAPTION_TYPES = [
   { value: "headline", label: "Headline" },
@@ -36,6 +36,18 @@ const STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "rejected", label: "Rejected" },
 ];
+
+// Apple Liquid Glass styles
+const glassStyles = {
+  surface: {
+    background: "rgba(20,20,20,0.55)",
+    backdropFilter: "blur(28px) saturate(140%)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+    borderRadius: "16px",
+  },
+  highlight: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0))",
+};
 
 export type Caption = {
   id: string;
@@ -168,142 +180,276 @@ export default function CaptionLibrary() {
   }, {} as Record<string, number>) || {};
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Caption Library"
-        description="Unified library for all your marketing copy elements"
-        actions={
-          <div className="flex items-center gap-sm">
+    <div 
+      className="min-h-screen p-6 space-y-6"
+      style={{
+        background: "radial-gradient(circle at top, #1a1a1a 0%, #0b0b0b 60%, #050505 100%)",
+      }}
+    >
+      {/* Header */}
+      <div 
+        className="p-6 relative overflow-hidden"
+        style={glassStyles.surface}
+      >
+        {/* Highlight overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: glassStyles.highlight }}
+        />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 
+              className="text-2xl font-semibold"
+              style={{ color: "rgba(235,235,235,0.95)" }}
+            >
+              Caption Library
+            </h1>
+            <p style={{ color: "rgba(180,180,180,0.7)" }}>
+              Unified library for all your marketing copy elements
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "grid" | "table")}>
-              <TabsList className="h-9">
-                <TabsTrigger value="grid" className="px-sm">
+              <TabsList 
+                className="h-9 border-0"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <TabsTrigger 
+                  value="grid" 
+                  className="px-3 data-[state=active]:bg-white/20"
+                  style={{ color: "rgba(235,235,235,0.95)" }}
+                >
                   <Grid className="h-4 w-4" />
                 </TabsTrigger>
-                <TabsTrigger value="table" className="px-sm">
+                <TabsTrigger 
+                  value="table" 
+                  className="px-3 data-[state=active]:bg-white/20"
+                  style={{ color: "rgba(235,235,235,0.95)" }}
+                >
                   <TableIcon className="h-4 w-4" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-sm" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setImportDialogOpen(true)}
+              className="border border-white/10 hover:bg-white/10"
+              style={{ color: "rgba(235,235,235,0.95)" }}
+            >
+              <Upload className="h-4 w-4 mr-2" />
               Import
             </Button>
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <Download className="h-4 w-4 mr-sm" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={exportToCSV}
+              className="border border-white/10 hover:bg-white/10"
+              style={{ color: "rgba(235,235,235,0.95)" }}
+            >
+              <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button onClick={handleCreate} className="rounded-full">
-              <Plus className="h-4 w-4 mr-sm" />
+            <Button 
+              onClick={handleCreate} 
+              className="rounded-full border-0"
+              style={{
+                background: "rgba(255,255,255,0.15)",
+                color: "rgba(235,235,235,0.95)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
               New Caption
             </Button>
           </div>
-        }
-      />
+        </div>
+      </div>
 
-      <FilterBar
-        search={{
-          value: search,
-          onChange: setSearch,
-          placeholder: "Search captions...",
-        }}
+      {/* Filter Bar */}
+      <div 
+        className="p-4 relative overflow-hidden"
+        style={glassStyles.surface}
       >
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[140px] h-9 bg-card rounded-lg">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {CAPTION_TYPES.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: glassStyles.highlight }}
+        />
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+            <Search 
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" 
+              style={{ color: "rgba(180,180,180,0.7)" }}
+            />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search captions..."
+              className="pl-9 border-white/10 bg-white/5 focus:bg-white/10"
+              style={{ 
+                color: "rgba(235,235,235,0.95)",
+                borderColor: "rgba(255,255,255,0.1)",
+              }}
+            />
+          </div>
 
-        <Select value={entityFilter} onValueChange={setEntityFilter}>
-          <SelectTrigger className="w-[140px] h-9 bg-card rounded-lg">
-            <SelectValue placeholder="Entity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Entities</SelectItem>
-            {systemEntities.map((entity) => (
-              <SelectItem key={entity.id} value={entity.name}>
-                {entity.emoji} {entity.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger 
+              className="w-[140px] h-9 border-white/10"
+              style={{ 
+                background: "rgba(255,255,255,0.05)", 
+                color: "rgba(235,235,235,0.95)",
+                borderColor: "rgba(255,255,255,0.1)",
+              }}
+            >
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {CAPTION_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={languageFilter} onValueChange={setLanguageFilter}>
-          <SelectTrigger className="w-[130px] h-9 bg-card rounded-lg">
-            <SelectValue placeholder="Language" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Languages</SelectItem>
-            {LANGUAGES.map((lang) => (
-              <SelectItem key={lang.value} value={lang.value}>
-                {lang.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={entityFilter} onValueChange={setEntityFilter}>
+            <SelectTrigger 
+              className="w-[140px] h-9 border-white/10"
+              style={{ 
+                background: "rgba(255,255,255,0.05)", 
+                color: "rgba(235,235,235,0.95)",
+                borderColor: "rgba(255,255,255,0.1)",
+              }}
+            >
+              <SelectValue placeholder="Entity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Entities</SelectItem>
+              {systemEntities.map((entity) => (
+                <SelectItem key={entity.id} value={entity.name}>
+                  {entity.emoji} {entity.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[130px] h-9 bg-card rounded-lg">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            {STATUS_OPTIONS.map((status) => (
-              <SelectItem key={status.value} value={status.value}>
-                {status.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterBar>
+          <Select value={languageFilter} onValueChange={setLanguageFilter}>
+            <SelectTrigger 
+              className="w-[130px] h-9 border-white/10"
+              style={{ 
+                background: "rgba(255,255,255,0.05)", 
+                color: "rgba(235,235,235,0.95)",
+                borderColor: "rgba(255,255,255,0.1)",
+              }}
+            >
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Languages</SelectItem>
+              {LANGUAGES.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      {/* Type Stats */}
-      <div className="flex gap-sm flex-wrap">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger 
+              className="w-[130px] h-9 border-white/10"
+              style={{ 
+                background: "rgba(255,255,255,0.05)", 
+                color: "rgba(235,235,235,0.95)",
+                borderColor: "rgba(255,255,255,0.1)",
+              }}
+            >
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              {STATUS_OPTIONS.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Type Stats Pills */}
+      <div className="flex gap-2 flex-wrap">
         {CAPTION_TYPES.map((type) => (
           <button
             key={type.value}
             onClick={() => setTypeFilter(type.value === typeFilter ? "all" : type.value)}
-            className={`px-sm py-xs rounded-full text-body-sm transition-smooth ${
-              type.value === typeFilter
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
+            className="px-4 py-2 text-sm transition-all"
+            style={{
+              ...glassStyles.surface,
+              background: type.value === typeFilter 
+                ? "rgba(255,255,255,0.2)" 
+                : "rgba(20,20,20,0.55)",
+              color: "rgba(235,235,235,0.95)",
+            }}
           >
             {type.label} ({typeStats[type.value] || 0})
           </button>
         ))}
       </div>
 
-      <DataCard noPadding>
-        {isLoading ? (
-          <div className="p-md">
-            <TableSkeleton columns={6} rows={10} />
-          </div>
-        ) : !captions || captions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-xl text-center">
-            <Grid className="h-12 w-12 text-muted-foreground mb-md" />
-            <h3 className="text-heading-sm font-semibold mb-sm">No captions found</h3>
-            <p className="text-body-sm text-muted-foreground mb-md">
-              Create your first caption or adjust filters
-            </p>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-sm" />
-              Create Caption
-            </Button>
-          </div>
-        ) : viewMode === "grid" ? (
-          <CaptionGridView captions={captions} onEdit={handleEdit} />
-        ) : (
-          <CaptionTableView captions={captions} onEdit={handleEdit} />
-        )}
-      </DataCard>
+      {/* Data Card */}
+      <div 
+        className="relative overflow-hidden"
+        style={glassStyles.surface}
+      >
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: glassStyles.highlight }}
+        />
+        <div className="relative z-10">
+          {isLoading ? (
+            <div className="p-6">
+              <TableSkeleton columns={6} rows={10} />
+            </div>
+          ) : !captions || captions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Grid className="h-12 w-12 mb-4" style={{ color: "rgba(180,180,180,0.7)" }} />
+              <h3 
+                className="text-lg font-semibold mb-2"
+                style={{ color: "rgba(235,235,235,0.95)" }}
+              >
+                No captions found
+              </h3>
+              <p 
+                className="text-sm mb-4"
+                style={{ color: "rgba(180,180,180,0.7)" }}
+              >
+                Create your first caption or adjust filters
+              </p>
+              <Button 
+                onClick={handleCreate}
+                style={{
+                  background: "rgba(255,255,255,0.15)",
+                  color: "rgba(235,235,235,0.95)",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Caption
+              </Button>
+            </div>
+          ) : viewMode === "grid" ? (
+            <CaptionGridView captions={captions} onEdit={handleEdit} />
+          ) : (
+            <CaptionTableView captions={captions} onEdit={handleEdit} />
+          )}
+        </div>
+      </div>
 
       <CaptionDialog
         open={dialogOpen}
@@ -322,6 +468,6 @@ export default function CaptionLibrary() {
           queryClient.invalidateQueries({ queryKey: ["ad-elements"] });
         }}
       />
-    </PageContainer>
+    </div>
   );
 }
