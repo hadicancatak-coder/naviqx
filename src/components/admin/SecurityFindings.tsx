@@ -14,6 +14,7 @@ export interface Finding {
   source: "scanner" | "linter" | "runtime";
   actionable?: boolean;
   fixUrl?: string;
+  onCleanup?: () => void;
 }
 
 interface SecurityFindingsProps {
@@ -121,6 +122,11 @@ export function SecurityFindings({ findings, onAcknowledge }: SecurityFindingsPr
                 )}
 
                 <div className="flex items-center gap-sm mt-md">
+                  {finding.onCleanup && (
+                    <Button size="sm" variant="default" onClick={finding.onCleanup}>
+                      Clean Now
+                    </Button>
+                  )}
                   {finding.fixUrl && (
                     <Button size="sm" variant="outline" asChild>
                       <a href={finding.fixUrl} target="_blank" rel="noopener noreferrer">
