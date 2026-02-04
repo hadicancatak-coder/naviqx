@@ -178,7 +178,7 @@ export default function CaptionLibrary() {
 
   return (
     <div 
-      className="min-h-screen p-6 space-y-6"
+      className="min-h-[calc(100vh-60px)] p-6 space-y-6 -mx-md -mt-md -mb-lg relative z-10"
       style={{
         background: "radial-gradient(circle at top, #1b1b1b 0%, #0c0c0c 55%, #050505 100%)",
       }}
