@@ -64,10 +64,10 @@ function TreeNode({ page, level, selectedPageId, onSelectPage, onCreatePage, isA
     <div>
       <div
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-smooth group",
+          "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-smooth group min-w-0",
           isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
         )}
-        style={{ paddingLeft: `${12 + level * 16}px` }}
+        style={{ paddingLeft: `${12 + level * 12}px` }}
         onClick={() => onSelectPage(page)}
       >
         {hasChildren ? (
@@ -76,7 +76,7 @@ function TreeNode({ page, level, selectedPageId, onSelectPage, onCreatePage, isA
               e.stopPropagation();
               setExpanded(!expanded);
             }}
-            className="p-0.5 hover:bg-muted rounded"
+            className="p-0.5 hover:bg-muted rounded shrink-0"
           >
             {expanded ? (
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -85,23 +85,17 @@ function TreeNode({ page, level, selectedPageId, onSelectPage, onCreatePage, isA
             )}
           </button>
         ) : (
-          <span className="w-5" />
+          <span className="w-5 shrink-0" />
         )}
         
-        <DynamicIcon name={iconName} className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
-        <span className="text-body-sm truncate flex-1">{page.title}</span>
-        
-        {showCategory && categoryInfo && (
-          <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", categoryColors[page.category])}>
-            {categoryInfo.label}
-          </Badge>
-        )}
+        <DynamicIcon name={iconName} className={cn("h-4 w-4 shrink-0", isSelected ? "text-primary" : "text-muted-foreground")} />
+        <span className="text-body-sm flex-1 break-words" title={page.title}>{page.title}</span>
         
         {isAdmin && (
           <Button
             variant="ghost"
             size="icon-xs"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onCreatePage?.(page.id);
