@@ -261,10 +261,12 @@ src/
 3. ✅ `ExternalReviewPage` shell component
 4. ✅ `SearchAdsReviewContent` (the new feature)
 5. ✅ Update routes for search ads
-6. Migrate existing pages one at a time (campaigns → LP → knowledge → projects)
-7. Update admin management
-8. Data migration SQL
-9. Cleanup old code
+6. ✅ `LpMapReviewContent` and LP Planner share dialog
+7. Migrate campaigns (complex - uses ExternalCampaignGrid, ExternalCampaignDetailPanel, ExternalVersionGallery)
+8. Migrate knowledge & projects (simpler - read-only pages)
+9. Update admin management (already done)
+10. Data migration SQL
+11. Cleanup old code
 
 ## Completed Components
 
@@ -274,9 +276,20 @@ src/
 - `src/components/external/ExternalCommentForm.tsx` - Comment input
 - `src/components/external/ExternalCommentFeed.tsx` - Comment display
 - `src/components/external/SearchAdsReviewContent.tsx` - Search ads content
+- `src/components/external/LpMapReviewContent.tsx` - LP map content
+- `src/components/lp-planner/LpMapShareDialog.tsx` - LP share dialog
+- `src/components/search/SearchAdsShareDialog.tsx` - Search ads share dialog
 - `src/pages/PublicReview.tsx` - Unified public page
+- `src/pages/admin/ExternalLinksManagement.tsx` - Unified admin panel
 
-## Route Added
+## Routes Added
 
-`/ads/search/review/:token` - Search Ads external review
+- `/ads/search/review/:token` - Search Ads external review
+- `/ads/lp/review/:token` - LP Map external review (unified system)
+
+## Pending Migration
+
+- Campaigns: Uses old `campaign_external_access` table and custom components
+- Knowledge: Uses `knowledge_pages.public_token` column
+- Projects: Uses `projects.public_token` column
 

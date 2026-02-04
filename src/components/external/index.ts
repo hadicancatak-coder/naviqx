@@ -6,3 +6,4 @@ export { ExternalReviewHeader } from './ExternalReviewHeader';
 export { ExternalCommentForm } from './ExternalCommentForm';
 export { ExternalCommentFeed } from './ExternalCommentFeed';
 export { SearchAdsReviewContent } from './SearchAdsReviewContent';
+export { LpMapReviewContent } from './LpMapReviewContent';

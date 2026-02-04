@@ -77,8 +77,9 @@ const App = () => (
             <Route path="/knowledge/public/:token" element={<Suspense fallback={<PageLoader />}><KnowledgePublic /></Suspense>} />
             <Route path="/projects/public/:token" element={<Suspense fallback={<PageLoader />}><ProjectsPublic /></Suspense>} />
             <Route path="/lp-planner/public/:token" element={<Suspense fallback={<PageLoader />}><LpMapPublic /></Suspense>} />
-            {/* Unified Public Review - Search Ads */}
+            {/* Unified Public Review Routes */}
             <Route path="/ads/search/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="search_ads" /></Suspense>} />
+            <Route path="/ads/lp/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="lp_map" /></Suspense>} />
             
             {/* AUTHENTICATED ROUTES - Inside AuthProvider */}
             <Route path="/*" element={
