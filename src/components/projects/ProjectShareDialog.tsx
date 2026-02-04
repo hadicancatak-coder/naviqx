@@ -53,6 +53,9 @@ export function ProjectShareDialog({ open, onOpenChange, project }: ProjectShare
         // Generate new unified token
         const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24);
 
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('public_access_links') as any)
           .insert({
@@ -62,6 +65,7 @@ export function ProjectShareDialog({ open, onOpenChange, project }: ProjectShare
             entity: project.name,
             is_public: true,
             is_active: true,
+            created_by: user?.id,
             metadata: { project_status: project.status },
           })
           .select()
