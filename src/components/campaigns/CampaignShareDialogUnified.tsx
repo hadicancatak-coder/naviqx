@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getProductionUrl } from "@/lib/urlHelpers";
+import { getUniversalReviewUrl } from "@/lib/urlHelpers";
 
 interface CampaignShareDialogUnifiedProps {
   open: boolean;
@@ -67,7 +67,7 @@ export function CampaignShareDialogUnified({
   };
 
   const shareUrl = linkData?.access_token
-    ? `${getProductionUrl()}/review/${linkData.access_token}`
+    ? getUniversalReviewUrl(linkData.access_token)
     : "";
 
   const handleTogglePublic = async () => {

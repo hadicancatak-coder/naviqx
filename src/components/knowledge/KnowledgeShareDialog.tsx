@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Check, Globe, Link2, MousePointerClick, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { getProductionUrl } from "@/lib/utils";
+import { getUniversalReviewUrl } from "@/lib/urlHelpers";
 import { KnowledgePage } from "@/hooks/useKnowledgePages";
 
 interface KnowledgeShareDialogProps {
@@ -110,7 +110,7 @@ export function KnowledgeShareDialog({ open, onOpenChange, page }: KnowledgeShar
 
   const isEnabled = !!accessLink;
   const shareUrl = accessLink?.access_token 
-    ? `${getProductionUrl()}/knowledge/review/${accessLink.access_token}`
+    ? getUniversalReviewUrl(accessLink.access_token)
     : '';
 
   const handleCopy = async () => {

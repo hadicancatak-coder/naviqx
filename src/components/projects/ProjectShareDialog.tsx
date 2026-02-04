@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Check, Globe, Link2, MousePointerClick, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { getProductionUrl } from "@/lib/utils";
+import { getUniversalReviewUrl } from "@/lib/urlHelpers";
 import { Project } from "@/hooks/useProjects";
 
 interface ProjectShareDialogProps {
@@ -110,7 +110,7 @@ export function ProjectShareDialog({ open, onOpenChange, project }: ProjectShare
 
   const isEnabled = !!accessLink;
   const shareUrl = accessLink?.access_token 
-    ? `${getProductionUrl()}/projects/review/${accessLink.access_token}`
+    ? getUniversalReviewUrl(accessLink.access_token)
     : '';
 
   const handleCopy = async () => {

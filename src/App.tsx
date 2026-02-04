@@ -58,6 +58,7 @@ const CopyWriter = lazy(() => import("./pages/CopyWriter"));
 const CaptionLibrary = lazy(() => import("./pages/CaptionLibrary"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
 const PublicReview = lazy(() => import("./pages/PublicReview"));
+const UniversalReview = lazy(() => import("./pages/UniversalReview"));
 
 
 const App = () => (
@@ -67,6 +68,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
           {/* PUBLIC ROUTES - Outside AuthProvider to prevent MFA redirects */}
+            {/* Universal Token Resolver - auto-detects resource type */}
+            <Route path="/r/:token" element={<Suspense fallback={<PageLoader />}><UniversalReview /></Suspense>} />
+            
             {/* Legacy routes - redirect to unified */}
             <Route path="/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />
             <Route path="/campaigns-log/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />

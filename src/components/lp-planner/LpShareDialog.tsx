@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { LpMap, useUpdateLpMap } from "@/hooks/useLpMaps";
-import { getProductionUrl } from "@/lib/urlHelpers";
+import { getUniversalReviewUrl } from "@/lib/urlHelpers";
 
 interface LpShareDialogProps {
   open: boolean;
@@ -32,7 +32,7 @@ export const LpShareDialog = ({
 
   const updateMap = useUpdateLpMap();
 
-  const shareUrl = `${getProductionUrl()}/lp-planner/public/${map.public_token}`;
+  const shareUrl = getUniversalReviewUrl(map.public_token);
 
   const handleTogglePublic = async () => {
     await updateMap.mutateAsync({
