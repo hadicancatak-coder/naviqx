@@ -80,6 +80,7 @@ const App = () => (
             {/* Unified Public Review Routes */}
             <Route path="/ads/search/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="search_ads" /></Suspense>} />
             <Route path="/ads/lp/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="lp_map" /></Suspense>} />
+            <Route path="/campaigns/review/:token" element={<Suspense fallback={<PageLoader />}><PublicReview resourceType="campaign" /></Suspense>} />
             
             {/* AUTHENTICATED ROUTES - Inside AuthProvider */}
             <Route path="/*" element={

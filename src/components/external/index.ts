@@ -7,3 +7,4 @@ export { ExternalCommentForm } from './ExternalCommentForm';
 export { ExternalCommentFeed } from './ExternalCommentFeed';
 export { SearchAdsReviewContent } from './SearchAdsReviewContent';
 export { LpMapReviewContent } from './LpMapReviewContent';
+export { CampaignReviewContent } from './CampaignReviewContent';

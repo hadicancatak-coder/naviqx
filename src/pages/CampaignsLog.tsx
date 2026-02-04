@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CampaignTable } from "@/components/campaigns/CampaignTable";
 import { CreateUtmCampaignDialog } from "@/components/campaigns/CreateUtmCampaignDialog";
 import { CampaignBulkImportDialog } from "@/components/campaigns/CampaignBulkImportDialog";
-import { CampaignShareDialog } from "@/components/campaigns/CampaignShareDialog";
+import { CampaignShareDialogUnified } from "@/components/campaigns/CampaignShareDialogUnified";
 import { CampaignBulkBar } from "@/components/campaigns/CampaignBulkBar";
 import { EntityCommentsDialog } from "@/components/campaigns/EntityCommentsDialog";
 import { useUtmCampaigns } from "@/hooks/useUtmCampaigns";
@@ -28,11 +28,6 @@ export default function CampaignsLog() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareEntity, setShareEntity] = useState<string>("");
   const [entityCommentsOpen, setEntityCommentsOpen] = useState(false);
-  const [entityShareInfo, setEntityShareInfo] = useState<{
-    isPublic: boolean;
-    publicToken: string | null;
-    clickCount: number;
-  }>({ isPublic: false, publicToken: null, clickCount: 0 });
 
   const { data: entities = [] } = useSystemEntities();
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useUtmCampaigns({ withTracking: true });
@@ -53,33 +48,10 @@ export default function CampaignsLog() {
   });
   
   // Fetch entity share info when opening share dialog
-  const fetchEntityShareInfo = useCallback(async (entity: string) => {
-    const { data } = await supabase
-      .from("campaign_external_access")
-      .select("access_token, is_active, click_count")
-      .eq("entity", entity)
-      .is("campaign_id", null)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    
-    if (data) {
-      setEntityShareInfo({
-        isPublic: data.is_active ?? false,
-        publicToken: data.access_token,
-        clickCount: data.click_count ?? 0,
-      });
-    } else {
-      setEntityShareInfo({ isPublic: false, publicToken: null, clickCount: 0 });
-    }
-  }, []);
-
   const handleOpenShareDialog = useCallback((entity: string) => {
     setShareEntity(entity);
     setShareDialogOpen(true);
-    fetchEntityShareInfo(entity);
-  }, [fetchEntityShareInfo]);
+  }, []);
 
   // Filter campaigns based on search and entity
   const filteredCampaigns = useMemo(() => {
@@ -249,14 +221,10 @@ export default function CampaignsLog() {
         open={bulkImportDialogOpen} 
         onOpenChange={setBulkImportDialogOpen} 
       />
-      <CampaignShareDialog
+      <CampaignShareDialogUnified
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
         entity={shareEntity}
-        isPublic={entityShareInfo.isPublic}
-        publicToken={entityShareInfo.publicToken}
-        clickCount={entityShareInfo.clickCount}
-        onRefresh={() => fetchEntityShareInfo(shareEntity)}
       />
       <EntityCommentsDialog
         open={entityCommentsOpen}
