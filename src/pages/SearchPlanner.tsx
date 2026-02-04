@@ -3,10 +3,11 @@ import SearchAdEditor from "@/components/search/SearchAdEditor";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { SearchPlannerStructurePanel, SearchPlannerPreviewPanel, SearchPlannerQualityPanel } from "@/components/search-planner";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, Share2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
+import { Button } from "@/components/ui/button";
+import { SearchAdsShareDialog } from "@/components/search/SearchAdsShareDialog";
 interface AdData {
   id?: string;
   name: string;
@@ -60,6 +61,8 @@ interface SearchPlannerProps {
 export default function SearchPlanner({ adType = "search" }: SearchPlannerProps) {
   const [editorContext, setEditorContext] = useState<EditorContext | null>(null);
   const [rightPanelTab, setRightPanelTab] = useState<"preview" | "quality">("preview");
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<string>("UAE");
   const [liveFields, setLiveFields] = useState<LiveFields>({
     headlines: [],
     descriptions: [],
@@ -71,6 +74,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
 
   const handleEditAd = (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setEditorContext({ ad, adGroup, campaign, entity });
+    setSelectedEntity(entity);
     // Initialize live fields from ad data
     setLiveFields({
       headlines: Array.isArray(ad?.headlines) ? ad.headlines : [],
@@ -83,6 +87,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
   };
 
   const handleCreateAd = (adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
+    setSelectedEntity(entity);
     const newAd: AdData = {
       name: `New ${adType === 'search' ? 'Search' : 'Display'} Ad`,
       ad_group_id: adGroup.id,
@@ -137,12 +142,30 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="px-lg py-md border-b border-border/50 liquid-glass">
-        <PageHeader
-          icon={Search}
-          title="Search Ads Planner"
-          description="Create and manage search advertising campaigns"
-        />
+        <div className="flex items-center justify-between">
+          <PageHeader
+            icon={Search}
+            title="Search Ads Planner"
+            description="Create and manage search advertising campaigns"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowShareDialog(true)}
+            className="gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            Share for Review
+          </Button>
+        </div>
       </div>
+
+      {/* Share Dialog */}
+      <SearchAdsShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        entity={selectedEntity}
+      />
 
       {/* Main Content - 3 Column Layout */}
       <div className="flex-1 overflow-hidden">
