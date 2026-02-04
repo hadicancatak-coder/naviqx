@@ -1,100 +1,78 @@
 
 
-# Universal Token Resolver - COMPLETED ✅
+## Email Notification System with Resend
 
 ### Overview
-Add a universal token resolver that auto-detects the resource type from any token, allowing a single URL pattern `/r/:token` to work for all resource types. This eliminates the need for users to remember resource-specific URL prefixes.
+Implement email notifications for task assignments and mentions (instant), plus a daily deadline digest (batched). Uses Resend with test sender `onboarding@resend.dev` (easily switchable to your verified domain later).
+
+### Email Volume Estimate
+- Task assignments: ~69/month
+- Mentions: ~14/month  
+- Deadline digest: ~150/month (1 per user per day max)
+- **Total: ~233 emails/month** (11.6% of 2k limit)
 
 ---
 
-### Architecture
+### What Gets Built
 
-The solution creates a new `UniversalReview` page that:
-1. Accepts any token via `/r/:token`
-2. Queries `public_access_links` by token only (no resource_type filter)
-3. Extracts the `resource_type` from the database record
-4. Passes the resolved type to the existing `PublicReview` component
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                     Universal Token Flow                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  User visits: /r/abc123xyz                                      │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────┐                                       │
-│  │  UniversalReview    │                                       │
-│  │  (new component)    │                                       │
-│  └──────────┬──────────┘                                       │
-│             │                                                   │
-│             ▼                                                   │
-│  ┌─────────────────────────────────────────────────────┐       │
-│  │  Query: SELECT resource_type FROM public_access_links │       │
-│  │         WHERE access_token = 'abc123xyz'              │       │
-│  └─────────────────────────────────────────────────────┘       │
-│             │                                                   │
-│             ▼                                                   │
-│  ┌─────────────────────┐                                       │
-│  │  Resolved Type:     │                                       │
-│  │  "search_ads"       │                                       │
-│  └──────────┬──────────┘                                       │
-│             │                                                   │
-│             ▼                                                   │
-│  ┌─────────────────────┐                                       │
-│  │  PublicReview       │ ◄── Existing unified component         │
-│  │  resourceType=      │                                       │
-│  │  "search_ads"       │                                       │
-│  └─────────────────────┘                                       │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Component | Type | Description |
+|-----------|------|-------------|
+| `RESEND_API_KEY` secret | Secret | Store your Resend API key securely |
+| `email_enabled` column | Database | Add to `notification_preferences` table |
+| `send-notification-email` | Edge Function | Email sender with templates |
+| `NotificationPreferences.tsx` | UI Update | Add email toggles for supported types |
+| `daily-notification-scheduler` | Edge Function Update | Add deadline digest emails |
+| `email_on_notification_insert` | DB Trigger | Auto-send email on instant notifications |
 
 ---
 
 ### Implementation Steps
 
-**Step 1: Create Token Resolution Hook**
-Create `useTokenResolver` hook in `src/hooks/useTokenResolver.ts`:
-- Query `public_access_links` by `access_token` only
-- Return `resource_type`, `is_active`, and expiration status
-- Handle loading and error states
+**Step 1: Add RESEND_API_KEY Secret**
+Store your Resend API key (`re_b7mBeMjn_...`) in the backend secrets.
 
-**Step 2: Create Universal Review Page**
-Create `src/pages/UniversalReview.tsx`:
-- Use `useTokenResolver` to auto-detect resource type
-- Render `PublicReview` with resolved `resourceType`
-- Show loading skeleton during resolution
-- Display appropriate error for invalid/expired tokens
+**Step 2: Database Migration**
+Add `email_enabled` column to notification_preferences:
+```sql
+ALTER TABLE notification_preferences 
+ADD COLUMN email_enabled BOOLEAN DEFAULT false;
 
-**Step 3: Register Universal Route**
-Update `src/App.tsx`:
-- Add route: `/r/:token` for the universal resolver
-- Keep existing resource-specific routes for backward compatibility
-
-**Step 4: Update Share Dialogs to Use Universal URL**
-Update all share dialogs to generate universal URLs:
-- `SearchAdsShareDialog.tsx`: `/r/:token`
-- `LpMapShareDialog.tsx`: `/r/:token`
-- `CampaignShareDialogUnified.tsx`: `/r/:token`
-- `KnowledgeShareDialog.tsx`: `/r/:token`
-- `ProjectShareDialog.tsx`: `/r/:token`
-
-**Step 5: Update URL Helper**
-Add a utility function in `src/lib/urlHelpers.ts`:
-```typescript
-export const getUniversalReviewUrl = (token: string): string => {
-  return `${getProductionUrl()}/r/${token}`;
-};
+-- Create helper function
+CREATE FUNCTION is_email_notification_enabled(p_user_id uuid, p_type text)
+RETURNS boolean AS $$
+SELECT COALESCE(email_enabled, false)
+FROM notification_preferences
+WHERE user_id = p_user_id AND notification_type = p_type;
+$$ LANGUAGE sql;
 ```
 
----
+**Step 3: Create Email Edge Function**
+Create `send-notification-email` with:
+- 3 React Email templates (task-assigned, mention, deadline-digest)
+- CFI logo branding from existing `src/assets/cfi-logo.png`
+- Deep links to tasks using production URL `naviqx.lovable.app`
+- Link to preferences page for unsubscribe
 
-### Benefits
-- **Simpler URLs**: `/r/abc123` instead of `/campaigns/review/abc123`
-- **Future-proof**: New resource types work automatically
-- **Backward compatible**: Existing resource-specific URLs still function
-- **Single source of truth**: Resource type determined by database, not URL
+**Step 4: Update Notification Preferences UI**
+Add email toggle column for email-supported notification types:
+- Task assignments
+- Mentions  
+- Deadline digest (new combined type)
+
+Show two toggles per row: "In-app" | "Email"
+
+**Step 5: Add Database Trigger for Instant Emails**
+Create trigger that fires on `notifications` INSERT for types:
+- `task_assigned`
+- `mention`, `comment_mention`, `description_mention`
+
+Uses `net.http_post` to call the email edge function (requires pg_net extension).
+
+**Step 6: Modify Daily Scheduler for Digest**
+Update `daily-notification-scheduler` to:
+- Group all deadline tasks (3-day, 1-day, overdue) by user
+- Send ONE digest email per user with all their tasks
+- Check `email_enabled` preference before sending
 
 ---
 
@@ -102,35 +80,88 @@ export const getUniversalReviewUrl = (token: string): string => {
 
 | File | Action |
 |------|--------|
-| `src/hooks/useTokenResolver.ts` | Create |
-| `src/pages/UniversalReview.tsx` | Create |
-| `src/App.tsx` | Add `/r/:token` route |
-| `src/lib/urlHelpers.ts` | Add `getUniversalReviewUrl` |
-| `src/components/search/SearchAdsShareDialog.tsx` | Use universal URL |
-| `src/components/lp-planner/LpMapShareDialog.tsx` | Use universal URL |
-| `src/components/campaigns/CampaignShareDialogUnified.tsx` | Use universal URL |
-| `src/components/knowledge/KnowledgeShareDialog.tsx` | Use universal URL |
-| `src/components/projects/ProjectShareDialog.tsx` | Use universal URL |
+| Secret: `RESEND_API_KEY` | Add |
+| `notification_preferences` table | Add `email_enabled` column |
+| `supabase/functions/send-notification-email/index.ts` | Create |
+| `supabase/functions/send-notification-email/_templates/task-assigned.tsx` | Create |
+| `supabase/functions/send-notification-email/_templates/mention.tsx` | Create |
+| `supabase/functions/send-notification-email/_templates/deadline-digest.tsx` | Create |
+| `src/components/NotificationPreferences.tsx` | Modify |
+| `supabase/functions/daily-notification-scheduler/index.ts` | Modify |
+| `supabase/config.toml` | Add new function registration |
 
 ---
 
-### Technical Details
+### Email Template Preview
 
-**Token Resolution Query:**
-```sql
-SELECT resource_type, is_active, expires_at
-FROM public_access_links
-WHERE access_token = $token
-LIMIT 1
+**Task Assigned Email:**
+```
+Subject: You've been assigned to: [Task Title]
+
+[CFI Logo]
+
+New Task Assignment
+
+[Assigner Name] assigned you to:
+"[Task Title]"
+
+Due: [Date]
+
+[View Task →]
+
+---
+Manage email preferences: [link]
 ```
 
-**Error Handling:**
-- No token found: "Invalid access link"
-- Token inactive: "This link has been deactivated"
-- Token expired: "This access link has expired"
+**Deadline Digest Email:**
+```
+Subject: Your task deadline summary - [Date]
 
-**Performance:**
-- Single lightweight query (just 3 columns)
-- Cached with React Query (5 min stale time)
-- No additional database load after resolution
+[CFI Logo]
+
+⚠️ OVERDUE (2 tasks)
+• Task A - 3 days overdue
+• Task B - 1 day overdue
+
+📅 DUE TOMORROW (1 task)
+• Task C
+
+📆 DUE IN 3 DAYS (2 tasks)
+• Task D
+• Task E
+
+[View All Tasks →]
+
+---
+Manage email preferences: [link]
+```
+
+---
+
+### Switching to Your Verified Domain Later
+
+When you verify `naviqx.com` in Resend, you only need to change one line:
+
+```typescript
+// In send-notification-email/index.ts
+// FROM:
+from: "NaviqX <onboarding@resend.dev>"
+
+// TO:
+from: "NaviqX <noreply@naviqx.com>"
+```
+
+---
+
+### Technical Notes
+
+1. **pg_net Extension**: Required for database trigger to call edge functions. Will be enabled in migration.
+
+2. **Rate Limiting**: Existing `notification_rate_limit` table prevents spam.
+
+3. **Preference Defaults**: Email defaults to OFF (opt-in) - users must enable in settings.
+
+4. **Error Handling**: Failed emails are logged but don't block app functionality.
+
+5. **Cron Timing**: Digest emails sent at 8am daily (same as existing scheduler).
 
