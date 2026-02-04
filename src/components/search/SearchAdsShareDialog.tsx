@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getProductionUrl } from "@/lib/urlHelpers";
+import { getUniversalReviewUrl } from "@/lib/urlHelpers";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface SearchAdsShareDialogProps {
@@ -73,7 +73,7 @@ export function SearchAdsShareDialog({
   };
 
   const shareUrl = token
-    ? `${getProductionUrl()}/ads/search/review/${token}`
+    ? getUniversalReviewUrl(token)
     : "";
 
   const handleTogglePublic = async () => {

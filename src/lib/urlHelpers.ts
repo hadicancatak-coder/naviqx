@@ -55,3 +55,11 @@ export function getHostname(url: string): string {
   const parsed = safeParseUrl(url);
   return parsed?.hostname.replace('www.', '') || url.split('/')[0] || '';
 }
+
+/**
+ * Get the universal review URL for a given token.
+ * Uses the simplified /r/:token pattern that auto-detects resource type.
+ */
+export function getUniversalReviewUrl(token: string): string {
+  return `${getProductionUrl()}/r/${token}`;
+}
