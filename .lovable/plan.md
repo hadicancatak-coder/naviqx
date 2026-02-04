@@ -1,90 +1,136 @@
-# Unified External Access System - Implementation Progress
 
-## Completed ✅
 
-### Phase 1: Database
-- ✅ Created `public_access_links` table with RLS
-- ✅ Created `public_access_comments` table with RLS
-- ✅ Created `increment_access_link_clicks` RPC function
+## Universal Token Resolver for Unified External Access
 
-### Phase 2: Core Infrastructure
-- ✅ `usePublicAccess.ts` - Unified hook for all public access
-- ✅ `ExternalReviewPage.tsx` - Shared shell component
-- ✅ `ExternalReviewHeader.tsx` - Header with identification
-- ✅ `ExternalCommentForm.tsx` - Unified comment input
-- ✅ `ExternalCommentFeed.tsx` - Comment display
-
-### Phase 3: Feature Migrations
-- ✅ **Search Ads** - `SearchAdsReviewContent.tsx` + `SearchAdsShareDialog.tsx`
-- ✅ **LP Planner** - `LpMapReviewContent.tsx` + `LpMapShareDialog.tsx`
-- ✅ **Campaigns** - `CampaignReviewContent.tsx` + `CampaignShareDialogUnified.tsx`
-- ✅ **Knowledge Pages** - `KnowledgeReviewContent.tsx` (read-only, no comments)
-- ✅ **Projects** - `ProjectReviewContent.tsx` (read-only, roadmap display)
-
-### Phase 4: Admin Management
-- ✅ Updated `ExternalLinksManagement.tsx` to use unified `public_access_links` table
-
-### Phase 5: Routes
-- ✅ `/ads/search/review/:token` → Search Ads unified review
-- ✅ `/ads/lp/review/:token` → LP Planner unified review  
-- ✅ `/campaigns/review/:token` → Campaigns unified review
-- ✅ `/knowledge/review/:token` → Knowledge unified review
-- ✅ `/projects/review/:token` → Projects unified review
-
-## Remaining Work
-
-### Phase 6: Share Dialog Integration ✅
-- ✅ Created `ProjectShareDialog.tsx` using unified system
-- ✅ Created `KnowledgeShareDialog.tsx` using unified system
-- ✅ Updated Projects page to use ProjectShareDialog
-- ✅ Updated KnowledgePageContent to use KnowledgeShareDialog
-
-### Phase 7: Data Migration ✅
-- ✅ SQL migration to copy existing tokens from legacy tables to `public_access_links`
-- ✅ SQL migration to copy existing comments to `public_access_comments`
-- ✅ Migrated: campaign_external_access → public_access_links (resource_type: campaign)
-- ✅ Migrated: external_campaign_review_comments → public_access_comments
-- ✅ Migrated: knowledge_pages.public_token → public_access_links (resource_type: knowledge)
-- ✅ Migrated: projects.public_token → public_access_links (resource_type: project)
-
-### Phase 8: Cleanup ✅
-- ✅ Removed `useExternalAccess.ts` hook (replaced by `usePublicAccess.ts`)
-- ✅ Removed legacy `CampaignReview.tsx` page
-- ✅ Removed legacy `CampaignsLogExternal.tsx` page
-- ✅ Removed legacy `KnowledgePublic.tsx` page
-- ✅ Removed legacy `ProjectsPublic.tsx` page
-- ✅ Removed legacy `CampaignShareDialog.tsx` component
-- ✅ Updated `ExternalAccessDialog.tsx` to use `usePublicAccessManagement`
-- ✅ Updated App.tsx routes to use unified `PublicReview` component
-- ✅ Legacy routes (`/review/:token`, `/campaigns-log/*`, etc.) now redirect to unified system
+### Overview
+Add a universal token resolver that auto-detects the resource type from any token, allowing a single URL pattern `/r/:token` to work for all resource types. This eliminates the need for users to remember resource-specific URL prefixes.
 
 ---
 
-## Architecture Overview
+### Architecture
+
+The solution creates a new `UniversalReview` page that:
+1. Accepts any token via `/r/:token`
+2. Queries `public_access_links` by token only (no resource_type filter)
+3. Extracts the `resource_type` from the database record
+4. Passes the resolved type to the existing `PublicReview` component
 
 ```text
-src/
-├── hooks/
-│   └── usePublicAccess.ts              # Unified access hook ✅
-├── components/
-│   └── external/
-│       ├── ExternalReviewPage.tsx       # Shared shell ✅
-│       ├── ExternalReviewHeader.tsx     # Header with ID bar ✅
-│       ├── ExternalCommentForm.tsx      # Unified comment input ✅
-│       ├── ExternalCommentFeed.tsx      # Comment display ✅
-│       ├── CampaignReviewContent.tsx    # Campaign-specific ✅
-│       ├── LpMapReviewContent.tsx       # LP-specific ✅
-│       ├── SearchAdsReviewContent.tsx   # Search ads-specific ✅
-│       ├── KnowledgeReviewContent.tsx   # Knowledge-specific ✅
-│       └── ProjectReviewContent.tsx     # Project-specific ✅
-├── pages/
-│   └── PublicReview.tsx                 # Single page, routes by type ✅
+┌─────────────────────────────────────────────────────────────────┐
+│                     Universal Token Flow                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  User visits: /r/abc123xyz                                      │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────┐                                       │
+│  │  UniversalReview    │                                       │
+│  │  (new component)    │                                       │
+│  └──────────┬──────────┘                                       │
+│             │                                                   │
+│             ▼                                                   │
+│  ┌─────────────────────────────────────────────────────┐       │
+│  │  Query: SELECT resource_type FROM public_access_links │       │
+│  │         WHERE access_token = 'abc123xyz'              │       │
+│  └─────────────────────────────────────────────────────┘       │
+│             │                                                   │
+│             ▼                                                   │
+│  ┌─────────────────────┐                                       │
+│  │  Resolved Type:     │                                       │
+│  │  "search_ads"       │                                       │
+│  └──────────┬──────────┘                                       │
+│             │                                                   │
+│             ▼                                                   │
+│  ┌─────────────────────┐                                       │
+│  │  PublicReview       │ ◄── Existing unified component         │
+│  │  resourceType=      │                                       │
+│  │  "search_ads"       │                                       │
+│  └─────────────────────┘                                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Technical Benefits
+---
 
-1. **Single source of truth**: One table for all access tokens
-2. **Unified RLS**: One set of policies to maintain
-3. **Consistent admin view**: All links in one place
-4. **Less code**: ~2000 lines removed, ~500 lines added
-5. **Easy to extend**: Add new resource types without new tables/hooks
+### Implementation Steps
+
+**Step 1: Create Token Resolution Hook**
+Create `useTokenResolver` hook in `src/hooks/useTokenResolver.ts`:
+- Query `public_access_links` by `access_token` only
+- Return `resource_type`, `is_active`, and expiration status
+- Handle loading and error states
+
+**Step 2: Create Universal Review Page**
+Create `src/pages/UniversalReview.tsx`:
+- Use `useTokenResolver` to auto-detect resource type
+- Render `PublicReview` with resolved `resourceType`
+- Show loading skeleton during resolution
+- Display appropriate error for invalid/expired tokens
+
+**Step 3: Register Universal Route**
+Update `src/App.tsx`:
+- Add route: `/r/:token` for the universal resolver
+- Keep existing resource-specific routes for backward compatibility
+
+**Step 4: Update Share Dialogs to Use Universal URL**
+Update all share dialogs to generate universal URLs:
+- `SearchAdsShareDialog.tsx`: `/r/:token`
+- `LpMapShareDialog.tsx`: `/r/:token`
+- `CampaignShareDialogUnified.tsx`: `/r/:token`
+- `KnowledgeShareDialog.tsx`: `/r/:token`
+- `ProjectShareDialog.tsx`: `/r/:token`
+
+**Step 5: Update URL Helper**
+Add a utility function in `src/lib/urlHelpers.ts`:
+```typescript
+export const getUniversalReviewUrl = (token: string): string => {
+  return `${getProductionUrl()}/r/${token}`;
+};
+```
+
+---
+
+### Benefits
+- **Simpler URLs**: `/r/abc123` instead of `/campaigns/review/abc123`
+- **Future-proof**: New resource types work automatically
+- **Backward compatible**: Existing resource-specific URLs still function
+- **Single source of truth**: Resource type determined by database, not URL
+
+---
+
+### Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `src/hooks/useTokenResolver.ts` | Create |
+| `src/pages/UniversalReview.tsx` | Create |
+| `src/App.tsx` | Add `/r/:token` route |
+| `src/lib/urlHelpers.ts` | Add `getUniversalReviewUrl` |
+| `src/components/search/SearchAdsShareDialog.tsx` | Use universal URL |
+| `src/components/lp-planner/LpMapShareDialog.tsx` | Use universal URL |
+| `src/components/campaigns/CampaignShareDialogUnified.tsx` | Use universal URL |
+| `src/components/knowledge/KnowledgeShareDialog.tsx` | Use universal URL |
+| `src/components/projects/ProjectShareDialog.tsx` | Use universal URL |
+
+---
+
+### Technical Details
+
+**Token Resolution Query:**
+```sql
+SELECT resource_type, is_active, expires_at
+FROM public_access_links
+WHERE access_token = $token
+LIMIT 1
+```
+
+**Error Handling:**
+- No token found: "Invalid access link"
+- Token inactive: "This link has been deactivated"
+- Token expired: "This access link has expired"
+
+**Performance:**
+- Single lightweight query (just 3 columns)
+- Cached with React Query (5 min stale time)
+- No additional database load after resolution
+
