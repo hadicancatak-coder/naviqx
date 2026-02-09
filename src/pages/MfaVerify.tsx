@@ -101,7 +101,10 @@ export default function MfaVerify() {
           description: "You have been successfully authenticated",
         });
 
-        // Navigate immediately - state is now properly managed
+        // CRITICAL: Wait for localStorage write to commit before navigation
+        // This prevents race condition where ProtectedRoute checks before token is persisted
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
         logger.debug('Navigating to home page');
         navigate("/", { replace: true });
       }

@@ -49,18 +49,35 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // If MFA is enabled but not verified, check localStorage token
+    // If MFA is enabled but not verified, check localStorage token with proper validation
     if (mfaEnabled && !mfaVerified) {
-      const hasStoredToken = localStorage.getItem('mfa_session_data');
+      const storedData = localStorage.getItem('mfa_session_data');
       
-      if (hasStoredToken) {
-        // Token exists - trust it immediately, validate in background
-        logger.debug('MFA token found in localStorage, proceeding');
-        return;
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          const isValid = parsed.token && 
+                          parsed.expiresAt && 
+                          new Date(parsed.expiresAt) > new Date();
+          
+          if (isValid) {
+            // Valid token exists - trust it and skip redirect
+            logger.debug('Valid MFA token in localStorage, allowing access');
+            return;
+          }
+          
+          // Token expired - clean up
+          logger.debug('MFA token expired, cleaning up');
+          localStorage.removeItem('mfa_session_data');
+        } catch {
+          // Malformed data - clean up
+          logger.debug('Malformed MFA token data, cleaning up');
+          localStorage.removeItem('mfa_session_data');
+        }
       }
       
-      // No token at all - redirect to verify
-      logger.debug('MFA enabled but no token, redirecting to verification');
+      // No valid token - redirect to verify
+      logger.debug('MFA enabled but no valid token, redirecting to verification');
       navigate("/mfa-verify");
       return;
     }
