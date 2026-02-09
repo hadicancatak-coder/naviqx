@@ -77,6 +77,17 @@ serve(async (req) => {
       });
     }
 
+    // Build the reset link for the app
+    // The action_link from Supabase points to their domain, so we construct our own
+    // using the hashed_token which can be used with verifyOtp
+    const hashedToken = data.properties?.hashed_token;
+    const appUrl = Deno.env.get("APP_URL") || "https://naviqx.lovable.app";
+    
+    // Construct a reset link that goes to our app's reset-password page
+    const resetLink = hashedToken 
+      ? `${appUrl}/reset-password?token_hash=${hashedToken}&type=recovery`
+      : data.properties?.action_link;
+
     // Log the admin action
     await userClient.from("admin_audit_log").insert({
       admin_id: adminUser.id,
@@ -86,13 +97,13 @@ serve(async (req) => {
     });
 
     console.log(`Password reset initiated for ${targetEmail} by admin ${adminUser.id}`);
+    console.log(`Reset link generated: ${resetLink ? 'yes' : 'no'}, hashed_token: ${hashedToken ? 'yes' : 'no'}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "Password reset link generated",
-        // Return the action link for the admin to share with the user
-        resetLink: data.properties?.action_link 
+        resetLink: resetLink
       }),
       {
         status: 200,
