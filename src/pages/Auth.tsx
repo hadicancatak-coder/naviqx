@@ -75,33 +75,38 @@ export default function Auth() {
 
   useEffect(() => {
     const checkExistingSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // User is already logged in - check their MFA status
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('mfa_enabled')
-          .eq('user_id', session.user.id)
-          .single();
+      // ISSUE 4 FIX: Use getUser() instead of getSession() for reliable server validation
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        // No valid session, stay on auth page
+        return;
+      }
+      
+      // User is already logged in - check their MFA status
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('mfa_enabled')
+        .eq('user_id', user.id)
+        .single();
 
-        if (!profile?.mfa_enabled) {
-          navigate("/mfa-setup", { replace: true });
-        } else {
-          // Check if they have a valid MFA session token
-          const mfaToken = localStorage.getItem('mfa_session_data');
-          if (mfaToken) {
-            try {
-              const parsed = JSON.parse(mfaToken);
-              if (parsed.token && new Date(parsed.expiresAt) > new Date()) {
-                navigate("/", { replace: true }); // Valid MFA session, go to home
-                return;
-              }
-            } catch {
-              // Invalid token format, need to verify
+      if (!profile?.mfa_enabled) {
+        navigate("/mfa-setup", { replace: true });
+      } else {
+        // Check if they have a valid MFA session token
+        const mfaToken = localStorage.getItem('mfa_session_data');
+        if (mfaToken) {
+          try {
+            const parsed = JSON.parse(mfaToken);
+            if (parsed.token && new Date(parsed.expiresAt) > new Date()) {
+              navigate("/", { replace: true }); // Valid MFA session, go to home
+              return;
             }
+          } catch {
+            // Invalid token format, need to verify
           }
-          navigate("/mfa-verify", { replace: true });
         }
+        navigate("/mfa-verify", { replace: true });
       }
     };
     

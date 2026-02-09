@@ -79,18 +79,23 @@ Deno.serve(async (req) => {
       verifyOtp = undefined;
     }
 
-    // Get or create secret from secure table
+    // ISSUE 5 FIX: Get existing secret from secure table - ALWAYS reuse if exists
+    // This prevents invalidating QR codes that were already scanned but not verified
     const { data: mfaSecrets } = await supabase
       .from('user_mfa_secrets')
-      .select('mfa_secret')
+      .select('mfa_secret, mfa_enrolled_at')
       .eq('user_id', user.id)
       .single();
 
     let secret = mfaSecrets?.mfa_secret as string | undefined;
+    const isAlreadyEnrolled = !!mfaSecrets?.mfa_enrolled_at;
     
     if (!secret) {
-      // Generate new secret (base32, 20 bytes = 160 bits)
+      // Only generate new secret if none exists at all
       secret = new OTPAuth.Secret({ size: 20 }).base32;
+      console.log('Generated new MFA secret for user');
+    } else {
+      console.log('Reusing existing MFA secret for user', { isAlreadyEnrolled });
     }
 
     // If verifying OTP

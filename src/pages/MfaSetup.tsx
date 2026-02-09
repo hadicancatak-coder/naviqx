@@ -29,8 +29,9 @@ export default function MfaSetup() {
 
   const setupMfa = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      // ISSUE 4 FIX: Use getUser() for reliable server validation
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
         navigate("/auth");
         return;
       }
@@ -39,16 +40,17 @@ export default function MfaSetup() {
       const { data: mfaSecrets } = await supabase
         .from('user_mfa_secrets')
         .select('mfa_secret, mfa_enrolled_at')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single();
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('mfa_enabled')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single();
 
-      // If user already has MFA enabled with a secret, redirect to verify
+      // ISSUE 5 FIX: Check if MFA is already fully enabled (enrolled_at set)
+      // If so, redirect to verify instead of regenerating secret
       if (profile?.mfa_enabled && mfaSecrets?.mfa_secret && mfaSecrets?.mfa_enrolled_at) {
         logger.debug('MFA already configured, redirecting to verify');
         toast({
@@ -59,6 +61,7 @@ export default function MfaSetup() {
         return;
       }
 
+      // Call setup-mfa - it will reuse existing secret if one exists (even without enrollment)
       const { data, error } = await supabase.functions.invoke('setup-mfa');
 
       if (error) throw error;
