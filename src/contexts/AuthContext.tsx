@@ -158,8 +158,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error || !data?.valid) {
-        const reason = data?.reason || error?.message;
+        const reason = data?.reason || error?.message || '';
         logger.debug('Validation failed', { reason });
+        
+        // CRITICAL: If auth session is invalid (401 from edge function), sign out completely
+        // This handles cases where JWT references a session that no longer exists
+        if (reason.includes('Unauthorized') || reason.includes('Auth session missing') || reason.includes('session_not_found')) {
+          logger.warn('Auth session invalid - signing out user');
+          setMfaSessionToken(null);
+          setMfaVerified(false);
+          sessionStorage.removeItem('mfa_status_cache');
+          // Use setTimeout to avoid calling signOut during render
+          setTimeout(async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/auth';
+          }, 0);
+          return false;
+        }
         
         // SECURITY: If IP mismatch, clear token and require re-verification
         if (reason === 'ip_mismatch') {
