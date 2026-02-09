@@ -14,7 +14,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     mfaVerified,
     mfaEnabled,
     mfaEnrollmentRequired,
-    mfaStatusLoading
+    mfaStatusLoading,
+    setMfaVerifiedStatus
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,8 +69,9 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
                           new Date(parsed.expiresAt) > new Date();
           
           if (isValid) {
-            // Valid token exists - trust it and skip redirect
-            logger.debug('Valid MFA token in localStorage, allowing access');
+            // ISSUE 2 FIX: Sync React state with valid localStorage token
+            logger.debug('Valid MFA token in localStorage, syncing state and allowing access');
+            setMfaVerifiedStatus(true, parsed.token, parsed.expiresAt);
             return;
           }
           
@@ -88,7 +90,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       navigate("/mfa-verify");
       return;
     }
-  }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, mfaStatusLoading, navigate, location]);
+  }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, mfaStatusLoading, navigate, location, setMfaVerifiedStatus]);
 
   // ALWAYS render children immediately - no loading states, no null returns
   // Auth redirects happen asynchronously via useEffect above

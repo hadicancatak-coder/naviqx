@@ -77,29 +77,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [skipNextValidation, setSkipNextValidation] = useState(false);
   
   // MFA status caching - fetched once per session, not on every navigation
-  // Initialize from sessionStorage for instant navigation (no waiting for DB)
-  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(() => {
-    const cached = sessionStorage.getItem('mfa_status_cache');
-    if (cached) {
-      try {
-        return JSON.parse(cached).mfaEnabled ?? null;
-      } catch { return null; }
-    }
-    return null;
-  });
-  const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(() => {
-    const cached = sessionStorage.getItem('mfa_status_cache');
-    if (cached) {
-      try {
-        return JSON.parse(cached).mfaEnrollmentRequired ?? null;
-      } catch { return null; }
-    }
-    return null;
-  });
-  // Only show loading if we have NO cached data at all
-  const [mfaStatusLoading, setMfaStatusLoading] = useState(() => {
-    return !sessionStorage.getItem('mfa_status_cache');
-  });
+  // NOTE: We don't initialize from cache here - we validate userId first in useEffect
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+  const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(null);
+  // Start with loading=true since we need to validate cache
+  const [mfaStatusLoading, setMfaStatusLoading] = useState(true);
   
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
@@ -219,13 +201,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Fetch MFA status once per session - cached in context AND sessionStorage
+  // Validate and load MFA status from cache or fetch from DB
+  const loadMfaStatusFromCacheOrFetch = (userId: string) => {
+    const cached = sessionStorage.getItem('mfa_status_cache');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        // CRITICAL: Validate that cache belongs to current user
+        if (parsed.userId === userId) {
+          logger.debug('Using cached MFA status for user', { userId: userId.substring(0, 8) });
+          setMfaEnabled(parsed.mfaEnabled ?? null);
+          setMfaEnrollmentRequired(parsed.mfaEnrollmentRequired ?? null);
+          setMfaStatusLoading(false);
+          return; // Valid cache found, no need to fetch
+        } else {
+          // Cache belongs to different user - clear it
+          logger.debug('Clearing stale MFA cache from different user');
+          sessionStorage.removeItem('mfa_status_cache');
+        }
+      } catch {
+        sessionStorage.removeItem('mfa_status_cache');
+      }
+    }
+    // No valid cache - fetch from DB
+    fetchMfaStatus(userId);
+  };
+
   const fetchMfaStatus = async (userId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('mfa_enabled, mfa_enrollment_required')
         .eq('user_id', userId)
         .single();
+      
+      if (error) {
+        // ISSUE 6 FIX: On network error, don't force setup - keep null state
+        logger.error('Error fetching MFA status:', error);
+        // Only set to false/true if we have no existing state
+        if (mfaEnabled === null) {
+          // Keep null to indicate unknown state - don't force setup
+          setMfaStatusLoading(false);
+        }
+        return;
+      }
       
       const enabled = data?.mfa_enabled || false;
       const enrollmentRequired = data?.mfa_enrollment_required ?? true;
@@ -233,7 +252,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setMfaEnabled(enabled);
       setMfaEnrollmentRequired(enrollmentRequired);
       
-      // Cache in sessionStorage for instant page loads
+      // Cache in sessionStorage with userId for validation
       sessionStorage.setItem('mfa_status_cache', JSON.stringify({
         mfaEnabled: enabled,
         mfaEnrollmentRequired: enrollmentRequired,
@@ -241,9 +260,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         cachedAt: Date.now()
       }));
     } catch (err) {
+      // ISSUE 6 FIX: Network error - don't default to forcing setup
       logger.error('Error fetching MFA status:', err);
-      setMfaEnabled(false);
-      setMfaEnrollmentRequired(true);
+      // Keep loading false but don't change mfaEnabled state
     } finally {
       setMfaStatusLoading(false);
     }
@@ -259,10 +278,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Fetch role and MFA status in parallel - only once per session
+        // Fetch role and validate/load MFA status in parallel - only once per session
         setRoleLoading(true);
         fetchUserRole(session.user.id);
-        fetchMfaStatus(session.user.id);
+        loadMfaStatusFromCacheOrFetch(session.user.id);
         
         // Check if we have a valid session token in localStorage
         const sessionToken = getMfaSessionToken();

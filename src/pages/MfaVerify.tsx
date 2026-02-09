@@ -21,7 +21,7 @@ export default function MfaVerify() {
   const [backupCode, setBackupCode] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setMfaVerifiedStatus, refreshMfaStatus } = useAuth();
+  const { setMfaVerifiedStatus, refreshMfaStatus, signOut } = useAuth();
 
   const checkSession = useCallback(async () => {
     // Use getUser() instead of getSession() - getSession() can return stale cached tokens
@@ -234,11 +234,7 @@ export default function MfaVerify() {
 
           <Button
             variant="outline"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              localStorage.removeItem('mfa_session_data');
-              navigate("/auth");
-            }}
+            onClick={() => signOut()}
             className="w-full"
           >
             Sign Out
