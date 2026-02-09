@@ -86,14 +86,51 @@ export function usePublicAccess({ token, resourceType }: UsePublicAccessOptions)
         .maybeSingle();
 
       if (error) throw error;
-      if (!data) throw new Error('Invalid or expired access link');
       
-      // Check expiration
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        throw new Error('This access link has expired');
+      // If found in public_access_links, use it
+      if (data) {
+        // Check expiration
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          throw new Error('This access link has expired');
+        }
+        return data as PublicAccessLink;
       }
 
-      return data as PublicAccessLink;
+      // Fallback for legacy LP Map tokens stored in lp_maps table
+      if (resourceType === 'lp_map') {
+        const { data: lpMap, error: lpMapError } = await supabase
+          .from('lp_maps')
+          .select('id, name, is_public, entity_id, click_count, last_accessed_at, created_at')
+          .eq('public_token', token)
+          .eq('is_public', true)
+          .maybeSingle();
+
+        if (lpMapError) throw lpMapError;
+
+        if (lpMap) {
+          // Construct a compatible PublicAccessLink object
+          return {
+            id: lpMap.id,
+            access_token: token,
+            resource_type: 'lp_map',
+            resource_id: lpMap.id,
+            entity: null,
+            is_active: lpMap.is_public,
+            is_public: true,
+            expires_at: null,
+            created_by: null,
+            created_at: lpMap.created_at,
+            click_count: lpMap.click_count || 0,
+            last_accessed_at: lpMap.last_accessed_at,
+            metadata: {},
+            reviewer_name: null,
+            reviewer_email: null,
+            email_verified: false,
+          } as PublicAccessLink;
+        }
+      }
+
+      throw new Error('Invalid or expired access link');
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -106,7 +143,16 @@ export function usePublicAccess({ token, resourceType }: UsePublicAccessOptions)
       // Fire-and-forget click tracking
       void (async () => {
         try {
-          await supabase.rpc('increment_access_link_clicks', { p_token: token });
+          // For legacy LP Map tokens, update lp_maps directly
+          if (accessData.resource_type === 'lp_map' && accessData.resource_id) {
+            await supabase.from('lp_maps').update({
+              click_count: (accessData.click_count || 0) + 1,
+              last_accessed_at: new Date().toISOString(),
+            }).eq('id', accessData.resource_id);
+          } else {
+            // Standard click tracking via RPC
+            await supabase.rpc('increment_access_link_clicks', { p_token: token });
+          }
         } catch {
           // Silent fail - click tracking is best-effort
         }
