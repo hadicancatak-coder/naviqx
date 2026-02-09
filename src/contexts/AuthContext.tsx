@@ -27,13 +27,17 @@ const getMfaSessionToken = (): string | null => {
 
 const setMfaSessionToken = (token: string | null, expiresAt?: string): void => {
   if (token && expiresAt) {
-    localStorage.setItem(MFA_SESSION_KEY, JSON.stringify({ 
+    // Synchronous write to localStorage - MUST complete before navigation
+    const data = JSON.stringify({ 
       token, 
       expiresAt,
       storedAt: new Date().toISOString()
-    }));
+    });
+    localStorage.setItem(MFA_SESSION_KEY, data);
+    logger.debug('MFA token stored in localStorage');
   } else {
     localStorage.removeItem(MFA_SESSION_KEY);
+    logger.debug('MFA token removed from localStorage');
   }
 };
 
@@ -358,8 +362,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setMfaVerifiedStatus = (verified: boolean, sessionToken?: string, expiresAt?: string) => {
-    logger.debug('Setting MFA status', { verified });
-    setMfaVerified(verified);
+    logger.debug('Setting MFA status', { verified, hasToken: !!sessionToken });
+    
+    // CRITICAL: Write localStorage BEFORE state update to prevent race condition
+    // ProtectedRoute checks localStorage synchronously, so it must be committed first
     if (verified && sessionToken && expiresAt) {
       setMfaSessionToken(sessionToken, expiresAt);
       setSkipNextValidation(true); // Skip immediate re-validation
@@ -370,6 +376,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setMfaSessionToken(null);
     }
+    
+    // State update happens AFTER localStorage is committed
+    setMfaVerified(verified);
   };
 
   // Refresh MFA status after setup completes - updates cache immediately
