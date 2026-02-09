@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +28,46 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [validSession, setValidSession] = useState<boolean | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   // Check for valid recovery session on mount
   useEffect(() => {
     const checkSession = async () => {
+      // Check for admin-generated token_hash in URL
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
+      
+      if (tokenHash && type === 'recovery') {
+        setVerifying(true);
+        try {
+          // Verify the OTP token to establish a session
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery',
+          });
+          
+          if (error) {
+            logger.error('Failed to verify admin reset token', error);
+            setValidSession(false);
+          } else if (data.session) {
+            logger.debug('Admin reset token verified successfully');
+            setValidSession(true);
+          } else {
+            setValidSession(false);
+          }
+        } catch (err) {
+          logger.error('Error verifying token', err);
+          setValidSession(false);
+        } finally {
+          setVerifying(false);
+        }
+        return;
+      }
+      
+      // Standard check for existing recovery session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -58,7 +92,7 @@ export default function ResetPassword() {
     checkSession();
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,13 +147,16 @@ export default function ResetPassword() {
     }
   };
 
-  // Still checking session
-  if (validSession === null) {
+  // Still checking session or verifying token
+  if (validSession === null || verifying) {
     return (
       <GlassBackground variant="centered">
         <Card className="w-full max-w-md p-lg liquid-glass-elevated">
-          <div className="flex items-center justify-center p-xl">
+          <div className="flex flex-col items-center justify-center p-xl gap-md">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            {verifying && (
+              <p className="text-body-sm text-muted-foreground">Verifying reset link...</p>
+            )}
           </div>
         </Card>
       </GlassBackground>
