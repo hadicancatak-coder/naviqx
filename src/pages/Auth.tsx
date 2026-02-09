@@ -53,24 +53,33 @@ export default function Auth() {
   }, []);
 
   // Create dynamic schema based on allowed domains
+  // For login: only validate email format (password validation happens server-side)
+  // For signup: validate email + strong password requirements
   const authSchema = useMemo(() => {
     const domainPattern = allowedDomains.map(d => d.replace('.', '\\.')).join('|');
     const regex = new RegExp(`@(${domainPattern})$`, 'i');
     const domainList = allowedDomains.map(d => `@${d}`).join(', ');
     
-    return z.object({
-      email: z.string()
-        .email("Invalid email address")
-        .refine(
-          (email) => regex.test(email),
-          `Only ${domainList} email addresses are allowed`
-        ),
-      password: authPasswordSchema,
-      name: z.string()
-        .min(1, "Name is required")
-        .max(100, "Name must not exceed 100 characters")
-        .optional(),
-    });
+    const emailSchema = z.string()
+      .email("Invalid email address")
+      .refine(
+        (email) => regex.test(email),
+        `Only ${domainList} email addresses are allowed`
+      );
+    
+    return {
+      login: z.object({
+        email: emailSchema,
+        password: z.string().min(1, "Password is required"), // Simple validation for login
+      }),
+      signup: z.object({
+        email: emailSchema,
+        password: authPasswordSchema, // Strong validation for signup
+        name: z.string()
+          .min(1, "Name is required")
+          .max(100, "Name must not exceed 100 characters"),
+      }),
+    };
   }, [allowedDomains]);
 
   useEffect(() => {
@@ -123,7 +132,9 @@ export default function Auth() {
         ? { email, password }
         : { email, password, name };
       
-      authSchema.parse(validationData);
+      // Use appropriate schema based on login vs signup
+      const schema = isLogin ? authSchema.login : authSchema.signup;
+      schema.parse(validationData);
 
       if (isLogin) {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({
