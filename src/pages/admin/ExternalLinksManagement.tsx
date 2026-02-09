@@ -47,6 +47,7 @@ import {
   BookOpen,
   FolderKanban,
   MapPin,
+  Database,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Label } from "@/components/ui/label";
@@ -68,65 +69,221 @@ interface PublicAccessLink {
   created_at: string;
   click_count: number;
   last_accessed_at: string | null;
+  // Track if this is a legacy link
+  _isLegacy?: boolean;
 }
 
 type FilterType = 'all' | ResourceType;
+
+// Helper to check if a link is legacy (stored in original table)
+const isLegacyLink = (link: PublicAccessLink): boolean => {
+  return link._isLegacy === true;
+};
 
 export default function ExternalLinksManagement() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [extendLinkId, setExtendLinkId] = useState<string | null>(null);
+  const [extendLinkType, setExtendLinkType] = useState<ResourceType | null>(null);
   const [newExpiration, setNewExpiration] = useState("");
   const [deleteLink, setDeleteLink] = useState<PublicAccessLink | null>(null);
 
-  // Fetch all links from unified table
+  // Fetch all links from unified table + legacy sources
   const { data: links = [], isLoading } = useQuery({
-    queryKey: ["public-access-links"],
+    queryKey: ["public-access-links", "all-sources"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. Fetch from unified table
+      const { data: unifiedLinks = [] } = await supabase
         .from("public_access_links")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as PublicAccessLink[];
+      // 2. Fetch legacy LP Maps
+      const { data: lpMaps = [] } = await supabase
+        .from("lp_maps")
+        .select("id, name, public_token, is_public, click_count, last_accessed_at, created_at, created_by")
+        .not("public_token", "is", null);
+
+      // 3. Fetch legacy Knowledge Pages
+      const { data: knowledgePages = [] } = await supabase
+        .from("knowledge_pages")
+        .select("id, title, public_token, is_public, created_at, updated_by")
+        .not("public_token", "is", null);
+
+      // 4. Fetch legacy Projects
+      const { data: projects = [] } = await supabase
+        .from("projects")
+        .select("id, name, public_token, is_public, created_at")
+        .not("public_token", "is", null);
+
+      // Get existing unified tokens to avoid duplicates
+      const unifiedTokens = new Set((unifiedLinks || []).map(l => l.access_token));
+
+      // Normalize legacy LP Maps (exclude if already in unified)
+      const normalizedLpMaps: PublicAccessLink[] = (lpMaps || [])
+        .filter(lp => !unifiedTokens.has(lp.public_token))
+        .map(lp => ({
+          id: lp.id,
+          access_token: lp.public_token,
+          resource_type: 'lp_map' as ResourceType,
+          resource_id: lp.id,
+          entity: lp.name,
+          is_active: lp.is_public ?? false,
+          is_public: true,
+          click_count: lp.click_count || 0,
+          last_accessed_at: lp.last_accessed_at,
+          created_at: lp.created_at,
+          created_by: lp.created_by,
+          reviewer_name: null,
+          reviewer_email: null,
+          email_verified: false,
+          expires_at: null,
+          _isLegacy: true,
+        }));
+
+      // Normalize legacy Knowledge Pages
+      const normalizedKnowledge: PublicAccessLink[] = (knowledgePages || [])
+        .filter(kp => !unifiedTokens.has(kp.public_token))
+        .map(kp => ({
+          id: kp.id,
+          access_token: kp.public_token,
+          resource_type: 'knowledge' as ResourceType,
+          resource_id: kp.id,
+          entity: kp.title,
+          is_active: kp.is_public ?? false,
+          is_public: true,
+          click_count: 0,
+          last_accessed_at: null,
+          created_at: kp.created_at,
+          created_by: kp.updated_by,
+          reviewer_name: null,
+          reviewer_email: null,
+          email_verified: false,
+          expires_at: null,
+          _isLegacy: true,
+        }));
+
+      // Normalize legacy Projects
+      const normalizedProjects: PublicAccessLink[] = (projects || [])
+        .filter(p => !unifiedTokens.has(p.public_token))
+        .map(p => ({
+          id: p.id,
+          access_token: p.public_token,
+          resource_type: 'project' as ResourceType,
+          resource_id: p.id,
+          entity: p.name,
+          is_active: p.is_public ?? false,
+          is_public: true,
+          click_count: 0,
+          last_accessed_at: null,
+          created_at: p.created_at,
+          created_by: null,
+          reviewer_name: null,
+          reviewer_email: null,
+          email_verified: false,
+          expires_at: null,
+          _isLegacy: true,
+        }));
+
+      // Combine and sort by created_at
+      const allLinks = [
+        ...(unifiedLinks || []).map(l => ({ ...l, _isLegacy: false })),
+        ...normalizedLpMaps,
+        ...normalizedKnowledge,
+        ...normalizedProjects,
+      ].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return allLinks as PublicAccessLink[];
     },
   });
 
-  // Deactivate link
+  // Deactivate link (handles legacy tables)
   const deactivateMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("public_access_links")
-        .update({ is_active: false })
-        .eq("id", id);
-      if (error) throw error;
+    mutationFn: async (link: PublicAccessLink) => {
+      if (isLegacyLink(link)) {
+        // Update the original table
+        if (link.resource_type === 'lp_map') {
+          const { error } = await supabase
+            .from("lp_maps")
+            .update({ is_public: false })
+            .eq("id", link.id);
+          if (error) throw error;
+        } else if (link.resource_type === 'knowledge') {
+          const { error } = await supabase
+            .from("knowledge_pages")
+            .update({ is_public: false })
+            .eq("id", link.id);
+          if (error) throw error;
+        } else if (link.resource_type === 'project') {
+          const { error } = await supabase
+            .from("projects")
+            .update({ is_public: false })
+            .eq("id", link.id);
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase
+          .from("public_access_links")
+          .update({ is_active: false })
+          .eq("id", link.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["public-access-links"] });
+      queryClient.invalidateQueries({ queryKey: ["public-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["lp-maps"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
       toast.success("Link deactivated");
     },
     onError: () => toast.error("Failed to deactivate link"),
   });
 
-  // Reactivate link
+  // Reactivate link (handles legacy tables)
   const reactivateMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("public_access_links")
-        .update({ is_active: true })
-        .eq("id", id);
-      if (error) throw error;
+    mutationFn: async (link: PublicAccessLink) => {
+      if (isLegacyLink(link)) {
+        if (link.resource_type === 'lp_map') {
+          const { error } = await supabase
+            .from("lp_maps")
+            .update({ is_public: true })
+            .eq("id", link.id);
+          if (error) throw error;
+        } else if (link.resource_type === 'knowledge') {
+          const { error } = await supabase
+            .from("knowledge_pages")
+            .update({ is_public: true })
+            .eq("id", link.id);
+          if (error) throw error;
+        } else if (link.resource_type === 'project') {
+          const { error } = await supabase
+            .from("projects")
+            .update({ is_public: true })
+            .eq("id", link.id);
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase
+          .from("public_access_links")
+          .update({ is_active: true })
+          .eq("id", link.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["public-access-links"] });
+      queryClient.invalidateQueries({ queryKey: ["public-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["lp-maps"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
       toast.success("Link reactivated");
     },
     onError: () => toast.error("Failed to reactivate link"),
   });
 
-  // Extend expiration
+  // Extend expiration (only for unified table links)
   const extendMutation = useMutation({
     mutationFn: async ({ id, expiresAt }: { id: string; expiresAt: string }) => {
       const { error } = await supabase
@@ -139,22 +296,49 @@ export default function ExternalLinksManagement() {
       queryClient.invalidateQueries({ queryKey: ["public-access-links"] });
       toast.success("Expiration date updated");
       setExtendLinkId(null);
+      setExtendLinkType(null);
       setNewExpiration("");
     },
     onError: () => toast.error("Failed to update expiration"),
   });
 
-  // Delete link
+  // Delete link (handles legacy tables)
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("public_access_links")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
+    mutationFn: async (link: PublicAccessLink) => {
+      if (isLegacyLink(link)) {
+        // For legacy links, just clear the public_token
+        if (link.resource_type === 'lp_map') {
+          const { error } = await supabase
+            .from("lp_maps")
+            .update({ public_token: null, is_public: false })
+            .eq("id", link.id);
+          if (error) throw error;
+        } else if (link.resource_type === 'knowledge') {
+          const { error } = await supabase
+            .from("knowledge_pages")
+            .update({ public_token: null, is_public: false })
+            .eq("id", link.id);
+          if (error) throw error;
+        } else if (link.resource_type === 'project') {
+          const { error } = await supabase
+            .from("projects")
+            .update({ public_token: null, is_public: false })
+            .eq("id", link.id);
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase
+          .from("public_access_links")
+          .delete()
+          .eq("id", link.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["public-access-links"] });
+      queryClient.invalidateQueries({ queryKey: ["public-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["lp-maps"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-pages"] });
       toast.success("Link deleted");
       setDeleteLink(null);
     },
@@ -174,7 +358,7 @@ export default function ExternalLinksManagement() {
     toast.success("Link copied to clipboard");
   };
 
-  const getTypeBadge = (type: ResourceType) => {
+  const getTypeBadge = (link: PublicAccessLink) => {
     const config: Record<ResourceType, { icon: typeof Search; label: string; variant: "default" | "secondary" | "outline" }> = {
       campaign: { icon: Eye, label: "Campaign", variant: "secondary" },
       knowledge: { icon: BookOpen, label: "Knowledge", variant: "outline" },
@@ -182,12 +366,20 @@ export default function ExternalLinksManagement() {
       lp_map: { icon: MapPin, label: "LP Map", variant: "outline" },
       search_ads: { icon: Search, label: "Search Ads", variant: "default" },
     };
-    const { icon: Icon, label, variant } = config[type];
+    const { icon: Icon, label, variant } = config[link.resource_type];
     return (
-      <Badge variant={variant}>
-        <Icon className="h-3 w-3 mr-xs" />
-        {label}
-      </Badge>
+      <div className="flex items-center gap-xs">
+        <Badge variant={variant}>
+          <Icon className="h-3 w-3 mr-xs" />
+          {label}
+        </Badge>
+        {isLegacyLink(link) && (
+          <Badge variant="outline" className="text-muted-foreground">
+            <Database className="h-3 w-3 mr-xs" />
+            Legacy
+          </Badge>
+        )}
+      </div>
     );
   };
 
@@ -226,6 +418,7 @@ export default function ExternalLinksManagement() {
     search_ads: links.filter((l) => l.resource_type === "search_ads").length,
     active: links.filter((l) => l.is_active).length,
     totalClicks: links.reduce((sum, l) => sum + (l.click_count || 0), 0),
+    legacy: links.filter((l) => isLegacyLink(l)).length,
   };
 
   return (
@@ -233,12 +426,12 @@ export default function ExternalLinksManagement() {
       <div>
         <h2 className="text-heading-lg">External Access Links</h2>
         <p className="text-body-sm text-muted-foreground">
-          Manage all public access links from the unified system
+          Manage all public access links from unified and legacy sources
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-md">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-md">
         <Card>
           <CardHeader className="pb-sm">
             <CardTitle className="text-body-sm text-muted-foreground">Total</CardTitle>
@@ -305,6 +498,16 @@ export default function ExternalLinksManagement() {
             <p className="text-heading-lg font-semibold">{stats.totalClicks}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-sm">
+            <CardTitle className="text-body-sm text-muted-foreground flex items-center gap-xs">
+              <Database className="h-4 w-4" /> Legacy
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-heading-lg font-semibold text-muted-foreground">{stats.legacy}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -362,8 +565,8 @@ export default function ExternalLinksManagement() {
                 </TableRow>
               ) : (
                 filteredLinks.map((link) => (
-                  <TableRow key={link.id}>
-                    <TableCell>{getTypeBadge(link.resource_type)}</TableCell>
+                  <TableRow key={`${link.resource_type}-${link.id}`}>
+                    <TableCell>{getTypeBadge(link)}</TableCell>
                     <TableCell>
                       <p className="text-body-sm font-medium">{link.entity || "—"}</p>
                     </TableCell>
@@ -411,20 +614,25 @@ export default function ExternalLinksManagement() {
                             Copy Link
                           </DropdownMenuItem>
                           {link.is_active ? (
-                            <DropdownMenuItem onClick={() => deactivateMutation.mutate(link.id)}>
+                            <DropdownMenuItem onClick={() => deactivateMutation.mutate(link)}>
                               <PowerOff className="h-4 w-4 mr-sm" />
                               Deactivate
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem onClick={() => reactivateMutation.mutate(link.id)}>
+                            <DropdownMenuItem onClick={() => reactivateMutation.mutate(link)}>
                               <Power className="h-4 w-4 mr-sm" />
                               Reactivate
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => setExtendLinkId(link.id)}>
-                            <Calendar className="h-4 w-4 mr-sm" />
-                            Set Expiration
-                          </DropdownMenuItem>
+                          {!isLegacyLink(link) && (
+                            <DropdownMenuItem onClick={() => {
+                              setExtendLinkId(link.id);
+                              setExtendLinkType(link.resource_type);
+                            }}>
+                              <Calendar className="h-4 w-4 mr-sm" />
+                              Set Expiration
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => setDeleteLink(link)}
@@ -445,7 +653,10 @@ export default function ExternalLinksManagement() {
       </Card>
 
       {/* Extend Expiration Dialog */}
-      <Dialog open={!!extendLinkId} onOpenChange={() => setExtendLinkId(null)}>
+      <Dialog open={!!extendLinkId} onOpenChange={() => {
+        setExtendLinkId(null);
+        setExtendLinkType(null);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Set Link Expiration</DialogTitle>
@@ -462,7 +673,10 @@ export default function ExternalLinksManagement() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setExtendLinkId(null)}>
+            <Button variant="outline" onClick={() => {
+              setExtendLinkId(null);
+              setExtendLinkType(null);
+            }}>
               Cancel
             </Button>
             <Button
@@ -488,6 +702,11 @@ export default function ExternalLinksManagement() {
             <DialogTitle>Delete Access Link</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this access link? This action cannot be undone.
+              {deleteLink && isLegacyLink(deleteLink) && (
+                <span className="block mt-2 text-warning-text">
+                  This is a legacy link - the token will be removed from the original resource.
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -496,7 +715,7 @@ export default function ExternalLinksManagement() {
             </Button>
             <Button 
               variant="destructive" 
-              onClick={() => deleteLink && deleteMutation.mutate(deleteLink.id)}
+              onClick={() => deleteLink && deleteMutation.mutate(deleteLink)}
             >
               Delete
             </Button>

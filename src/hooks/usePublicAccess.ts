@@ -284,6 +284,10 @@ export function usePublicAccessManagement() {
       isPublic = false,
       metadata = {},
     }: GenerateLinkParams) => {
+      // Get current user (REQUIRED for RLS)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Authentication required');
+
       // Generate unique token
       const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24);
 
@@ -298,7 +302,7 @@ export function usePublicAccessManagement() {
           .eq('is_active', true);
       }
 
-      // Create new link
+      // Create new link with created_by for RLS
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.from('public_access_links') as any)
         .insert({
@@ -310,6 +314,8 @@ export function usePublicAccessManagement() {
           reviewer_email: reviewerEmail || null,
           expires_at: expiresAt?.toISOString() || null,
           is_public: isPublic,
+          is_active: true,
+          created_by: user.id,
           metadata,
         })
         .select()
