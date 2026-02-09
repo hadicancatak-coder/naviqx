@@ -346,14 +346,8 @@ export default function ExternalLinksManagement() {
   });
 
   const copyToClipboard = (link: PublicAccessLink) => {
-    const routes: Record<ResourceType, string> = {
-      campaign: "/review",
-      knowledge: "/knowledge/public",
-      project: "/projects/public",
-      lp_map: "/lp/public",
-      search_ads: "/ads/search/review",
-    };
-    const url = `${getProductionUrl()}${routes[link.resource_type]}/${link.access_token}`;
+    // Use universal token URL pattern for all resource types
+    const url = `${getProductionUrl()}/r/${link.access_token}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard");
   };
