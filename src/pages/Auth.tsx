@@ -74,19 +74,39 @@ export default function Auth() {
   }, [allowedDomains]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
-      }
-    });
+        // User is already logged in - check their MFA status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('mfa_enabled')
+          .eq('user_id', session.user.id)
+          .single();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
+        if (!profile?.mfa_enabled) {
+          navigate("/mfa-setup", { replace: true });
+        } else {
+          // Check if they have a valid MFA session token
+          const mfaToken = localStorage.getItem('mfa_session_data');
+          if (mfaToken) {
+            try {
+              const parsed = JSON.parse(mfaToken);
+              if (parsed.token && new Date(parsed.expiresAt) > new Date()) {
+                navigate("/", { replace: true }); // Valid MFA session, go to home
+                return;
+              }
+            } catch {
+              // Invalid token format, need to verify
+            }
+          }
+          navigate("/mfa-verify", { replace: true });
+        }
       }
-    });
-
-    return () => subscription.unsubscribe();
+    };
+    
+    checkExistingSession();
+    // No onAuthStateChange listener - handleSubmit handles navigation after login
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
