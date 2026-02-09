@@ -1,245 +1,276 @@
 
-# Critical Fix: MFA Authentication Loop
+# Fix MFA Authentication Loop - Complete Solution
 
-## Problem Analysis
+## Root Cause Analysis
 
-Users are trapped in an infinite MFA verification loop after successfully entering their credentials and OTP code. The issue has multiple contributing factors:
+After investigating the full MFA system, I identified **5 critical issues** causing the authentication loop:
 
-### Root Causes Identified
+### Issue 1: Race Condition in Auth.tsx
+The `onAuthStateChange` listener in `Auth.tsx` navigates to `/` whenever a session exists, but the login handler also navigates to `/mfa-setup` or `/mfa-verify`. These race against each other.
 
-1. **Race Condition in State Propagation**
-   - After successful MFA verification, `setMfaVerifiedStatus()` updates React state
-   - `navigate("/")` is called immediately after
-   - The `ProtectedRoute` useEffect runs BEFORE state update propagates
-   - Result: User is redirected back to `/mfa-verify`
+```
+User logs in → onAuthStateChange fires → navigate("/")
+              → handleSubmit also runs → navigate("/mfa-verify")
+Result: Unpredictable navigation
+```
 
-2. **localStorage Check Timing Issue**
-   - The fallback localStorage check in `ProtectedRoute` (line 54-59) uses raw `localStorage.getItem()`
-   - This check happens at the right time, but there's a microtask timing issue where the localStorage write from `setMfaSessionToken()` may not have committed yet
+### Issue 2: sessionStorage Cache Never Validated
+The MFA status cache in `sessionStorage` is trusted without validation against the database. If the cache becomes stale or corrupted, users get stuck in loops.
 
-3. **Cross-Domain Token Isolation**
-   - Users accessing from multiple domains (`naviqx.com`, `naviqx.lovable.app`, preview URL)
-   - localStorage is domain-specific, so tokens don't persist across domains
-   - This creates the appearance of "missing" tokens
+### Issue 3: mfaEnabled Null State Ambiguity
+When `mfaEnabled` is `null` (loading), `ProtectedRoute` skips both the setup redirect AND the verify redirect, causing unpredictable behavior on page refresh.
 
-4. **onAuthStateChange Interference**
-   - The `refreshSession()` call in MfaVerify can trigger auth state changes
-   - These events call `validateMfaSession()` which may clear the token if validation fails transiently
+### Issue 4: signOut Cache Cleanup Race
+`sessionStorage.removeItem()` happens after `signOut()` but before navigation completes, so the cache may persist across sessions.
+
+### Issue 5: MFA Setup Always Regenerates Secret
+The `MfaSetup.tsx` page always calls `setup-mfa` which generates a NEW secret, even if the user already has one. This means if users accidentally land on `/mfa-setup` when they already have MFA, their existing authenticator app stops working.
 
 ## Solution
 
-### Part 1: Fix Race Condition with Navigation Delay
+### Fix 1: Remove Race Condition in Auth.tsx
 
-In `MfaVerify.tsx`, add a small delay before navigation to ensure state has propagated:
-
-```typescript
-// After setMfaVerifiedStatus and refreshMfaStatus
-// Use a microtask to ensure localStorage write is committed
-await new Promise(resolve => setTimeout(resolve, 100));
-navigate("/", { replace: true });
-```
-
-### Part 2: Improve localStorage Token Check in ProtectedRoute
-
-Instead of checking just `localStorage.getItem()`, use the proper `getMfaSessionToken()` pattern that validates the token:
+Remove the `onAuthStateChange` auto-redirect from Auth.tsx. The login handler already navigates appropriately based on MFA status.
 
 ```typescript
-// ProtectedRoute.tsx - line 53-59
-if (mfaEnabled && !mfaVerified) {
-  // Parse and validate the token properly
-  const storedData = localStorage.getItem('mfa_session_data');
-  if (storedData) {
-    try {
-      const { token, expiresAt } = JSON.parse(storedData);
-      if (token && new Date(expiresAt) > new Date()) {
-        // Valid token exists - trust it and skip redirect
-        logger.debug('Valid MFA token found in localStorage, proceeding');
-        return;
-      }
-    } catch (e) {
-      // Invalid JSON - clear it
-      localStorage.removeItem('mfa_session_data');
+// Auth.tsx - REMOVE these lines (77-90):
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      navigate("/");  // REMOVE - let MFA logic handle this
     }
-  }
-  // No valid token - redirect
-  logger.debug('MFA enabled but no valid token, redirecting to verification');
-  navigate("/mfa-verify");
-  return;
-}
+  });
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      navigate("/");  // REMOVE - causes race condition
+    }
+  });
+
+  return () => subscription.unsubscribe();
+}, [navigate]);
 ```
 
-### Part 3: Prevent Auth State Handler from Clearing Token During Verification
+**Replace with**: Check if user is already authenticated BEFORE showing login form, and if so, navigate appropriately based on MFA status.
 
-Add a flag to skip validation during active MFA verification:
+### Fix 2: Validate Cache Against User ID
+
+Add user ID validation to the sessionStorage cache to prevent using another user's cached status.
 
 ```typescript
-// AuthContext.tsx - Add a new state
-const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
-
-// In onAuthStateChange handler - skip if actively verifying
-if (event === 'SIGNED_IN' && !isVerifyingMfa) {
-  validateMfaSession(session.user);
-}
-
-// Export setIsVerifyingMfa for MfaVerify to use
+// AuthContext.tsx - In initial state setup
+const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(() => {
+  const cached = sessionStorage.getItem('mfa_status_cache');
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      // Don't trust cache until we verify it's for the current user
+      // This will be validated in fetchMfaStatus
+      return parsed.mfaEnabled ?? null;
+    } catch { return null; }
+  }
+  return null;
+});
 ```
 
-### Part 4: Ensure Token is Committed Before Navigation
+### Fix 3: Clear Cache Before Sign Out Navigation
 
-In `setMfaVerifiedStatus`, use synchronous localStorage write:
+Move cache clearing to happen synchronously BEFORE navigation.
 
 ```typescript
-const setMfaVerifiedStatus = (verified: boolean, sessionToken?: string, expiresAt?: string) => {
-  logger.debug('Setting MFA status', { verified });
+// AuthContext.tsx - signOut function
+const signOut = async () => {
+  // FIRST: Clear all MFA state synchronously
+  setMfaSessionToken(null);
+  setMfaVerified(false);
+  sessionStorage.removeItem('mfa_status_cache');
+  setMfaEnabled(null);
+  setMfaEnrollmentRequired(null);
   
-  // Write to localStorage FIRST (synchronous)
-  if (verified && sessionToken && expiresAt) {
-    localStorage.setItem(MFA_SESSION_KEY, JSON.stringify({ 
-      token: sessionToken, 
-      expiresAt,
-      storedAt: new Date().toISOString()
-    }));
-  } else {
-    localStorage.removeItem(MFA_SESSION_KEY);
-  }
-  
-  // Then update React state
-  setMfaVerified(verified);
-  if (verified && sessionToken) {
-    setSkipNextValidation(true);
-    prefetchTasksData();
-  }
+  // THEN: Sign out and navigate
+  await supabase.auth.signOut();
+  navigate("/auth");
 };
+```
+
+### Fix 4: Add Guard to MFA Setup Page
+
+Check if user already has MFA enabled and redirect to verify instead of regenerating their secret.
+
+```typescript
+// MfaSetup.tsx - Add at the start of setupMfa function
+const setupMfa = useCallback(async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    // NEW: Check if MFA is already set up
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('mfa_enabled')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (profile?.mfa_enabled) {
+      // MFA is already enabled - redirect to verify, not setup
+      logger.debug('MFA already enabled, redirecting to verify');
+      navigate("/mfa-verify", { replace: true });
+      return;
+    }
+
+    // Continue with normal setup...
+  } catch (error) {
+    // ...
+  }
+}, [navigate, toast]);
+```
+
+### Fix 5: Improve ProtectedRoute Null State Handling
+
+When `mfaEnabled` is `null`, wait for it to be loaded instead of skipping the check.
+
+```typescript
+// ProtectedRoute.tsx - Line 39-42
+// Wait for MFA status to be loaded
+if (mfaStatusLoading || !user) {
+  return; // Already handled correctly
+}
+
+// NEW: If mfaEnabled is still null after loading finished, treat as needing setup
+if (mfaEnabled === null) {
+  // This shouldn't happen if fetchMfaStatus worked, but handle defensively
+  logger.warn('mfaEnabled still null after loading - forcing refresh');
+  return; // Let the context re-fetch
+}
 ```
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/MfaVerify.tsx` | Add navigation delay and verification flag |
-| `src/components/ProtectedRoute.tsx` | Improve token validation logic |
-| `src/contexts/AuthContext.tsx` | Add `isVerifyingMfa` flag, ensure token write order |
+| `src/pages/Auth.tsx` | Remove auto-redirect race condition |
+| `src/contexts/AuthContext.tsx` | Fix signOut cache clearing order, add cache validation |
+| `src/pages/MfaSetup.tsx` | Check if MFA already enabled before regenerating secret |
+| `src/components/ProtectedRoute.tsx` | Handle null mfaEnabled state defensively |
 
 ## Implementation Details
 
-### MfaVerify.tsx Changes
+### Auth.tsx Changes
 
 ```typescript
-// Line 78-106 - Wrap successful verification
-if (verifyData.success) {
-  // Create MFA session on server
-  const { data: sessionData, error: sessionError } = await supabase.functions.invoke('manage-mfa-session', {
-    body: { action: 'create' }
-  });
+// Replace lines 76-90 with:
+useEffect(() => {
+  const checkExistingSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // User is already logged in - check their MFA status
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('mfa_enabled')
+        .eq('user_id', session.user.id)
+        .single();
 
-  if (sessionError || !sessionData?.sessionToken) {
-    throw new Error('Failed to create session');
-  }
-
-  const expiresAt = sessionData.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-  // Mark MFA as verified with session token and expiry
-  setMfaVerifiedStatus(true, sessionData.sessionToken, expiresAt);
-  refreshMfaStatus();
+      if (!profile?.mfa_enabled) {
+        navigate("/mfa-setup");
+      } else {
+        // Check if they have a valid MFA session
+        const mfaToken = localStorage.getItem('mfa_session_data');
+        if (mfaToken) {
+          try {
+            const parsed = JSON.parse(mfaToken);
+            if (parsed.token && new Date(parsed.expiresAt) > new Date()) {
+              navigate("/"); // Valid MFA session, go to home
+              return;
+            }
+          } catch { /* Invalid token, need to verify */ }
+        }
+        navigate("/mfa-verify");
+      }
+    }
+  };
   
+  checkExistingSession();
+  // No onAuthStateChange listener - handleSubmit handles navigation
+}, [navigate]);
+```
+
+### AuthContext.tsx Changes
+
+```typescript
+// signOut function - lines 400-408
+const signOut = async () => {
+  // Clear state SYNCHRONOUSLY before async operations
+  setMfaSessionToken(null);
+  setMfaVerified(false);
+  sessionStorage.removeItem('mfa_status_cache');
+  setMfaEnabled(null);
+  setMfaEnrollmentRequired(null);
+  
+  // Now do async signout
+  await supabase.auth.signOut();
+  navigate("/auth");
+};
+```
+
+### MfaSetup.tsx Changes
+
+```typescript
+// Inside setupMfa callback, before generating QR code (after line 36):
+// Check if MFA is already configured
+const { data: mfaSecrets } = await supabase
+  .from('user_mfa_secrets')
+  .select('mfa_secret, mfa_enrolled_at')
+  .eq('user_id', session.user.id)
+  .single();
+
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('mfa_enabled')
+  .eq('user_id', session.user.id)
+  .single();
+
+// If user already has MFA enabled with a secret, redirect to verify
+if (profile?.mfa_enabled && mfaSecrets?.mfa_secret && mfaSecrets?.mfa_enrolled_at) {
+  logger.debug('MFA already configured, redirecting to verify');
   toast({
-    title: "Verified!",
-    description: "You have been successfully authenticated",
+    title: "MFA Already Enabled",
+    description: "Redirecting to verification...",
   });
-
-  // CRITICAL: Wait for state to propagate before navigation
-  await new Promise(resolve => setTimeout(resolve, 150));
-  
-  logger.debug('Navigating to home page');
-  navigate("/", { replace: true });
+  navigate("/mfa-verify", { replace: true });
+  return;
 }
 ```
 
 ### ProtectedRoute.tsx Changes
 
 ```typescript
-// Replace lines 52-66 with improved validation
-if (mfaEnabled && !mfaVerified) {
-  // Check localStorage with proper validation
-  const storedData = localStorage.getItem('mfa_session_data');
-  
-  if (storedData) {
-    try {
-      const parsed = JSON.parse(storedData);
-      const isValid = parsed.token && 
-                      parsed.expiresAt && 
-                      new Date(parsed.expiresAt) > new Date();
-      
-      if (isValid) {
-        logger.debug('Valid MFA token in localStorage, allowing access');
-        return; // Don't redirect - valid token exists
-      }
-      
-      // Token expired - clean up
-      localStorage.removeItem('mfa_session_data');
-    } catch {
-      // Malformed data - clean up
-      localStorage.removeItem('mfa_session_data');
-    }
-  }
-  
-  logger.debug('MFA enabled but no valid token, redirecting to verification');
-  navigate("/mfa-verify");
+// After line 42, add defensive null check:
+// If mfaEnabled is still null but loading is done, force a cache refresh
+if (mfaEnabled === null && !mfaStatusLoading) {
+  logger.debug('mfaEnabled is null after loading - deferring redirect');
+  // Don't redirect yet - let context try to fetch again
   return;
 }
-```
-
-### AuthContext.tsx Changes
-
-```typescript
-// Lines 28-37 - Ensure proper write order in setMfaSessionToken
-const setMfaSessionToken = (token: string | null, expiresAt?: string): void => {
-  if (token && expiresAt) {
-    // Synchronous write to localStorage
-    const data = JSON.stringify({ 
-      token, 
-      expiresAt,
-      storedAt: new Date().toISOString()
-    });
-    localStorage.setItem(MFA_SESSION_KEY, data);
-    logger.debug('MFA token stored in localStorage');
-  } else {
-    localStorage.removeItem(MFA_SESSION_KEY);
-    logger.debug('MFA token removed from localStorage');
-  }
-};
-
-// Lines 360-373 - Ensure localStorage is written before state
-const setMfaVerifiedStatus = (verified: boolean, sessionToken?: string, expiresAt?: string) => {
-  logger.debug('Setting MFA status', { verified, hasToken: !!sessionToken });
-  
-  // CRITICAL: Write localStorage BEFORE state update
-  if (verified && sessionToken && expiresAt) {
-    setMfaSessionToken(sessionToken, expiresAt);
-    setSkipNextValidation(true);
-    prefetchTasksData();
-  } else {
-    setMfaSessionToken(null);
-  }
-  
-  // State update happens after localStorage is committed
-  setMfaVerified(verified);
-};
 ```
 
 ## Expected Outcome
 
 After implementation:
-1. MFA verification will complete successfully without redirect loops
-2. Token will be properly persisted in localStorage before navigation
-3. ProtectedRoute will correctly detect valid tokens
-4. Users will navigate to the dashboard immediately after MFA verification
-5. Cross-domain access will still require re-verification (intended security behavior)
+
+1. **No more setup loops**: Users with existing MFA won't be asked to set up again
+2. **No more verify loops**: MFA verification will persist correctly across navigation
+3. **Clean sign-out**: Cache is fully cleared before navigation, preventing stale state
+4. **No race conditions**: Login flow has single navigation path based on MFA status
+5. **Defensive handling**: Edge cases with null states are handled gracefully
 
 ## Testing Checklist
 
-- [ ] Login with email/password → MFA prompt appears
-- [ ] Enter valid OTP → Successfully redirected to dashboard
-- [ ] Refresh page → Stays on dashboard (token persisted)
-- [ ] Close browser, reopen → MFA required again after 24h OR stays logged in if within 24h
-- [ ] Use backup code → Successfully authenticated
+- [ ] Fresh login → MFA verify prompt → Enter code → Lands on dashboard
+- [ ] Page refresh on dashboard → Stays on dashboard (token persisted)
+- [ ] Sign out → Sign in → MFA verify (not setup) if MFA was already enabled
+- [ ] New user signup → First login → MFA setup prompt → Complete setup → Dashboard
+- [ ] IP address change → MFA re-verify required (security feature)
+- [ ] Close browser completely → Reopen → MFA required (24h expiry)
