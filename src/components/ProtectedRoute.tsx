@@ -5,7 +5,7 @@ import { logger } from "@/lib/logger";
 
 // MFA is required for ALL routes when enabled - no exemptions
 // Only these routes don't trigger MFA redirect (they handle it themselves)
-const MFA_SELF_HANDLING_ROUTES = ['/mfa-setup', '/mfa-verify', '/auth'];
+const MFA_SELF_HANDLING_ROUTES = ['/mfa-setup', '/mfa-verify', '/auth', '/change-password', '/reset-password'];
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { 
@@ -15,6 +15,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     mfaEnabled,
     mfaEnrollmentRequired,
     mfaStatusLoading,
+    forcePasswordReset,
+    forcePasswordResetLoading,
     setMfaVerifiedStatus
   } = useAuth();
   const navigate = useNavigate();
@@ -37,8 +39,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Wait for MFA status to be loaded from context (only on initial load)
-    if (mfaStatusLoading || !user) {
+    // Wait for all status to be loaded from context (only on initial load)
+    if (mfaStatusLoading || forcePasswordResetLoading || !user) {
       return;
     }
 
@@ -49,7 +51,14 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // SECURITY: If MFA is explicitly disabled but enrollment is required, force setup
+    // PRIORITY 1: Check force password reset FIRST (before MFA)
+    if (forcePasswordReset) {
+      logger.debug('Force password reset required, redirecting to change-password');
+      navigate("/change-password");
+      return;
+    }
+
+    // PRIORITY 2: SECURITY: If MFA is explicitly disabled but enrollment is required, force setup
     // Use === false to avoid redirecting when mfaEnabled is null (still loading)
     if (mfaEnabled === false && mfaEnrollmentRequired !== false) {
       logger.debug('MFA explicitly disabled but required, redirecting to setup');
@@ -57,7 +66,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // If MFA is enabled but not verified, check localStorage token with proper validation
+    // PRIORITY 3: If MFA is enabled but not verified, check localStorage token with proper validation
     if (mfaEnabled && !mfaVerified) {
       const storedData = localStorage.getItem('mfa_session_data');
       
@@ -90,7 +99,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       navigate("/mfa-verify");
       return;
     }
-  }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, mfaStatusLoading, navigate, location, setMfaVerifiedStatus]);
+  }, [user, mfaEnabled, mfaEnrollmentRequired, mfaVerified, mfaStatusLoading, forcePasswordReset, forcePasswordResetLoading, navigate, location, setMfaVerifiedStatus]);
 
   // ALWAYS render children immediately - no loading states, no null returns
   // Auth redirects happen asynchronously via useEffect above

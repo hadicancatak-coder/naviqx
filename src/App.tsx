@@ -18,6 +18,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import MfaSetup from "./pages/MfaSetup";
 import MfaVerify from "./pages/MfaVerify";
+import ResetPassword from "./pages/ResetPassword";
+import ChangePasswordRequired from "./pages/ChangePasswordRequired";
 
 // High-traffic pages loaded eagerly for instant navigation
 import Tasks from "./pages/Tasks";
@@ -93,8 +95,10 @@ const App = () => (
                   <TaskDrawer />
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
                     <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
+                    <Route path="/change-password" element={<ProtectedRoute><ChangePasswordRequired /></ProtectedRoute>} />
                     <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/dashboard" element={<Navigate to="/" replace />} />

@@ -12,6 +12,7 @@ import { authPasswordSchema } from "@/lib/validationSchemas";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { GlassBackground } from "@/components/layout/GlassBackground";
 import { AuthPageFooter } from "@/components/layout/AuthPageFooter";
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 import { logger } from "@/lib/logger";
 
 export default function Auth() {
@@ -21,6 +22,7 @@ export default function Auth() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [allowedDomains, setAllowedDomains] = useState<string[]>(['cfi.trade']);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -144,14 +146,24 @@ export default function Auth() {
 
         if (error) throw error;
 
-        // Check MFA status for this user
+        // Check MFA status and force password reset for this user
         const { data: profile } = await supabase
           .from('profiles')
-          .select('mfa_enabled, mfa_enrollment_required')
+          .select('mfa_enabled, mfa_enrollment_required, force_password_reset')
           .eq('user_id', signInData.user.id)
           .single();
 
-        // SECURITY: MFA is mandatory for ALL users
+        // PRIORITY 1: Check force password reset FIRST
+        if (profile?.force_password_reset) {
+          toast({
+            title: "Password Update Required",
+            description: "Please update your password to meet our security requirements",
+          });
+          navigate("/change-password");
+          return;
+        }
+
+        // PRIORITY 2: SECURITY: MFA is mandatory for ALL users
         // If MFA is not enabled, always force setup regardless of mfa_enrollment_required
         if (!profile?.mfa_enabled) {
           toast({
@@ -162,7 +174,7 @@ export default function Auth() {
           return;
         }
 
-        // If MFA is enabled, require verification
+        // PRIORITY 3: If MFA is enabled, require verification
         navigate("/mfa-verify");
       } else {
         const { error } = await supabase.auth.signUp({
@@ -292,6 +304,16 @@ export default function Auth() {
               "Create Account"
             )}
           </Button>
+
+          {isLogin && (
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="w-full text-body-sm text-muted-foreground hover:text-primary transition-smooth"
+            >
+              Forgot your password?
+            </button>
+          )}
         </form>
 
         <div className="mt-lg text-center">
@@ -309,6 +331,13 @@ export default function Auth() {
         {/* Footer */}
         <AuthPageFooter />
       </Card>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onOpenChange={setShowForgotPassword}
+        allowedDomains={allowedDomains}
+      />
     </GlassBackground>
   );
 }

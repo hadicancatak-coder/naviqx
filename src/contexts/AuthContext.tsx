@@ -51,9 +51,12 @@ interface AuthContextType {
   mfaEnabled: boolean | null;
   mfaEnrollmentRequired: boolean | null;
   mfaStatusLoading: boolean;
+  forcePasswordReset: boolean;
+  forcePasswordResetLoading: boolean;
   setMfaVerifiedStatus: (verified: boolean, sessionToken?: string, expiresAt?: string) => void;
   validateMfaSession: (currentUser?: User) => Promise<boolean>;
   refreshMfaStatus: () => void;
+  clearForcePasswordReset: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -82,6 +85,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [mfaEnrollmentRequired, setMfaEnrollmentRequired] = useState<boolean | null>(null);
   // Start with loading=true since we need to validate cache
   const [mfaStatusLoading, setMfaStatusLoading] = useState(true);
+  
+  // Force password reset state
+  const [forcePasswordReset, setForcePasswordReset] = useState(false);
+  const [forcePasswordResetLoading, setForcePasswordResetLoading] = useState(true);
   
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
@@ -212,7 +219,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           logger.debug('Using cached MFA status for user', { userId: userId.substring(0, 8) });
           setMfaEnabled(parsed.mfaEnabled ?? null);
           setMfaEnrollmentRequired(parsed.mfaEnrollmentRequired ?? null);
+          setForcePasswordReset(parsed.forcePasswordReset ?? false);
           setMfaStatusLoading(false);
+          setForcePasswordResetLoading(false);
           return; // Valid cache found, no need to fetch
         } else {
           // Cache belongs to different user - clear it
@@ -231,7 +240,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('mfa_enabled, mfa_enrollment_required')
+        .select('mfa_enabled, mfa_enrollment_required, force_password_reset')
         .eq('user_id', userId)
         .single();
       
@@ -242,20 +251,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (mfaEnabled === null) {
           // Keep null to indicate unknown state - don't force setup
           setMfaStatusLoading(false);
+          setForcePasswordResetLoading(false);
         }
         return;
       }
       
       const enabled = data?.mfa_enabled || false;
       const enrollmentRequired = data?.mfa_enrollment_required ?? true;
+      const passwordReset = data?.force_password_reset || false;
       
       setMfaEnabled(enabled);
       setMfaEnrollmentRequired(enrollmentRequired);
+      setForcePasswordReset(passwordReset);
       
       // Cache in sessionStorage with userId for validation
       sessionStorage.setItem('mfa_status_cache', JSON.stringify({
         mfaEnabled: enabled,
         mfaEnrollmentRequired: enrollmentRequired,
+        forcePasswordReset: passwordReset,
         userId: userId,
         cachedAt: Date.now()
       }));
@@ -265,6 +278,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Keep loading false but don't change mfaEnabled state
     } finally {
       setMfaStatusLoading(false);
+      setForcePasswordResetLoading(false);
     }
   };
 
@@ -410,9 +424,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.setItem('mfa_status_cache', JSON.stringify({
         mfaEnabled: true,
         mfaEnrollmentRequired: true,
+        forcePasswordReset: forcePasswordReset,
         userId: user.id,
         cachedAt: Date.now()
       }));
+    }
+  };
+
+  // Clear force password reset flag after successful password change
+  const clearForcePasswordReset = () => {
+    logger.debug('Clearing force password reset flag');
+    setForcePasswordReset(false);
+    
+    // Update sessionStorage cache
+    if (user) {
+      const cached = sessionStorage.getItem('mfa_status_cache');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          parsed.forcePasswordReset = false;
+          sessionStorage.setItem('mfa_status_cache', JSON.stringify(parsed));
+        } catch {
+          // Ignore parse errors
+        }
+      }
     }
   };
 
@@ -444,9 +479,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         mfaEnabled: false,
         mfaEnrollmentRequired: false,
         mfaStatusLoading: false,
+        forcePasswordReset: false,
+        forcePasswordResetLoading: false,
         validateMfaSession: async () => false,
         setMfaVerifiedStatus: () => {},
         refreshMfaStatus: () => {},
+        clearForcePasswordReset: () => {},
         signOut: async () => {
           // Sign out on external review page is a no-op
         },
@@ -468,9 +506,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         mfaEnabled,
         mfaEnrollmentRequired,
         mfaStatusLoading,
+        forcePasswordReset,
+        forcePasswordResetLoading,
         validateMfaSession,
         setMfaVerifiedStatus,
         refreshMfaStatus,
+        clearForcePasswordReset,
         signOut 
       }}
     >
