@@ -35,6 +35,30 @@ export default function MfaSetup() {
         return;
       }
 
+      // Check if MFA is already configured - prevent regenerating secret
+      const { data: mfaSecrets } = await supabase
+        .from('user_mfa_secrets')
+        .select('mfa_secret, mfa_enrolled_at')
+        .eq('user_id', session.user.id)
+        .single();
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('mfa_enabled')
+        .eq('user_id', session.user.id)
+        .single();
+
+      // If user already has MFA enabled with a secret, redirect to verify
+      if (profile?.mfa_enabled && mfaSecrets?.mfa_secret && mfaSecrets?.mfa_enrolled_at) {
+        logger.debug('MFA already configured, redirecting to verify');
+        toast({
+          title: "MFA Already Enabled",
+          description: "Redirecting to verification...",
+        });
+        navigate("/mfa-verify", { replace: true });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('setup-mfa');
 
       if (error) throw error;

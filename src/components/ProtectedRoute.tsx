@@ -41,6 +41,13 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    // Defensive null check: if mfaEnabled is still null after loading, defer redirect
+    // This handles edge cases where fetchMfaStatus failed or is still in progress
+    if (mfaEnabled === null) {
+      logger.debug('mfaEnabled is null after loading - deferring redirect');
+      return;
+    }
+
     // SECURITY: If MFA is explicitly disabled but enrollment is required, force setup
     // Use === false to avoid redirecting when mfaEnabled is null (still loading)
     if (mfaEnabled === false && mfaEnrollmentRequired !== false) {
