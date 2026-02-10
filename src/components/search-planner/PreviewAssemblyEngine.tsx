@@ -11,7 +11,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Globe, Smartphone, Image, Monitor, Play, Mail, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CampaignAsset } from "./AssetPicker";
+
+interface CampaignAsset {
+  id: string;
+  asset_type: string;
+  asset_url: string;
+  status?: string | null;
+  [key: string]: unknown;
+}
 
 // Placement types per campaign type
 const APP_PLACEMENTS = ['search', 'play_store', 'youtube', 'display_network'] as const;

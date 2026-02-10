@@ -238,6 +238,7 @@ export default function SearchPlanner() {
                 adGroup={adGroupContext.adGroup}
                 campaign={adGroupContext.campaign}
                 entity={adGroupContext.entity}
+                campaignType={(adGroupContext.campaign.campaign_type || 'search') as string}
                 onEditAd={(ad) => {
                   handleEditAd(
                     ad as AdData,
