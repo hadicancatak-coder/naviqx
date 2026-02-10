@@ -31,6 +31,8 @@ interface AdData {
 interface AdGroupData {
   id: string;
   name: string;
+  keywords?: unknown;
+  match_types?: unknown;
 }
 
 interface CampaignData {
@@ -251,6 +253,8 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                       sitelinks={sitelinks}
                       callouts={callouts}
                       entity={editorContext.entity}
+                      keywords={(editorContext.adGroup?.keywords as string[]) || []}
+                      matchTypes={(editorContext.adGroup?.match_types as string[]) || []}
                     />
                   )}
                 </ScrollArea>

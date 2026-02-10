@@ -182,6 +182,7 @@ export type Database = {
       }
       ad_groups: {
         Row: {
+          bidding_strategy: string | null
           campaign_id: string
           created_at: string | null
           created_by: string | null
@@ -189,13 +190,13 @@ export type Database = {
           is_template: boolean | null
           keywords: Json | null
           match_types: Json | null
-          max_cpc: number | null
           name: string
           status: string | null
           template_name: string | null
           updated_at: string | null
         }
         Insert: {
+          bidding_strategy?: string | null
           campaign_id: string
           created_at?: string | null
           created_by?: string | null
@@ -203,13 +204,13 @@ export type Database = {
           is_template?: boolean | null
           keywords?: Json | null
           match_types?: Json | null
-          max_cpc?: number | null
           name: string
           status?: string | null
           template_name?: string | null
           updated_at?: string | null
         }
         Update: {
+          bidding_strategy?: string | null
           campaign_id?: string
           created_at?: string | null
           created_by?: string | null
@@ -217,7 +218,6 @@ export type Database = {
           is_template?: boolean | null
           keywords?: Json | null
           match_types?: Json | null
-          max_cpc?: number | null
           name?: string
           status?: string | null
           template_name?: string | null
