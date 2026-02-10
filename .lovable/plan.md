@@ -1,194 +1,209 @@
 
+# Display & App Ad Editors with Custom Fields and Previews
 
-# Bulk Actions + Display & App Campaign Types for Search Planner
+## Problem
 
-## Summary
-
-This plan adds three major capabilities to the Search Planner: **campaign type differentiation** (Search, Display, App), **bulk campaign actions**, and proper **routing and navigation** for all campaign types.
-
-| Change | Location | Impact |
-|--------|----------|--------|
-| Database: Add `campaign_type` column | `search_campaigns` table | Low |
-| Database: Fix `ads` FK to CASCADE on ad_group delete | `ads` table | Critical |
-| Campaign type selector in create dialog | `CreateCampaignDialog.tsx` | Medium |
-| Campaign type filter pills in structure panel | `SearchPlannerStructurePanel.tsx` | Medium |
-| Type badges on campaign rows | `SearchPlannerStructurePanel.tsx` | Low |
-| Selection mode + checkboxes on campaigns | `SearchPlannerStructurePanel.tsx` | High |
-| Floating bulk actions bar (new component) | `SearchPlannerBulkBar.tsx` | Medium |
-| Display Planner route + sidebar entry | `App.tsx`, `AppSidebar.tsx` | Medium |
-| Duplicate dialog: carry `campaign_type` | `DuplicateCampaignDialog.tsx` | Low |
+The editor currently renders **only Search ad fields** (15 headlines, 4 descriptions, sitelinks, callouts, DKI). When you create a Display or App campaign and add an ad, you get the same Search form -- which is completely wrong. These ad types have fundamentally different structures.
 
 ---
 
-## Critical Detail: Cascade Delete Fix
+## What Each Ad Type Needs
 
-Currently, `ads.ad_group_id` uses `ON DELETE SET NULL`. When we bulk-delete campaigns, the cascade chain is:
+### Search Ads (already implemented)
+- 15 Headlines (30 chars each) with drag-to-reorder and DKI
+- 4 Descriptions (90 chars each)
+- Sitelinks (5 max)
+- Callouts (4 max)
+- Landing Page, Business Name, Path fields
 
-```text
-search_campaigns --> ad_groups (CASCADE) --> ads (SET NULL = orphaned!)
-```
+### Display Ads (new)
+- 1 Long Headline (90 chars) -- the main headline
+- 5 Short Headlines (30 chars each) -- Google rotates these
+- 5 Descriptions (90 chars each)
+- CTA Button Text (e.g., "Learn More", "Sign Up", "Shop Now")
+- Landing Page, Business Name
+- DB columns already exist: `long_headline`, `short_headlines`, `cta_text`
 
-This means bulk-deleting campaigns will **orphan ads** instead of removing them. We must fix this:
+### App Ads (new)
+- 5 Headlines (30 chars each)
+- 5 Descriptions (90 chars each)
+- App Platform: Android or iOS (select)
+- App Campaign Goal: Installs, In-App Events, or Retargeting (select)
+- App Store URL (Google Play or App Store link)
+- CTA Button Text
+- Requires new DB columns: `app_platform`, `app_campaign_goal`, `app_store_url`
+
+---
+
+## Changes
+
+### 1. Database Migration
+
+Add App-specific columns to the `ads` table:
 
 ```sql
-ALTER TABLE ads DROP CONSTRAINT ads_ad_group_id_fkey;
-ALTER TABLE ads ADD CONSTRAINT ads_ad_group_id_fkey 
-  FOREIGN KEY (ad_group_id) REFERENCES ad_groups(id) ON DELETE CASCADE;
+ALTER TABLE ads ADD COLUMN app_platform text;        -- 'android' | 'ios'
+ALTER TABLE ads ADD COLUMN app_campaign_goal text;    -- 'installs' | 'in_app_events' | 'retargeting'
+ALTER TABLE ads ADD COLUMN app_store_url text;
 ```
 
-With this fix, deleting a campaign cascades through ad_groups and then to ads -- no orphans.
+No new RLS policies needed -- existing `ads` policies cover these columns.
 
----
+### 2. Refactor SearchAdEditor: Conditional Field Rendering
 
-## 1. Database Migration
+**File**: `src/components/search/SearchAdEditor.tsx`
 
-```sql
--- Add campaign_type column
-ALTER TABLE search_campaigns
-  ADD COLUMN campaign_type text NOT NULL DEFAULT 'search';
+The editor determines `adType` from `ad?.ad_type || propAdType || "search"`. Currently it always renders search fields. The change:
 
--- Fix ads cascade (currently SET NULL, should CASCADE)
-ALTER TABLE ads DROP CONSTRAINT ads_ad_group_id_fkey;
-ALTER TABLE ads ADD CONSTRAINT ads_ad_group_id_fkey 
-  FOREIGN KEY (ad_group_id) REFERENCES ad_groups(id) ON DELETE CASCADE;
-```
+- Wrap the form body in a conditional:
+  - `adType === "search"` -- render current search fields (headlines, descriptions, sitelinks, callouts, DKI, keywords)
+  - `adType === "display"` -- render display fields (long headline, short headlines, descriptions, CTA)
+  - `adType === "app"` -- render app fields (headlines, descriptions, app platform, campaign goal, app store URL, CTA)
 
-No new RLS policies needed -- existing policies on `search_campaigns` cover this.
+- Update the `handleSave` function to include type-specific data:
+  - Search: current behavior (headlines, descriptions, sitelinks, callouts)
+  - Display: save `long_headline`, `short_headlines`, `descriptions`, `cta_text`
+  - App: save `headlines`, `descriptions`, `app_platform`, `app_campaign_goal`, `app_store_url`, `cta_text`
 
----
+- Update the title to show "Edit Display Ad" / "Create App Ad" etc.
 
-## 2. CreateCampaignDialog: Add Campaign Type Selector
+### 3. Display Ad Form Section
 
-**File**: `src/components/ads/CreateCampaignDialog.tsx`
+New form section rendered when `adType === "display"`:
 
-### Changes
-- Add `campaignType` state, default from new prop `defaultCampaignType` (or `'search'`)
-- Add a **Campaign Type** select field with three options and descriptions:
-  - **Search** -- Text ads on search results pages
-  - **Display** -- Visual banner ads across display network  
-  - **App** -- App install and engagement campaigns
-- Save `campaign_type` on insert
-- Update props interface to accept `defaultCampaignType?: 'search' | 'display' | 'app'`
+| Field | Type | Limit | Notes |
+|-------|------|-------|-------|
+| Long Headline | Single input | 90 chars | Primary headline, character counter |
+| Short Headlines (1-5) | 5 inputs | 30 chars each | Progressive disclosure (start with 3) |
+| Descriptions (1-5) | 5 inputs | 90 chars each | Progressive disclosure (start with 2) |
+| CTA Text | Select dropdown | Preset options | "Learn More", "Sign Up", "Shop Now", "Get Quote", "Apply Now", "Contact Us", "Download", "Book Now" |
+| Landing Page | Input | URL | Same as search |
+| Business Name | Input | Text | Same as search |
 
----
+### 4. App Ad Form Section
 
-## 3. SearchPlannerStructurePanel: Type Filter + Selection Mode
+New form section rendered when `adType === "app"`:
 
-**File**: `src/components/search-planner/SearchPlannerStructurePanel.tsx`
+| Field | Type | Limit | Notes |
+|-------|------|-------|-------|
+| App Platform | Select | "Android" / "iOS" | Required |
+| Campaign Goal | Select | "Installs" / "In-App Events" / "Retargeting" | Required |
+| App Store URL | Input | URL | Google Play or App Store link |
+| Headlines (1-5) | 5 inputs | 30 chars each | Progressive disclosure |
+| Descriptions (1-5) | 5 inputs | 90 chars each | Progressive disclosure |
+| CTA Text | Select dropdown | Preset options | "Install", "Open", "Play Now", "Learn More", "Sign Up" |
 
-### 3a. Campaign Type Filter Pills
-Below the search bar, add a row of filter pills:
+### 5. Display Ad Preview Component
 
-- `All` | `Search` | `Display` | `App`
-- State: `campaignTypeFilter` (default: `'all'`)
-- Filter `filteredCampaigns` by `campaign_type` when not `'all'`
-- "New Campaign" button pre-fills the type from active filter
-- Counts shown on each pill (e.g., "Search (4)")
+**New file**: `src/components/ads/DisplayAdPreview.tsx`
 
-### 3b. Campaign Type Badges
-Each campaign row shows a small badge indicating its type:
-- Search: blue badge
-- Display: purple badge
-- App: green badge
+A banner-style preview that shows:
+- Business name and "Ad" badge at the top
+- Large image placeholder area (since we don't have image upload yet, show a placeholder)
+- Short headline displayed prominently
+- Description text below
+- CTA button at the bottom
+- Desktop/mobile toggle (banner vs. square format)
 
-### 3c. Selection Mode
-- Add a **checkbox icon button** in the header to toggle `selectionMode`
-- When active:
-  - Each campaign row gets a `Checkbox` on the left side
-  - A "Select All (filtered)" / "Deselect All" toggle at the top
-  - Clicking checkbox selects/deselects (does NOT expand/collapse)
-  - Campaign row click still expands/collapses (only checkbox toggles selection)
-- State: `selectionMode: boolean`, `selectedCampaignIds: Set<string>`
-- When selection mode is off, clear all selections
-- Pass selected IDs + callbacks down to the bulk bar
+### 6. App Ad Preview Component
 
-### 3d. Props Update
-Add new prop to `SearchPlannerStructurePanelProps`:
+**New file**: `src/components/ads/AppAdPreview.tsx`
+
+A mobile app install ad preview:
+- App icon placeholder with app platform badge (Android/iOS)
+- App name (from business name)
+- Headline text
+- Description text
+- Star rating placeholder
+- CTA install button
+- Campaign goal badge (Installs/In-App/Retargeting)
+
+### 7. Update SearchPlannerPreviewPanel
+
+**File**: `src/components/search-planner/SearchPlannerPreviewPanel.tsx`
+
+Add an `adType` prop. Based on the type:
+- `search` -- current Google search ad preview (no change)
+- `display` -- render `DisplayAdPreview` with long headline, short headlines, descriptions, CTA
+- `app` -- render `AppAdPreview` with headlines, descriptions, app info, CTA
+
+### 8. Update SearchPlanner Page
+
+**File**: `src/pages/SearchPlanner.tsx`
+
+- Pass `adType` to `SearchPlannerPreviewPanel` so it knows which preview to render
+- Update `LiveFields` interface to include display/app-specific fields:
+  ```typescript
+  interface LiveFields {
+    // Search fields (existing)
+    headlines: string[];
+    descriptions: string[];
+    sitelinks: { description: string; link: string }[];
+    callouts: string[];
+    landingPage: string;
+    businessName: string;
+    // Display fields
+    longHeadline?: string;
+    shortHeadlines?: string[];
+    ctaText?: string;
+    // App fields
+    appPlatform?: string;
+    appCampaignGoal?: string;
+    appStoreUrl?: string;
+  }
+  ```
+- Update `onFieldChange` to pass these new fields from the editor
+
+### 9. Update SearchPlannerQualityPanel
+
+The quality/compliance panel needs to adapt per ad type:
+- Search: current behavior (ad strength, MENA compliance, keyword relevance)
+- Display: simplified scoring (headline presence, description presence, CTA selected, image placeholder note)
+- App: simplified scoring (app URL validation, platform selected, goal selected, headline/description presence)
+
+### 10. Config Updates
+
+**File**: `src/config/searchAdsConfig.ts`
+
+Add display and app config sections:
+
 ```typescript
-defaultCampaignType?: 'search' | 'display' | 'app';
-```
-This allows the parent page to tell the structure panel what type to default to.
-
----
-
-## 4. SearchPlannerBulkBar: Floating Bulk Actions
-
-**New file**: `src/components/search-planner/SearchPlannerBulkBar.tsx`
-
-Follows the established `CampaignBulkActionsBar` pattern (floating `Card` at bottom center).
-
-### Actions
-
-| Action | Behavior |
-|--------|----------|
-| **Clear** | Deselects all, exits selection mode |
-| **Delete** | AlertDialog confirmation showing total ad groups + ads count that will be removed. Deletes from `search_campaigns` (cascade handles the rest). Invalidates `search-campaigns-hierarchy`, `ad-groups-hierarchy`, `ads-hierarchy` |
-| **Duplicate** | Duplicates all selected campaigns with their ad groups and ads. Shows progress bar. Uses same logic as existing `DuplicateCampaignDialog` but batched |
-| **Export** | Exports selected campaigns to JSON with full hierarchy (campaigns > ad groups > ads). Downloads as file |
-| **Change Status** | Dropdown: Active / Paused / Draft. Bulk updates `status` column on `search_campaigns` |
-
-### Props
-```typescript
-interface SearchPlannerBulkBarProps {
-  selectedCampaignIds: Set<string>;
-  campaigns: CampaignData[];
-  adGroups: AdGroupData[];
-  ads: AdData[];
-  onClearSelection: () => void;
-  onRefresh: () => void;
+display: {
+  longHeadline: { maxCharacters: 90 },
+  shortHeadlines: { maxCount: 5, maxCharacters: 30 },
+  descriptions: { maxCount: 5, maxCharacters: 90 },
+  ctaOptions: ['Learn More', 'Sign Up', 'Shop Now', ...],
+},
+app: {
+  headlines: { maxCount: 5, maxCharacters: 30 },
+  descriptions: { maxCount: 5, maxCharacters: 90 },
+  platforms: ['android', 'ios'],
+  goals: ['installs', 'in_app_events', 'retargeting'],
+  ctaOptions: ['Install', 'Open', 'Play Now', ...],
 }
 ```
 
-The component internally computes counts (ad groups, ads) for the selected campaigns to show in confirmations.
-
 ---
 
-## 5. DuplicateCampaignDialog: Carry campaign_type
+## Files Modified
 
-**File**: `src/components/search/DuplicateCampaignDialog.tsx`
-
-Currently the duplicate insert does not include `campaign_type` in the spread. Since we added it as a column, the existing `...rest` spread in the duplicate logic will carry it automatically. But the `Campaign` interface in this file needs updating to include `campaign_type?: string`.
-
----
-
-## 6. Routes: Add Display Planner
-
-**File**: `src/App.tsx`
-```tsx
-<Route path="/ads/display" element={<SearchPlanner adType="display" key="display" />} />
-```
-
-**File**: `src/components/AppSidebar.tsx`
-Add a "Display Planner" entry under ads items:
-```tsx
-{ title: "Display Planner", url: "/ads/display", icon: Image },
-```
-
-**File**: `src/components/layout/TopHeader.tsx`
-Add breadcrumb title mapping:
-```tsx
-if (path === "/ads/display") return "Display Planner";
-```
-
-App campaigns share the same planner UI with `adType="display"` for now (Display and App ads use the same format). The `campaign_type` column distinguishes them within the same planner instance.
-
----
-
-## 7. Structure Panel Query: Filter by campaign_type
-
-Currently the structure panel fetches ALL campaigns for the entity. With the new campaign type filter, the query remains the same (fetch all for entity), and filtering happens client-side using `campaignTypeFilter`. This keeps the code simple and avoids extra network calls when switching filters.
-
-When the planner is mounted via `/ads/display`, the `defaultCampaignType` prop defaults the filter to `'display'` (but user can switch to see all).
-
----
+| File | Change |
+|------|--------|
+| Database migration | Add `app_platform`, `app_campaign_goal`, `app_store_url` columns |
+| `src/config/searchAdsConfig.ts` | Add display and app config sections |
+| `src/components/search/SearchAdEditor.tsx` | Conditional form rendering per adType, update save logic |
+| `src/components/ads/DisplayAdPreview.tsx` | New banner-style preview component |
+| `src/components/ads/AppAdPreview.tsx` | New app install preview component |
+| `src/components/search-planner/SearchPlannerPreviewPanel.tsx` | Accept adType prop, render correct preview |
+| `src/pages/SearchPlanner.tsx` | Pass adType to preview, extend LiveFields for display/app fields |
+| `src/components/search-planner/SearchPlannerQualityPanel.tsx` | Adapt scoring per ad type |
 
 ## Implementation Order
 
-1. Database migration (add `campaign_type`, fix ads FK cascade)
-2. Update `CreateCampaignDialog.tsx` (campaign type selector + prop)
-3. Create `SearchPlannerBulkBar.tsx` (floating bulk actions)
-4. Update `SearchPlannerStructurePanel.tsx` (filter pills, type badges, selection mode, bulk bar)
-5. Update `DuplicateCampaignDialog.tsx` (campaign_type in interface)
-6. Add routes: `App.tsx`, `AppSidebar.tsx`, `TopHeader.tsx`
-7. Export from `index.ts`
-
+1. Database migration (add app columns)
+2. Update config with display/app field specs
+3. Create `DisplayAdPreview.tsx` and `AppAdPreview.tsx`
+4. Update `SearchAdEditor.tsx` with conditional rendering + save logic
+5. Update `SearchPlannerPreviewPanel.tsx` to accept adType and render correct preview
+6. Update `SearchPlanner.tsx` to pass adType and extended LiveFields
+7. Update `SearchPlannerQualityPanel.tsx` for type-aware scoring
