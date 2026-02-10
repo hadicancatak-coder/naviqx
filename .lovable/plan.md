@@ -1,209 +1,190 @@
 
-# Display & App Ad Editors with Custom Fields and Previews
 
-## Problem
+# Campaign-Level Settings + Validation Engine + Quality Panel Adaptation
 
-The editor currently renders **only Search ad fields** (15 headlines, 4 descriptions, sitelinks, callouts, DKI). When you create a Display or App campaign and add an ad, you get the same Search form -- which is completely wrong. These ad types have fundamentally different structures.
+## What's Wrong Today
 
----
+When you click a campaign name in the structure panel, the middle column goes **blank** ("Select an Ad to Edit"). There's no campaign-level configuration at all. The Quality Panel only understands Search ad metrics (Headlines 0/15, Descriptions 0/4, Sitelinks, Callouts). Display and App ads get the same irrelevant scoring.
 
-## What Each Ad Type Needs
-
-### Search Ads (already implemented)
-- 15 Headlines (30 chars each) with drag-to-reorder and DKI
-- 4 Descriptions (90 chars each)
-- Sitelinks (5 max)
-- Callouts (4 max)
-- Landing Page, Business Name, Path fields
-
-### Display Ads (new)
-- 1 Long Headline (90 chars) -- the main headline
-- 5 Short Headlines (30 chars each) -- Google rotates these
-- 5 Descriptions (90 chars each)
-- CTA Button Text (e.g., "Learn More", "Sign Up", "Shop Now")
-- Landing Page, Business Name
-- DB columns already exist: `long_headline`, `short_headlines`, `cta_text`
-
-### App Ads (new)
-- 5 Headlines (30 chars each)
-- 5 Descriptions (90 chars each)
-- App Platform: Android or iOS (select)
-- App Campaign Goal: Installs, In-App Events, or Retargeting (select)
-- App Store URL (Google Play or App Store link)
-- CTA Button Text
-- Requires new DB columns: `app_platform`, `app_campaign_goal`, `app_store_url`
+The previous plan overcomplicated things by proposing targeting blocks (demographics, geography, content). That's unnecessary -- **targeting is entity-based** in this system. This plan strips it down to what actually matters per campaign type.
 
 ---
 
-## Changes
+## What Changes
 
 ### 1. Database Migration
 
-Add App-specific columns to the `ads` table:
+Add campaign-level configuration columns to `search_campaigns`:
 
 ```sql
-ALTER TABLE ads ADD COLUMN app_platform text;        -- 'android' | 'ios'
-ALTER TABLE ads ADD COLUMN app_campaign_goal text;    -- 'installs' | 'in_app_events' | 'retargeting'
-ALTER TABLE ads ADD COLUMN app_store_url text;
+-- App campaign settings
+ALTER TABLE search_campaigns ADD COLUMN app_platform text;
+ALTER TABLE search_campaigns ADD COLUMN app_store_id text;
+ALTER TABLE search_campaigns ADD COLUMN app_store_url text;
+ALTER TABLE search_campaigns ADD COLUMN app_objective text;
+ALTER TABLE search_campaigns ADD COLUMN optimization_goal text;
+ALTER TABLE search_campaigns ADD COLUMN optimization_event text;
+ALTER TABLE search_campaigns ADD COLUMN bidding_type text;
+ALTER TABLE search_campaigns ADD COLUMN bidding_target numeric;
+ALTER TABLE search_campaigns ADD COLUMN audience_mode text;
+
+-- Display campaign settings
+ALTER TABLE search_campaigns ADD COLUMN display_objective text;
+
+-- Shared readiness tracking
+ALTER TABLE search_campaigns ADD COLUMN readiness_status text DEFAULT 'not_ready';
 ```
 
-No new RLS policies needed -- existing `ads` policies cover these columns.
+All nullable. Existing campaigns unaffected.
 
-### 2. Refactor SearchAdEditor: Conditional Field Rendering
+### 2. CampaignDetailPanel (new component)
 
-**File**: `src/components/search/SearchAdEditor.tsx`
+**New file**: `src/components/search-planner/CampaignDetailPanel.tsx`
 
-The editor determines `adType` from `ad?.ad_type || propAdType || "search"`. Currently it always renders search fields. The change:
+When a user clicks a campaign name, this fills the middle column instead of blank space. It adapts sections based on `campaign_type`.
 
-- Wrap the form body in a conditional:
-  - `adType === "search"` -- render current search fields (headlines, descriptions, sitelinks, callouts, DKI, keywords)
-  - `adType === "display"` -- render display fields (long headline, short headlines, descriptions, CTA)
-  - `adType === "app"` -- render app fields (headlines, descriptions, app platform, campaign goal, app store URL, CTA)
+#### Search campaigns show:
+- Campaign name (editable inline)
+- Objective (editable)
+- Status badge
+- Readiness status (computed from child ad groups and ads)
+- Google Parity Checklist (collapsible)
 
-- Update the `handleSave` function to include type-specific data:
-  - Search: current behavior (headlines, descriptions, sitelinks, callouts)
-  - Display: save `long_headline`, `short_headlines`, `descriptions`, `cta_text`
-  - App: save `headlines`, `descriptions`, `app_platform`, `app_campaign_goal`, `app_store_url`, `cta_text`
+#### App campaigns show:
+- Campaign name + status
+- **Objective**: App Installs / App Engagement / App Pre-Registration (select)
+- **Optimization Goal**: Installs / In-app Action (select). If In-app Action: event name input
+- **Bidding**: Target CPI / Target CPA (select + numeric input)
+- **Platform & Store**: Android / iOS (select), App ID input, Store URL (derived, read-only)
+- **Audience Mode**: All users / New users only / Existing users (select)
+- Readiness status + Google Parity Checklist
 
-- Update the title to show "Edit Display Ad" / "Create App Ad" etc.
+#### Display campaigns show:
+- Campaign name + status
+- **Objective**: Awareness / Consideration / Conversions (select)
+- Readiness status + Google Parity Checklist
 
-### 3. Display Ad Form Section
+No targeting blocks, no demographics, no geography. Entity handles that.
 
-New form section rendered when `adType === "display"`:
+### 3. Validation Engine
 
-| Field | Type | Limit | Notes |
-|-------|------|-------|-------|
-| Long Headline | Single input | 90 chars | Primary headline, character counter |
-| Short Headlines (1-5) | 5 inputs | 30 chars each | Progressive disclosure (start with 3) |
-| Descriptions (1-5) | 5 inputs | 90 chars each | Progressive disclosure (start with 2) |
-| CTA Text | Select dropdown | Preset options | "Learn More", "Sign Up", "Shop Now", "Get Quote", "Apply Now", "Contact Us", "Download", "Book Now" |
-| Landing Page | Input | URL | Same as search |
-| Business Name | Input | Text | Same as search |
+**New file**: `src/lib/campaignValidation.ts`
 
-### 4. App Ad Form Section
-
-New form section rendered when `adType === "app"`:
-
-| Field | Type | Limit | Notes |
-|-------|------|-------|-------|
-| App Platform | Select | "Android" / "iOS" | Required |
-| Campaign Goal | Select | "Installs" / "In-App Events" / "Retargeting" | Required |
-| App Store URL | Input | URL | Google Play or App Store link |
-| Headlines (1-5) | 5 inputs | 30 chars each | Progressive disclosure |
-| Descriptions (1-5) | 5 inputs | 90 chars each | Progressive disclosure |
-| CTA Text | Select dropdown | Preset options | "Install", "Open", "Play Now", "Learn More", "Sign Up" |
-
-### 5. Display Ad Preview Component
-
-**New file**: `src/components/ads/DisplayAdPreview.tsx`
-
-A banner-style preview that shows:
-- Business name and "Ad" badge at the top
-- Large image placeholder area (since we don't have image upload yet, show a placeholder)
-- Short headline displayed prominently
-- Description text below
-- CTA button at the bottom
-- Desktop/mobile toggle (banner vs. square format)
-
-### 6. App Ad Preview Component
-
-**New file**: `src/components/ads/AppAdPreview.tsx`
-
-A mobile app install ad preview:
-- App icon placeholder with app platform badge (Android/iOS)
-- App name (from business name)
-- Headline text
-- Description text
-- Star rating placeholder
-- CTA install button
-- Campaign goal badge (Installs/In-App/Retargeting)
-
-### 7. Update SearchPlannerPreviewPanel
-
-**File**: `src/components/search-planner/SearchPlannerPreviewPanel.tsx`
-
-Add an `adType` prop. Based on the type:
-- `search` -- current Google search ad preview (no change)
-- `display` -- render `DisplayAdPreview` with long headline, short headlines, descriptions, CTA
-- `app` -- render `AppAdPreview` with headlines, descriptions, app info, CTA
-
-### 8. Update SearchPlanner Page
-
-**File**: `src/pages/SearchPlanner.tsx`
-
-- Pass `adType` to `SearchPlannerPreviewPanel` so it knows which preview to render
-- Update `LiveFields` interface to include display/app-specific fields:
-  ```typescript
-  interface LiveFields {
-    // Search fields (existing)
-    headlines: string[];
-    descriptions: string[];
-    sitelinks: { description: string; link: string }[];
-    callouts: string[];
-    landingPage: string;
-    businessName: string;
-    // Display fields
-    longHeadline?: string;
-    shortHeadlines?: string[];
-    ctaText?: string;
-    // App fields
-    appPlatform?: string;
-    appCampaignGoal?: string;
-    appStoreUrl?: string;
-  }
-  ```
-- Update `onFieldChange` to pass these new fields from the editor
-
-### 9. Update SearchPlannerQualityPanel
-
-The quality/compliance panel needs to adapt per ad type:
-- Search: current behavior (ad strength, MENA compliance, keyword relevance)
-- Display: simplified scoring (headline presence, description presence, CTA selected, image placeholder note)
-- App: simplified scoring (app URL validation, platform selected, goal selected, headline/description presence)
-
-### 10. Config Updates
-
-**File**: `src/config/searchAdsConfig.ts`
-
-Add display and app config sections:
+Pure function: takes campaign + its ad groups + their ads, returns:
 
 ```typescript
-display: {
-  longHeadline: { maxCharacters: 90 },
-  shortHeadlines: { maxCount: 5, maxCharacters: 30 },
-  descriptions: { maxCount: 5, maxCharacters: 90 },
-  ctaOptions: ['Learn More', 'Sign Up', 'Shop Now', ...],
-},
-app: {
-  headlines: { maxCount: 5, maxCharacters: 30 },
-  descriptions: { maxCount: 5, maxCharacters: 90 },
-  platforms: ['android', 'ios'],
-  goals: ['installs', 'in_app_events', 'retargeting'],
-  ctaOptions: ['Install', 'Open', 'Play Now', ...],
+interface ValidationResult {
+  ready: boolean;
+  blocking: string[];
+  warnings: string[];
 }
 ```
 
+**Search rules:**
+- FAIL: No ad groups
+- FAIL: Any ad group has 0 ads
+- FAIL: Any ad has fewer than 3 headlines or 2 descriptions
+- FAIL: Any ad missing landing page
+- FAIL: Any ad group has 0 keywords
+- WARN: Any ad has fewer than 10 headlines
+
+**App rules:**
+- FAIL: No objective
+- FAIL: No optimization goal
+- FAIL: No app platform
+- FAIL: No app store ID
+- FAIL: No ad groups or any ad has 0 headlines/descriptions
+- WARN: Only one headline per ad
+
+**Display rules:**
+- FAIL: No ad groups
+- FAIL: Any ad missing short headline or description
+- FAIL: Any ad missing business name
+- WARN: No long headline on any ad
+- WARN: No objective set
+
+### 4. Google Parity Checklist
+
+**New file**: `src/components/search-planner/GoogleParityChecklist.tsx`
+
+Collapsible panel with green checkmark / red X per requirement. Embedded inside `CampaignDetailPanel` and also available in the Quality panel.
+
+**Search checklist:**
+- At least 1 RSA per ad group
+- 3+ headlines per RSA
+- 2+ descriptions per RSA
+- Final URL set
+- Keywords present
+
+**App checklist:**
+- Objective selected
+- Optimization goal selected
+- App linked (platform + store ID)
+- At least 1 headline
+- At least 1 description
+- Audience mode defined
+- Bidding strategy defined
+
+**Display checklist:**
+- At least 1 short headline
+- At least 1 description
+- Business name set
+- Long headline present (recommended)
+- Objective set
+
+### 5. Update Quality Panel
+
+**File**: `src/components/search-planner/SearchPlannerQualityPanel.tsx`
+
+Add `adType` prop. Metrics adapt per type:
+
+- **Search** (no change): Headlines 0/15, Descriptions 0/4, Sitelinks, Callouts, Ad Strength, MENA policy
+- **Display**: Short Headlines x/5, Descriptions x/5, Long Headline present/missing, CTA set/missing. No sitelinks/callouts metrics
+- **App**: Headlines x/5, Descriptions x/5, Platform set, Goal set, Store URL set. No sitelinks/callouts metrics
+
+When no ad is selected but a campaign is, show campaign-level readiness instead of ad-level metrics.
+
+### 6. Readiness Dots in Structure Panel
+
+**File**: `src/components/search-planner/SearchPlannerStructurePanel.tsx`
+
+Each campaign row gets a small colored dot:
+- Green: READY (all validation passes)
+- Red: NOT READY (any blocking issue)
+- Computed client-side using the validation engine against loaded hierarchy data
+
+### 7. Wire CampaignDetailPanel into SearchPlanner
+
+**File**: `src/pages/SearchPlanner.tsx`
+
+- Add `campaignContext` state (like `editorContext` and `adGroupContext`)
+- `handleCampaignClick` sets `campaignContext` instead of clearing everything
+- Middle column renders `CampaignDetailPanel` when `campaignContext` is set
+- Right column shows campaign-level readiness + parity checklist when campaign is selected
+
 ---
 
-## Files Modified
+## Files
 
 | File | Change |
 |------|--------|
-| Database migration | Add `app_platform`, `app_campaign_goal`, `app_store_url` columns |
-| `src/config/searchAdsConfig.ts` | Add display and app config sections |
-| `src/components/search/SearchAdEditor.tsx` | Conditional form rendering per adType, update save logic |
-| `src/components/ads/DisplayAdPreview.tsx` | New banner-style preview component |
-| `src/components/ads/AppAdPreview.tsx` | New app install preview component |
-| `src/components/search-planner/SearchPlannerPreviewPanel.tsx` | Accept adType prop, render correct preview |
-| `src/pages/SearchPlanner.tsx` | Pass adType to preview, extend LiveFields for display/app fields |
-| `src/components/search-planner/SearchPlannerQualityPanel.tsx` | Adapt scoring per ad type |
+| Database migration | Add campaign-level columns |
+| `src/lib/campaignValidation.ts` | **New** -- validation engine |
+| `src/components/search-planner/GoogleParityChecklist.tsx` | **New** -- parity checklist |
+| `src/components/search-planner/CampaignDetailPanel.tsx` | **New** -- campaign config panel |
+| `src/components/search-planner/SearchPlannerQualityPanel.tsx` | Add `adType` prop, type-aware metrics |
+| `src/components/search-planner/SearchPlannerStructurePanel.tsx` | Readiness dots on campaign rows |
+| `src/components/search-planner/index.ts` | Export new components |
+| `src/pages/SearchPlanner.tsx` | Wire campaign click to detail panel, pass adType to quality panel |
 
 ## Implementation Order
 
-1. Database migration (add app columns)
-2. Update config with display/app field specs
-3. Create `DisplayAdPreview.tsx` and `AppAdPreview.tsx`
-4. Update `SearchAdEditor.tsx` with conditional rendering + save logic
-5. Update `SearchPlannerPreviewPanel.tsx` to accept adType and render correct preview
-6. Update `SearchPlanner.tsx` to pass adType and extended LiveFields
-7. Update `SearchPlannerQualityPanel.tsx` for type-aware scoring
+1. Database migration
+2. `campaignValidation.ts`
+3. `GoogleParityChecklist.tsx`
+4. `CampaignDetailPanel.tsx`
+5. Update `SearchPlannerQualityPanel.tsx`
+6. Update `SearchPlannerStructurePanel.tsx` (readiness dots)
+7. Update `SearchPlanner.tsx` (wire everything)
+8. Update `index.ts` exports
+
