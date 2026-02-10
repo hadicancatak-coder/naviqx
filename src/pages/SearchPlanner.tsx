@@ -103,6 +103,12 @@ export default function SearchPlanner() {
       callouts: Array.isArray(ad?.callouts) ? ad.callouts : [],
       landingPage: ad?.landing_page || "",
       businessName: ad?.business_name || "",
+      longHeadline: (ad as Record<string, unknown>)?.long_headline as string || "",
+      shortHeadlines: Array.isArray((ad as Record<string, unknown>)?.short_headlines) ? (ad as Record<string, unknown>).short_headlines as string[] : [],
+      ctaText: (ad as Record<string, unknown>)?.cta_text as string || "",
+      appPlatform: (ad as Record<string, unknown>)?.app_platform as string || "",
+      appCampaignGoal: (ad as Record<string, unknown>)?.app_campaign_goal as string || "",
+      appStoreUrl: (ad as Record<string, unknown>)?.app_store_url as string || "",
     });
   };
 
@@ -135,6 +141,12 @@ export default function SearchPlanner() {
       callouts: [],
       landingPage: "",
       businessName: "",
+      longHeadline: "",
+      shortHeadlines: [],
+      ctaText: "",
+      appPlatform: "",
+      appCampaignGoal: "",
+      appStoreUrl: "",
     });
   };
 
