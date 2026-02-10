@@ -35,6 +35,7 @@ import { toast } from "sonner";
 
 // Import dialogs
 import { CreateCampaignDialog } from "@/components/ads/CreateCampaignDialog";
+import { CreateAdGroupDialog } from "@/components/ads/CreateAdGroupDialog";
 import { DeleteAdDialog } from "@/components/search/DeleteAdDialog";
 import { DeleteAdGroupDialog } from "@/components/search/DeleteAdGroupDialog";
 import { DeleteCampaignDialog } from "@/components/search/DeleteCampaignDialog";
@@ -230,7 +231,7 @@ export function SearchPlannerStructurePanel({
   };
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['campaigns-hierarchy'] });
+    queryClient.invalidateQueries({ queryKey: ['search-campaigns-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ad-groups-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ads-hierarchy'] });
   };
@@ -561,6 +562,16 @@ export function SearchPlannerStructurePanel({
         defaultEntity={selectedEntity}
         onSuccess={handleRefresh}
       />
+
+      {showCreateAdGroup && (
+        <CreateAdGroupDialog
+          open={!!showCreateAdGroup}
+          onOpenChange={(open) => !open && setShowCreateAdGroup(null)}
+          campaignId={showCreateAdGroup.campaignId}
+          campaignName={showCreateAdGroup.campaignName}
+          onSuccess={handleRefresh}
+        />
+      )}
 
       {deleteAdDialog && (
         <DeleteAdDialog
