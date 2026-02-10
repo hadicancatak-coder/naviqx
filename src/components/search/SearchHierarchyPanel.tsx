@@ -26,10 +26,11 @@ interface SearchHierarchyPanelProps {
   onEditAd: (ad: any, adGroup: any, campaign: any, entity: string) => void;
   onCreateAd: (adGroup: any, campaign: any, entity: string) => void;
   onCampaignClick?: (campaign: any, entity: string) => void;
+  onAdGroupClick?: (adGroup: any, campaign: any, entity: string) => void;
   adType?: "search" | "display";
 }
 
-export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, adType = "search" }: SearchHierarchyPanelProps) {
+export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, onAdGroupClick, adType = "search" }: SearchHierarchyPanelProps) {
   const queryClient = useQueryClient();
   const [selectedEntity, setSelectedEntity] = useState<string>("UAE");
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
@@ -408,7 +409,12 @@ export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, ad
                                 <div className="group flex items-center gap-sm p-sm pl-sm ml-lg hover:bg-accent/30 rounded-lg transition-all">
                                   <div 
                                     className="flex items-center gap-sm flex-1 cursor-pointer min-w-0"
-                                    onClick={() => toggleAdGroup(adGroup.id)}
+                                    onClick={() => {
+                                      if (onAdGroupClick) {
+                                        onAdGroupClick(adGroup, campaign, selectedEntity);
+                                      }
+                                      toggleAdGroup(adGroup.id);
+                                    }}
                                   >
                                     {isAdGroupExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                                     <Folder className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import SearchAdEditor from "@/components/search/SearchAdEditor";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { SearchPlannerStructurePanel, SearchPlannerPreviewPanel, SearchPlannerQualityPanel } from "@/components/search-planner";
+import { SearchPlannerStructurePanel, SearchPlannerPreviewPanel, SearchPlannerQualityPanel, AdGroupDetailPanel } from "@/components/search-planner";
 import { Search, FileText, Share2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,6 +33,8 @@ interface AdGroupData {
   name: string;
   keywords?: unknown;
   match_types?: unknown;
+  campaign_id?: string;
+  bidding_strategy?: string | null;
 }
 
 interface CampaignData {
@@ -42,6 +44,12 @@ interface CampaignData {
 
 interface EditorContext {
   ad: AdData;
+  adGroup: AdGroupData;
+  campaign: CampaignData;
+  entity: string;
+}
+
+interface AdGroupContext {
   adGroup: AdGroupData;
   campaign: CampaignData;
   entity: string;
@@ -62,6 +70,7 @@ interface SearchPlannerProps {
 
 export default function SearchPlanner({ adType = "search" }: SearchPlannerProps) {
   const [editorContext, setEditorContext] = useState<EditorContext | null>(null);
+  const [adGroupContext, setAdGroupContext] = useState<AdGroupContext | null>(null);
   const [rightPanelTab, setRightPanelTab] = useState<"preview" | "quality">("preview");
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<string>("UAE");
@@ -76,6 +85,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
 
   const handleEditAd = (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setEditorContext({ ad, adGroup, campaign, entity });
+    setAdGroupContext(null);
     setSelectedEntity(entity);
     // Initialize live fields from ad data
     setLiveFields({
@@ -90,6 +100,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
 
   const handleCreateAd = (adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setSelectedEntity(entity);
+    setAdGroupContext(null);
     const newAd: AdData = {
       name: `New ${adType === 'search' ? 'Search' : 'Display'} Ad`,
       ad_group_id: adGroup.id,
@@ -119,6 +130,13 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
 
   const handleCampaignClick = (_campaign: CampaignData, _entity: string) => {
     setEditorContext(null);
+    setAdGroupContext(null);
+  };
+
+  const handleAdGroupClick = (adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
+    setEditorContext(null);
+    setAdGroupContext({ adGroup, campaign, entity });
+    setSelectedEntity(entity);
   };
 
   const handleSave = () => {
@@ -178,6 +196,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
               onEditAd={handleEditAd}
               onCreateAd={handleCreateAd}
               onCampaignClick={handleCampaignClick}
+              onAdGroupClick={handleAdGroupClick}
               adType={adType}
             />
           </ResizablePanel>
@@ -198,6 +217,28 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                 showHeader={false}
                 hidePreview={true}
                 onFieldChange={handleFieldChange}
+              />
+            ) : adGroupContext ? (
+              <AdGroupDetailPanel
+                key={adGroupContext.adGroup.id}
+                adGroup={adGroupContext.adGroup}
+                campaign={adGroupContext.campaign}
+                entity={adGroupContext.entity}
+                onEditAd={(ad) => {
+                  handleEditAd(
+                    ad as AdData,
+                    adGroupContext.adGroup,
+                    adGroupContext.campaign,
+                    adGroupContext.entity
+                  );
+                }}
+                onCreateAd={() => {
+                  handleCreateAd(
+                    adGroupContext.adGroup,
+                    adGroupContext.campaign,
+                    adGroupContext.entity
+                  );
+                }}
               />
             ) : (
               <div className="h-full flex items-center justify-center p-lg">
