@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Monitor, Smartphone, ChevronLeft, ChevronRight, Globe } from "lucide-react";
+import { Monitor, Smartphone, ChevronLeft, ChevronRight, Globe, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PreviewAssemblyEngine } from "./PreviewAssemblyEngine";
+import cfiEmblem from "@/assets/cfi-logo-emblem.png";
 
 interface Sitelink {
   description: string;
@@ -20,15 +21,12 @@ interface SearchPlannerPreviewPanelProps {
   sitelinks: Sitelink[];
   callouts: string[];
   adType?: "search" | "display" | "app";
-  // Display fields
   longHeadline?: string;
   shortHeadlines?: string[];
   ctaText?: string;
-  // App fields
   appPlatform?: string;
   appCampaignGoal?: string;
   appStoreUrl?: string;
-  // Context
   adId?: string;
   campaignId?: string;
 }
@@ -51,7 +49,6 @@ export function SearchPlannerPreviewPanel({
   campaignId,
 }: SearchPlannerPreviewPanelProps) {
 
-  // Display & App: use assembly engine
   if (adType === "display" || adType === "app") {
     return (
       <PreviewAssemblyEngine
@@ -69,7 +66,6 @@ export function SearchPlannerPreviewPanel({
     );
   }
 
-  // Search ad preview (existing)
   return <SearchAdPreviewPanel
     headlines={headlines}
     descriptions={descriptions}
@@ -80,7 +76,6 @@ export function SearchPlannerPreviewPanel({
   />;
 }
 
-// Extracted search preview into its own component
 function SearchAdPreviewPanel({ headlines, descriptions, landingPage, businessName, sitelinks, callouts }: {
   headlines: string[]; descriptions: string[]; landingPage: string; businessName: string; sitelinks: Sitelink[]; callouts: string[];
 }) {
@@ -111,7 +106,7 @@ function SearchAdPreviewPanel({ headlines, descriptions, landingPage, businessNa
 
   return (
     <div className="p-md">
-      <Card className="bg-card border-border shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-card border-border shadow-md ring-1 ring-border rounded-xl overflow-hidden">
         <CardHeader className="p-md pb-sm border-b border-border bg-card">
           <div className="flex items-center justify-between">
             <CardTitle className="text-body-sm font-semibold text-foreground flex items-center gap-xs">
@@ -145,42 +140,41 @@ function SearchAdPreviewPanel({ headlines, descriptions, landingPage, businessNa
             </div>
           )}
         </CardHeader>
-        <CardContent className="p-md">
-          <div className={cn("bg-background border border-border rounded-lg p-md transition-smooth", previewMode === 'mobile' && "max-w-[320px] mx-auto")}>
-            <div className="flex items-center gap-xs mb-xs">
-              <Badge variant="outline" className="text-[10px] px-xs py-0 rounded-sm bg-transparent border-muted-foreground/40 text-muted-foreground font-normal">Ad</Badge>
-              <span className="text-metadata text-muted-foreground">·</span>
-              <span className="text-metadata text-foreground">{displayUrl}</span>
-            </div>
-            <div className="mb-xs">
-              <a href="#" className="text-primary hover:underline transition-smooth cursor-pointer" onClick={(e) => e.preventDefault()}>
-                <h3 className={cn("font-medium leading-tight", previewMode === 'desktop' ? "text-heading-sm" : "text-body")}>
-                  {currentCombination.headlines.slice(0, 3).join(' | ') || 'Your Headlines Here'}
-                </h3>
-              </a>
-            </div>
-            <div className="mb-sm">
-              <p className="text-body-sm text-foreground leading-relaxed">
-                {currentCombination.descriptions.join(' ') || 'Your description text will appear here.'}
-              </p>
-            </div>
-            {validSitelinks.length > 0 && (
-              <div className={cn("flex flex-wrap gap-xs pt-sm border-t border-border", previewMode === 'mobile' && "flex-col")}>
-                {validSitelinks.slice(0, previewMode === 'desktop' ? 4 : 2).map((sitelink, index) => (
-                  <a key={index} href="#" className="text-primary text-body-sm hover:underline transition-smooth" onClick={(e) => e.preventDefault()}>
-                    {sitelink.description || sitelink.link}
-                  </a>
-                ))}
+        <CardContent className="p-md bg-muted/10">
+          {/* Wrap in device frame for mobile */}
+          {previewMode === 'mobile' ? (
+            <div className="max-w-[360px] mx-auto">
+              <div className="border-2 border-border/60 rounded-[24px] p-[3px] bg-muted/20 shadow-md">
+                <div className="rounded-[21px] overflow-hidden bg-background">
+                  <div className="h-6 bg-muted/30 flex items-center justify-center">
+                    <div className="w-16 h-1.5 bg-border/50 rounded-full" />
+                  </div>
+                  <SearchSerpContent
+                    currentCombination={currentCombination}
+                    displayUrl={displayUrl}
+                    validSitelinks={validSitelinks}
+                    validCallouts={validCallouts}
+                    headlines={headlines}
+                    descriptions={descriptions}
+                    isMobile
+                  />
+                </div>
               </div>
-            )}
-            {validCallouts.length > 0 && (
-              <div className="flex flex-wrap gap-xs pt-xs text-metadata text-muted-foreground">
-                {validCallouts.slice(0, 4).map((callout, index) => (
-                  <span key={index}>{callout}{index < validCallouts.length - 1 && index < 3 && ' · '}</span>
-                ))}
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="bg-background border border-border rounded-lg overflow-hidden shadow-sm">
+              <SearchSerpContent
+                currentCombination={currentCombination}
+                displayUrl={displayUrl}
+                validSitelinks={validSitelinks}
+                validCallouts={validCallouts}
+                headlines={headlines}
+                descriptions={descriptions}
+                isMobile={false}
+              />
+            </div>
+          )}
+
           <div className="mt-md pt-md border-t border-border">
             <div className="grid grid-cols-2 gap-sm">
               <div className="text-center p-sm bg-muted/50 rounded-md">
@@ -195,6 +189,70 @@ function SearchAdPreviewPanel({ headlines, descriptions, landingPage, businessNa
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Extracted SERP content to reuse in both desktop and mobile frames
+function SearchSerpContent({ currentCombination, displayUrl, validSitelinks, validCallouts, headlines, descriptions, isMobile }: {
+  currentCombination: { headlines: string[]; descriptions: string[] };
+  displayUrl: string;
+  validSitelinks: Sitelink[];
+  validCallouts: string[];
+  headlines: string[];
+  descriptions: string[];
+  isMobile: boolean;
+}) {
+  return (
+    <div className="p-md">
+      {/* Fake Google search bar */}
+      <div className="mb-md">
+        <div className="flex items-center gap-sm bg-card border border-border rounded-full px-md py-sm shadow-sm">
+          <Search className="h-4 w-4 text-muted-foreground/50" />
+          <span className="text-body-sm text-muted-foreground/50 flex-1">{displayUrl}</span>
+          <div className="w-7 h-7 rounded-full bg-primary/10 overflow-hidden flex-shrink-0">
+            <img src={cfiEmblem} alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+      </div>
+
+      {/* Ad result */}
+      <div className="flex items-center gap-xs mb-xs">
+        <img src={cfiEmblem} alt="" className="w-5 h-5 rounded-sm object-cover" />
+        <div className="flex flex-col">
+          <span className="text-metadata text-foreground">{displayUrl}</span>
+        </div>
+        <span className="text-metadata text-muted-foreground">·</span>
+        <Badge variant="outline" className="text-[10px] px-xs py-0 rounded-sm bg-transparent border-muted-foreground/40 text-muted-foreground font-normal">Sponsored</Badge>
+      </div>
+      <div className="mb-xs">
+        <a href="#" className="text-primary hover:underline transition-smooth cursor-pointer" onClick={(e) => e.preventDefault()}>
+          <h3 className={cn("font-medium leading-tight", isMobile ? "text-body" : "text-heading-sm")}>
+            {currentCombination.headlines.slice(0, 3).join(' | ') || 'Your Headlines Here'}
+          </h3>
+        </a>
+      </div>
+      <div className="mb-sm">
+        <p className="text-body-sm text-foreground leading-relaxed">
+          {currentCombination.descriptions.join(' ') || 'Your description text will appear here.'}
+        </p>
+      </div>
+      {validSitelinks.length > 0 && (
+        <div className={cn("flex flex-wrap gap-xs pt-sm border-t border-border", isMobile && "flex-col")}>
+          {validSitelinks.slice(0, isMobile ? 2 : 4).map((sitelink, index) => (
+            <a key={index} href="#" className="text-primary text-body-sm hover:underline transition-smooth" onClick={(e) => e.preventDefault()}>
+              {sitelink.description || sitelink.link}
+            </a>
+          ))}
+        </div>
+      )}
+      {validCallouts.length > 0 && (
+        <div className="flex flex-wrap gap-xs pt-xs text-metadata text-muted-foreground">
+          {validCallouts.slice(0, 4).map((callout, index) => (
+            <span key={index}>{callout}{index < validCallouts.length - 1 && index < 3 && ' · '}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
