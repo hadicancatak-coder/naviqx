@@ -21,6 +21,15 @@ interface SearchPlannerQualityPanelProps {
   entity: string;
   keywords?: string[];
   matchTypes?: string[];
+  adType?: "search" | "display" | "app";
+  // Display-specific
+  longHeadline?: string;
+  shortHeadlines?: string[];
+  ctaText?: string;
+  // App-specific
+  appPlatform?: string;
+  appCampaignGoal?: string;
+  appStoreUrl?: string;
 }
 
 export function SearchPlannerQualityPanel({
@@ -31,6 +40,13 @@ export function SearchPlannerQualityPanel({
   entity,
   keywords = [],
   matchTypes = [],
+  adType = "search",
+  longHeadline,
+  shortHeadlines = [],
+  ctaText,
+  appPlatform,
+  appCampaignGoal,
+  appStoreUrl,
 }: SearchPlannerQualityPanelProps) {
   
   const adStrength = useMemo(() => {
@@ -70,6 +86,30 @@ export function SearchPlannerQualityPanel({
   }, [score]);
 
   const metrics = useMemo(() => {
+    if (adType === 'display') {
+      const validShortHeadlines = (shortHeadlines.length > 0 ? shortHeadlines : headlines).filter(h => h?.trim());
+      const validDescriptions = descriptions.filter(d => d?.trim());
+      return [
+        { name: 'Short Headlines', current: validShortHeadlines.length, recommended: 5, status: validShortHeadlines.length >= 3 ? 'success' : validShortHeadlines.length >= 1 ? 'warning' : 'error' },
+        { name: 'Descriptions', current: validDescriptions.length, recommended: 5, status: validDescriptions.length >= 3 ? 'success' : validDescriptions.length >= 1 ? 'warning' : 'error' },
+        { name: 'Long Headline', current: longHeadline?.trim() ? 1 : 0, recommended: 1, status: longHeadline?.trim() ? 'success' : 'warning' },
+        { name: 'CTA', current: ctaText?.trim() ? 1 : 0, recommended: 1, status: ctaText?.trim() ? 'success' : 'neutral' },
+      ];
+    }
+
+    if (adType === 'app') {
+      const validHeadlines = headlines.filter(h => h?.trim());
+      const validDescriptions = descriptions.filter(d => d?.trim());
+      return [
+        { name: 'Headlines', current: validHeadlines.length, recommended: 5, status: validHeadlines.length >= 3 ? 'success' : validHeadlines.length >= 1 ? 'warning' : 'error' },
+        { name: 'Descriptions', current: validDescriptions.length, recommended: 5, status: validDescriptions.length >= 3 ? 'success' : validDescriptions.length >= 1 ? 'warning' : 'error' },
+        { name: 'Platform', current: appPlatform ? 1 : 0, recommended: 1, status: appPlatform ? 'success' : 'error' },
+        { name: 'Goal', current: appCampaignGoal ? 1 : 0, recommended: 1, status: appCampaignGoal ? 'success' : 'error' },
+        { name: 'Store URL', current: appStoreUrl ? 1 : 0, recommended: 1, status: appStoreUrl ? 'success' : 'warning' },
+      ];
+    }
+
+    // Search (default)
     const validHeadlines = headlines.filter(h => h?.trim());
     const validDescriptions = descriptions.filter(d => d?.trim());
     const validSitelinks = sitelinks.filter(s => s?.description?.trim());
@@ -81,7 +121,7 @@ export function SearchPlannerQualityPanel({
       { name: 'Sitelinks', current: validSitelinks.length, recommended: 4, status: validSitelinks.length >= 4 ? 'success' : validSitelinks.length >= 2 ? 'warning' : 'neutral' },
       { name: 'Callouts', current: validCallouts.length, recommended: 4, status: validCallouts.length >= 4 ? 'success' : validCallouts.length >= 2 ? 'warning' : 'neutral' },
     ];
-  }, [headlines, descriptions, sitelinks, callouts]);
+  }, [headlines, descriptions, sitelinks, callouts, adType, shortHeadlines, longHeadline, ctaText, appPlatform, appCampaignGoal, appStoreUrl]);
 
   return (
     <div className="p-md space-y-md">
@@ -150,22 +190,26 @@ export function SearchPlannerQualityPanel({
             </div>
           )}
 
-          {/* Warning Sections */}
-          <WarningSection
-            title="Ad Relevancy"
-            icon={<Target className="h-3.5 w-3.5 text-primary" />}
-            warnings={relevancyWarnings}
-          />
-          <WarningSection
-            title="Intent Catch"
-            icon={<Shield className="h-3.5 w-3.5 text-warning" />}
-            warnings={intentWarnings}
-          />
-          <WarningSection
-            title="MENA Policy"
-            icon={<Globe className="h-3.5 w-3.5 text-info" />}
-            warnings={policyWarnings}
-          />
+          {/* Warning Sections (Search only) */}
+          {adType === 'search' && (
+            <>
+              <WarningSection
+                title="Ad Relevancy"
+                icon={<Target className="h-3.5 w-3.5 text-primary" />}
+                warnings={relevancyWarnings}
+              />
+              <WarningSection
+                title="Intent Catch"
+                icon={<Shield className="h-3.5 w-3.5 text-warning" />}
+                warnings={intentWarnings}
+              />
+              <WarningSection
+                title="MENA Policy"
+                icon={<Globe className="h-3.5 w-3.5 text-info" />}
+                warnings={policyWarnings}
+              />
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
