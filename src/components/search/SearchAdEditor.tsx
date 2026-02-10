@@ -30,6 +30,7 @@ import { UnifiedBestPracticeChecker } from "./UnifiedBestPracticeChecker";
 import { AdComplianceChecker } from "../AdComplianceChecker";
 import { Plus } from "lucide-react";
 import { KeywordStrategySection } from "../search-planner/KeywordStrategySection";
+import { AssetPicker } from "../search-planner/AssetPicker";
 
 interface SearchAdEditorProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -834,6 +835,16 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                   <Label>Business Name</Label>
                   <Input placeholder="Your Business" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
                 </div>
+
+                {/* Creative Assets */}
+                <div className="space-y-2">
+                  <Label className="text-body-sm font-semibold">Creative Assets</Label>
+                  <AssetPicker
+                    adId={ad?.id}
+                    campaignId={campaign?.id}
+                    assetTypes={['image_square', 'image_landscape', 'logo_square', 'logo_wide']}
+                  />
+                </div>
               </>
             )}
 
@@ -954,6 +965,16 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                 <div className="space-y-2">
                   <Label>Business Name</Label>
                   <Input placeholder="Your App Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                </div>
+
+                {/* Creative Assets */}
+                <div className="space-y-2">
+                  <Label className="text-body-sm font-semibold">Creative Assets</Label>
+                  <AssetPicker
+                    adId={ad?.id}
+                    campaignId={campaign?.id}
+                    assetTypes={['image_square', 'image_landscape', 'video_landscape', 'video_square', 'video_portrait']}
+                  />
                 </div>
               </>
             )}

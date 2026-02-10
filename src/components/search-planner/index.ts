@@ -8,3 +8,5 @@ export { AdGroupDetailPanel } from './AdGroupDetailPanel';
 export { SearchPlannerBulkBar } from './SearchPlannerBulkBar';
 export { CampaignDetailPanel } from './CampaignDetailPanel';
 export { GoogleParityChecklist } from './GoogleParityChecklist';
+export { AssetPicker } from './AssetPicker';
+export { PreviewAssemblyEngine } from './PreviewAssemblyEngine';
