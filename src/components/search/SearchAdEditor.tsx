@@ -28,6 +28,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { UnifiedBestPracticeChecker } from "./UnifiedBestPracticeChecker";
 import { AdComplianceChecker } from "../AdComplianceChecker";
 import { Plus } from "lucide-react";
+import { KeywordStrategySection } from "../search-planner/KeywordStrategySection";
 
 interface SearchAdEditorProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -873,6 +874,19 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+                <AccordionItem value="keywords-hidepreview">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Keywords</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <KeywordStrategySection
+                      adGroupId={adGroup.id}
+                      matchTypes={Array.isArray(adGroup.match_types) ? adGroup.match_types as string[] : []}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             )}
 
@@ -1216,6 +1230,20 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                   </AccordionContent>
                 </AccordionItem>
 
+                <AccordionItem value="keywords">
+                  <AccordionTrigger className="text-body-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <span>Keywords</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <KeywordStrategySection
+                      adGroupId={adGroup.id}
+                      matchTypes={Array.isArray(adGroup.match_types) ? adGroup.match_types as string[] : []}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+
               </Accordion>
             )}
 
@@ -1304,33 +1332,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                 )}
               </div>
 
-              {/* Compliance Issues */}
-              {complianceIssues.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    <div className="font-semibold mb-1">Compliance Issues:</div>
-                    {complianceIssues.map((issue, i) => (
-                      <div key={i} className="text-sm">• {issue.message}</div>
-                    ))}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Enhanced Compliance Check with Entity Rules */}
-              {(headlines.some(h => h.trim()) || descriptions.some(d => d.trim())) && (
-                <div className="border-t border-border pt-md mt-md">
-                  <h4 className="text-body-sm font-semibold mb-3 text-foreground">
-                    Compliance Check
-                  </h4>
-                  <AdComplianceChecker
-                    headlines={headlines.filter(h => h.trim())}
-                    descriptions={descriptions.filter(d => d.trim())}
-                    sitelinks={sitelinks.filter(s => s.description).map(s => s.description)}
-                    callouts={callouts.filter(c => c.trim())}
-                    entity={entity}
-                  />
-                </div>
-              )}
+              {/* Compliance issues removed — MENA warnings now in Quality Panel */}
 
               {/* Unified Best Practice Checker - BELOW PREVIEWS */}
               {isEditMode && (
