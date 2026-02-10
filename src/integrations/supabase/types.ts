@@ -3425,10 +3425,18 @@ export type Database = {
       }
       search_campaigns: {
         Row: {
+          app_objective: string | null
+          app_platform: string | null
+          app_store_id: string | null
+          app_store_url: string | null
+          audience_mode: string | null
+          bidding_target: number | null
+          bidding_type: string | null
           budget_monthly: number | null
           campaign_type: string
           created_at: string | null
           created_by: string | null
+          display_objective: string | null
           entity: string | null
           google_campaign_id: string | null
           google_campaign_url: string | null
@@ -3437,15 +3445,26 @@ export type Database = {
           languages: string[] | null
           name: string
           objective: string | null
+          optimization_event: string | null
+          optimization_goal: string | null
+          readiness_status: string | null
           status: string | null
           template_name: string | null
           updated_at: string | null
         }
         Insert: {
+          app_objective?: string | null
+          app_platform?: string | null
+          app_store_id?: string | null
+          app_store_url?: string | null
+          audience_mode?: string | null
+          bidding_target?: number | null
+          bidding_type?: string | null
           budget_monthly?: number | null
           campaign_type?: string
           created_at?: string | null
           created_by?: string | null
+          display_objective?: string | null
           entity?: string | null
           google_campaign_id?: string | null
           google_campaign_url?: string | null
@@ -3454,15 +3473,26 @@ export type Database = {
           languages?: string[] | null
           name: string
           objective?: string | null
+          optimization_event?: string | null
+          optimization_goal?: string | null
+          readiness_status?: string | null
           status?: string | null
           template_name?: string | null
           updated_at?: string | null
         }
         Update: {
+          app_objective?: string | null
+          app_platform?: string | null
+          app_store_id?: string | null
+          app_store_url?: string | null
+          audience_mode?: string | null
+          bidding_target?: number | null
+          bidding_type?: string | null
           budget_monthly?: number | null
           campaign_type?: string
           created_at?: string | null
           created_by?: string | null
+          display_objective?: string | null
           entity?: string | null
           google_campaign_id?: string | null
           google_campaign_url?: string | null
@@ -3471,6 +3501,9 @@ export type Database = {
           languages?: string[] | null
           name?: string
           objective?: string | null
+          optimization_event?: string | null
+          optimization_goal?: string | null
+          readiness_status?: string | null
           status?: string | null
           template_name?: string | null
           updated_at?: string | null
