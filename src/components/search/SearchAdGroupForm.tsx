@@ -122,6 +122,7 @@ export function SearchAdGroupForm({ campaign, entity, onAdGroupCreated }: Search
               <div className="space-y-sm">
                 {existingAdGroups.map(adGroup => {
                   const adCount = adGroup.ads?.[0]?.count || 0;
+                  const matchTypes = Array.isArray(adGroup.match_types) ? adGroup.match_types as string[] : [];
                   return (
                     <div
                       key={adGroup.id}
@@ -130,6 +131,18 @@ export function SearchAdGroupForm({ campaign, entity, onAdGroupCreated }: Search
                       <div className="flex items-center justify-between">
                         <div className="font-medium">{adGroup.name}</div>
                         <Badge variant="secondary">{adCount} {adCount === 1 ? 'ad' : 'ads'}</Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-xs mt-xs">
+                        {adGroup.bidding_strategy && (
+                          <Badge variant="outline" className="text-metadata">
+                            {(adGroup.bidding_strategy as string).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                          </Badge>
+                        )}
+                        {matchTypes.map((mt: string) => (
+                          <Badge key={mt} variant="outline" className="text-metadata text-muted-foreground">
+                            {mt === 'exact' ? '[Exact]' : mt === 'phrase' ? '"Phrase"' : 'Broad'}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   );

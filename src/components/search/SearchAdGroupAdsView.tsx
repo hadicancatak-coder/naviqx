@@ -78,6 +78,20 @@ export function SearchAdGroupAdsView({
           <p className="text-body-sm text-muted-foreground mt-xs">
             Create and manage search ads for this ad group
           </p>
+          {(adGroup.bidding_strategy || (Array.isArray(adGroup.match_types) && adGroup.match_types.length > 0)) && (
+            <div className="flex flex-wrap items-center gap-xs mt-sm">
+              {adGroup.bidding_strategy && (
+                <Badge variant="outline" className="text-metadata">
+                  {String(adGroup.bidding_strategy).replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                </Badge>
+              )}
+              {Array.isArray(adGroup.match_types) && (adGroup.match_types as string[]).map((mt: string) => (
+                <Badge key={mt} variant="outline" className="text-metadata text-muted-foreground">
+                  {mt === 'exact' ? '[Exact]' : mt === 'phrase' ? '"Phrase"' : 'Broad'}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         <Card>
