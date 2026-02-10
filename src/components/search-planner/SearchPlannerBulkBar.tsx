@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Download, Copy, Trash2, Loader2 } from 'lucide-react';
+import { X, Download, Copy, Trash2, Loader2, Pause, Layers } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,7 +66,6 @@ export function SearchPlannerBulkBar({
   const selectedCount = selectedCampaignIds.size;
   if (selectedCount === 0) return null;
 
-  // Compute affected counts
   const selectedIds = Array.from(selectedCampaignIds);
   const affectedAdGroups = adGroups.filter(ag => selectedIds.includes(ag.campaign_id));
   const affectedAdGroupIds = new Set(affectedAdGroups.map(ag => ag.id));
@@ -84,9 +84,7 @@ export function SearchPlannerBulkBar({
         .from('search_campaigns')
         .delete()
         .in('id', selectedIds);
-
       if (error) throw error;
-
       toast.success(`Deleted ${selectedCount} campaign(s)`);
       onClearSelection();
       invalidateAll();
@@ -104,14 +102,12 @@ export function SearchPlannerBulkBar({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-
       let duplicated = 0;
 
       for (const campaignId of selectedIds) {
         const campaign = campaigns.find(c => c.id === campaignId);
         if (!campaign) continue;
 
-        // Create campaign copy
         const { data: newCampaign, error: campErr } = await supabase
           .from('search_campaigns')
           .insert({
@@ -124,10 +120,8 @@ export function SearchPlannerBulkBar({
           })
           .select()
           .single();
-
         if (campErr) throw campErr;
 
-        // Duplicate ad groups
         const campAdGroups = adGroups.filter(ag => ag.campaign_id === campaignId);
         const adGroupMap = new Map<string, string>();
 
@@ -144,12 +138,10 @@ export function SearchPlannerBulkBar({
             })
             .select()
             .single();
-
           if (agErr) throw agErr;
           adGroupMap.set(ag.id, newAg.id);
         }
 
-        // Duplicate ads
         if (adGroupMap.size > 0) {
           const campAds = ads.filter(ad => ad.ad_group_id && adGroupMap.has(ad.ad_group_id));
           for (const ad of campAds) {
@@ -176,7 +168,6 @@ export function SearchPlannerBulkBar({
             if (adErr) throw adErr;
           }
         }
-
         duplicated++;
       }
 
@@ -195,7 +186,6 @@ export function SearchPlannerBulkBar({
     const exportData = selectedIds.map(campaignId => {
       const campaign = campaigns.find(c => c.id === campaignId);
       if (!campaign) return null;
-
       const campAdGroups = adGroups.filter(ag => ag.campaign_id === campaignId);
       return {
         ...campaign,
@@ -222,9 +212,7 @@ export function SearchPlannerBulkBar({
         .from('search_campaigns')
         .update({ status })
         .in('id', selectedIds);
-
       if (error) throw error;
-
       toast.success(`Updated ${selectedCount} campaign(s) to "${status}"`);
       invalidateAll();
       onRefresh();
@@ -233,27 +221,61 @@ export function SearchPlannerBulkBar({
     }
   };
 
+  const handlePauseAll = async () => {
+    await handleChangeStatus('paused');
+  };
+
+  const handleChangeType = async (type: string) => {
+    try {
+      const { error } = await supabase
+        .from('search_campaigns')
+        .update({ campaign_type: type })
+        .in('id', selectedIds);
+      if (error) throw error;
+      toast.success(`Changed ${selectedCount} campaign(s) to "${type}"`);
+      invalidateAll();
+      onRefresh();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to change type');
+    }
+  };
+
   return (
     <div className="fixed bottom-md left-1/2 -translate-x-1/2 z-overlay">
-      <div className="bg-primary text-primary-foreground rounded-lg shadow-lg p-md flex items-center gap-md">
+      <div className="liquid-glass-elevated rounded-xl shadow-lg p-md flex items-center gap-md border border-border">
+        {/* Selection info */}
         <div className="flex items-center gap-sm">
-          <span className="font-semibold text-body-sm">{selectedCount} selected</span>
+          <Badge variant="default" className="bg-primary text-primary-foreground text-body-sm font-semibold px-sm">
+            {selectedCount}
+          </Badge>
+          <div className="flex flex-col">
+            <span className="text-body-sm font-semibold text-foreground">selected</span>
+            <span className="text-metadata text-muted-foreground">
+              {affectedAdGroups.length} ad groups · {affectedAds.length} ads
+            </span>
+          </div>
           <Button
             size="sm"
             variant="ghost"
             onClick={onClearSelection}
-            className="text-primary-foreground hover:text-primary-foreground h-7 w-7 p-0"
+            className="text-muted-foreground hover:text-foreground h-7 w-7 p-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <div className="h-6 w-px bg-primary-foreground/20" />
+        <div className="h-8 w-px bg-border" />
 
+        {/* Actions */}
         <div className="flex items-center gap-sm">
+          <Button size="sm" variant="secondary" onClick={handlePauseAll} className="transition-smooth">
+            <Pause className="w-4 h-4 mr-xs" />
+            Pause All
+          </Button>
+
           <Select onValueChange={handleChangeStatus}>
-            <SelectTrigger className="w-36 h-8 bg-primary-foreground text-primary text-body-sm">
-              <SelectValue placeholder="Set status..." />
+            <SelectTrigger className="w-32 h-8 text-body-sm">
+              <SelectValue placeholder="Status..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="active">Active</SelectItem>
@@ -262,12 +284,23 @@ export function SearchPlannerBulkBar({
             </SelectContent>
           </Select>
 
-          <Button size="sm" variant="secondary" onClick={handleExport}>
+          <Select onValueChange={handleChangeType}>
+            <SelectTrigger className="w-32 h-8 text-body-sm">
+              <SelectValue placeholder="Type..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="search">Search</SelectItem>
+              <SelectItem value="display">Display</SelectItem>
+              <SelectItem value="app">App</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button size="sm" variant="secondary" onClick={handleExport} className="transition-smooth">
             <Download className="w-4 h-4 mr-xs" />
             Export
           </Button>
 
-          <Button size="sm" variant="secondary" onClick={handleDuplicate} disabled={isDuplicating}>
+          <Button size="sm" variant="secondary" onClick={handleDuplicate} disabled={isDuplicating} className="transition-smooth">
             {isDuplicating ? <Loader2 className="w-4 h-4 mr-xs animate-spin" /> : <Copy className="w-4 h-4 mr-xs" />}
             Duplicate
           </Button>
@@ -276,6 +309,7 @@ export function SearchPlannerBulkBar({
             size="sm"
             variant="destructive"
             onClick={() => setShowDeleteConfirm(true)}
+            className="transition-smooth"
           >
             <Trash2 className="w-4 h-4 mr-xs" />
             Delete
