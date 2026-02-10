@@ -62,10 +62,18 @@ interface LiveFields {
   callouts: string[];
   landingPage: string;
   businessName: string;
+  // Display fields
+  longHeadline?: string;
+  shortHeadlines?: string[];
+  ctaText?: string;
+  // App fields
+  appPlatform?: string;
+  appCampaignGoal?: string;
+  appStoreUrl?: string;
 }
 
 interface SearchPlannerProps {
-  adType?: "search" | "display";
+  adType?: "search" | "display" | "app";
 }
 
 export default function SearchPlanner({ adType = "search" }: SearchPlannerProps) {
@@ -102,7 +110,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     setSelectedEntity(entity);
     setAdGroupContext(null);
     const newAd: AdData = {
-      name: `New ${adType === 'search' ? 'Search' : 'Display'} Ad`,
+      name: `New ${adType === 'search' ? 'Search' : adType === 'display' ? 'Display' : 'App'} Ad`,
       ad_group_id: adGroup.id,
       ad_group_name: adGroup.name,
       campaign_name: campaign.name,
@@ -198,7 +206,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
               onCampaignClick={handleCampaignClick}
               onAdGroupClick={handleAdGroupClick}
               adType={adType}
-              defaultCampaignType={adType === "display" ? "display" : undefined}
+              defaultCampaignType={adType !== "search" ? adType : undefined}
             />
           </ResizablePanel>
           
@@ -287,6 +295,13 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                       callouts={callouts}
                       landingPage={liveFields.landingPage}
                       businessName={liveFields.businessName}
+                      adType={adType}
+                      longHeadline={liveFields.longHeadline}
+                      shortHeadlines={liveFields.shortHeadlines}
+                      ctaText={liveFields.ctaText}
+                      appPlatform={liveFields.appPlatform}
+                      appCampaignGoal={liveFields.appCampaignGoal}
+                      appStoreUrl={liveFields.appStoreUrl}
                     />
                   ) : (
                     <SearchPlannerQualityPanel
