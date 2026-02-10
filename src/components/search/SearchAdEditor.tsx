@@ -30,7 +30,7 @@ import { UnifiedBestPracticeChecker } from "./UnifiedBestPracticeChecker";
 import { AdComplianceChecker } from "../AdComplianceChecker";
 import { Plus } from "lucide-react";
 import { KeywordStrategySection } from "../search-planner/KeywordStrategySection";
-import { AssetPicker } from "../search-planner/AssetPicker";
+
 
 interface SearchAdEditorProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -836,52 +836,11 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                   <Input placeholder="Your Business" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
                 </div>
 
-                {/* Creative Assets */}
-                <div className="space-y-2">
-                  <Label className="text-body-sm font-semibold">Creative Assets</Label>
-                  <AssetPicker
-                    adId={ad?.id}
-                    campaignId={campaign?.id}
-                    assetTypes={['image_square', 'image_landscape', 'logo_square', 'logo_wide']}
-                  />
-                </div>
               </>
             )}
 
             {adType === 'app' && isEditMode && (
               <>
-                {/* App Platform & Goal */}
-                <div className="grid grid-cols-2 gap-md">
-                  <div className="space-y-2">
-                    <Label>App Platform *</Label>
-                    <Select value={appPlatform} onValueChange={setAppPlatform}>
-                      <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
-                      <SelectContent>
-                        {SEARCH_ADS_CONFIG.app.platforms.map(p => (
-                          <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Campaign Goal *</Label>
-                    <Select value={appCampaignGoal} onValueChange={setAppCampaignGoal}>
-                      <SelectTrigger><SelectValue placeholder="Select goal" /></SelectTrigger>
-                      <SelectContent>
-                        {SEARCH_ADS_CONFIG.app.goals.map(g => (
-                          <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* App Store URL */}
-                <div className="space-y-2">
-                  <Label>App Store URL</Label>
-                  <Input placeholder={appPlatform === 'ios' ? 'https://apps.apple.com/...' : 'https://play.google.com/store/apps/...'} value={appStoreUrl} onChange={(e) => setAppStoreUrl(e.target.value)} />
-                </div>
-
                 {/* App Headlines */}
                 <div className="space-y-2">
                   <Label>Headlines ({appHeadlines.filter(h => h.trim()).length}/5, 30 chars each)</Label>
@@ -967,15 +926,6 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                   <Input placeholder="Your App Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
                 </div>
 
-                {/* Creative Assets */}
-                <div className="space-y-2">
-                  <Label className="text-body-sm font-semibold">Creative Assets</Label>
-                  <AssetPicker
-                    adId={ad?.id}
-                    campaignId={campaign?.id}
-                    assetTypes={['image_square', 'image_landscape', 'video_landscape', 'video_square', 'video_portrait']}
-                  />
-                </div>
               </>
             )}
 

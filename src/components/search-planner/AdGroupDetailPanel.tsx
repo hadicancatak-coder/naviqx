@@ -18,7 +18,9 @@ import {
   Target, 
   Tags,
   Save,
-  Loader2
+  Loader2,
+  Smartphone,
+  Crosshair,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +32,13 @@ const BIDDING_STRATEGIES = [
   { value: 'manual_cpc', label: 'Manual CPC' },
   { value: 'maximize_conversion_value', label: 'Maximize Conversion Value' },
   { value: 'target_impression_share', label: 'Target Impression Share' },
+];
+
+const DISPLAY_BIDDING_STRATEGIES = [
+  { value: 'maximize_clicks', label: 'Maximize Clicks' },
+  { value: 'maximize_conversions', label: 'Maximize Conversions' },
+  { value: 'target_cpa', label: 'Target CPA' },
+  { value: 'target_roas', label: 'Target ROAS' },
 ];
 
 const MATCH_TYPES = [
@@ -46,12 +55,16 @@ interface AdGroupDetailPanelProps {
     match_types?: unknown;
     keywords?: unknown;
     campaign_id?: string;
+    app_platform?: string | null;
+    app_subtype?: string | null;
+    targeting_method?: string | null;
   };
-  campaign: { id: string; name: string };
+  campaign: { id: string; name: string; campaign_type?: string };
   entity: string;
   onEditAd: (ad: unknown) => void;
   onCreateAd: () => void;
   onAdGroupUpdated?: () => void;
+  campaignType?: string;
 }
 
 export function AdGroupDetailPanel({
@@ -61,8 +74,10 @@ export function AdGroupDetailPanel({
   onEditAd,
   onCreateAd,
   onAdGroupUpdated,
+  campaignType: propCampaignType,
 }: AdGroupDetailPanelProps) {
   const queryClient = useQueryClient();
+  const campaignType = propCampaignType || campaign.campaign_type || 'search';
   
   const [biddingStrategy, setBiddingStrategy] = useState(adGroup.bidding_strategy || '');
   const [matchTypes, setMatchTypes] = useState<string[]>(
@@ -101,12 +116,19 @@ export function AdGroupDetailPanel({
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: any = {};
+      
+      if (campaignType === 'search') {
+        updateData.bidding_strategy = biddingStrategy || null;
+        updateData.match_types = matchTypes;
+      } else if (campaignType === 'display') {
+        updateData.bidding_strategy = biddingStrategy || null;
+      }
+
       const { error } = await supabase
         .from('ad_groups')
-        .update({
-          bidding_strategy: biddingStrategy || null,
-          match_types: matchTypes,
-        })
+        .update(updateData)
         .eq('id', adGroup.id);
 
       if (error) throw error;
@@ -122,7 +144,8 @@ export function AdGroupDetailPanel({
   };
 
   const formatBiddingLabel = (value: string) => {
-    const found = BIDDING_STRATEGIES.find(s => s.value === value);
+    const allStrategies = [...BIDDING_STRATEGIES, ...DISPLAY_BIDDING_STRATEGIES];
+    const found = allStrategies.find(s => s.value === value);
     return found?.label || value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
@@ -146,6 +169,7 @@ export function AdGroupDetailPanel({
   };
 
   const currentMatchTypes = matchTypes.length > 0 ? matchTypes : ['broad'];
+  const biddingStrategiesForType = campaignType === 'display' ? DISPLAY_BIDDING_STRATEGIES : BIDDING_STRATEGIES;
 
   return (
     <ScrollArea className="h-full">
@@ -170,82 +194,136 @@ export function AdGroupDetailPanel({
           </div>
         </div>
 
-        {/* Bidding Strategy Card */}
-        <Card className="p-card space-y-sm">
-          <div className="flex items-center gap-sm">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Settings2 className="h-4 w-4 text-primary" />
+        {/* APP: Platform & Sub-type (read-only display) */}
+        {campaignType === 'app' && (
+          <Card className="p-card space-y-sm">
+            <div className="flex items-center gap-sm">
+              <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <Smartphone className="h-4 w-4 text-success-text" />
+              </div>
+              <div>
+                <h3 className="text-body font-semibold text-foreground">App Configuration</h3>
+                <p className="text-metadata text-muted-foreground">Platform and campaign sub-type</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-body font-semibold text-foreground">Bidding Strategy</h3>
-              <p className="text-metadata text-muted-foreground">How your ads compete in auctions</p>
+            <div className="grid grid-cols-2 gap-sm">
+              <div className="p-sm bg-muted/50 rounded-md">
+                <p className="text-metadata text-muted-foreground">Platform</p>
+                <p className="text-body-sm font-medium text-foreground capitalize">{adGroup.app_platform || 'Not set'}</p>
+              </div>
+              <div className="p-sm bg-muted/50 rounded-md">
+                <p className="text-metadata text-muted-foreground">Sub-type</p>
+                <p className="text-body-sm font-medium text-foreground">
+                  {adGroup.app_subtype === 'app_installs' ? 'App Installs' : 
+                   adGroup.app_subtype === 'app_engagement' ? 'App Engagement' : 
+                   adGroup.app_subtype || 'Not set'}
+                </p>
+              </div>
             </div>
-          </div>
-          <Select value={biddingStrategy} onValueChange={handleBiddingChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select bidding strategy">
-                {biddingStrategy ? formatBiddingLabel(biddingStrategy) : 'Select bidding strategy'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {BIDDING_STRATEGIES.map(s => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+          </Card>
+        )}
+
+        {/* DISPLAY: Targeting Method */}
+        {campaignType === 'display' && (
+          <Card className="p-card space-y-sm">
+            <div className="flex items-center gap-sm">
+              <div className="h-8 w-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <Crosshair className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-body font-semibold text-foreground">Targeting Method</h3>
+                <p className="text-metadata text-muted-foreground">How your ads reach your audience</p>
+              </div>
+            </div>
+            <div className="p-sm bg-muted/50 rounded-md">
+              <p className="text-metadata text-muted-foreground">Method</p>
+              <p className="text-body-sm font-medium text-foreground capitalize">{adGroup.targeting_method || 'Not set'}</p>
+            </div>
+          </Card>
+        )}
+
+        {/* Bidding Strategy Card - Search & Display only */}
+        {(campaignType === 'search' || campaignType === 'display') && (
+          <Card className="p-card space-y-sm">
+            <div className="flex items-center gap-sm">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Settings2 className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-body font-semibold text-foreground">Bidding Strategy</h3>
+                <p className="text-metadata text-muted-foreground">How your ads compete in auctions</p>
+              </div>
+            </div>
+            <Select value={biddingStrategy} onValueChange={handleBiddingChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select bidding strategy">
+                  {biddingStrategy ? formatBiddingLabel(biddingStrategy) : 'Select bidding strategy'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {biddingStrategiesForType.map(s => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Card>
+        )}
+
+        {/* Match Types Card - Search only */}
+        {campaignType === 'search' && (
+          <Card className="p-card space-y-sm">
+            <div className="flex items-center gap-sm">
+              <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Target className="h-4 w-4 text-warning-text" />
+              </div>
+              <div>
+                <h3 className="text-body font-semibold text-foreground">Match Types</h3>
+                <p className="text-metadata text-muted-foreground">How closely search queries must match your keywords</p>
+              </div>
+            </div>
+            <div className="space-y-sm">
+              {MATCH_TYPES.map(type => (
+                <label
+                  key={type.value}
+                  className={cn(
+                    "flex items-center gap-sm p-sm rounded-lg border cursor-pointer transition-smooth",
+                    matchTypes.includes(type.value)
+                      ? "border-primary/30 bg-primary/5"
+                      : "border-border hover:bg-card-hover"
+                  )}
+                >
+                  <Checkbox
+                    checked={matchTypes.includes(type.value)}
+                    onCheckedChange={() => handleMatchTypeToggle(type.value)}
+                  />
+                  <div className="flex-1">
+                    <span className="text-body-sm font-medium text-foreground">{type.label}</span>
+                    <span className="text-metadata text-muted-foreground ml-sm">{type.notation}</span>
+                  </div>
+                  <Badge variant="outline" className={cn('text-metadata', type.color)}>
+                    {type.label}
+                  </Badge>
+                </label>
               ))}
-            </SelectContent>
-          </Select>
-        </Card>
+            </div>
+          </Card>
+        )}
 
-        {/* Match Types Card */}
-        <Card className="p-card space-y-sm">
-          <div className="flex items-center gap-sm">
-            <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
-              <Target className="h-4 w-4 text-warning-text" />
+        {/* Keyword Strategy - Search only */}
+        {campaignType === 'search' && (
+          <Card className="p-card space-y-sm">
+            <div className="flex items-center gap-sm mb-xs">
+              <div className="h-8 w-8 rounded-lg bg-info/10 flex items-center justify-center">
+                <Tags className="h-4 w-4 text-info-text" />
+              </div>
+              <div>
+                <h3 className="text-body font-semibold text-foreground">Keywords</h3>
+                <p className="text-metadata text-muted-foreground">Target keywords for this ad group (max 20)</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-body font-semibold text-foreground">Match Types</h3>
-              <p className="text-metadata text-muted-foreground">How closely search queries must match your keywords</p>
-            </div>
-          </div>
-          <div className="space-y-sm">
-            {MATCH_TYPES.map(type => (
-              <label
-                key={type.value}
-                className={cn(
-                  "flex items-center gap-sm p-sm rounded-lg border cursor-pointer transition-smooth",
-                  matchTypes.includes(type.value)
-                    ? "border-primary/30 bg-primary/5"
-                    : "border-border hover:bg-card-hover"
-                )}
-              >
-                <Checkbox
-                  checked={matchTypes.includes(type.value)}
-                  onCheckedChange={() => handleMatchTypeToggle(type.value)}
-                />
-                <div className="flex-1">
-                  <span className="text-body-sm font-medium text-foreground">{type.label}</span>
-                  <span className="text-metadata text-muted-foreground ml-sm">{type.notation}</span>
-                </div>
-                <Badge variant="outline" className={cn('text-metadata', type.color)}>
-                  {type.label}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </Card>
-
-        {/* Keyword Strategy */}
-        <Card className="p-card space-y-sm">
-          <div className="flex items-center gap-sm mb-xs">
-            <div className="h-8 w-8 rounded-lg bg-info/10 flex items-center justify-center">
-              <Tags className="h-4 w-4 text-info-text" />
-            </div>
-            <div>
-              <h3 className="text-body font-semibold text-foreground">Keywords</h3>
-              <p className="text-metadata text-muted-foreground">Target keywords for this ad group (max 20)</p>
-            </div>
-          </div>
-          <KeywordStrategySection adGroupId={adGroup.id} matchTypes={currentMatchTypes} />
-        </Card>
+            <KeywordStrategySection adGroupId={adGroup.id} matchTypes={currentMatchTypes} />
+          </Card>
+        )}
 
         {/* Ads Summary */}
         <Card className="p-card space-y-sm">

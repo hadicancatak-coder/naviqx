@@ -6,9 +6,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Monitor, Smartphone, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PreviewAssemblyEngine } from "./PreviewAssemblyEngine";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { CampaignAsset } from "./AssetPicker";
 
 interface Sitelink {
   description: string;
@@ -53,20 +50,6 @@ export function SearchPlannerPreviewPanel({
   adId,
   campaignId,
 }: SearchPlannerPreviewPanelProps) {
-  // Fetch assets for assembly engine
-  const { data: assets = [] } = useQuery({
-    queryKey: ['campaign-assets-preview', adId, campaignId],
-    queryFn: async () => {
-      let query = supabase.from('campaign_assets').select('*').order('sort_order');
-      if (adId) query = query.eq('ad_id', adId);
-      else if (campaignId) query = query.eq('campaign_id', campaignId);
-      else return [];
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as CampaignAsset[];
-    },
-    enabled: !!(adId || campaignId) && adType !== 'search',
-  });
 
   // Display & App: use assembly engine
   if (adType === "display" || adType === "app") {
@@ -81,7 +64,7 @@ export function SearchPlannerPreviewPanel({
         ctaText={ctaText}
         appPlatform={appPlatform}
         appStoreUrl={appStoreUrl}
-        assets={assets}
+        assets={[]}
       />
     );
   }

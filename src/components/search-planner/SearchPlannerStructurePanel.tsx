@@ -168,7 +168,7 @@ export function SearchPlannerStructurePanel({
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
   const [expandedAdGroups, setExpandedAdGroups] = useState<Set<string>>(new Set());
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
-  const [showCreateAdGroup, setShowCreateAdGroup] = useState<{campaignId: string; campaignName: string} | null>(null);
+  const [showCreateAdGroup, setShowCreateAdGroup] = useState<{campaignId: string; campaignName: string; campaignType: string} | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [campaignTypeFilter, setCampaignTypeFilter] = useState<CampaignTypeFilter>('all');
   
@@ -556,7 +556,7 @@ export function SearchPlannerStructurePanel({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-card border-border shadow-lg">
                           <DropdownMenuItem
-                            onClick={() => setShowCreateAdGroup({ campaignId: campaign.id, campaignName: campaign.name })}
+                            onClick={() => setShowCreateAdGroup({ campaignId: campaign.id, campaignName: campaign.name, campaignType: campaignTypeLabel })}
                             className="gap-xs hover:bg-card-hover"
                           >
                             <FolderPlus className="h-4 w-4" />
@@ -783,6 +783,7 @@ export function SearchPlannerStructurePanel({
           onOpenChange={(open) => !open && setShowCreateAdGroup(null)}
           campaignId={showCreateAdGroup.campaignId}
           campaignName={showCreateAdGroup.campaignName}
+          campaignType={showCreateAdGroup.campaignType}
           onSuccess={handleRefresh}
         />
       )}

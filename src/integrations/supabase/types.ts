@@ -182,6 +182,8 @@ export type Database = {
       }
       ad_groups: {
         Row: {
+          app_platform: string | null
+          app_subtype: string | null
           bidding_strategy: string | null
           campaign_id: string
           created_at: string | null
@@ -192,10 +194,13 @@ export type Database = {
           match_types: Json | null
           name: string
           status: string | null
+          targeting_method: string | null
           template_name: string | null
           updated_at: string | null
         }
         Insert: {
+          app_platform?: string | null
+          app_subtype?: string | null
           bidding_strategy?: string | null
           campaign_id: string
           created_at?: string | null
@@ -206,10 +211,13 @@ export type Database = {
           match_types?: Json | null
           name: string
           status?: string | null
+          targeting_method?: string | null
           template_name?: string | null
           updated_at?: string | null
         }
         Update: {
+          app_platform?: string | null
+          app_subtype?: string | null
           bidding_strategy?: string | null
           campaign_id?: string
           created_at?: string | null
@@ -220,6 +228,7 @@ export type Database = {
           match_types?: Json | null
           name?: string
           status?: string | null
+          targeting_method?: string | null
           template_name?: string | null
           updated_at?: string | null
         }
@@ -481,6 +490,7 @@ export type Database = {
           sitelinks: Json
           updated_at: string
           updated_by: string | null
+          utm_campaign_id: string | null
         }
         Insert: {
           ad_group_id?: string | null
@@ -513,6 +523,7 @@ export type Database = {
           sitelinks?: Json
           updated_at?: string
           updated_by?: string | null
+          utm_campaign_id?: string | null
         }
         Update: {
           ad_group_id?: string | null
@@ -545,6 +556,7 @@ export type Database = {
           sitelinks?: Json
           updated_at?: string
           updated_by?: string | null
+          utm_campaign_id?: string | null
         }
         Relationships: [
           {
@@ -552,6 +564,13 @@ export type Database = {
             columns: ["ad_group_id"]
             isOneToOne: false
             referencedRelation: "ad_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ads_utm_campaign_id_fkey"
+            columns: ["utm_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "utm_campaigns"
             referencedColumns: ["id"]
           },
         ]
