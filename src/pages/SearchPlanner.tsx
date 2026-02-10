@@ -198,6 +198,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
               onCampaignClick={handleCampaignClick}
               onAdGroupClick={handleAdGroupClick}
               adType={adType}
+              defaultCampaignType={adType === "display" ? "display" : undefined}
             />
           </ResizablePanel>
           

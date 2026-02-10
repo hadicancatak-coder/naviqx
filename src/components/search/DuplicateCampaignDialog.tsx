@@ -14,6 +14,7 @@ interface Campaign {
   entity?: string;
   status?: string;
   languages?: string[];
+  campaign_type?: string;
 }
 
 interface DuplicateCampaignDialogProps {
@@ -50,7 +51,8 @@ export function DuplicateCampaignDialog({ open, onOpenChange, campaign, adGroups
           name: name.trim(),
           entity: campaign.entity,
           status: campaign.status || 'active',
-          languages: campaign.languages
+          languages: campaign.languages,
+          campaign_type: campaign.campaign_type || 'search',
         })
         .select()
         .single();

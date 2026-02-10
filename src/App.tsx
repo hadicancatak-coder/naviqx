@@ -122,6 +122,7 @@ const App = () => (
                       </Route>
                       <Route path="/ads" element={<Navigate to="/ads/search" replace />} />
                       <Route path="/ads/search" element={<SearchPlanner adType="search" key="search" />} />
+                      <Route path="/ads/display" element={<SearchPlanner adType="display" key="display" />} />
                       <Route path="/ads/library" element={<Navigate to="/ads/captions" replace />} />
                       <Route path="/ads/captions" element={<CaptionLibrary />} />
                       <Route path="/ads/lp" element={<LpPlanner />} />

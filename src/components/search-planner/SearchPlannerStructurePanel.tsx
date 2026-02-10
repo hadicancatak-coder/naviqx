@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ChevronRight, 
   ChevronDown, 
@@ -14,11 +15,12 @@ import {
   FileText, 
   Trash2, 
   Copy, 
-  Edit, 
   Search,
   MoreHorizontal,
-  Archive,
-  FolderPlus
+  FolderPlus,
+  CheckSquare,
+  Monitor,
+  Smartphone,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,11 +29,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { calculateAdStrength } from "@/lib/adQualityScore";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 // Import dialogs
 import { CreateCampaignDialog } from "@/components/ads/CreateCampaignDialog";
@@ -42,6 +43,7 @@ import { DeleteCampaignDialog } from "@/components/search/DeleteCampaignDialog";
 import { DuplicateAdDialog } from "@/components/search/DuplicateAdDialog";
 import { DuplicateAdGroupDialog } from "@/components/search/DuplicateAdGroupDialog";
 import { DuplicateCampaignDialog } from "@/components/search/DuplicateCampaignDialog";
+import { SearchPlannerBulkBar } from "./SearchPlannerBulkBar";
 
 // Local type definitions for this component
 interface SitelinkData {
@@ -63,7 +65,6 @@ interface AdData {
   campaign_name?: string;
   entity?: string;
   ad_type?: string;
-  // These are Json from Supabase, so we use any to allow compatibility
   headlines: string[] | unknown;
   descriptions: string[] | unknown;
   sitelinks: { description: string; link: string }[] | unknown;
@@ -85,7 +86,25 @@ interface CampaignData {
   id: string;
   name: string;
   entity?: string;
+  campaign_type?: string;
+  status?: string;
+  languages?: string[];
 }
+
+type CampaignTypeFilter = 'all' | 'search' | 'display' | 'app';
+
+const CAMPAIGN_TYPE_FILTERS: { value: CampaignTypeFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'search', label: 'Search' },
+  { value: 'display', label: 'Display' },
+  { value: 'app', label: 'App' },
+];
+
+const CAMPAIGN_TYPE_BADGE_STYLES: Record<string, string> = {
+  search: "bg-info-soft text-info-text",
+  display: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  app: "bg-success-soft text-success-text",
+};
 
 interface SearchPlannerStructurePanelProps {
   onEditAd: (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
@@ -93,6 +112,7 @@ interface SearchPlannerStructurePanelProps {
   onCampaignClick?: (campaign: CampaignData, entity: string) => void;
   onAdGroupClick?: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   adType?: "search" | "display";
+  defaultCampaignType?: 'search' | 'display' | 'app';
 }
 
 interface DeleteAdDialogState { ad: AdData }
@@ -108,6 +128,7 @@ export function SearchPlannerStructurePanel({
   onCampaignClick,
   onAdGroupClick,
   adType = "search",
+  defaultCampaignType,
 }: SearchPlannerStructurePanelProps) {
   const queryClient = useQueryClient();
   const { data: systemEntities = [] } = useSystemEntities();
@@ -119,6 +140,11 @@ export function SearchPlannerStructurePanel({
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [showCreateAdGroup, setShowCreateAdGroup] = useState<{campaignId: string; campaignName: string} | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<CampaignTypeFilter>(defaultCampaignType || 'all');
+  
+  // Selection mode
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
   
   // Set default entity when data loads
   useEffect(() => {
@@ -203,21 +229,40 @@ export function SearchPlannerStructurePanel({
     });
   };
 
-  // Filter campaigns based on search
+  // Filter campaigns based on search + type
   const filteredCampaigns = useMemo(() => {
-    if (!searchQuery) return campaigns;
-    const query = searchQuery.toLowerCase();
+    let filtered = campaigns;
     
-    return campaigns.filter(campaign => {
-      const matchesCampaign = campaign.name.toLowerCase().includes(query);
-      const campaignAdGroups = adGroups.filter(ag => ag.campaign_id === campaign.id);
-      const matchesAdGroup = campaignAdGroups.some(ag => ag.name.toLowerCase().includes(query));
-      const campaignAds = campaignAdGroups.flatMap(ag => ads.filter(ad => ad.ad_group_id === ag.id));
-      const matchesAd = campaignAds.some(ad => ad.name.toLowerCase().includes(query));
-      
-      return matchesCampaign || matchesAdGroup || matchesAd;
+    // Type filter
+    if (campaignTypeFilter !== 'all') {
+      filtered = filtered.filter(c => (c.campaign_type || 'search') === campaignTypeFilter);
+    }
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(campaign => {
+        const matchesCampaign = campaign.name.toLowerCase().includes(query);
+        const campaignAdGroups = adGroups.filter(ag => ag.campaign_id === campaign.id);
+        const matchesAdGroup = campaignAdGroups.some(ag => ag.name.toLowerCase().includes(query));
+        const campaignAds = campaignAdGroups.flatMap(ag => ads.filter(ad => ad.ad_group_id === ag.id));
+        const matchesAd = campaignAds.some(ad => ad.name.toLowerCase().includes(query));
+        return matchesCampaign || matchesAdGroup || matchesAd;
+      });
+    }
+    
+    return filtered;
+  }, [campaigns, adGroups, ads, searchQuery, campaignTypeFilter]);
+
+  // Campaign type counts (for filter pills)
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: campaigns.length, search: 0, display: 0, app: 0 };
+    campaigns.forEach(c => {
+      const type = (c.campaign_type || 'search') as string;
+      if (type in counts) counts[type]++;
     });
-  }, [campaigns, adGroups, ads, searchQuery]);
+    return counts;
+  }, [campaigns]);
 
   const getAdGroupsForCampaign = (campaignId: string) => {
     return adGroups.filter(ag => ag.campaign_id === campaignId);
@@ -243,6 +288,47 @@ export function SearchPlannerStructurePanel({
     if (score >= 60) return "text-warning";
     return "text-destructive";
   };
+
+  // Selection handlers
+  const toggleCampaignSelection = useCallback((campaignId: string) => {
+    setSelectedCampaignIds(prev => {
+      const next = new Set(prev);
+      if (next.has(campaignId)) {
+        next.delete(campaignId);
+      } else {
+        next.add(campaignId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const filteredIds = filteredCampaigns.map(c => c.id);
+    const allSelected = filteredIds.every(id => selectedCampaignIds.has(id));
+    
+    if (allSelected) {
+      setSelectedCampaignIds(new Set());
+    } else {
+      setSelectedCampaignIds(new Set(filteredIds));
+    }
+  }, [filteredCampaigns, selectedCampaignIds]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedCampaignIds(new Set());
+    setSelectionMode(false);
+  }, []);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode(prev => {
+      if (prev) {
+        setSelectedCampaignIds(new Set());
+      }
+      return !prev;
+    });
+  }, []);
+
+  // Determine the default campaign type for the create dialog
+  const createDialogDefaultType = campaignTypeFilter !== 'all' ? campaignTypeFilter : undefined;
 
   return (
     <div className="h-full flex flex-col">
@@ -271,14 +357,25 @@ export function SearchPlannerStructurePanel({
           </Select>
         </div>
 
-        {/* New Campaign Button */}
-        <Button 
-          onClick={() => setShowCreateCampaign(true)} 
-          className="w-full h-9 gap-xs transition-smooth"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="text-body-sm">New Campaign</span>
-        </Button>
+        {/* New Campaign + Selection Mode */}
+        <div className="flex gap-xs">
+          <Button 
+            onClick={() => setShowCreateCampaign(true)} 
+            className="flex-1 h-9 gap-xs transition-smooth"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="text-body-sm">New Campaign</span>
+          </Button>
+          <Button
+            variant={selectionMode ? "secondary" : "outline"}
+            size="icon"
+            className="h-9 w-9 transition-smooth"
+            onClick={toggleSelectionMode}
+            title={selectionMode ? "Exit selection mode" : "Select campaigns"}
+          >
+            <CheckSquare className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Search */}
         <div className="relative">
@@ -290,6 +387,39 @@ export function SearchPlannerStructurePanel({
             className="h-9 pl-9 bg-white/10 border-white/20 transition-smooth"
           />
         </div>
+
+        {/* Campaign Type Filter Pills */}
+        <div className="flex gap-xs flex-wrap">
+          {CAMPAIGN_TYPE_FILTERS.map(filter => (
+            <button
+              key={filter.value}
+              onClick={() => setCampaignTypeFilter(filter.value)}
+              className={cn(
+                "px-sm py-xs rounded-full text-metadata font-medium transition-smooth border",
+                campaignTypeFilter === filter.value
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted text-muted-foreground border-transparent hover:bg-card-hover hover:text-foreground"
+              )}
+            >
+              {filter.label} ({typeCounts[filter.value] || 0})
+            </button>
+          ))}
+        </div>
+
+        {/* Select All toggle when in selection mode */}
+        {selectionMode && filteredCampaigns.length > 0 && (
+          <div className="flex items-center gap-sm">
+            <Checkbox
+              checked={filteredCampaigns.length > 0 && filteredCampaigns.every(c => selectedCampaignIds.has(c.id))}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="text-metadata text-muted-foreground">
+              {selectedCampaignIds.size > 0 
+                ? `${selectedCampaignIds.size} selected` 
+                : `Select all (${filteredCampaigns.length})`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Tree View */}
@@ -310,19 +440,43 @@ export function SearchPlannerStructurePanel({
               const campaignAdGroups = getAdGroupsForCampaign(campaign.id);
               const isExpanded = expandedCampaigns.has(campaign.id);
               const totalAds = getTotalAdsForCampaign(campaign.id);
+              const isSelected = selectedCampaignIds.has(campaign.id);
+              const campaignTypeLabel = (campaign.campaign_type || 'search') as string;
 
                 return (
                 <Collapsible key={campaign.id} open={isExpanded}>
-                  {/* Campaign Row - entire row clickable for expand/collapse */}
+                  {/* Campaign Row */}
                   <div 
                     className={cn(
                       "group flex items-center gap-xs p-sm rounded-lg transition-smooth cursor-pointer",
-                      "hover:bg-card-hover border border-transparent hover:border-border active:scale-[0.99]"
+                      "hover:bg-card-hover border border-transparent hover:border-border active:scale-[0.99]",
+                      isSelected && "bg-primary/10 border-primary/30"
                     )}
-                    onClick={() => toggleCampaign(campaign.id)}
+                    onClick={() => {
+                      if (selectionMode) return; // Don't expand in selection mode row click
+                      toggleCampaign(campaign.id);
+                    }}
                   >
+                    {/* Selection checkbox */}
+                    {selectionMode && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleCampaignSelection(campaign.id)}
+                        />
+                      </div>
+                    )}
+
                     {/* Chevron indicator */}
-                    <div className="p-xs">
+                    <div 
+                      className="p-xs"
+                      onClick={(e) => {
+                        if (selectionMode) {
+                          e.stopPropagation();
+                          toggleCampaign(campaign.id);
+                        }
+                      }}
+                    >
                       {isExpanded ? (
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       ) : (
@@ -338,56 +492,72 @@ export function SearchPlannerStructurePanel({
                       </span>
                     </div>
 
+                    {/* Campaign Type Badge */}
+                    <Badge 
+                      variant="secondary" 
+                      className={cn(
+                        "text-metadata capitalize shrink-0",
+                        CAMPAIGN_TYPE_BADGE_STYLES[campaignTypeLabel] || ""
+                      )}
+                    >
+                      {campaignTypeLabel === 'search' && <Search className="h-3 w-3 mr-0.5" />}
+                      {campaignTypeLabel === 'display' && <Monitor className="h-3 w-3 mr-0.5" />}
+                      {campaignTypeLabel === 'app' && <Smartphone className="h-3 w-3 mr-0.5" />}
+                      {campaignTypeLabel}
+                    </Badge>
+
                     {/* Campaign Stats */}
-                    <Badge variant="secondary" className="text-metadata bg-muted">
+                    <Badge variant="secondary" className="text-metadata bg-muted shrink-0">
                       {campaignAdGroups.length} groups
                     </Badge>
 
                     {/* Campaign Actions */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          className="opacity-0 group-hover:opacity-100 transition-smooth"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-border shadow-lg">
-                        <DropdownMenuItem
-                          onClick={() => setShowCreateAdGroup({ campaignId: campaign.id, campaignName: campaign.name })}
-                          className="gap-xs hover:bg-card-hover"
-                        >
-                          <FolderPlus className="h-4 w-4" />
-                          <span className="text-body-sm">Add Ad Group</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDuplicateCampaignDialog({ 
-                            campaign, 
-                            adGroupsCount: campaignAdGroups.length, 
-                            adsCount: totalAds 
-                          })}
-                          className="gap-xs hover:bg-card-hover"
-                        >
-                          <Copy className="h-4 w-4" />
-                          <span className="text-body-sm">Duplicate</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setDeleteCampaignDialog({ 
-                            campaign, 
-                            adGroupsCount: campaignAdGroups.length, 
-                            adsCount: totalAds 
-                          })}
-                          className="gap-xs text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="text-body-sm">Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {!selectionMode && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            className="opacity-0 group-hover:opacity-100 transition-smooth"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-card border-border shadow-lg">
+                          <DropdownMenuItem
+                            onClick={() => setShowCreateAdGroup({ campaignId: campaign.id, campaignName: campaign.name })}
+                            className="gap-xs hover:bg-card-hover"
+                          >
+                            <FolderPlus className="h-4 w-4" />
+                            <span className="text-body-sm">Add Ad Group</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDuplicateCampaignDialog({ 
+                              campaign, 
+                              adGroupsCount: campaignAdGroups.length, 
+                              adsCount: totalAds 
+                            })}
+                            className="gap-xs hover:bg-card-hover"
+                          >
+                            <Copy className="h-4 w-4" />
+                            <span className="text-body-sm">Duplicate</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setDeleteCampaignDialog({ 
+                              campaign, 
+                              adGroupsCount: campaignAdGroups.length, 
+                              adsCount: totalAds 
+                            })}
+                            className="gap-xs text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="text-body-sm">Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
 
                   {/* Ad Groups */}
@@ -404,7 +574,7 @@ export function SearchPlannerStructurePanel({
 
                           return (
                             <Collapsible key={adGroup.id} open={isAdGroupExpanded}>
-                              {/* Ad Group Row - chevron expands, name opens detail */}
+                              {/* Ad Group Row */}
                               <div 
                                 className={cn(
                                   "group flex items-center gap-xs p-sm rounded-lg transition-smooth cursor-pointer",
@@ -417,7 +587,6 @@ export function SearchPlannerStructurePanel({
                                   toggleAdGroup(adGroup.id);
                                 }}
                               >
-                                {/* Chevron indicator */}
                                 <div className="p-xs">
                                   {isAdGroupExpanded ? (
                                     <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -426,7 +595,6 @@ export function SearchPlannerStructurePanel({
                                   )}
                                 </div>
 
-                                {/* Ad Group name */}
                                 <div className="flex items-center gap-xs flex-1 min-w-0">
                                   <Folder className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                   <span className="flex-1 text-body-sm text-foreground break-words line-clamp-2">
@@ -505,7 +673,6 @@ export function SearchPlannerStructurePanel({
                                           {strength}%
                                         </Badge>
 
-                                        {/* Ad Actions */}
                                         <div 
                                           className="flex items-center gap-xs opacity-0 group-hover:opacity-100 transition-smooth"
                                           onClick={(e) => e.stopPropagation()}
@@ -537,7 +704,6 @@ export function SearchPlannerStructurePanel({
                                     );
                                   })}
 
-                                  {/* Add Ad Button */}
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -562,11 +728,22 @@ export function SearchPlannerStructurePanel({
         </div>
       </ScrollArea>
 
+      {/* Bulk Actions Bar */}
+      <SearchPlannerBulkBar
+        selectedCampaignIds={selectedCampaignIds}
+        campaigns={campaigns}
+        adGroups={adGroups}
+        ads={ads}
+        onClearSelection={handleClearSelection}
+        onRefresh={handleRefresh}
+      />
+
       {/* Dialogs */}
       <CreateCampaignDialog
         open={showCreateCampaign}
         onOpenChange={setShowCreateCampaign}
         defaultEntity={selectedEntity}
+        defaultCampaignType={createDialogDefaultType}
         onSuccess={handleRefresh}
       />
 
