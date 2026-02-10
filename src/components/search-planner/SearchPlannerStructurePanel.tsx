@@ -91,6 +91,7 @@ interface SearchPlannerStructurePanelProps {
   onEditAd: (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   onCreateAd: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   onCampaignClick?: (campaign: CampaignData, entity: string) => void;
+  onAdGroupClick?: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   adType?: "search" | "display";
 }
 
@@ -105,6 +106,7 @@ export function SearchPlannerStructurePanel({
   onEditAd,
   onCreateAd,
   onCampaignClick,
+  onAdGroupClick,
   adType = "search",
 }: SearchPlannerStructurePanelProps) {
   const queryClient = useQueryClient();
@@ -402,13 +404,18 @@ export function SearchPlannerStructurePanel({
 
                           return (
                             <Collapsible key={adGroup.id} open={isAdGroupExpanded}>
-                              {/* Ad Group Row - entire row is clickable for expand/collapse */}
+                              {/* Ad Group Row - chevron expands, name opens detail */}
                               <div 
                                 className={cn(
                                   "group flex items-center gap-xs p-sm rounded-lg transition-smooth cursor-pointer",
                                   "hover:bg-card-hover active:scale-[0.99]"
                                 )}
-                                onClick={() => toggleAdGroup(adGroup.id)}
+                                onClick={() => {
+                                  if (onAdGroupClick) {
+                                    onAdGroupClick(adGroup, campaign, selectedEntity);
+                                  }
+                                  toggleAdGroup(adGroup.id);
+                                }}
                               >
                                 {/* Chevron indicator */}
                                 <div className="p-xs">
