@@ -325,6 +325,13 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                       entity={editorContext.entity}
                       keywords={(editorContext.adGroup?.keywords as string[]) || []}
                       matchTypes={(editorContext.adGroup?.match_types as string[]) || []}
+                      adType={adType}
+                      longHeadline={liveFields.longHeadline}
+                      shortHeadlines={liveFields.shortHeadlines}
+                      ctaText={liveFields.ctaText}
+                      appPlatform={liveFields.appPlatform}
+                      appCampaignGoal={liveFields.appCampaignGoal}
+                      appStoreUrl={liveFields.appStoreUrl}
                     />
                   )}
                 </ScrollArea>
