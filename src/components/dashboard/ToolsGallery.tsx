@@ -4,10 +4,10 @@ import { TOOL_COLORS } from "@/lib/constants";
 
 const MOST_USED_TOOLS = [
   {
-    id: "search-planner",
-    name: "Search Planner",
-    description: "Plan and manage search campaigns with advanced targeting",
-    route: "/ads/search",
+    id: "google-planner",
+    name: "Google Planner",
+    description: "Plan and manage Search, Display & App campaigns",
+    route: "/ads/google",
     icon: "Search",
     colorKey: "blue" as const,
   },

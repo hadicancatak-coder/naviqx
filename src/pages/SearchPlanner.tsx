@@ -74,11 +74,7 @@ interface LiveFields {
   appStoreUrl?: string;
 }
 
-interface SearchPlannerProps {
-  adType?: "search" | "display" | "app";
-}
-
-export default function SearchPlanner({ adType = "search" }: SearchPlannerProps) {
+export default function SearchPlanner() {
   const [editorContext, setEditorContext] = useState<EditorContext | null>(null);
   const [adGroupContext, setAdGroupContext] = useState<AdGroupContext | null>(null);
   const [campaignContext, setCampaignContext] = useState<{ campaign: CampaignData; entity: string } | null>(null);
@@ -114,13 +110,14 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     setSelectedEntity(entity);
     setAdGroupContext(null);
     setCampaignContext(null);
+    const campaignType = (campaign.campaign_type || 'search') as string;
     const newAd: AdData = {
-      name: `New ${adType === 'search' ? 'Search' : adType === 'display' ? 'Display' : 'App'} Ad`,
+      name: `New ${campaignType === 'display' ? 'Display' : campaignType === 'app' ? 'App' : 'Search'} Ad`,
       ad_group_id: adGroup.id,
       ad_group_name: adGroup.name,
       campaign_name: campaign.name,
       entity: entity,
-      ad_type: adType,
+      ad_type: campaignType,
       headlines: [],
       descriptions: [],
       sitelinks: [],
@@ -167,6 +164,9 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     setLiveFields((prev) => ({ ...prev, ...fields }));
   }, []);
 
+  // Derive adType from current context
+  const currentAdType = (editorContext?.ad?.ad_type || editorContext?.campaign?.campaign_type || 'search') as "search" | "display" | "app";
+
   // Use live fields for preview
   const headlines = liveFields.headlines.filter(Boolean);
   const descriptions = liveFields.descriptions.filter(Boolean);
@@ -180,8 +180,8 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
         <div className="flex items-center justify-between">
           <PageHeader
             icon={Search}
-            title="Search Ads Planner"
-            description="Create and manage search advertising campaigns"
+            title="Google Planner"
+            description="Plan and manage Search, Display & App campaigns"
           />
           <Button
             variant="outline"
@@ -212,8 +212,6 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
               onCreateAd={handleCreateAd}
               onCampaignClick={handleCampaignClick}
               onAdGroupClick={handleAdGroupClick}
-              adType={adType}
-              defaultCampaignType={adType !== "search" ? adType : undefined}
             />
           </ResizablePanel>
           
@@ -227,7 +225,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                 adGroup={editorContext.adGroup}
                 campaign={editorContext.campaign}
                 entity={editorContext.entity}
-                adType={adType}
+                adType={currentAdType}
                 onSave={handleSave}
                 onCancel={handleCancel}
                 showHeader={false}
@@ -308,7 +306,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                       callouts={callouts}
                       landingPage={liveFields.landingPage}
                       businessName={liveFields.businessName}
-                      adType={adType}
+                      adType={currentAdType}
                       longHeadline={liveFields.longHeadline}
                       shortHeadlines={liveFields.shortHeadlines}
                       ctaText={liveFields.ctaText}
@@ -325,7 +323,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                       entity={editorContext.entity}
                       keywords={(editorContext.adGroup?.keywords as string[]) || []}
                       matchTypes={(editorContext.adGroup?.match_types as string[]) || []}
-                      adType={adType}
+                      adType={currentAdType}
                       longHeadline={liveFields.longHeadline}
                       shortHeadlines={liveFields.shortHeadlines}
                       ctaText={liveFields.ctaText}

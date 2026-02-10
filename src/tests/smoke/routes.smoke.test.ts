@@ -13,7 +13,7 @@ const ROUTES = {
     { path: '/', name: 'Dashboard' },
     { path: '/tasks', name: 'Tasks' },
     { path: '/calendar', name: 'Calendar' },
-    { path: '/ads/search', name: 'Search Ads' },
+    { path: '/ads/google', name: 'Google Planner' },
     { path: '/ads/captions', name: 'Caption Library' },
     { path: '/notifications', name: 'Notifications' },
     { path: '/profile', name: 'Profile' },
