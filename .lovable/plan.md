@@ -1,190 +1,120 @@
 
+# Fix: Type-Aware Fields, Remove Asset Upload, Link to Campaigns Log
 
-# Campaign-Level Settings + Validation Engine + Quality Panel Adaptation
+## Problems Identified
 
-## What's Wrong Today
-
-When you click a campaign name in the structure panel, the middle column goes **blank** ("Select an Ad to Edit"). There's no campaign-level configuration at all. The Quality Panel only understands Search ad metrics (Headlines 0/15, Descriptions 0/4, Sitelinks, Callouts). Display and App ads get the same irrelevant scoring.
-
-The previous plan overcomplicated things by proposing targeting blocks (demographics, geography, content). That's unnecessary -- **targeting is entity-based** in this system. This plan strips it down to what actually matters per campaign type.
+1. **AssetPicker (creative upload) is embedded in the Ad Editor** for Display and App ads -- user wants it removed entirely
+2. **CreateAdGroupDialog shows Search fields (Keyword Match Types, Search bidding strategies) for ALL campaign types** -- App ad groups need Platform (iOS/Android) and Sub-type (Installs/Engagement); Display needs Targeting Method
+3. **AdGroupDetailPanel always shows Search-specific cards** (Match Types, Keywords) regardless of campaign type
+4. **Ad Editor shows App Platform/Goal fields at the ad level** -- these belong at the campaign/ad-group level, not per-ad
+5. **No option to link an ad to a campaign from the Campaigns Log** (utm_campaigns table)
+6. **Previews reference uploaded assets** -- should work purely from text fields per type
 
 ---
 
-## What Changes
+## Changes
 
-### 1. Database Migration
+### 1. Remove AssetPicker from Ad Editor
 
-Add campaign-level configuration columns to `search_campaigns`:
+**File**: `src/components/search/SearchAdEditor.tsx`
 
-```sql
--- App campaign settings
-ALTER TABLE search_campaigns ADD COLUMN app_platform text;
-ALTER TABLE search_campaigns ADD COLUMN app_store_id text;
-ALTER TABLE search_campaigns ADD COLUMN app_store_url text;
-ALTER TABLE search_campaigns ADD COLUMN app_objective text;
-ALTER TABLE search_campaigns ADD COLUMN optimization_goal text;
-ALTER TABLE search_campaigns ADD COLUMN optimization_event text;
-ALTER TABLE search_campaigns ADD COLUMN bidding_type text;
-ALTER TABLE search_campaigns ADD COLUMN bidding_target numeric;
-ALTER TABLE search_campaigns ADD COLUMN audience_mode text;
+- Delete the "Creative Assets" section and `AssetPicker` usage from both the Display block (~lines 839-847) and the App block (~lines 970-978)
+- Remove the `AssetPicker` import
+- The Display ad editor keeps: Long Headline, Short Headlines, Descriptions, CTA, Landing Page, Business Name
+- The App ad editor keeps: Headlines, Descriptions, CTA, Business Name (Platform/Goal/Store URL stay at campaign level -- see point 4)
 
--- Display campaign settings
-ALTER TABLE search_campaigns ADD COLUMN display_objective text;
+### 2. Remove App Platform/Goal/Store URL from Ad Editor
 
--- Shared readiness tracking
-ALTER TABLE search_campaigns ADD COLUMN readiness_status text DEFAULT 'not_ready';
-```
+**File**: `src/components/search/SearchAdEditor.tsx`
 
-All nullable. Existing campaigns unaffected.
+- Remove `appPlatform`, `appCampaignGoal`, `appStoreUrl` fields from the App ad editing section (~lines 853-883) -- these are already managed in `CampaignDetailPanel` at the campaign level
+- Remove associated state variables and their sync to `onFieldChange`
+- App ad editor will only have: Headlines, Descriptions, CTA, Business Name
 
-### 2. CampaignDetailPanel (new component)
+### 3. Make CreateAdGroupDialog type-aware
 
-**New file**: `src/components/search-planner/CampaignDetailPanel.tsx`
+**File**: `src/components/ads/CreateAdGroupDialog.tsx`
 
-When a user clicks a campaign name, this fills the middle column instead of blank space. It adapts sections based on `campaign_type`.
+Add `campaignType` prop. Render different fields per type:
 
-#### Search campaigns show:
-- Campaign name (editable inline)
-- Objective (editable)
-- Status badge
-- Readiness status (computed from child ad groups and ads)
-- Google Parity Checklist (collapsible)
+- **Search**: Name + Bidding Strategy (full list) + Keyword Match Types (existing behavior)
+- **App**: Name + Platform (Android/iOS) + Campaign Sub-type (App Installs/App Engagement)
+- **Display**: Name + Targeting Method (Contextual/Audience/Placement) + Bidding Strategy (filtered to: Maximize Clicks, Maximize Conversions, Target CPA, Target ROAS)
 
-#### App campaigns show:
-- Campaign name + status
-- **Objective**: App Installs / App Engagement / App Pre-Registration (select)
-- **Optimization Goal**: Installs / In-app Action (select). If In-app Action: event name input
-- **Bidding**: Target CPI / Target CPA (select + numeric input)
-- **Platform & Store**: Android / iOS (select), App ID input, Store URL (derived, read-only)
-- **Audience Mode**: All users / New users only / Existing users (select)
-- Readiness status + Google Parity Checklist
+Validation per type:
+- Search: name + bidding + match types required
+- App: name + platform + sub-type required
+- Display: name required, rest optional
 
-#### Display campaigns show:
-- Campaign name + status
-- **Objective**: Awareness / Consideration / Conversions (select)
-- Readiness status + Google Parity Checklist
+Database insert adapts: stores `app_platform`, `app_subtype`, `targeting_method` columns (requires migration).
 
-No targeting blocks, no demographics, no geography. Entity handles that.
+### 4. Make AdGroupDetailPanel type-aware
 
-### 3. Validation Engine
+**File**: `src/components/search-planner/AdGroupDetailPanel.tsx`
 
-**New file**: `src/lib/campaignValidation.ts`
+Accept a `campaignType` prop (derived from the parent campaign). Conditionally render:
 
-Pure function: takes campaign + its ad groups + their ads, returns:
+- **Search**: Bidding Strategy + Match Types + Keywords (current behavior)
+- **App**: Platform + Sub-type display (read from ad group record) -- no keywords or match types
+- **Display**: Targeting Method + Bidding Strategy -- no keywords or match types
 
-```typescript
-interface ValidationResult {
-  ready: boolean;
-  blocking: string[];
-  warnings: string[];
-}
-```
+### 5. Add "Link to Campaign" selector (Campaigns Log)
 
-**Search rules:**
-- FAIL: No ad groups
-- FAIL: Any ad group has 0 ads
-- FAIL: Any ad has fewer than 3 headlines or 2 descriptions
-- FAIL: Any ad missing landing page
-- FAIL: Any ad group has 0 keywords
-- WARN: Any ad has fewer than 10 headlines
+**File**: `src/components/search/SearchAdEditor.tsx`
 
-**App rules:**
-- FAIL: No objective
-- FAIL: No optimization goal
-- FAIL: No app platform
-- FAIL: No app store ID
-- FAIL: No ad groups or any ad has 0 headlines/descriptions
-- WARN: Only one headline per ad
+Add a dropdown in the ad editor (all types) that fetches campaigns from `utm_campaigns` table and lets the user pick one to associate. This stores a `utm_campaign_id` on the ad record, linking the Google Planner ad to an existing Campaign Log entry.
 
-**Display rules:**
-- FAIL: No ad groups
-- FAIL: Any ad missing short headline or description
-- FAIL: Any ad missing business name
-- WARN: No long headline on any ad
-- WARN: No objective set
+Requires a new column `utm_campaign_id` on the `ads` table (migration).
 
-### 4. Google Parity Checklist
+### 6. Fix Preview Panel -- remove asset dependency for Display/App
 
-**New file**: `src/components/search-planner/GoogleParityChecklist.tsx`
+**File**: `src/components/search-planner/SearchPlannerPreviewPanel.tsx`
 
-Collapsible panel with green checkmark / red X per requirement. Embedded inside `CampaignDetailPanel` and also available in the Quality panel.
+- Remove the `campaign_assets` query (lines 57-69)
+- Pass empty assets array to `PreviewAssemblyEngine` -- previews render from text fields only
+- Remove `AssetPicker` type import
 
-**Search checklist:**
-- At least 1 RSA per ad group
-- 3+ headlines per RSA
-- 2+ descriptions per RSA
-- Final URL set
-- Keywords present
+**File**: `src/components/search-planner/PreviewAssemblyEngine.tsx`
 
-**App checklist:**
-- Objective selected
-- Optimization goal selected
-- App linked (platform + store ID)
-- At least 1 headline
-- At least 1 description
-- Audience mode defined
-- Bidding strategy defined
+- When no image assets exist, show placeholder boxes (already handled) -- no "upload required" warnings
+- Keep the placement tabs functional using text-only rendering
 
-**Display checklist:**
-- At least 1 short headline
-- At least 1 description
-- Business name set
-- Long headline present (recommended)
-- Objective set
-
-### 5. Update Quality Panel
-
-**File**: `src/components/search-planner/SearchPlannerQualityPanel.tsx`
-
-Add `adType` prop. Metrics adapt per type:
-
-- **Search** (no change): Headlines 0/15, Descriptions 0/4, Sitelinks, Callouts, Ad Strength, MENA policy
-- **Display**: Short Headlines x/5, Descriptions x/5, Long Headline present/missing, CTA set/missing. No sitelinks/callouts metrics
-- **App**: Headlines x/5, Descriptions x/5, Platform set, Goal set, Store URL set. No sitelinks/callouts metrics
-
-When no ad is selected but a campaign is, show campaign-level readiness instead of ad-level metrics.
-
-### 6. Readiness Dots in Structure Panel
+### 7. Wire campaignType through the hierarchy
 
 **File**: `src/components/search-planner/SearchPlannerStructurePanel.tsx`
 
-Each campaign row gets a small colored dot:
-- Green: READY (all validation passes)
-- Red: NOT READY (any blocking issue)
-- Computed client-side using the validation engine against loaded hierarchy data
-
-### 7. Wire CampaignDetailPanel into SearchPlanner
+- Update `showCreateAdGroup` state to include `campaignType`
+- Pass `campaignType` to `CreateAdGroupDialog`
+- Pass `campaignType` when calling `onAdGroupClick`
 
 **File**: `src/pages/SearchPlanner.tsx`
 
-- Add `campaignContext` state (like `editorContext` and `adGroupContext`)
-- `handleCampaignClick` sets `campaignContext` instead of clearing everything
-- Middle column renders `CampaignDetailPanel` when `campaignContext` is set
-- Right column shows campaign-level readiness + parity checklist when campaign is selected
+- Pass `campaignType` from `adGroupContext.campaign.campaign_type` to `AdGroupDetailPanel`
 
 ---
 
-## Files
+## Technical Details
+
+### Database Migration
+
+```sql
+-- Add type-aware fields to ad_groups
+ALTER TABLE ad_groups ADD COLUMN IF NOT EXISTS app_platform text;
+ALTER TABLE ad_groups ADD COLUMN IF NOT EXISTS app_subtype text;
+ALTER TABLE ad_groups ADD COLUMN IF NOT EXISTS targeting_method text;
+
+-- Add utm_campaign link to ads
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS utm_campaign_id uuid REFERENCES utm_campaigns(id);
+```
+
+### Files Changed Summary
 
 | File | Change |
 |------|--------|
-| Database migration | Add campaign-level columns |
-| `src/lib/campaignValidation.ts` | **New** -- validation engine |
-| `src/components/search-planner/GoogleParityChecklist.tsx` | **New** -- parity checklist |
-| `src/components/search-planner/CampaignDetailPanel.tsx` | **New** -- campaign config panel |
-| `src/components/search-planner/SearchPlannerQualityPanel.tsx` | Add `adType` prop, type-aware metrics |
-| `src/components/search-planner/SearchPlannerStructurePanel.tsx` | Readiness dots on campaign rows |
-| `src/components/search-planner/index.ts` | Export new components |
-| `src/pages/SearchPlanner.tsx` | Wire campaign click to detail panel, pass adType to quality panel |
-
-## Implementation Order
-
-1. Database migration
-2. `campaignValidation.ts`
-3. `GoogleParityChecklist.tsx`
-4. `CampaignDetailPanel.tsx`
-5. Update `SearchPlannerQualityPanel.tsx`
-6. Update `SearchPlannerStructurePanel.tsx` (readiness dots)
-7. Update `SearchPlanner.tsx` (wire everything)
-8. Update `index.ts` exports
-
+| `src/components/search/SearchAdEditor.tsx` | Remove AssetPicker, remove app platform/goal/store from ad level, add utm_campaign_id selector |
+| `src/components/ads/CreateAdGroupDialog.tsx` | Add campaignType prop, render type-specific fields |
+| `src/components/search-planner/AdGroupDetailPanel.tsx` | Add campaignType prop, hide Search-only cards for App/Display |
+| `src/components/search-planner/SearchPlannerPreviewPanel.tsx` | Remove asset query, pass empty assets |
+| `src/components/search-planner/SearchPlannerStructurePanel.tsx` | Pass campaignType to dialog and callbacks |
+| `src/pages/SearchPlanner.tsx` | Wire campaignType to AdGroupDetailPanel |
+| Database migration | Add columns to ad_groups and ads tables |
