@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { calculateAdStrength } from "@/lib/adQualityScore";
+import { validateCampaign } from "@/lib/campaignValidation";
 import { useSystemEntities } from "@/hooks/useSystemEntities";
 import { cn } from "@/lib/utils";
 
@@ -121,6 +122,39 @@ interface DeleteCampaignDialogState { campaign: CampaignData; adGroupsCount: num
 interface DuplicateAdDialogState { ad: AdData }
 interface DuplicateAdGroupDialogState { adGroup: AdGroupData; adsCount: number }
 interface DuplicateCampaignDialogState { campaign: CampaignData; adGroupsCount: number; adsCount: number }
+// eslint-disable-next-line react-refresh/only-export-components
+function CampaignReadinessDot({ campaignId, campaignType, campaign, adGroups: campaignAdGroups, ads: allAds }: {
+  campaignId: string;
+  campaignType: string;
+  campaign: CampaignData;
+  adGroups: { id: string; name: string; keywords?: unknown; campaign_id: string }[];
+  ads: AdData[];
+}) {
+  const groupsWithAds = useMemo(() => {
+    return campaignAdGroups.map(ag => ({
+      ...ag,
+      ads: allAds.filter(a => a.ad_group_id === ag.id),
+    }));
+  }, [campaignAdGroups, allAds]);
+
+  const validation = useMemo(() => {
+    return validateCampaign(
+      { ...campaign, campaign_type: campaignType },
+      groupsWithAds
+    );
+  }, [campaign, campaignType, groupsWithAds]);
+
+  return (
+    <span
+      className={cn(
+        "h-2 w-2 rounded-full flex-shrink-0",
+        validation.ready ? "bg-success" : "bg-destructive"
+      )}
+      title={validation.ready ? 'Ready' : validation.blocking[0] || 'Not ready'}
+    />
+  );
+}
+
 
 export function SearchPlannerStructurePanel({
   onEditAd,
@@ -484,13 +518,14 @@ export function SearchPlannerStructurePanel({
                       )}
                     </div>
 
-                    {/* Campaign name */}
-                    <div className="flex items-center gap-xs flex-1 min-w-0">
-                      <Folder className="h-4 w-4 text-primary/70 flex-shrink-0" />
-                      <span className="flex-1 text-body-sm font-medium text-foreground break-words line-clamp-2">
-                        {campaign.name}
-                      </span>
-                    </div>
+                     {/* Campaign name + readiness dot */}
+                     <div className="flex items-center gap-xs flex-1 min-w-0">
+                       <Folder className="h-4 w-4 text-primary/70 flex-shrink-0" />
+                       <span className="flex-1 text-body-sm font-medium text-foreground break-words line-clamp-2">
+                         {campaign.name}
+                       </span>
+                       <CampaignReadinessDot campaignId={campaign.id} campaignType={campaignTypeLabel} campaign={campaign} adGroups={campaignAdGroups} ads={ads} />
+                     </div>
 
                     {/* Campaign Type Badge */}
                     <Badge 

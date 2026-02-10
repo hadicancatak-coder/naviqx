@@ -2,8 +2,8 @@ import { useState, useCallback } from "react";
 import SearchAdEditor from "@/components/search/SearchAdEditor";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { SearchPlannerStructurePanel, SearchPlannerPreviewPanel, SearchPlannerQualityPanel, AdGroupDetailPanel } from "@/components/search-planner";
-import { Search, FileText, Share2 } from "lucide-react";
+import { SearchPlannerStructurePanel, SearchPlannerPreviewPanel, SearchPlannerQualityPanel, AdGroupDetailPanel, CampaignDetailPanel } from "@/components/search-planner";
+import { Search, FileText, Share2, Folder } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,8 @@ interface AdGroupData {
 interface CampaignData {
   id: string;
   name: string;
+  campaign_type?: string;
+  [key: string]: unknown;
 }
 
 interface EditorContext {
@@ -79,6 +81,7 @@ interface SearchPlannerProps {
 export default function SearchPlanner({ adType = "search" }: SearchPlannerProps) {
   const [editorContext, setEditorContext] = useState<EditorContext | null>(null);
   const [adGroupContext, setAdGroupContext] = useState<AdGroupContext | null>(null);
+  const [campaignContext, setCampaignContext] = useState<{ campaign: CampaignData; entity: string } | null>(null);
   const [rightPanelTab, setRightPanelTab] = useState<"preview" | "quality">("preview");
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<string>("UAE");
@@ -94,6 +97,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
   const handleEditAd = (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setEditorContext({ ad, adGroup, campaign, entity });
     setAdGroupContext(null);
+    setCampaignContext(null);
     setSelectedEntity(entity);
     // Initialize live fields from ad data
     setLiveFields({
@@ -109,6 +113,7 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
   const handleCreateAd = (adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setSelectedEntity(entity);
     setAdGroupContext(null);
+    setCampaignContext(null);
     const newAd: AdData = {
       name: `New ${adType === 'search' ? 'Search' : adType === 'display' ? 'Display' : 'App'} Ad`,
       ad_group_id: adGroup.id,
@@ -136,14 +141,16 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
     });
   };
 
-  const handleCampaignClick = (_campaign: CampaignData, _entity: string) => {
+  const handleCampaignClick = (campaign: CampaignData, entity: string) => {
     setEditorContext(null);
     setAdGroupContext(null);
+    setCampaignContext({ campaign, entity });
   };
 
   const handleAdGroupClick = (adGroup: AdGroupData, campaign: CampaignData, entity: string) => {
     setEditorContext(null);
     setAdGroupContext({ adGroup, campaign, entity });
+    setCampaignContext(null);
     setSelectedEntity(entity);
   };
 
@@ -249,6 +256,12 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                   );
                 }}
               />
+            ) : campaignContext ? (
+              <CampaignDetailPanel
+                key={campaignContext.campaign.id}
+                campaign={campaignContext.campaign}
+                entity={campaignContext.entity}
+              />
             ) : (
               <div className="h-full flex items-center justify-center p-lg">
                 <div className="text-center space-y-md">
@@ -315,6 +328,20 @@ export default function SearchPlanner({ adType = "search" }: SearchPlannerProps)
                     />
                   )}
                 </ScrollArea>
+              </div>
+            ) : campaignContext ? (
+              <div className="h-full flex items-center justify-center p-lg">
+                <div className="text-center space-y-md">
+                  <div className="w-16 h-16 rounded-xl bg-muted/50 flex items-center justify-center mx-auto">
+                    <Folder className="h-8 w-8 text-primary/40" />
+                  </div>
+                  <div className="space-y-xs">
+                    <h3 className="text-body font-medium text-muted-foreground">Campaign Selected</h3>
+                    <p className="text-body-sm text-muted-foreground/70">
+                      Campaign settings and validation are shown in the center panel
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="h-full flex items-center justify-center p-lg">
