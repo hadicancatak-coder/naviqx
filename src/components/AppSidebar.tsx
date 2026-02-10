@@ -14,7 +14,8 @@ import {
   BarChart3,
   Search,
   FolderKanban,
-  Zap
+  Zap,
+  Monitor,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,7 @@ import {
 
 const adsItems = [
   { title: "Search Planner", url: "/ads/search", icon: Megaphone },
+  { title: "Display Planner", url: "/ads/display", icon: Monitor },
   { title: "Brief Planner", url: "/ads/lp", icon: Target },
   { title: "Caption Library", url: "/ads/captions", icon: PenTool },
   { title: "UTM Planner", url: "/utm-planner", icon: Link2 },

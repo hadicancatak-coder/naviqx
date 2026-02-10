@@ -3417,6 +3417,7 @@ export type Database = {
       search_campaigns: {
         Row: {
           budget_monthly: number | null
+          campaign_type: string
           created_at: string | null
           created_by: string | null
           entity: string | null
@@ -3433,6 +3434,7 @@ export type Database = {
         }
         Insert: {
           budget_monthly?: number | null
+          campaign_type?: string
           created_at?: string | null
           created_by?: string | null
           entity?: string | null
@@ -3449,6 +3451,7 @@ export type Database = {
         }
         Update: {
           budget_monthly?: number | null
+          campaign_type?: string
           created_at?: string | null
           created_by?: string | null
           entity?: string | null

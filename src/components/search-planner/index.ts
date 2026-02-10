@@ -5,3 +5,4 @@ export { SearchPlannerQualityPanel } from './SearchPlannerQualityPanel';
 export { SearchPlannerPreviewPanel } from './SearchPlannerPreviewPanel';
 export { SearchPlannerStructurePanel } from './SearchPlannerStructurePanel';
 export { AdGroupDetailPanel } from './AdGroupDetailPanel';
+export { SearchPlannerBulkBar } from './SearchPlannerBulkBar';
