@@ -146,7 +146,7 @@ export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, ad
 
   const handleCampaignCreated = () => {
     setShowCreateCampaign(false);
-    queryClient.invalidateQueries({ queryKey: ['campaigns-hierarchy'] });
+    queryClient.invalidateQueries({ queryKey: ['search-campaigns-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ad-campaigns-tree'] });
   };
 
@@ -157,7 +157,7 @@ export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, ad
   };
 
   const handleDeleteSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['campaigns-hierarchy'] });
+    queryClient.invalidateQueries({ queryKey: ['search-campaigns-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ad-groups-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ads-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ads'] });
@@ -166,7 +166,7 @@ export function SearchHierarchyPanel({ onEditAd, onCreateAd, onCampaignClick, ad
   };
 
   const handleDuplicateSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['campaigns-hierarchy'] });
+    queryClient.invalidateQueries({ queryKey: ['search-campaigns-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ad-groups-hierarchy'] });
     queryClient.invalidateQueries({ queryKey: ['ads-hierarchy'] });
   };
