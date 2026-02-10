@@ -842,6 +842,81 @@ export type Database = {
           },
         ]
       }
+      campaign_assets: {
+        Row: {
+          ad_id: string | null
+          aspect_ratio: string | null
+          asset_type: string
+          asset_url: string
+          campaign_id: string | null
+          created_at: string
+          created_by: string | null
+          dimensions: string | null
+          file_name: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          policy_notes: string | null
+          policy_status: string | null
+          sort_order: number | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad_id?: string | null
+          aspect_ratio?: string | null
+          asset_type: string
+          asset_url: string
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dimensions?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          policy_notes?: string | null
+          policy_status?: string | null
+          sort_order?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad_id?: string | null
+          aspect_ratio?: string | null
+          asset_type?: string
+          asset_url?: string
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dimensions?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          policy_notes?: string | null
+          policy_status?: string | null
+          sort_order?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_assets_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "search_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_assignees: {
         Row: {
           assigned_at: string

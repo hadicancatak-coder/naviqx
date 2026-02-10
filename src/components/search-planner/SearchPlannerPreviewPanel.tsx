@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Monitor, Smartphone, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DisplayAdPreview } from "@/components/ads/DisplayAdPreview";
-import { AppAdPreview } from "@/components/ads/AppAdPreview";
+import { PreviewAssemblyEngine } from "./PreviewAssemblyEngine";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { CampaignAsset } from "./AssetPicker";
 
 interface Sitelink {
   description: string;
@@ -29,6 +31,9 @@ interface SearchPlannerPreviewPanelProps {
   appPlatform?: string;
   appCampaignGoal?: string;
   appStoreUrl?: string;
+  // Context
+  adId?: string;
+  campaignId?: string;
 }
 
 export function SearchPlannerPreviewPanel({
@@ -45,32 +50,38 @@ export function SearchPlannerPreviewPanel({
   appPlatform = "",
   appCampaignGoal = "",
   appStoreUrl = "",
+  adId,
+  campaignId,
 }: SearchPlannerPreviewPanelProps) {
-  // Display ad preview
-  if (adType === "display") {
-    return (
-      <DisplayAdPreview
-        longHeadline={longHeadline}
-        shortHeadlines={shortHeadlines}
-        descriptions={descriptions}
-        ctaText={ctaText}
-        landingPage={landingPage}
-        businessName={businessName}
-      />
-    );
-  }
+  // Fetch assets for assembly engine
+  const { data: assets = [] } = useQuery({
+    queryKey: ['campaign-assets-preview', adId, campaignId],
+    queryFn: async () => {
+      let query = supabase.from('campaign_assets').select('*').order('sort_order');
+      if (adId) query = query.eq('ad_id', adId);
+      else if (campaignId) query = query.eq('campaign_id', campaignId);
+      else return [];
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as CampaignAsset[];
+    },
+    enabled: !!(adId || campaignId) && adType !== 'search',
+  });
 
-  // App ad preview
-  if (adType === "app") {
+  // Display & App: use assembly engine
+  if (adType === "display" || adType === "app") {
     return (
-      <AppAdPreview
+      <PreviewAssemblyEngine
+        adType={adType}
         headlines={headlines}
         descriptions={descriptions}
-        ctaText={ctaText}
+        longHeadline={longHeadline}
+        shortHeadlines={shortHeadlines}
         businessName={businessName}
+        ctaText={ctaText}
         appPlatform={appPlatform}
-        appCampaignGoal={appCampaignGoal}
         appStoreUrl={appStoreUrl}
+        assets={assets}
       />
     );
   }
