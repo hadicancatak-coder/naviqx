@@ -286,6 +286,7 @@ export function LibraryPageEditor({
             <Label>Content</Label>
             <div className="border border-border rounded-lg overflow-hidden min-h-[300px]">
               <RichTextEditor
+                key={page?.id || "new"}
                 value={content}
                 onChange={setContent}
                 placeholder="Write your page content here..."
