@@ -455,6 +455,9 @@ export type Database = {
           ad_group_name: string | null
           ad_strength: number | null
           ad_type: string | null
+          app_campaign_goal: string | null
+          app_platform: string | null
+          app_store_url: string | null
           approval_status: string | null
           business_name: string | null
           callouts: Json
@@ -484,6 +487,9 @@ export type Database = {
           ad_group_name?: string | null
           ad_strength?: number | null
           ad_type?: string | null
+          app_campaign_goal?: string | null
+          app_platform?: string | null
+          app_store_url?: string | null
           approval_status?: string | null
           business_name?: string | null
           callouts?: Json
@@ -513,6 +519,9 @@ export type Database = {
           ad_group_name?: string | null
           ad_strength?: number | null
           ad_type?: string | null
+          app_campaign_goal?: string | null
+          app_platform?: string | null
+          app_store_url?: string | null
           approval_status?: string | null
           business_name?: string | null
           callouts?: Json

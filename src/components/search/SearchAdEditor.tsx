@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Save, ChevronLeft, Copy, BookmarkPlus, Download, Edit } from "lucide-react";
+import { SEARCH_ADS_CONFIG } from "@/config/searchAdsConfig";
 import { logger } from "@/lib/logger";
 import { SearchAdPreview } from "@/components/ads/SearchAdPreview";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,7 +41,7 @@ interface SearchAdEditorProps {
   entity: string;
   onSave: (adId?: string) => void;
   onCancel: () => void;
-  adType?: "search" | "display";
+  adType?: "search" | "display" | "app";
   showHeader?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFieldChange?: (fields: any) => void;
@@ -77,6 +78,16 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
   const [displayDescriptions, setDisplayDescriptions] = useState<string[]>(Array(5).fill(""));
   const [ctaText, setCtaText] = useState("");
 
+  // App ad specific state
+  const [appPlatform, setAppPlatform] = useState("");
+  const [appCampaignGoal, setAppCampaignGoal] = useState("");
+  const [appStoreUrl, setAppStoreUrl] = useState("");
+  const [appHeadlines, setAppHeadlines] = useState<string[]>(Array(5).fill(""));
+  const [appDescriptions, setAppDescriptions] = useState<string[]>(Array(5).fill(""));
+  const [visibleAppHeadlineCount, setVisibleAppHeadlineCount] = useState(3);
+  const [visibleAppDescriptionCount, setVisibleAppDescriptionCount] = useState(2);
+  const [visibleShortHeadlineCount, setVisibleShortHeadlineCount] = useState(3);
+  const [visibleDisplayDescriptionCount, setVisibleDisplayDescriptionCount] = useState(2);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -159,6 +170,16 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
         setDisplayDescriptions([...(ad.descriptions || []), ...Array(5).fill("")].slice(0, 5));
         setCtaText(ad.cta_text || "");
       }
+
+      // Load app-specific fields
+      if (ad.ad_type === "app") {
+        setAppPlatform(ad.app_platform || "");
+        setAppCampaignGoal(ad.app_campaign_goal || "");
+        setAppStoreUrl(ad.app_store_url || "");
+        setAppHeadlines([...(ad.headlines || []), ...Array(5).fill("")].slice(0, 5));
+        setAppDescriptions([...(ad.descriptions || []), ...Array(5).fill("")].slice(0, 5));
+        setCtaText(ad.cta_text || "");
+      }
     } else {
       setLanguage(campaign?.languages?.[0] || "EN");
     }
@@ -167,16 +188,37 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
   // Sync field changes to parent for live preview
   useEffect(() => {
     if (onFieldChange) {
-      onFieldChange({
-        headlines: headlines.filter(h => h.trim()),
-        descriptions: descriptions.filter(d => d.trim()),
-        sitelinks: sitelinks.filter(s => s.description.trim() || s.link.trim()),
-        callouts: callouts.filter(c => c.trim()),
-        landingPage,
-        businessName,
-      });
+      if (adType === 'display') {
+        onFieldChange({
+          longHeadline,
+          shortHeadlines: shortHeadlines.filter(h => h.trim()),
+          descriptions: displayDescriptions.filter(d => d.trim()),
+          ctaText,
+          landingPage,
+          businessName,
+        });
+      } else if (adType === 'app') {
+        onFieldChange({
+          headlines: appHeadlines.filter(h => h.trim()),
+          descriptions: appDescriptions.filter(d => d.trim()),
+          ctaText,
+          appPlatform,
+          appCampaignGoal,
+          appStoreUrl,
+          businessName,
+        });
+      } else {
+        onFieldChange({
+          headlines: headlines.filter(h => h.trim()),
+          descriptions: descriptions.filter(d => d.trim()),
+          sitelinks: sitelinks.filter(s => s.description.trim() || s.link.trim()),
+          callouts: callouts.filter(c => c.trim()),
+          landingPage,
+          businessName,
+        });
+      }
     }
-  }, [headlines, descriptions, sitelinks, callouts, landingPage, businessName, onFieldChange]);
+  }, [headlines, descriptions, sitelinks, callouts, landingPage, businessName, onFieldChange, adType, longHeadline, shortHeadlines, displayDescriptions, ctaText, appHeadlines, appDescriptions, appPlatform, appCampaignGoal, appStoreUrl]);
 
   const updateHeadline = (index: number, value: string) => {
     const newHeadlines = [...headlines];
@@ -373,14 +415,26 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
       return;
     }
 
-    if (!headlines[0]?.trim()) {
-      if (!silent) toast.error("Please enter at least one headline");
-      return;
-    }
-
-    if (!descriptions[0]?.trim()) {
-      if (!silent) toast.error("Please enter at least one description");
-      return;
+    // Type-specific validation
+    if (adType === 'display') {
+      if (!longHeadline?.trim() && !shortHeadlines.some(h => h.trim())) {
+        if (!silent) toast.error("Please enter at least one headline");
+        return;
+      }
+    } else if (adType === 'app') {
+      if (!appHeadlines.some(h => h.trim())) {
+        if (!silent) toast.error("Please enter at least one headline");
+        return;
+      }
+    } else {
+      if (!headlines[0]?.trim()) {
+        if (!silent) toast.error("Please enter at least one headline");
+        return;
+      }
+      if (!descriptions[0]?.trim()) {
+        if (!silent) toast.error("Please enter at least one description");
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -400,16 +454,35 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
         approval_status: "approved"
       };
 
-      // Search ad specific data
-      baseData.headlines = headlines.filter(h => h.trim()).map((h, i) => {
-        const originalIndex = headlines.indexOf(h);
-        return dkiEnabled[originalIndex] ? `{Keyword:${h}}` : h;
-      });
-      baseData.descriptions = descriptions.filter(d => d.trim());
-      baseData.sitelinks = sitelinks.filter(s => s.description.trim() || s.link.trim());
-      baseData.callouts = callouts.filter(c => c.trim());
-      baseData.ad_strength = adStrength.score;
-      baseData.compliance_issues = complianceIssues.map(issue => ({ ...issue }));
+      if (adType === 'display') {
+        baseData.long_headline = longHeadline;
+        baseData.short_headlines = shortHeadlines.filter(h => h.trim());
+        baseData.descriptions = displayDescriptions.filter(d => d.trim());
+        baseData.cta_text = ctaText;
+        baseData.headlines = [];
+        baseData.sitelinks = [];
+        baseData.callouts = [];
+      } else if (adType === 'app') {
+        baseData.headlines = appHeadlines.filter(h => h.trim());
+        baseData.descriptions = appDescriptions.filter(d => d.trim());
+        baseData.cta_text = ctaText;
+        baseData.app_platform = appPlatform;
+        baseData.app_campaign_goal = appCampaignGoal;
+        baseData.app_store_url = appStoreUrl;
+        baseData.sitelinks = [];
+        baseData.callouts = [];
+      } else {
+        // Search ad specific data
+        baseData.headlines = headlines.filter(h => h.trim()).map((h, i) => {
+          const originalIndex = headlines.indexOf(h);
+          return dkiEnabled[originalIndex] ? `{Keyword:${h}}` : h;
+        });
+        baseData.descriptions = descriptions.filter(d => d.trim());
+        baseData.sitelinks = sitelinks.filter(s => s.description.trim() || s.link.trim());
+        baseData.callouts = callouts.filter(c => c.trim());
+        baseData.ad_strength = adStrength.score;
+        baseData.compliance_issues = complianceIssues.map(issue => ({ ...issue }));
+      }
 
       if (ad?.id) {
         // Get current auth user directly to ensure correct ID
@@ -564,7 +637,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
           <div>
             <div className="flex items-center justify-between mb-md">
               <h2 className="text-heading-lg font-semibold">
-                {ad?.id ? "Edit Search Ad" : "Create Search Ad"}
+                {ad?.id ? `Edit ${adType === 'display' ? 'Display' : adType === 'app' ? 'App' : 'Search'} Ad` : `Create ${adType === 'display' ? 'Display' : adType === 'app' ? 'App' : 'Search'} Ad`}
               </h2>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -648,246 +721,416 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Headlines (15 max, 30 chars each) - Drag to reorder</Label>
-              {isEditMode ? (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={headlines.slice(0, visibleHeadlineCount).map((_, i) => `headline-${i}`)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-3">
-                      {headlines.slice(0, visibleHeadlineCount).map((headline, index) => (
+            {/* Type-specific fields */}
+            {adType === 'display' && isEditMode && (
+              <>
+                {/* Long Headline */}
+                <div className="space-y-2">
+                  <Label>
+                    Long Headline
+                    <span className={
+                      longHeadline.length < 72 ? "ml-2 text-success" :
+                      longHeadline.length < 86 ? "ml-2 text-warning" :
+                      "ml-2 text-destructive"
+                    }>
+                      {longHeadline.length}/90
+                    </span>
+                  </Label>
+                  <Input
+                    placeholder="Primary headline (90 chars)"
+                    value={longHeadline}
+                    onChange={(e) => setLongHeadline(e.target.value)}
+                    maxLength={90}
+                  />
+                </div>
+
+                {/* Short Headlines */}
+                <div className="space-y-2">
+                  <Label>Short Headlines ({shortHeadlines.filter(h => h.trim()).length}/5, 30 chars each)</Label>
+                  <div className="space-y-3">
+                    {shortHeadlines.slice(0, visibleShortHeadlineCount).map((h, i) => (
+                      <div key={i} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-metadata">
+                            Short Headline {i + 1}
+                            <span className={h.length < 24 ? "ml-2 text-success" : h.length < 29 ? "ml-2 text-warning" : "ml-2 text-destructive"}>
+                              {h.length}/30
+                            </span>
+                          </Label>
+                        </div>
+                        <Input
+                          placeholder={`Short headline ${i + 1}`}
+                          value={h}
+                          onChange={(e) => {
+                            const updated = [...shortHeadlines];
+                            updated[i] = e.target.value;
+                            setShortHeadlines(updated);
+                          }}
+                          maxLength={30}
+                        />
+                      </div>
+                    ))}
+                    {visibleShortHeadlineCount < 5 && (
+                      <Button type="button" variant="outline" size="sm" onClick={() => setVisibleShortHeadlineCount(Math.min(visibleShortHeadlineCount + 2, 5))} className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add More ({5 - visibleShortHeadlineCount} remaining)
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Display Descriptions */}
+                <div className="space-y-2">
+                  <Label>Descriptions ({displayDescriptions.filter(d => d.trim()).length}/5, 90 chars each)</Label>
+                  <div className="space-y-3">
+                    {displayDescriptions.slice(0, visibleDisplayDescriptionCount).map((d, i) => (
+                      <div key={i} className="space-y-1">
+                        <Label className="text-metadata">
+                          Description {i + 1}
+                          <span className={d.length < 72 ? "ml-2 text-success" : d.length < 86 ? "ml-2 text-warning" : "ml-2 text-destructive"}>
+                            {d.length}/90
+                          </span>
+                        </Label>
+                        <Input
+                          placeholder={`Description ${i + 1}`}
+                          value={d}
+                          onChange={(e) => {
+                            const updated = [...displayDescriptions];
+                            updated[i] = e.target.value;
+                            setDisplayDescriptions(updated);
+                          }}
+                          maxLength={90}
+                        />
+                      </div>
+                    ))}
+                    {visibleDisplayDescriptionCount < 5 && (
+                      <Button type="button" variant="outline" size="sm" onClick={() => setVisibleDisplayDescriptionCount(Math.min(visibleDisplayDescriptionCount + 2, 5))} className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add More ({5 - visibleDisplayDescriptionCount} remaining)
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="space-y-2">
+                  <Label>CTA Button Text</Label>
+                  <Select value={ctaText} onValueChange={setCtaText}>
+                    <SelectTrigger><SelectValue placeholder="Select CTA" /></SelectTrigger>
+                    <SelectContent>
+                      {SEARCH_ADS_CONFIG.display.ctaOptions.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Landing Page & Business Name */}
+                <div className="space-y-2">
+                  <Label>Landing Page</Label>
+                  <Input placeholder="https://example.com" value={landingPage} onChange={(e) => setLandingPage(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Business Name</Label>
+                  <Input placeholder="Your Business" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                </div>
+              </>
+            )}
+
+            {adType === 'app' && isEditMode && (
+              <>
+                {/* App Platform & Goal */}
+                <div className="grid grid-cols-2 gap-md">
+                  <div className="space-y-2">
+                    <Label>App Platform *</Label>
+                    <Select value={appPlatform} onValueChange={setAppPlatform}>
+                      <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                      <SelectContent>
+                        {SEARCH_ADS_CONFIG.app.platforms.map(p => (
+                          <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Campaign Goal *</Label>
+                    <Select value={appCampaignGoal} onValueChange={setAppCampaignGoal}>
+                      <SelectTrigger><SelectValue placeholder="Select goal" /></SelectTrigger>
+                      <SelectContent>
+                        {SEARCH_ADS_CONFIG.app.goals.map(g => (
+                          <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* App Store URL */}
+                <div className="space-y-2">
+                  <Label>App Store URL</Label>
+                  <Input placeholder={appPlatform === 'ios' ? 'https://apps.apple.com/...' : 'https://play.google.com/store/apps/...'} value={appStoreUrl} onChange={(e) => setAppStoreUrl(e.target.value)} />
+                </div>
+
+                {/* App Headlines */}
+                <div className="space-y-2">
+                  <Label>Headlines ({appHeadlines.filter(h => h.trim()).length}/5, 30 chars each)</Label>
+                  <div className="space-y-3">
+                    {appHeadlines.slice(0, visibleAppHeadlineCount).map((h, i) => (
+                      <div key={i} className="space-y-1">
+                        <Label className="text-metadata">
+                          Headline {i + 1}
+                          <span className={h.length < 24 ? "ml-2 text-success" : h.length < 29 ? "ml-2 text-warning" : "ml-2 text-destructive"}>
+                            {h.length}/30
+                          </span>
+                        </Label>
+                        <Input
+                          placeholder={`Headline ${i + 1}`}
+                          value={h}
+                          onChange={(e) => {
+                            const updated = [...appHeadlines];
+                            updated[i] = e.target.value;
+                            setAppHeadlines(updated);
+                          }}
+                          maxLength={30}
+                        />
+                      </div>
+                    ))}
+                    {visibleAppHeadlineCount < 5 && (
+                      <Button type="button" variant="outline" size="sm" onClick={() => setVisibleAppHeadlineCount(Math.min(visibleAppHeadlineCount + 2, 5))} className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add More ({5 - visibleAppHeadlineCount} remaining)
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* App Descriptions */}
+                <div className="space-y-2">
+                  <Label>Descriptions ({appDescriptions.filter(d => d.trim()).length}/5, 90 chars each)</Label>
+                  <div className="space-y-3">
+                    {appDescriptions.slice(0, visibleAppDescriptionCount).map((d, i) => (
+                      <div key={i} className="space-y-1">
+                        <Label className="text-metadata">
+                          Description {i + 1}
+                          <span className={d.length < 72 ? "ml-2 text-success" : d.length < 86 ? "ml-2 text-warning" : "ml-2 text-destructive"}>
+                            {d.length}/90
+                          </span>
+                        </Label>
+                        <Input
+                          placeholder={`Description ${i + 1}`}
+                          value={d}
+                          onChange={(e) => {
+                            const updated = [...appDescriptions];
+                            updated[i] = e.target.value;
+                            setAppDescriptions(updated);
+                          }}
+                          maxLength={90}
+                        />
+                      </div>
+                    ))}
+                    {visibleAppDescriptionCount < 5 && (
+                      <Button type="button" variant="outline" size="sm" onClick={() => setVisibleAppDescriptionCount(Math.min(visibleAppDescriptionCount + 2, 5))} className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add More ({5 - visibleAppDescriptionCount} remaining)
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="space-y-2">
+                  <Label>CTA Button Text</Label>
+                  <Select value={ctaText} onValueChange={setCtaText}>
+                    <SelectTrigger><SelectValue placeholder="Select CTA" /></SelectTrigger>
+                    <SelectContent>
+                      {SEARCH_ADS_CONFIG.app.ctaOptions.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Business Name */}
+                <div className="space-y-2">
+                  <Label>Business Name</Label>
+                  <Input placeholder="Your App Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                </div>
+              </>
+            )}
+
+            {/* Search ad fields (only for search type) */}
+            {adType === 'search' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Headlines (15 max, 30 chars each) - Drag to reorder</Label>
+                  {isEditMode ? (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={headlines.slice(0, visibleHeadlineCount).map((_, i) => `headline-${i}`)} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-3">
+                          {headlines.slice(0, visibleHeadlineCount).map((headline, index) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Label htmlFor={`headline-${index}`}>
+                                  Headline {index + 1}
+                                  <span className={headline.length < 24 ? "ml-2 text-success" : headline.length < 29 ? "ml-2 text-warning" : "ml-2 text-destructive"}>
+                                    {headline.length}/30
+                                  </span>
+                                </Label>
+                              </div>
+                              <SortableHeadlineInput
+                                id={`headline-${index}`}
+                                index={index}
+                                headline={headline}
+                                isDkiEnabled={dkiEnabled[index]}
+                                onUpdate={(value) => updateHeadline(index, value)}
+                                onToggleDki={() => toggleDKI(index)}
+                                renderActions={() => (
+                                  <FieldActions
+                                    value={headline}
+                                    elementType="headline"
+                                    onSelect={(content) => updateHeadline(index, content)}
+                                    onSave={() => handleSaveElement('headline', headline)}
+                                    isEmpty={!headline.trim()}
+                                  />
+                                )}
+                              />
+                            </div>
+                          ))}
+                          {visibleHeadlineCount < 15 && (
+                            <Button type="button" variant="outline" size="sm" onClick={() => setVisibleHeadlineCount(Math.min(visibleHeadlineCount + 3, 15))} className="w-full">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add More Headlines ({15 - visibleHeadlineCount} remaining)
+                            </Button>
+                          )}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <div className="space-y-1">
+                      {headlines.filter(h => h.trim()).map((headline, index) => {
+                        const pattern = detectHeadlinePattern(headline);
+                        const hasPattern = pattern.type !== 'none';
+                        return (
+                          <div key={index} className={`text-sm p-2 rounded flex items-center gap-2 ${hasPattern ? 'bg-warning-soft border border-warning/30' : 'bg-muted/30'}`}>
+                            <span className="flex-1">• {headline}</span>
+                            {hasPattern && (
+                              <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                <Badge variant="outline" className="text-xs cursor-help bg-warning-soft border-warning/30 text-warning-text shrink-0">
+                                  {pattern.indicator} +{pattern.boost}%
+                                </Badge>
+                              </TooltipTrigger><TooltipContent><p className="text-sm">{pattern.description}</p></TooltipContent></Tooltip></TooltipProvider>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {headlines.filter(h => h.trim()).length === 0 && <div className="text-sm text-muted-foreground">No headlines</div>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Descriptions (4 max, 90 chars each)</Label>
+                  {isEditMode ? (
+                    <div className="grid grid-cols-1 gap-3">
+                      {descriptions.map((description, index) => (
                         <div key={index} className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label htmlFor={`headline-${index}`}>
-                              Headline {index + 1}
-                              <span className={
-                                headline.length < 24 ? "ml-2 text-success" :
-                                headline.length < 29 ? "ml-2 text-warning" :
-                                "ml-2 text-destructive"
-                              }>
-                                {headline.length}/30
+                            <Label htmlFor={`description-${index}`}>
+                              Description {index + 1}
+                              <span className={description.length < 72 ? "ml-2 text-success" : description.length < 86 ? "ml-2 text-warning" : "ml-2 text-destructive"}>
+                                {description.length}/90
                               </span>
                             </Label>
                           </div>
-                          <SortableHeadlineInput
-                            id={`headline-${index}`}
-                            index={index}
-                            headline={headline}
-                            isDkiEnabled={dkiEnabled[index]}
-                            onUpdate={(value) => updateHeadline(index, value)}
-                            onToggleDki={() => toggleDKI(index)}
-                            renderActions={() => (
-                              <FieldActions
-                                value={headline}
-                                elementType="headline"
-                                onSelect={(content) => updateHeadline(index, content)}
-                                onSave={() => handleSaveElement('headline', headline)}
-                                isEmpty={!headline.trim()}
-                              />
-                            )}
-                          />
+                          <div className="flex gap-2">
+                            <Input id={`description-${index}`} placeholder={`Description ${index + 1}${index < 2 ? ' *' : ''}`} value={description} onChange={(e) => updateDescription(index, e.target.value)} maxLength={90} className="flex-1" />
+                            <FieldActions value={description} elementType="description" onSelect={(content) => updateDescription(index, content)} onSave={() => handleSaveElement('description', description)} isEmpty={!description.trim()} />
+                          </div>
                         </div>
                       ))}
-                      {visibleHeadlineCount < 15 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setVisibleHeadlineCount(Math.min(visibleHeadlineCount + 3, 15))}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add More Headlines ({15 - visibleHeadlineCount} remaining)
-                        </Button>
-                      )}
                     </div>
-                  </SortableContext>
-                </DndContext>
-              ) : (
-                <div className="space-y-1">
-                  {headlines.filter(h => h.trim()).map((headline, index) => {
-                    const pattern = detectHeadlinePattern(headline);
-                    const hasPattern = pattern.type !== 'none';
-                    
-                    return (
-                      <div 
-                        key={index} 
-                        className={`text-sm p-2 rounded flex items-center gap-2 ${
-                          hasPattern ? 'bg-warning-soft border border-warning/30' : 'bg-muted/30'
-                        }`}
-                      >
-                        <span className="flex-1">• {headline}</span>
-                        {hasPattern && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge 
-                                  variant="outline" 
-                                  className="text-xs cursor-help bg-warning-soft border-warning/30 text-warning-text shrink-0"
-                                >
-                                  {pattern.indicator} +{pattern.boost}%
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-sm">{pattern.description}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {headlines.filter(h => h.trim()).length === 0 && (
-                    <div className="text-sm text-muted-foreground">No headlines</div>
+                  ) : (
+                    <div className="space-y-1">
+                      {descriptions.filter(d => d.trim()).map((description, index) => (
+                        <div key={index} className="text-sm bg-muted/30 p-2 rounded">• {description}</div>
+                      ))}
+                      {descriptions.filter(d => d.trim()).length === 0 && <div className="text-sm text-muted-foreground">No descriptions</div>}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label>Descriptions (4 max, 90 chars each)</Label>
-              {isEditMode ? (
-                <div className="grid grid-cols-1 gap-3">
-                  {descriptions.map((description, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor={`description-${index}`}>
-                          Description {index + 1}
-                          <span className={
-                            description.length < 72 ? "ml-2 text-success" :
-                            description.length < 86 ? "ml-2 text-warning" :
-                            "ml-2 text-destructive"
-                          }>
-                            {description.length}/90
-                          </span>
-                        </Label>
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          id={`description-${index}`}
-                          placeholder={`Description ${index + 1}${index < 2 ? ' *' : ''}`}
-                          value={description}
-                          onChange={(e) => updateDescription(index, e.target.value)}
-                          maxLength={90}
-                          className="flex-1"
-                        />
-                        <FieldActions
-                          value={description}
-                          elementType="description"
-                          onSelect={(content) => updateDescription(index, content)}
-                          onSave={() => handleSaveElement('description', description)}
-                          isEmpty={!description.trim()}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {descriptions.filter(d => d.trim()).map((description, index) => (
-                    <div key={index} className="text-sm bg-muted/30 p-2 rounded">
-                      • {description}
-                    </div>
-                  ))}
-                  {descriptions.filter(d => d.trim()).length === 0 && (
-                    <div className="text-sm text-muted-foreground">No descriptions</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Collapsible Sitelinks & Callouts */}
-            {isEditMode && (
-              <Accordion type="single" collapsible className="border rounded-lg">
-                <AccordionItem value="sitelinks" className="border-none">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Sitelinks & Callouts</span>
-                      <Badge variant="outline" className="text-xs">
-                        {sitelinks.filter(s => s.description.trim()).length} sitelinks, {callouts.filter(c => c.trim()).length} callouts
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-md pb-md space-y-lg">
-                    {/* Sitelinks */}
-                    <div className="space-y-3">
-                      <Label>Sitelinks (5 max)</Label>
-                      {sitelinks.map((sitelink, index) => (
-                        <div key={index} className="space-y-2 p-3 border rounded-lg bg-muted/20">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm">Sitelink {index + 1}</Label>
-                          </div>
-                          <div className="grid gap-2">
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Text (e.g., Contact Us)"
-                                value={sitelink.description}
-                                onChange={(e) => updateSitelink(index, 'description', e.target.value)}
-                                maxLength={25}
-                                className="flex-1"
-                              />
-                              <FieldActions
-                                value={sitelink.description}
-                                elementType="sitelink"
-                                onSelect={(content) => updateSitelink(index, 'description', content)}
-                                onSave={() => handleSaveElement('sitelink', sitelink.description)}
-                                isEmpty={!sitelink.description.trim()}
-                              />
+                {/* Collapsible Sitelinks & Callouts */}
+                {isEditMode && (
+                  <Accordion type="single" collapsible className="border rounded-lg">
+                    <AccordionItem value="sitelinks" className="border-none">
+                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Sitelinks & Callouts</span>
+                          <Badge variant="outline" className="text-xs">
+                            {sitelinks.filter(s => s.description.trim()).length} sitelinks, {callouts.filter(c => c.trim()).length} callouts
+                          </Badge>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-md pb-md space-y-lg">
+                        <div className="space-y-3">
+                          <Label>Sitelinks (5 max)</Label>
+                          {sitelinks.map((sitelink, index) => (
+                            <div key={index} className="space-y-2 p-3 border rounded-lg bg-muted/20">
+                              <Label className="text-sm">Sitelink {index + 1}</Label>
+                              <div className="grid gap-2">
+                                <div className="flex gap-2">
+                                  <Input placeholder="Text (e.g., Contact Us)" value={sitelink.description} onChange={(e) => updateSitelink(index, 'description', e.target.value)} maxLength={25} className="flex-1" />
+                                  <FieldActions value={sitelink.description} elementType="sitelink" onSelect={(content) => updateSitelink(index, 'description', content)} onSave={() => handleSaveElement('sitelink', sitelink.description)} isEmpty={!sitelink.description.trim()} />
+                                </div>
+                                <Input placeholder="URL (e.g., https://example.com/contact)" value={sitelink.link} onChange={(e) => updateSitelink(index, 'link', e.target.value)} />
+                              </div>
                             </div>
-                            <Input
-                              placeholder="URL (e.g., https://example.com/contact)"
-                              value={sitelink.link}
-                              onChange={(e) => updateSitelink(index, 'link', e.target.value)}
-                            />
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                        <div className="space-y-3">
+                          <Label>Callouts (4 max, 25 chars each)</Label>
+                          {callouts.map((callout, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input placeholder={`Callout ${index + 1} (e.g., Free Shipping)`} value={callout} onChange={(e) => updateCallout(index, e.target.value)} maxLength={25} className="flex-1" />
+                              <FieldActions value={callout} elementType="callout" onSelect={(content) => updateCallout(index, content)} onSave={() => handleSaveElement('callout', callout)} isEmpty={!callout.trim()} />
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="keywords-hidepreview">
+                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                        <div className="flex items-center gap-2"><span className="font-medium">Keywords</span></div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <KeywordStrategySection adGroupId={adGroup.id} matchTypes={Array.isArray(adGroup.match_types) ? adGroup.match_types as string[] : []} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+              </>
+            )}
 
-                    {/* Callouts */}
-                    <div className="space-y-3">
-                      <Label>Callouts (4 max, 25 chars each)</Label>
-                      {callouts.map((callout, index) => (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            placeholder={`Callout ${index + 1} (e.g., Free Shipping)`}
-                            value={callout}
-                            onChange={(e) => updateCallout(index, e.target.value)}
-                            maxLength={25}
-                            className="flex-1"
-                          />
-                          <FieldActions
-                            value={callout}
-                            elementType="callout"
-                            onSelect={(content) => updateCallout(index, content)}
-                            onSave={() => handleSaveElement('callout', callout)}
-                            isEmpty={!callout.trim()}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="keywords-hidepreview">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Keywords</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <KeywordStrategySection
-                      adGroupId={adGroup.id}
-                      matchTypes={Array.isArray(adGroup.match_types) ? adGroup.match_types as string[] : []}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+            {/* Non-edit mode for display/app */}
+            {adType !== 'search' && !isEditMode && (
+              <div className="space-y-2">
+                {adType === 'display' && (
+                  <>
+                    {longHeadline && <div className="text-sm bg-muted/30 p-2 rounded">Long Headline: {longHeadline}</div>}
+                    {shortHeadlines.filter(h => h.trim()).map((h, i) => <div key={i} className="text-sm bg-muted/30 p-2 rounded">• {h}</div>)}
+                    {displayDescriptions.filter(d => d.trim()).map((d, i) => <div key={i} className="text-sm bg-muted/30 p-2 rounded">• {d}</div>)}
+                    {ctaText && <Badge variant="secondary">{ctaText}</Badge>}
+                  </>
+                )}
+                {adType === 'app' && (
+                  <>
+                    {appPlatform && <Badge variant="outline">{appPlatform === 'ios' ? 'iOS' : 'Android'}</Badge>}
+                    {appCampaignGoal && <Badge variant="secondary">{appCampaignGoal}</Badge>}
+                    {appHeadlines.filter(h => h.trim()).map((h, i) => <div key={i} className="text-sm bg-muted/30 p-2 rounded">• {h}</div>)}
+                    {appDescriptions.filter(d => d.trim()).map((d, i) => <div key={i} className="text-sm bg-muted/30 p-2 rounded">• {d}</div>)}
+                  </>
+                )}
+              </div>
             )}
 
             {isEditMode && (
@@ -912,7 +1155,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
             <div>
             <div className="flex items-center justify-between mb-md">
               <h2 className="text-heading-lg font-semibold">
-                {ad?.id ? "Edit Search Ad" : "Create Search Ad"}
+                {ad?.id ? `Edit ${adType === 'display' ? 'Display' : adType === 'app' ? 'App' : 'Search'} Ad` : `Create ${adType === 'display' ? 'Display' : adType === 'app' ? 'App' : 'Search'} Ad`}
               </h2>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={onCancel}>

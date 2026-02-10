@@ -111,7 +111,7 @@ interface SearchPlannerStructurePanelProps {
   onCreateAd: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   onCampaignClick?: (campaign: CampaignData, entity: string) => void;
   onAdGroupClick?: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
-  adType?: "search" | "display";
+  adType?: "search" | "display" | "app";
   defaultCampaignType?: 'search' | 'display' | 'app';
 }
 

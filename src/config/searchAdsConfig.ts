@@ -49,6 +49,32 @@ export const SEARCH_ADS_CONFIG = {
     headlines: 3,
     descriptions: 2,
   },
+  
+  // Display Ads configuration
+  display: {
+    longHeadline: { maxCharacters: 90, warningThreshold: 72, dangerThreshold: 86 },
+    shortHeadlines: { maxCount: 5, maxCharacters: 30, warningThreshold: 24, dangerThreshold: 29 },
+    descriptions: { maxCount: 5, maxCharacters: 90, warningThreshold: 72, dangerThreshold: 86 },
+    ctaOptions: ['Learn More', 'Sign Up', 'Shop Now', 'Get Quote', 'Apply Now', 'Contact Us', 'Download', 'Book Now'],
+    initialVisible: { shortHeadlines: 3, descriptions: 2 },
+  },
+
+  // App Ads configuration
+  app: {
+    headlines: { maxCount: 5, maxCharacters: 30, warningThreshold: 24, dangerThreshold: 29 },
+    descriptions: { maxCount: 5, maxCharacters: 90, warningThreshold: 72, dangerThreshold: 86 },
+    platforms: [
+      { value: 'android', label: 'Android' },
+      { value: 'ios', label: 'iOS' },
+    ],
+    goals: [
+      { value: 'installs', label: 'Installs' },
+      { value: 'in_app_events', label: 'In-App Events' },
+      { value: 'retargeting', label: 'Retargeting' },
+    ],
+    ctaOptions: ['Install', 'Open', 'Play Now', 'Learn More', 'Sign Up'],
+    initialVisible: { headlines: 3, descriptions: 2 },
+  },
 } as const;
 
 // Ad strength thresholds
