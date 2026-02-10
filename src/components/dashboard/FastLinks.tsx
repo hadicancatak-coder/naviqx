@@ -11,10 +11,10 @@ const links = [
     color: "text-blue-600",
   },
   {
-    title: "Search Ads",
-    description: "Plan search campaigns",
+    title: "Google Planner",
+    description: "Plan ad campaigns",
     icon: Search,
-    url: "/ads/search",
+    url: "/ads/google",
     color: "text-green-600",
   },
   {

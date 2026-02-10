@@ -112,8 +112,6 @@ interface SearchPlannerStructurePanelProps {
   onCreateAd: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   onCampaignClick?: (campaign: CampaignData, entity: string) => void;
   onAdGroupClick?: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
-  adType?: "search" | "display" | "app";
-  defaultCampaignType?: 'search' | 'display' | 'app';
 }
 
 interface DeleteAdDialogState { ad: AdData }
@@ -161,8 +159,6 @@ export function SearchPlannerStructurePanel({
   onCreateAd,
   onCampaignClick,
   onAdGroupClick,
-  adType = "search",
-  defaultCampaignType,
 }: SearchPlannerStructurePanelProps) {
   const queryClient = useQueryClient();
   const { data: systemEntities = [] } = useSystemEntities();
@@ -174,7 +170,7 @@ export function SearchPlannerStructurePanel({
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [showCreateAdGroup, setShowCreateAdGroup] = useState<{campaignId: string; campaignName: string} | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [campaignTypeFilter, setCampaignTypeFilter] = useState<CampaignTypeFilter>(defaultCampaignType || 'all');
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<CampaignTypeFilter>('all');
   
   // Selection mode
   const [selectionMode, setSelectionMode] = useState(false);
@@ -199,7 +195,7 @@ export function SearchPlannerStructurePanel({
 
   // Fetch campaigns for selected entity
   const { data: campaigns = [] } = useQuery({
-    queryKey: ['search-campaigns-hierarchy', selectedEntity, adType],
+    queryKey: ['search-campaigns-hierarchy', selectedEntity],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('search_campaigns')
@@ -227,12 +223,11 @@ export function SearchPlannerStructurePanel({
 
   // Fetch all ads
   const { data: ads = [] } = useQuery({
-    queryKey: ['ads-hierarchy', adType],
+    queryKey: ['ads-hierarchy'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ads')
         .select('*')
-        .eq('ad_type', adType)
         .order('name');
       if (error) throw error;
       return data || [];
