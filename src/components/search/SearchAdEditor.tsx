@@ -30,6 +30,7 @@ import { UnifiedBestPracticeChecker } from "./UnifiedBestPracticeChecker";
 import { AdComplianceChecker } from "../AdComplianceChecker";
 import { Plus } from "lucide-react";
 import { KeywordStrategySection } from "../search-planner/KeywordStrategySection";
+import { PolicyPredictionBadge } from "../asset-intelligence/PolicyPredictionBadge";
 
 
 interface SearchAdEditorProps {
@@ -948,7 +949,7 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                                   </span>
                                 </Label>
                               </div>
-                              <SortableHeadlineInput
+                                <SortableHeadlineInput
                                 id={`headline-${index}`}
                                 index={index}
                                 headline={headline}
@@ -956,13 +957,16 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                                 onUpdate={(value) => updateHeadline(index, value)}
                                 onToggleDki={() => toggleDKI(index)}
                                 renderActions={() => (
-                                  <FieldActions
-                                    value={headline}
-                                    elementType="headline"
-                                    onSelect={(content) => updateHeadline(index, content)}
-                                    onSave={() => handleSaveElement('headline', headline)}
-                                    isEmpty={!headline.trim()}
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    <PolicyPredictionBadge assetText={headline} entity={entity} />
+                                    <FieldActions
+                                      value={headline}
+                                      elementType="headline"
+                                      onSelect={(content) => updateHeadline(index, content)}
+                                      onSave={() => handleSaveElement('headline', headline)}
+                                      isEmpty={!headline.trim()}
+                                    />
+                                  </div>
                                 )}
                               />
                             </div>
@@ -1013,8 +1017,9 @@ export default function SearchAdEditor({ ad, adGroup, campaign, entity, onSave, 
                               </span>
                             </Label>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 items-center">
                             <Input id={`description-${index}`} placeholder={`Description ${index + 1}${index < 2 ? ' *' : ''}`} value={description} onChange={(e) => updateDescription(index, e.target.value)} maxLength={90} className="flex-1" />
+                            <PolicyPredictionBadge assetText={description} entity={entity} />
                             <FieldActions value={description} elementType="description" onSelect={(content) => updateDescription(index, content)} onSave={() => handleSaveElement('description', description)} isEmpty={!description.trim()} />
                           </div>
                         </div>

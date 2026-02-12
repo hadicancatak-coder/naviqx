@@ -15,6 +15,7 @@ import {
   Search,
   FolderKanban,
   Zap,
+  Database,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,7 @@ import {
 
 const adsItems = [
   { title: "Google Planner", url: "/ads/google", icon: Megaphone },
+  { title: "Asset Intel", url: "/asset-library", icon: Database },
   { title: "Brief Planner", url: "/ads/lp", icon: Target },
   { title: "Caption Library", url: "/ads/captions", icon: PenTool },
   { title: "UTM Planner", url: "/utm-planner", icon: Link2 },
