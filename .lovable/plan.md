@@ -1,52 +1,140 @@
 
-# Google Planner: CFI Logo in Previews + UI Polish
+# Asset Intelligence: Policy Prediction + Best-Performing Asset Library
 
-## 1. Add CFI Emblem Logo to Previews
+## Overview
 
-The uploaded CFI emblem (red square logo) will be copied to `src/assets/cfi-logo-emblem.png` and used across ALL preview renderers in `PreviewAssemblyEngine.tsx` and `SearchPlannerPreviewPanel.tsx` -- replacing the generic letter-initial placeholders.
+Build a new **Asset Intelligence** feature that ingests historical Google Ads asset data (from CSV files per country), stores it in the database, and uses it for two purposes:
 
-**Affected preview components:**
-- **AppSearchPreview**: Replace the letter-in-circle with the CFI emblem as the app icon
-- **PlayStorePreview**: Replace the letter-in-square with the emblem
-- **YouTubePreview**: Add CFI logo next to business name in footer
-- **NativePreview**: Add small CFI logo next to the "Ad" badge
-- **BannerPreview**: Add CFI logo on the left side
-- **GmailPreview**: Replace the letter avatar with the CFI emblem
-- **SearchAdPreviewPanel** (Search SERP): Add CFI favicon next to the display URL
+1. **Policy Prediction**: When planning ads in the Google Planner, automatically check if a headline/description/callout has been previously approved or disapproved in a specific country -- giving advertisers a heads-up before submitting.
 
-All previews will import the emblem via `import cfiEmblem from "@/assets/cfi-logo-emblem.png"` for consistent branding.
+2. **Asset Library**: A dedicated page where advertisers can browse, filter, and reuse their best-performing assets (sorted by interaction rate, conversions) across countries and asset types.
 
-## 2. Preview UI Polish
+---
 
-Current previews look flat and minimal. Changes:
+## 1. New Database Table: `asset_intelligence`
 
-- **Better card shadows and depth**: Add subtle `shadow-md` and `ring-1 ring-border` to preview cards for more realistic Google-style framing
-- **Device frame simulation**: Add a thin device-like border wrapper around mobile previews (rounded corners, subtle bezel effect)
-- **Improved image placeholders**: Replace the plain gray boxes with a subtle gradient + dashed border + icon treatment
-- **Search SERP preview polish**: Add a fake Google search bar above the ad result for context (gray rounded input with search icon), making it feel like an actual SERP
-- **Play Store preview**: Add a more realistic store listing feel -- star rating row, download count, category tag
-- **YouTube preview**: Add the classic red YouTube play button overlay, channel avatar in corner
-- **Gmail preview**: Add inbox-style row context (checkbox, star icon, time) for realism
-- **Banner preview**: Add "Advertisement" label, more realistic sizing
+Stores parsed asset data from the uploaded CSVs. Each row = one unique asset + country combination with aggregated performance.
 
-## 3. Bulk Actions Enhancement
+```text
+asset_intelligence
+  id              uuid (PK)
+  entity          text (country: Lebanon, Jordan, Kuwait)
+  asset_text      text (the headline/description/callout/sitelink text)
+  asset_type      text (Headline, Description, Callout, Sitelink)
+  google_asset_id text (original asset_id from Google)
+  policy_status   text (approved, disapproved, mixed)
+  review_status   text (reviewed, pending)
+  level           text (Ad, Ad group, Campaign)
+  total_interactions  integer
+  interaction_rate    decimal
+  total_conversions   decimal
+  appearance_count    integer (how many times this asset appeared)
+  approved_count      integer
+  disapproved_count   integer
+  best_interaction_rate decimal (peak performance)
+  added_by        text (Advertiser, Google AI)
+  language        text (EN, AR -- auto-detected)
+  created_by      uuid
+  created_at      timestamptz
+  updated_at      timestamptz
+```
 
-The existing `SearchPlannerBulkBar` already supports Delete, Duplicate, Export, and Status changes. It's already wired into the structure panel. Enhancements:
+RLS: Authenticated users can read; admins can manage.
 
-- **"Pause All" quick action**: One-click to set all selected campaigns to paused
-- **Bulk type change**: Allow changing campaign_type for selected campaigns (Search/Display/App)
-- **Selection count badge**: Show affected ad groups + ads count inline (already computed but not displayed prominently)
-- **Better styling**: Follow the floating card standard with `liquid-glass-elevated` instead of solid `bg-primary`
+## 2. CSV Import Edge Function: `import-asset-intelligence`
+
+A backend function that:
+- Accepts a CSV file upload (multipart) + entity name
+- Parses the complex multi-line CSV format (asset blocks with nested `text_asset`, `callout_asset`, `sitelink_asset`, `policy_info`)
+- Extracts: asset text, asset type, policy status, interactions, interaction rate, conversions
+- Deduplicates by asset text + entity (aggregates counts)
+- Upserts into `asset_intelligence`
+- Returns import summary (total parsed, new, updated, skipped)
+
+## 3. Asset Library Page: `/asset-library`
+
+A new page with:
+
+**Header**: Title + Import CSV button (opens file picker, calls edge function)
+
+**Filter Bar**:
+- Country filter (Lebanon, Jordan, Kuwait, All)
+- Asset type filter (Headline, Description, Callout, Sitelink)
+- Policy status filter (Approved, Disapproved, Mixed)
+- Language filter (EN, AR)
+- Sort by: Interaction Rate, Conversions, Alphabetical
+
+**Asset Table/Grid**:
+- Each row shows: Asset text, Type badge, Country, Policy status (green/red/yellow dot), Interactions, Interaction Rate, Conversions, Language
+- Click to copy asset text
+- "Use in Ad" button that copies text to clipboard for quick paste into planner
+
+**Performance Insights Card** (top):
+- Total assets by country
+- Approval rate percentage per country
+- Top 5 best-performing assets
+- Disapproval patterns (common words/phrases that get rejected)
+
+## 4. Policy Prediction in Google Planner
+
+Integrate into the existing ad editor workflow:
+
+**In `SearchAdEditor.tsx`**:
+- When a user types a headline or description, query `asset_intelligence` for matches in the selected entity
+- Show inline badges:
+  - Green checkmark: "Previously approved in [Country]" with interaction rate
+  - Red warning: "Previously disapproved in [Country]" with reason context
+  - Yellow: "Mixed results -- approved in some placements, disapproved in others"
+- Auto-suggest: Show a dropdown of top-performing approved assets as the user types (typeahead from the library)
+
+**In `SearchPlannerQualityPanel.tsx`**:
+- Add a new "Asset Intelligence" section showing policy prediction for all current ad fields
+- Aggregate score: "X of Y assets have been previously approved in [Entity]"
+
+## 5. Sidebar Navigation
+
+Add "Asset Library" entry under the Ads/Google section in the sidebar.
+
+---
 
 ## Technical Details
 
-### Files Changed
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/import-asset-intelligence/index.ts` | CSV parser edge function |
+| `src/pages/AssetLibrary.tsx` | Asset Library page |
+| `src/hooks/useAssetIntelligence.ts` | Hook for querying/filtering assets |
+| `src/components/asset-intelligence/AssetImportDialog.tsx` | CSV upload dialog with entity picker |
+| `src/components/asset-intelligence/AssetTable.tsx` | Filterable asset data table |
+| `src/components/asset-intelligence/PolicyPredictionBadge.tsx` | Inline approval prediction badge |
+| `src/components/asset-intelligence/AssetInsightsCard.tsx` | Performance summary card |
+| `src/components/asset-intelligence/AssetTypeahead.tsx` | Auto-suggest from approved assets |
+
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/assets/cfi-logo-emblem.png` | Copy uploaded CFI emblem image |
-| `src/components/search-planner/PreviewAssemblyEngine.tsx` | Import CFI emblem, use in all placement renderers, improve placeholder styling, add contextual frames |
-| `src/components/search-planner/SearchPlannerPreviewPanel.tsx` | Import CFI emblem, add to search SERP preview, add fake search bar context |
-| `src/components/search-planner/SearchPlannerBulkBar.tsx` | Update styling to `liquid-glass-elevated`, add bulk type change, improve count display |
+| `src/components/search/SearchAdEditor.tsx` | Add policy prediction badges + asset typeahead on headline/description inputs |
+| `src/components/search-planner/SearchPlannerQualityPanel.tsx` | Add Asset Intelligence section |
+| `src/components/layout/AppSidebar.tsx` | Add Asset Library nav item |
+| `src/App.tsx` | Add `/asset-library` route |
+| Database migration | Create `asset_intelligence` table with indexes and RLS |
 
-### No database changes required.
+### CSV Parsing Strategy
+
+The CSV has a complex multi-line format where each "row" spans multiple lines due to nested asset blocks. The edge function will:
+1. Read the raw text and split by the `Enabled,` or `Paused,` row delimiter
+2. For each block, extract: asset_id, text content, asset type, policy status
+3. Parse the trailing CSV fields: Level, Status, Status reason, interactions, interaction rate, conversions
+4. Auto-detect language (Arabic vs English) using the existing `detect_language` pattern
+5. Upsert with aggregation (sum interactions/conversions, track approved vs disapproved counts)
+
+### Policy Prediction Logic
+
+When checking an asset in the planner:
+1. Query `asset_intelligence` WHERE `asset_text ILIKE %input%` AND `entity = selected_entity`
+2. If exact match found: show definitive approved/disapproved badge
+3. If partial match: show "similar asset was approved/disapproved" as a softer hint
+4. If no match: no prediction shown (neutral)
