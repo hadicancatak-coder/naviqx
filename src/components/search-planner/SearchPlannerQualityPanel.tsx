@@ -2,12 +2,11 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, AlertTriangle, TrendingUp, Shield, Target, Globe, Database } from "lucide-react";
+import { CheckCircle2, AlertTriangle, TrendingUp, Shield, Target, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AD_STRENGTH_THRESHOLDS } from "@/config/searchAdsConfig";
 import { calculateAdStrength, checkAdRelevancy, checkIntentCatch, checkMENAPolicies, type QualityWarning } from "@/lib/adQualityScore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useAssetIntelligence } from "@/hooks/useAssetIntelligence";
 
 interface Sitelink {
   description: string;
@@ -23,11 +22,9 @@ interface SearchPlannerQualityPanelProps {
   keywords?: string[];
   matchTypes?: string[];
   adType?: "search" | "display" | "app";
-  // Display-specific
   longHeadline?: string;
   shortHeadlines?: string[];
   ctaText?: string;
-  // App-specific
   appPlatform?: string;
   appCampaignGoal?: string;
   appStoreUrl?: string;
@@ -58,7 +55,6 @@ export function SearchPlannerQualityPanel({
     return calculateAdStrength(validHeadlines, validDescriptions, validSitelinks, validCallouts);
   }, [headlines, descriptions, sitelinks, callouts]);
 
-  // Quality warnings
   const relevancyWarnings = useMemo(() => {
     return checkAdRelevancy(headlines.filter(h => h?.trim()), descriptions.filter(d => d?.trim()));
   }, [headlines, descriptions]);
@@ -110,7 +106,6 @@ export function SearchPlannerQualityPanel({
       ];
     }
 
-    // Search (default)
     const validHeadlines = headlines.filter(h => h?.trim());
     const validDescriptions = descriptions.filter(d => d?.trim());
     const validSitelinks = sitelinks.filter(s => s?.description?.trim());
@@ -194,11 +189,6 @@ export function SearchPlannerQualityPanel({
           {/* Warning Sections (Search only) */}
           {adType === 'search' && (
             <>
-              <AssetIntelligenceSection
-                headlines={headlines.filter(h => h?.trim())}
-                descriptions={descriptions.filter(d => d?.trim())}
-                entity={entity}
-              />
               <WarningSection
                 title="Ad Relevancy"
                 icon={<Target className="h-3.5 w-3.5 text-primary" />}
@@ -250,56 +240,5 @@ function WarningSection({ title, icon, warnings }: { title: string; icon: React.
         ))}
       </CollapsibleContent>
     </Collapsible>
-  );
-}
-
-// Asset Intelligence section for quality panel
-function AssetIntelligenceSection({ headlines, descriptions, entity }: { headlines: string[]; descriptions: string[]; entity: string }) {
-  const allTexts = [...headlines, ...descriptions];
-  const { data: assets } = useAssetIntelligence({ entity: entity || "all" });
-
-  const matches = useMemo(() => {
-    if (!assets?.length || !allTexts.length) return { approved: 0, disapproved: 0, total: allTexts.filter(t => t.trim()).length };
-
-    let approved = 0;
-    let disapproved = 0;
-    for (const text of allTexts) {
-      if (!text.trim()) continue;
-      const match = assets.find(a => a.asset_text.toLowerCase() === text.trim().toLowerCase());
-      if (match) {
-        if (match.policy_status === "approved") approved++;
-        else if (match.policy_status === "disapproved") disapproved++;
-      }
-    }
-    return { approved, disapproved, total: allTexts.filter(t => t.trim()).length };
-  }, [assets, allTexts]);
-
-  if (matches.total === 0) return null;
-
-  const hasData = matches.approved > 0 || matches.disapproved > 0;
-
-  return (
-    <div className="pt-sm border-t border-border">
-      <div className="flex items-center gap-xs mb-xs">
-        <Database className="h-3.5 w-3.5 text-primary" />
-        <span className="text-metadata font-medium text-foreground">Asset Intelligence</span>
-      </div>
-      {hasData ? (
-        <div className="space-y-xs">
-          <div className="flex items-center justify-between text-metadata">
-            <span className="text-muted-foreground">Previously approved</span>
-            <span className="text-success font-medium">{matches.approved}/{matches.total}</span>
-          </div>
-          {matches.disapproved > 0 && (
-            <div className="flex items-center justify-between text-metadata">
-              <span className="text-muted-foreground">Previously rejected</span>
-              <span className="text-destructive font-medium">{matches.disapproved}/{matches.total}</span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-metadata text-muted-foreground">No historical data for these assets in {entity || "this entity"}</p>
-      )}
-    </div>
   );
 }
