@@ -60,7 +60,7 @@ const CaptionLibrary = lazy(() => import("./pages/CaptionLibrary"));
 const WebIntel = lazy(() => import("./pages/WebIntel"));
 const PublicReview = lazy(() => import("./pages/PublicReview"));
 const UniversalReview = lazy(() => import("./pages/UniversalReview"));
-const AssetLibrary = lazy(() => import("./pages/AssetLibrary"));
+
 
 
 const App = () => (
@@ -145,7 +145,7 @@ const App = () => (
                       <Route path="/tech-stack" element={<Navigate to="/library" replace />} />
                       <Route path="/projects" element={<Projects />} />
                       <Route path="/performance" element={<Performance />} />
-                      <Route path="/asset-library" element={<Suspense fallback={<PageLoader />}><AssetLibrary /></Suspense>} />
+                      
                     </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>
