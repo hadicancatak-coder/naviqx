@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Copy, Check, Trash2 } from "lucide-react";
 import {
@@ -18,11 +18,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { UtmBulkActionsBar } from "./UtmBulkActionsBar";
 import { useDeleteUtmLink } from "@/hooks/useUtmLinks";
 import { useAuth } from "@/contexts/AuthContext";
 import { exportUtmLinksToCSV } from "@/lib/utmExport";
+
+const PAGE_SIZE = 25;
 
 interface UtmLink {
   id: string;
@@ -43,20 +54,48 @@ interface UtmArchiveTableProps {
   isLoading?: boolean;
 }
 
+const getPageNumbers = (currentPage: number, totalPages: number): (number | "ellipsis")[] => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const pages: (number | "ellipsis")[] = [1];
+  if (currentPage > 3) pages.push("ellipsis");
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (currentPage < totalPages - 2) pages.push("ellipsis");
+  if (totalPages > 1) pages.push(totalPages);
+  return pages;
+};
+
 export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
   links,
   isLoading,
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { userRole } = useAuth();
   const deleteUtmLink = useDeleteUtmLink();
 
   const isAdmin = userRole === "admin";
 
+  // Reset page when links change (e.g. filters applied)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [links]);
+
+  const totalPages = Math.ceil(links.length / PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, links.length);
+  const visibleLinks = useMemo(
+    () => links.slice(startIndex, endIndex),
+    [links, startIndex, endIndex]
+  );
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(new Set(links.map((l) => l.id)));
+      setSelectedIds(new Set(visibleLinks.map((l) => l.id)));
     } else {
       setSelectedIds(new Set());
     }
@@ -106,8 +145,8 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
     toast.success(`Deleted ${idsToDelete.length} links`);
   };
 
-  const allSelected = links.length > 0 && selectedIds.size === links.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < links.length;
+  const allSelected = visibleLinks.length > 0 && visibleLinks.every((l) => selectedIds.has(l.id));
+  const someSelected = selectedIds.size > 0 && !allSelected;
 
   const getInitials = (name: string | null) => {
     if (!name) return "?";
@@ -139,6 +178,8 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
       </div>
     );
   }
+
+  const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (
     <div className="space-y-4">
@@ -172,7 +213,7 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {links.map((link) => (
+            {visibleLinks.map((link) => (
               <TableRow
                 key={link.id}
                 className="hover:bg-card-hover transition-smooth"
@@ -259,6 +300,48 @@ export const UtmArchiveTable: React.FC<UtmArchiveTableProps> = ({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination footer */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <span className="text-metadata text-muted-foreground">
+            Showing {startIndex + 1}–{endIndex} of {links.length} links
+          </span>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              {pageNumbers.map((page, idx) =>
+                page === "ellipsis" ? (
+                  <PaginationItem key={`ellipsis-${idx}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      isActive={page === currentPage}
+                      onClick={() => setCurrentPage(page)}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 };
