@@ -1,114 +1,109 @@
 
-# Recurring Tasks System Redesign
+# Search Planner: External Sharing, Entity Fix, and Campaign Type Differentiation
 
-## Root Cause Analysis
+## Issues Identified
 
-The recurring tasks system has **two critical failures**:
+### 1. External sharing shows everything, no granularity
+Currently, the Share dialog always creates an entity-wide link (`resource_id: null`) that dumps ALL campaigns for the entity. There's no way to share just one ad, one ad group, or one campaign.
 
-1. **The cron job stopped firing** -- there are zero logs for `generate-recurring-tasks`, meaning the hourly cron hasn't been executing. The function works perfectly when called manually (just tested it -- it created 7 tasks), but the scheduler isn't triggering it.
+### 2. Ads don't render in the external review
+The external review component (`SearchAdsReviewContent.tsx`) treats headlines/descriptions as `{text: string}` objects, but the database stores them as plain strings (`["headline1", "headline2"]`). This mismatch means every `.text` access returns `undefined` and nothing displays.
 
-2. **No catch-up logic** -- When the cron misses runs, each invocation only generates ONE overdue instance and advances `next_run_at` by one interval. So if "Daily Checklist" missed 28 days, it would take 28 separate hourly runs to catch up. Right now templates are stuck weeks behind:
-   - "Daily Checklist" stuck at Jan 20
-   - "Daily Report Updates" stuck at Jan 15
-   - "Seminars Report" stuck at Feb 2
+### 3. Can't create campaigns in entities other than UAE
+The `CreateCampaignDialog` defaults to UAE and uses `useSystemEntities` correctly, but the `SearchPlannerStructurePanel` initializes `selectedEntity` to empty string and defaults to UAE. The entity selector in the create dialog is driven by the panel's `selectedEntity` -- this works. However, the campaign query filters by `selectedEntity`, and when switching entities, any existing campaigns appear. The real issue is the campaign query uses entity matching, and the create dialog passes `defaultEntity={selectedEntity}` which should work for all entities. Let me verify further...
 
-## How Major Platforms Handle This
+Actually, re-reading the code: the `CreateCampaignDialog` receives `defaultEntity` and sets entity from it. Entity selector uses `systemEntities` which has all 11 entities. The creation itself does `entity: entity.trim()` which should work. The issue may be that `defaultEntity` resets to UAE on dialog close. Looking at line 96: `setEntity(defaultEntity || "UAE")` -- after creation it resets to `defaultEntity || "UAE"`. This is fine as long as the panel passes the right entity. The panel does pass `selectedEntity`. So creating in non-UAE entities should work unless there's a UI issue where the entity selector resets. This needs testing, but I'll ensure the flow is solid.
 
-**Todoist / ClickUp (Completion-Triggered Model):**
-- A recurring task is a SINGLE task that resets when completed
-- When you complete it, the due date advances to the next occurrence and status resets
-- No cron jobs, no background generation -- 100% reliable
-- Drawback: No historical instance tracking
+### 4. Campaign types not properly differentiated
+While the hierarchy tree shows type badges (Search/Display/App), there's no visual differentiation in the campaign rows beyond a small badge. The external review doesn't distinguish types at all. Display and App campaigns show the same Google SERP preview which is wrong.
 
-**Asana (Hybrid):**
-- Creates the next instance only when the current one is completed
-- One active instance at a time per template
-- History preserved through completed instances
+---
 
-**Monday.com / Linear:**
-- Automation/cycle-based -- relies on server-side schedulers similar to what we have
+## Plan
 
-## Recommended Approach: Hybrid Model (Todoist + History)
+### A. Granular Sharing Scope Selection
 
-Combine the reliability of completion-triggered generation with historical tracking:
+**File: `src/components/search/SearchAdsShareDialog.tsx`**
+- Redesign the dialog to include a **scope selector** with 3 levels:
+  - **Entity-wide**: Share all campaigns for the entity (current behavior)
+  - **Campaign**: Share a specific campaign (stores `resource_id = campaign.id` with metadata `{scope: 'campaign'}`)
+  - **Ad Group**: Share a specific ad group (stores `resource_id = ad_group.id` with metadata `{scope: 'ad_group'}`)
+- Add a cascading selector: Entity -> Campaign dropdown -> Ad Group dropdown (optional)
+- The `public_access_links.resource_id` field already exists and accepts UUIDs; `metadata` JSONB can store `{scope: 'entity'|'campaign'|'ad_group'}`
 
-### Core Changes
+**File: `src/pages/SearchPlanner.tsx`**
+- Pass current context (selected campaign/ad group/ad) to the share dialog so it can pre-populate the scope
 
-**1. Catch-up logic in the edge function (immediate fix)**
-- When the function runs, if `next_run_at` is far behind today, generate ALL missed instances in a single batch (up to a configurable cap of 7 days)
-- For anything older than 7 days, skip and fast-forward to today
-- This prevents the "one-at-a-time crawl" problem
+### B. Fix External Ad Preview Rendering
 
-**2. Completion-triggered generation (reliability layer)**
-- When a user completes a recurring task instance, automatically generate the NEXT instance right then
-- This happens in real-time via a database trigger -- no cron dependency
-- The cron becomes a safety net, not the primary mechanism
+**File: `src/components/external/SearchAdsReviewContent.tsx`**
+- Fix the data format mismatch: headlines/descriptions are stored as `string[]` not `{text: string}[]`
+- Update the rendering logic to handle both formats:
+  ```
+  const getTextValue = (item) => typeof item === 'string' ? item : item?.text || '';
+  ```
+- Similarly fix sitelinks (stored as `{description, link}` not `{headline, description1, description2, finalUrl}`)
+- Add campaign type awareness: for Display/App campaigns, render appropriate preview layouts instead of always showing Google SERP
+- Add proper empty state when an ad has no content
 
-**3. Fix the cron job**
-- Add `verify_jwt = false` to the function config so the cron can call it without auth
-- Set up a proper `pg_cron` + `pg_net` schedule as a backup
+**Scope-aware data fetching in external review:**
+- Read `metadata.scope` from `accessData` to determine what to fetch:
+  - `scope: 'entity'` or no scope: fetch all campaigns for the entity (current)
+  - `scope: 'campaign'`: fetch only the campaign matching `resource_id`
+  - `scope: 'ad_group'`: fetch only the ad group matching `resource_id` and its parent campaign
 
-**4. "Ensure Today" check on app load**
-- When a user opens the Tasks page, run a lightweight client-side check
-- If any template's `next_run_at` is in the past, call the edge function once
-- This guarantees users always see today's tasks even if the cron failed
+### C. Entity Selection Fix for Campaign Creation
 
-### Architecture Diagram
+**File: `src/components/ads/CreateCampaignDialog.tsx`**
+- Remove the auto-default to UAE when `defaultEntity` is provided -- respect whatever entity the panel passes
+- When `defaultEntity` changes (user switches entity in the panel), sync the dialog's internal state
 
-```text
-CURRENT (Fragile):
-  Cron (hourly) --> Edge Function --> Create 1 instance --> Advance next_run_at
-  (If cron fails, everything stops)
+**File: `src/components/search-planner/SearchPlannerStructurePanel.tsx`**
+- Ensure the entity from the panel is always passed correctly to the create dialog
 
-NEW (Resilient - 3 layers):
-  Layer 1: User completes task --> DB trigger --> Create next instance immediately
-  Layer 2: Cron (hourly) --> Edge function --> Batch catch-up for ALL overdue
-  Layer 3: App load --> Client check --> Call edge function if any templates overdue
-```
+### D. Campaign Type Visual Differentiation
 
-## Technical Implementation
+**File: `src/components/search-planner/SearchPlannerStructurePanel.tsx`**
+- Add distinct visual treatment per campaign type in the tree:
+  - Search campaigns: blue left border accent
+  - Display campaigns: purple left border accent
+  - App campaigns: green left border accent
+- Show campaign type icon more prominently in the campaign row
+
+**File: `src/components/external/SearchAdsReviewContent.tsx`**
+- Show campaign type badge in external review
+- For Display campaigns: render a display ad mockup (image placeholder + headlines) instead of SERP
+- For App campaigns: render an app install ad mockup (app icon + store button) instead of SERP
+
+---
+
+## Technical Details
+
+### Files to Create
+None -- all changes are modifications to existing files.
 
 ### Files to Modify
 
-| File | Change |
-|------|--------|
-| `supabase/functions/generate-recurring-tasks/index.ts` | Add batch catch-up loop: generate ALL overdue instances (max 7 days back), fast-forward if older |
-| `supabase/config.toml` | Add `[functions.generate-recurring-tasks]` with `verify_jwt = false` |
-| Database migration | Create trigger `on_recurring_task_completed` that auto-generates next instance when an instance task is completed |
-| `src/hooks/useTasks.ts` | Add a one-time "ensure today" check that calls the edge function if templates are overdue |
-| `src/domain/tasks/actions.ts` | After completing a recurring instance, trigger next-instance creation client-side as a fallback |
+| File | Changes |
+|------|---------|
+| `src/components/search/SearchAdsShareDialog.tsx` | Add scope selector (Entity/Campaign/Ad Group), cascading dropdowns, pass scope in metadata |
+| `src/pages/SearchPlanner.tsx` | Pass campaign/adGroup context to share dialog |
+| `src/components/external/SearchAdsReviewContent.tsx` | Fix data format (string[] vs object[]), add scope-aware fetching, add campaign type-specific previews |
+| `src/components/ads/CreateCampaignDialog.tsx` | Fix entity defaulting behavior |
+| `src/components/search-planner/SearchPlannerStructurePanel.tsx` | Add colored left borders per campaign type |
 
-### Database Trigger: Auto-Generate on Completion
+### Database Changes
+None required. The existing `public_access_links` table has `resource_id` (UUID) and `metadata` (JSONB) fields which can store the scope and any additional context.
 
-A new trigger on the `tasks` table that fires when a task with `template_task_id` has its status changed to `Completed`. It will:
-1. Look up the parent template's recurrence rule
-2. Calculate the next occurrence date from today
-3. Check if an instance already exists for that date
-4. If not, create it with the same assignees, labels, and metadata
-5. Update the template's `next_run_at` and `occurrence_count`
-
-This makes the system self-healing -- even if the cron never fires again, completing today's task creates tomorrow's.
-
-### Edge Function Catch-Up Logic
-
-```text
-For each overdue template:
-  while next_run_at <= today:
-    if (today - next_run_at) > 7 days:
-      fast-forward next_run_at to today (skip ancient backlog)
-      break
-    else:
-      create instance for next_run_at date
-      advance next_run_at by one interval
+### Data Format Fix (Critical)
+The external review currently does:
+```typescript
+const headlines = (ad.headlines as {text: string}[]).filter(h => h?.text);
 ```
-
-### Immediate Data Fix
-
-As part of the migration, reset all templates whose `next_run_at` is more than 7 days old to today, so they start fresh without generating a backlog of phantom tasks.
-
-## Summary
-
-The current system relies entirely on a cron job that has silently stopped. The redesign adds three layers of reliability so recurring tasks always appear:
-1. **Completion trigger** -- most reliable, user-driven
-2. **Cron with catch-up** -- batch safety net
-3. **Client-side check** -- last resort on app load
+But the actual data is `["headline1", "headline2"]`. The fix normalizes both formats:
+```typescript
+const toDisplayArray = (arr: unknown) => {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(item => typeof item === 'string' ? item : item?.text || '').filter(Boolean);
+};
+```
