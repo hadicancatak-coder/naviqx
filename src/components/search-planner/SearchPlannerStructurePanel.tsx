@@ -22,7 +22,9 @@ import {
   Monitor,
   Smartphone,
   ArrowRightLeft,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +49,7 @@ import { DuplicateAdGroupDialog } from "@/components/search/DuplicateAdGroupDial
 import { DuplicateCampaignDialog } from "@/components/search/DuplicateCampaignDialog";
 import { SearchPlannerBulkBar } from "./SearchPlannerBulkBar";
 import { MoveItemDialog } from "./MoveItemDialog";
+import { BulkMoveDialog } from "./BulkMoveDialog";
 
 // Local type definitions for this component
 interface SitelinkData {
@@ -185,6 +188,12 @@ export function SearchPlannerStructurePanel({
   // Selection mode
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
+  const [selectedAdGroupIds, setSelectedAdGroupIds] = useState<Set<string>>(new Set());
+  const [selectedAdIds, setSelectedAdIds] = useState<Set<string>>(new Set());
+
+  // Bulk move dialogs
+  const [bulkMoveAdGroups, setBulkMoveAdGroups] = useState(false);
+  const [bulkMoveAds, setBulkMoveAds] = useState(false);
   
   // Set default entity when data loads
   useEffect(() => {
@@ -358,6 +367,8 @@ export function SearchPlannerStructurePanel({
 
   const handleClearSelection = useCallback(() => {
     setSelectedCampaignIds(new Set());
+    setSelectedAdGroupIds(new Set());
+    setSelectedAdIds(new Set());
     setSelectionMode(false);
   }, []);
 
@@ -365,10 +376,33 @@ export function SearchPlannerStructurePanel({
     setSelectionMode(prev => {
       if (prev) {
         setSelectedCampaignIds(new Set());
+        setSelectedAdGroupIds(new Set());
+        setSelectedAdIds(new Set());
       }
       return !prev;
     });
   }, []);
+
+  const toggleAdGroupSelection = useCallback((adGroupId: string) => {
+    setSelectedAdGroupIds(prev => {
+      const next = new Set(prev);
+      if (next.has(adGroupId)) next.delete(adGroupId);
+      else next.add(adGroupId);
+      return next;
+    });
+  }, []);
+
+  const toggleAdSelection = useCallback((adId: string) => {
+    setSelectedAdIds(prev => {
+      const next = new Set(prev);
+      if (next.has(adId)) next.delete(adId);
+      else next.add(adId);
+      return next;
+    });
+  }, []);
+
+  const bulkSelectedAdGroupCount = selectedAdGroupIds.size;
+  const bulkSelectedAdCount = selectedAdIds.size;
 
   // Determine the default campaign type for the create dialog
   const createDialogDefaultType = campaignTypeFilter !== 'all' ? campaignTypeFilter : undefined;
@@ -624,7 +658,8 @@ export function SearchPlannerStructurePanel({
                               <div 
                                 className={cn(
                                   "group flex items-center gap-xs p-sm rounded-lg transition-smooth cursor-pointer",
-                                  "hover:bg-card-hover active:scale-[0.99]"
+                                  "hover:bg-card-hover active:scale-[0.99]",
+                                  selectionMode && selectedAdGroupIds.has(adGroup.id) && "bg-primary/10 border border-primary/30"
                                 )}
                                 onClick={() => {
                                   if (onAdGroupClick) {
@@ -633,6 +668,15 @@ export function SearchPlannerStructurePanel({
                                   toggleAdGroup(adGroup.id);
                                 }}
                               >
+                                {/* Ad Group selection checkbox */}
+                                {selectionMode && (
+                                  <div onClick={(e) => e.stopPropagation()}>
+                                    <Checkbox
+                                      checked={selectedAdGroupIds.has(adGroup.id)}
+                                      onCheckedChange={() => toggleAdGroupSelection(adGroup.id)}
+                                    />
+                                  </div>
+                                )}
                                 <div className="p-xs">
                                   {isAdGroupExpanded ? (
                                     <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -714,10 +758,25 @@ export function SearchPlannerStructurePanel({
                                         key={ad.id}
                                         className={cn(
                                           "group flex items-center gap-xs p-sm rounded-lg transition-smooth cursor-pointer w-full text-left",
-                                          "hover:bg-card-hover active:scale-[0.99]"
+                                          "hover:bg-card-hover active:scale-[0.99]",
+                                          selectionMode && selectedAdIds.has(ad.id!) && "bg-primary/10 border border-primary/30"
                                         )}
-                                        onClick={() => onEditAd(ad, adGroup, campaign, selectedEntity)}
+                                        onClick={() => {
+                                          if (selectionMode && ad.id) {
+                                            toggleAdSelection(ad.id);
+                                          } else {
+                                            onEditAd(ad, adGroup, campaign, selectedEntity);
+                                          }
+                                        }}
                                       >
+                                        {selectionMode && (
+                                          <div onClick={(e) => e.stopPropagation()}>
+                                            <Checkbox
+                                              checked={selectedAdIds.has(ad.id!)}
+                                              onCheckedChange={() => ad.id && toggleAdSelection(ad.id)}
+                                            />
+                                          </div>
+                                        )}
                                         <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                         <span className="flex-1 text-body-sm text-foreground break-words line-clamp-2 min-w-0">
                                           {ad.name}
@@ -793,7 +852,7 @@ export function SearchPlannerStructurePanel({
         </div>
       </ScrollArea>
 
-      {/* Bulk Actions Bar */}
+      {/* Bulk Actions Bar - Campaigns */}
       <SearchPlannerBulkBar
         selectedCampaignIds={selectedCampaignIds}
         campaigns={campaigns}
@@ -802,6 +861,66 @@ export function SearchPlannerStructurePanel({
         onClearSelection={handleClearSelection}
         onRefresh={handleRefresh}
       />
+
+      {/* Bulk Actions Bar - Ad Groups & Ads */}
+      {selectionMode && (bulkSelectedAdGroupCount > 0 || bulkSelectedAdCount > 0) && selectedCampaignIds.size === 0 && (
+        <div className="fixed bottom-md left-1/2 -translate-x-1/2 z-overlay">
+          <div className="liquid-glass-elevated rounded-xl shadow-lg p-md flex items-center gap-md border border-border">
+            <div className="flex items-center gap-sm">
+              <Badge variant="default" className="bg-primary text-primary-foreground text-body-sm font-semibold px-sm">
+                {bulkSelectedAdGroupCount > 0 ? bulkSelectedAdGroupCount : bulkSelectedAdCount}
+              </Badge>
+              <span className="text-body-sm font-semibold text-foreground">
+                {bulkSelectedAdGroupCount > 0 ? `ad group(s)` : `ad(s)`} selected
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => { setSelectedAdGroupIds(new Set()); setSelectedAdIds(new Set()); }}
+                className="text-muted-foreground hover:text-foreground h-7 w-7 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div className="flex items-center gap-sm">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => bulkSelectedAdGroupCount > 0 ? setBulkMoveAdGroups(true) : setBulkMoveAds(true)}
+                className="transition-smooth"
+              >
+                <ArrowRightLeft className="w-4 h-4 mr-xs" />
+                Move
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={async () => {
+                  if (bulkSelectedAdGroupCount > 0) {
+                    const ids = Array.from(selectedAdGroupIds);
+                    const { error } = await supabase.from('ad_groups').delete().in('id', ids);
+                    if (error) { toast.error(error.message); return; }
+                    toast.success(`Deleted ${ids.length} ad group(s)`);
+                  } else {
+                    const ids = Array.from(selectedAdIds);
+                    const { error } = await supabase.from('ads').delete().in('id', ids);
+                    if (error) { toast.error(error.message); return; }
+                    toast.success(`Deleted ${ids.length} ad(s)`);
+                  }
+                  setSelectedAdGroupIds(new Set());
+                  setSelectedAdIds(new Set());
+                  handleRefresh();
+                }}
+                className="transition-smooth"
+              >
+                <Trash2 className="w-4 h-4 mr-xs" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Dialogs */}
       <CreateCampaignDialog
@@ -910,6 +1029,24 @@ export function SearchPlannerStructurePanel({
           onSuccess={handleRefresh}
         />
       )}
+
+      {/* Bulk Move Dialogs */}
+      <BulkMoveDialog
+        open={bulkMoveAdGroups}
+        onOpenChange={setBulkMoveAdGroups}
+        moveType="ad_groups"
+        itemIds={Array.from(selectedAdGroupIds)}
+        currentEntity={selectedEntity}
+        onSuccess={() => { setSelectedAdGroupIds(new Set()); handleRefresh(); }}
+      />
+      <BulkMoveDialog
+        open={bulkMoveAds}
+        onOpenChange={setBulkMoveAds}
+        moveType="ads"
+        itemIds={Array.from(selectedAdIds)}
+        currentEntity={selectedEntity}
+        onSuccess={() => { setSelectedAdIds(new Set()); handleRefresh(); }}
+      />
     </div>
   );
 }
