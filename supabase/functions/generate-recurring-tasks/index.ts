@@ -19,10 +19,14 @@ const DAY_MAP: Record<string, number> = {
   sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
 };
 
-// Map day number to working_days format (lowercase 3-letter)
 const DAY_NUMBER_TO_NAME: Record<number, string> = {
   0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat'
 };
+
+// Max days to generate catch-up instances for
+const MAX_CATCHUP_DAYS = 7;
+// Max instances to generate per template in a single run
+const MAX_INSTANCES_PER_TEMPLATE = 14;
 
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
@@ -46,6 +50,11 @@ function startOfDay(date: Date): Date {
   return result;
 }
 
+function daysBetween(a: Date, b: Date): number {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.floor((b.getTime() - a.getTime()) / msPerDay);
+}
+
 function calculateNextOccurrence(
   rule: RecurrenceRule,
   fromDate: Date,
@@ -53,7 +62,6 @@ function calculateNextOccurrence(
 ): Date | null {
   if (rule.type === 'none') return null;
 
-  // Check end conditions
   if (rule.end_condition === 'after_n' && typeof rule.end_value === 'number') {
     if (occurrenceCount >= rule.end_value) return null;
   }
@@ -99,7 +107,6 @@ function calculateNextOccurrence(
       return null;
   }
 
-  // Final end date check
   if (rule.end_condition === 'until_date' && typeof rule.end_value === 'string') {
     const endDate = new Date(rule.end_value);
     if (nextDate > endDate) return null;
@@ -135,7 +142,6 @@ function parseRecurrenceRule(rrule: string | object | null): RecurrenceRule | nu
       return JSON.parse(rrule) as RecurrenceRule;
     }
     
-    // Parse legacy RRULE
     const parts = rrule.split(';').reduce((acc, part) => {
       const [key, value] = part.split('=');
       acc[key] = value;
@@ -160,31 +166,17 @@ function parseRecurrenceRule(rrule: string | object | null): RecurrenceRule | nu
   }
 }
 
-/**
- * Check if a given date falls on a working day for any of the assignees
- * Returns true if at least one assignee works on this day
- */
 function isWorkingDayForAssignees(
   date: Date,
   assigneeWorkingDays: Map<string, string[]>
 ): boolean {
-  // If no assignees have working_days configured, allow all days
-  if (assigneeWorkingDays.size === 0) {
-    return true;
-  }
+  if (assigneeWorkingDays.size === 0) return true;
 
   const dayName = DAY_NUMBER_TO_NAME[date.getDay()];
   
-  // Check if ANY assignee works on this day
-  for (const [userId, workingDays] of assigneeWorkingDays) {
-    // If user has no working_days set, assume they work all days
-    if (!workingDays || workingDays.length === 0) {
-      return true;
-    }
-    // Check if this day is in their working days (case-insensitive)
-    if (workingDays.some(wd => wd.toLowerCase() === dayName)) {
-      return true;
-    }
+  for (const [, workingDays] of assigneeWorkingDays) {
+    if (!workingDays || workingDays.length === 0) return true;
+    if (workingDays.some(wd => wd.toLowerCase() === dayName)) return true;
   }
 
   return false;
@@ -202,6 +194,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const now = new Date();
+    const today = startOfDay(now);
     console.log(`[generate-recurring-tasks] Running at ${now.toISOString()}`);
 
     // Find all templates that are due for generation
@@ -222,7 +215,7 @@ serve(async (req) => {
 
     console.log(`Found ${templates?.length || 0} templates due for generation`);
 
-    // Collect all unique user IDs from templates to fetch their working_days
+    // Fetch working_days for all assignees
     const allUserIds = new Set<string>();
     for (const template of templates || []) {
       for (const assignee of template.task_assignees || []) {
@@ -230,7 +223,6 @@ serve(async (req) => {
       }
     }
 
-    // Fetch working_days for all assignees
     const userWorkingDaysMap = new Map<string, string[]>();
     if (allUserIds.size > 0) {
       const { data: profiles, error: profilesError } = await supabase
@@ -249,12 +241,11 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Fetched working_days for ${userWorkingDaysMap.size} users`);
-
     const results = {
       processed: 0,
       created: 0,
       skipped_non_working_day: 0,
+      fast_forwarded: 0,
       errors: [] as string[],
     };
 
@@ -275,110 +266,138 @@ serve(async (req) => {
           }
         }
 
-        const occurrenceDate = new Date(template.next_run_at);
-        const occurrenceDateStr = occurrenceDate.toISOString().split('T')[0];
+        let currentNextRun = new Date(template.next_run_at);
+        let occurrenceCount = template.occurrence_count || 0;
+        let instancesCreated = 0;
 
-        // Check if this is a working day for any assignee
-        const isWorkingDay = isWorkingDayForAssignees(occurrenceDate, templateAssigneeWorkingDays);
-        
-        if (!isWorkingDay) {
-          console.log(`Skipping template ${template.id} on ${occurrenceDateStr} - not a working day for assignees`);
-          results.skipped_non_working_day++;
-          
-          // Still need to advance to the next occurrence
-          const newOccurrenceCount = (template.occurrence_count || 0);
-          const nextRun = calculateNextOccurrence(rule, occurrenceDate, newOccurrenceCount);
+        // ===== BATCH CATCH-UP LOOP =====
+        // Generate ALL overdue instances up to MAX_CATCHUP_DAYS old
+        // Fast-forward anything older than that
+        while (currentNextRun <= today && instancesCreated < MAX_INSTANCES_PER_TEMPLATE) {
+          const daysOverdue = daysBetween(currentNextRun, today);
 
-          await supabase
-            .from('tasks')
-            .update({ next_run_at: nextRun?.toISOString() || null })
-            .eq('id', template.id);
+          // If more than MAX_CATCHUP_DAYS overdue, fast-forward to today
+          if (daysOverdue > MAX_CATCHUP_DAYS) {
+            console.log(`Template ${template.id}: fast-forwarding from ${currentNextRun.toISOString()} to today (${daysOverdue} days overdue)`);
+            
+            // Calculate next occurrence from today instead
+            const nextFromToday = calculateNextOccurrence(rule, today, occurrenceCount);
+            if (nextFromToday) {
+              await supabase
+                .from('tasks')
+                .update({ 
+                  next_run_at: nextFromToday.toISOString(), 
+                  occurrence_count: occurrenceCount 
+                })
+                .eq('id', template.id);
+            } else {
+              await supabase
+                .from('tasks')
+                .update({ next_run_at: null, occurrence_count: occurrenceCount })
+                .eq('id', template.id);
+            }
+            results.fast_forwarded++;
+            break;
+          }
 
-          results.processed++;
-          continue;
-        }
+          const occurrenceDateStr = currentNextRun.toISOString().split('T')[0];
 
-        // Check if instance already exists for this date
-        const { data: existing } = await supabase
-          .from('tasks')
-          .select('id')
-          .eq('template_task_id', template.id)
-          .eq('occurrence_date', occurrenceDateStr)
-          .maybeSingle();
-
-        if (existing) {
-          console.log(`Instance already exists for template ${template.id} on ${occurrenceDateStr}`);
-          // Still update next_run_at
-        } else {
-          // Create new task instance
-          const { data: newTask, error: createError } = await supabase
-            .from('tasks')
-            .insert({
-              title: template.title,
-              description: template.description,
-              priority: template.priority,
-              status: template.status || 'Backlog',
-              due_at: template.next_run_at,
-              entity: template.entity,
-              project_id: template.project_id,
-              labels: template.labels,
-              created_by: template.created_by,
-              template_task_id: template.id,
-              occurrence_date: occurrenceDateStr,
-              task_type: 'recurring',
-              // Copy other relevant fields
-              jira_link: template.jira_link,
-              is_collaborative: template.is_collaborative ?? false,
-              estimated_hours: template.estimated_hours,
-              teams: template.teams,
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error(`Error creating instance for template ${template.id}:`, createError);
-            results.errors.push(`Template ${template.id}: ${createError.message}`);
+          // Check working day
+          const isWorkingDay = isWorkingDayForAssignees(currentNextRun, templateAssigneeWorkingDays);
+          if (!isWorkingDay) {
+            results.skipped_non_working_day++;
+            const nextRun = calculateNextOccurrence(rule, currentNextRun, occurrenceCount);
+            if (!nextRun) {
+              await supabase
+                .from('tasks')
+                .update({ next_run_at: null, occurrence_count: occurrenceCount })
+                .eq('id', template.id);
+              break;
+            }
+            currentNextRun = nextRun;
             continue;
           }
 
-          console.log(`Created task instance ${newTask.id} for template ${template.id}`);
+          // Check if instance already exists
+          const { data: existing } = await supabase
+            .from('tasks')
+            .select('id')
+            .eq('template_task_id', template.id)
+            .eq('occurrence_date', occurrenceDateStr)
+            .maybeSingle();
 
-          // Copy assignees
-          const assignees = template.task_assignees || [];
-          if (assignees.length > 0) {
-            const { error: assigneeError } = await supabase
-              .from('task_assignees')
-              .insert(
-                assignees.map((a: { user_id: string }) => ({
-                  task_id: newTask.id,
-                  user_id: a.user_id,
-                }))
-              );
+          if (!existing) {
+            // Create new task instance
+            const { data: newTask, error: createError } = await supabase
+              .from('tasks')
+              .insert({
+                title: template.title,
+                description: template.description,
+                priority: template.priority,
+                status: template.status || 'Backlog',
+                due_at: currentNextRun.toISOString(),
+                entity: template.entity,
+                project_id: template.project_id,
+                labels: template.labels,
+                created_by: template.created_by,
+                template_task_id: template.id,
+                occurrence_date: occurrenceDateStr,
+                task_type: 'recurring',
+                jira_link: template.jira_link,
+                is_collaborative: template.is_collaborative ?? false,
+                estimated_hours: template.estimated_hours,
+                teams: template.teams,
+              })
+              .select()
+              .single();
 
-            if (assigneeError) {
-              console.warn(`Error copying assignees for task ${newTask.id}:`, assigneeError);
+            if (createError) {
+              console.error(`Error creating instance for template ${template.id}:`, createError);
+              results.errors.push(`Template ${template.id}: ${createError.message}`);
+              break; // Stop this template on error
             }
+
+            // Copy assignees
+            const assignees = template.task_assignees || [];
+            if (assignees.length > 0) {
+              await supabase
+                .from('task_assignees')
+                .insert(
+                  assignees.map((a: { user_id: string }) => ({
+                    task_id: newTask.id,
+                    user_id: a.user_id,
+                  }))
+                );
+            }
+
+            instancesCreated++;
+            results.created++;
+            console.log(`Created instance ${newTask.id} for template ${template.id} on ${occurrenceDateStr}`);
           }
 
-          results.created++;
-        }
+          // Advance to next occurrence
+          occurrenceCount++;
+          const nextRun = calculateNextOccurrence(rule, currentNextRun, occurrenceCount);
+          if (!nextRun) {
+            await supabase
+              .from('tasks')
+              .update({ next_run_at: null, occurrence_count: occurrenceCount })
+              .eq('id', template.id);
+            break;
+          }
+          currentNextRun = nextRun;
 
-        // Calculate next occurrence
-        const newOccurrenceCount = (template.occurrence_count || 0) + 1;
-        const nextRun = calculateNextOccurrence(rule, occurrenceDate, newOccurrenceCount);
-
-        // Update template
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update({
-            next_run_at: nextRun?.toISOString() || null,
-            occurrence_count: newOccurrenceCount,
-          })
-          .eq('id', template.id);
-
-        if (updateError) {
-          console.error(`Error updating template ${template.id}:`, updateError);
-          results.errors.push(`Template update ${template.id}: ${updateError.message}`);
+          // If we've caught up to the future, update template and stop
+          if (currentNextRun > today) {
+            await supabase
+              .from('tasks')
+              .update({ 
+                next_run_at: currentNextRun.toISOString(), 
+                occurrence_count: occurrenceCount 
+              })
+              .eq('id', template.id);
+            break;
+          }
         }
 
         results.processed++;
