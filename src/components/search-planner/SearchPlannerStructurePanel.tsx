@@ -21,6 +21,7 @@ import {
   CheckSquare,
   Monitor,
   Smartphone,
+  ArrowRightLeft,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +46,7 @@ import { DuplicateAdDialog } from "@/components/search/DuplicateAdDialog";
 import { DuplicateAdGroupDialog } from "@/components/search/DuplicateAdGroupDialog";
 import { DuplicateCampaignDialog } from "@/components/search/DuplicateCampaignDialog";
 import { SearchPlannerBulkBar } from "./SearchPlannerBulkBar";
+import { MoveItemDialog } from "./MoveItemDialog";
 
 // Local type definitions for this component
 interface SitelinkData {
@@ -126,6 +128,8 @@ interface DeleteCampaignDialogState { campaign: CampaignData; adGroupsCount: num
 interface DuplicateAdDialogState { ad: AdData }
 interface DuplicateAdGroupDialogState { adGroup: AdGroupData; adsCount: number }
 interface DuplicateCampaignDialogState { campaign: CampaignData; adGroupsCount: number; adsCount: number }
+interface MoveAdGroupDialogState { adGroup: AdGroupData; campaignId: string; entity: string }
+interface MoveAdDialogState { ad: AdData; adGroupId: string; campaignId: string; entity: string }
 // eslint-disable-next-line react-refresh/only-export-components
 function CampaignReadinessDot({ campaignId, campaignType, campaign, adGroups: campaignAdGroups, ads: allAds }: {
   campaignId: string;
@@ -198,6 +202,10 @@ export function SearchPlannerStructurePanel({
   const [duplicateAdDialog, setDuplicateAdDialog] = useState<DuplicateAdDialogState | null>(null);
   const [duplicateAdGroupDialog, setDuplicateAdGroupDialog] = useState<DuplicateAdGroupDialogState | null>(null);
   const [duplicateCampaignDialog, setDuplicateCampaignDialog] = useState<DuplicateCampaignDialogState | null>(null);
+
+  // Move dialogs
+  const [moveAdGroupDialog, setMoveAdGroupDialog] = useState<MoveAdGroupDialogState | null>(null);
+  const [moveAdDialog, setMoveAdDialog] = useState<MoveAdDialogState | null>(null);
 
   // Fetch campaigns for selected entity
   const { data: campaigns = [] } = useQuery({
@@ -671,6 +679,13 @@ export function SearchPlannerStructurePanel({
                                       <Copy className="h-4 w-4" />
                                       <span className="text-body-sm">Duplicate</span>
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setMoveAdGroupDialog({ adGroup, campaignId: campaign.id, entity: selectedEntity })}
+                                      className="gap-xs hover:bg-card-hover"
+                                    >
+                                      <ArrowRightLeft className="h-4 w-4" />
+                                      <span className="text-body-sm">Move to Campaign</span>
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                       onClick={() => setDeleteAdGroupDialog({ adGroup, adsCount: adGroupAds.length })}
@@ -715,6 +730,18 @@ export function SearchPlannerStructurePanel({
                                           className="flex items-center gap-xs opacity-0 group-hover:opacity-100 transition-smooth"
                                           onClick={(e) => e.stopPropagation()}
                                         >
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 active:scale-95"
+                                            title="Move ad"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setMoveAdDialog({ ad, adGroupId: adGroup.id, campaignId: campaign.id, entity: selectedEntity });
+                                            }}
+                                          >
+                                            <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                                          </Button>
                                           <Button
                                             variant="ghost"
                                             size="icon"
@@ -852,6 +879,34 @@ export function SearchPlannerStructurePanel({
           adsCount={duplicateCampaignDialog.adsCount}
           open={!!duplicateCampaignDialog}
           onOpenChange={(open) => !open && setDuplicateCampaignDialog(null)}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {/* Move Dialogs */}
+      {moveAdGroupDialog && (
+        <MoveItemDialog
+          open={!!moveAdGroupDialog}
+          onOpenChange={(open) => !open && setMoveAdGroupDialog(null)}
+          moveType="ad_group"
+          itemId={moveAdGroupDialog.adGroup.id}
+          itemName={moveAdGroupDialog.adGroup.name}
+          currentCampaignId={moveAdGroupDialog.campaignId}
+          currentEntity={moveAdGroupDialog.entity}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {moveAdDialog && (
+        <MoveItemDialog
+          open={!!moveAdDialog}
+          onOpenChange={(open) => !open && setMoveAdDialog(null)}
+          moveType="ad"
+          itemId={moveAdDialog.ad.id!}
+          itemName={moveAdDialog.ad.name}
+          currentAdGroupId={moveAdDialog.adGroupId}
+          currentCampaignId={moveAdDialog.campaignId}
+          currentEntity={moveAdDialog.entity}
           onSuccess={handleRefresh}
         />
       )}
