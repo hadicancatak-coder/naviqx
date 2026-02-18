@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { realtimeService } from "@/lib/realtimeService";
 import { mapStatusToUi } from '@/domain';
 import { TASK_QUERY_KEY, TASK_WITH_TEMPLATES_KEY } from "@/lib/queryKeys";
+import { logger } from "@/lib/logger";
 
 export interface TaskFilters {
   assignees?: string[];
@@ -82,6 +83,35 @@ export function useTasks(filters?: TaskFilters) {
     return () => {
       unsubscribe();
     };
+  }, [user, queryClient]);
+
+  // "Ensure Today" check: if any templates are overdue, call the edge function once per session
+  const ensureTodayRan = useRef(false);
+  useEffect(() => {
+    if (!user || ensureTodayRan.current) return;
+    ensureTodayRan.current = true;
+
+    const checkOverdueTemplates = async () => {
+      try {
+        const { data: overdue } = await supabase
+          .from('tasks')
+          .select('id')
+          .eq('is_recurrence_template', true)
+          .not('next_run_at', 'is', null)
+          .lt('next_run_at', new Date().toISOString())
+          .limit(1);
+
+        if (overdue && overdue.length > 0) {
+          logger.debug('[useTasks] Overdue templates found, triggering catch-up');
+          await supabase.functions.invoke('generate-recurring-tasks');
+          queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+        }
+      } catch (err) {
+        logger.warn('[useTasks] Ensure-today check failed:', err);
+      }
+    };
+
+    checkOverdueTemplates();
   }, [user, queryClient]);
 
   return query;
