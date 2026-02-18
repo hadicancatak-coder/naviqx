@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -17,17 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { RecurrenceRule } from "@/lib/recurrenceUtils";
+import { RecurrenceRule, calculateNextOccurrence, getRecurrenceLabelNew } from "@/lib/recurrenceUtils";
 
 interface RecurrenceEditSheetProps {
   open: boolean;
@@ -52,6 +51,52 @@ const defaultRule: RecurrenceRule = {
   interval: 1,
   end_condition: "never",
 };
+
+function RecurrencePreview({ rule, endCount, endDate }: { rule: RecurrenceRule; endCount: string; endDate?: Date }) {
+  const preview = useMemo(() => {
+    if (rule.type === 'none') return [];
+    const finalRule: RecurrenceRule = {
+      ...rule,
+      end_value:
+        rule.end_condition === 'after_n' ? parseInt(endCount, 10) :
+        rule.end_condition === 'until_date' && endDate ? endDate.toISOString() :
+        undefined,
+    };
+    const dates: Date[] = [];
+    let current = new Date();
+    for (let i = 0; i < 5; i++) {
+      const next = calculateNextOccurrence(finalRule, current, i);
+      if (!next) break;
+      dates.push(next);
+      current = next;
+    }
+    return dates;
+  }, [rule, endCount, endDate]);
+
+  const label = getRecurrenceLabelNew(rule);
+
+  if (rule.type === 'none' || preview.length === 0) return null;
+
+  return (
+    <div className="border border-border rounded-lg p-sm bg-muted/30 space-y-xs">
+      <div className="flex items-center gap-xs text-metadata font-medium text-muted-foreground">
+        <Eye className="h-3.5 w-3.5" />
+        <span>Preview — {label}</span>
+      </div>
+      <ul className="space-y-0.5">
+        {preview.map((date, i) => (
+          <li key={i} className="text-body-sm text-foreground flex items-center gap-xs">
+            <span className="w-5 text-muted-foreground text-metadata text-right">{i + 1}.</span>
+            {format(date, "EEE, MMM d, yyyy")}
+          </li>
+        ))}
+      </ul>
+      {preview.length >= 5 && (
+        <p className="text-metadata text-muted-foreground italic">…and so on</p>
+      )}
+    </div>
+  );
+}
 
 export function RecurrenceEditSheet({
   open,
@@ -289,6 +334,9 @@ export function RecurrenceEditSheet({
             )}
           </div>
         </div>
+
+        {/* Live Preview */}
+        <RecurrencePreview rule={rule} endCount={endCount} endDate={endDate} />
 
         <SheetFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
