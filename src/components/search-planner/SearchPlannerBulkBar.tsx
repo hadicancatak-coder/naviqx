@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Download, Copy, Trash2, Loader2, Pause, Layers } from 'lucide-react';
+import { X, Download, Copy, Trash2, Loader2, Pause, ArrowRightLeft } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,9 +13,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useSystemEntities } from '@/hooks/useSystemEntities';
 
 interface CampaignData {
   id: string;
@@ -59,9 +69,13 @@ export function SearchPlannerBulkBar({
   onRefresh,
 }: SearchPlannerBulkBarProps) {
   const queryClient = useQueryClient();
+  const { data: systemEntities = [] } = useSystemEntities();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [moveTargetEntity, setMoveTargetEntity] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   const selectedCount = selectedCampaignIds.size;
   if (selectedCount === 0) return null;
@@ -240,6 +254,44 @@ export function SearchPlannerBulkBar({
     }
   };
 
+  const handleMoveToEntity = async () => {
+    if (!moveTargetEntity) {
+      toast.error('Please select a target entity');
+      return;
+    }
+    setIsMoving(true);
+    try {
+      const { error } = await supabase
+        .from('search_campaigns')
+        .update({ entity: moveTargetEntity })
+        .in('id', selectedIds);
+      if (error) throw error;
+
+      // Also update entity on associated ads
+      const adGroupIds = affectedAdGroups.map(ag => ag.id);
+      if (adGroupIds.length > 0) {
+        await supabase
+          .from('ads')
+          .update({ entity: moveTargetEntity })
+          .in('ad_group_id', adGroupIds);
+      }
+
+      toast.success(`Moved ${selectedCount} campaign(s) to ${moveTargetEntity}`);
+      onClearSelection();
+      invalidateAll();
+      onRefresh();
+      setShowMoveDialog(false);
+      setMoveTargetEntity('');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to move campaigns');
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
+  // Get current entity from first selected campaign
+  const currentEntity = campaigns.find(c => selectedIds.includes(c.id))?.entity || '';
+
   return (
     <div className="fixed bottom-md left-1/2 -translate-x-1/2 z-overlay">
       <div className="liquid-glass-elevated rounded-xl shadow-lg p-md flex items-center gap-md border border-border">
@@ -268,6 +320,11 @@ export function SearchPlannerBulkBar({
 
         {/* Actions */}
         <div className="flex items-center gap-sm">
+          <Button size="sm" variant="secondary" onClick={() => setShowMoveDialog(true)} className="transition-smooth">
+            <ArrowRightLeft className="w-4 h-4 mr-xs" />
+            Move
+          </Button>
+
           <Button size="sm" variant="secondary" onClick={handlePauseAll} className="transition-smooth">
             <Pause className="w-4 h-4 mr-xs" />
             Pause All
@@ -317,6 +374,48 @@ export function SearchPlannerBulkBar({
         </div>
       </div>
 
+      {/* Move Dialog */}
+      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Move {selectedCount} Campaign(s) to Entity</DialogTitle>
+            <DialogDescription>
+              Select a target entity. All associated ad groups and ads will be moved as well.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-md py-md">
+            <div className="space-y-sm">
+              <Label>Target Entity</Label>
+              <Select value={moveTargetEntity} onValueChange={setMoveTargetEntity}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select entity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {systemEntities
+                    .filter(e => e.name !== currentEntity)
+                    .map(e => (
+                      <SelectItem key={e.name} value={e.name}>{e.name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {currentEntity && (
+              <p className="text-metadata text-muted-foreground">
+                Currently in: <span className="font-medium text-foreground">{currentEntity}</span>
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMoveDialog(false)} disabled={isMoving}>Cancel</Button>
+            <Button onClick={handleMoveToEntity} disabled={isMoving || !moveTargetEntity}>
+              {isMoving && <Loader2 className="w-4 h-4 mr-xs animate-spin" />}
+              Move Campaigns
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="z-overlay">
           <AlertDialogHeader>

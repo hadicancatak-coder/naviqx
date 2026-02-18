@@ -42,12 +42,16 @@ const APP_PLATFORMS = [
 const APP_SUBTYPES = [
   { value: 'app_installs', label: 'App Installs' },
   { value: 'app_engagement', label: 'App Engagement' },
+  { value: 'in_app_action', label: 'In-App Action' },
+  { value: 'install_volume', label: 'Install Volume' },
 ] as const;
 
 const TARGETING_METHODS = [
   { value: 'contextual', label: 'Contextual' },
   { value: 'audience', label: 'Audience' },
   { value: 'placement', label: 'Placement' },
+  { value: 'fixed', label: 'Fixed Targeting' },
+  { value: 'in_platform', label: 'In-Platform Targeting' },
 ] as const;
 
 interface CreateAdGroupDialogProps {
