@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { TASK_TAGS } from "@/lib/constants";
 import { StaleBadge } from "@/components/tasks/StaleBadge";
 import { DependencyBadge } from "@/components/tasks/DependencyBadge";
+import { MissedRecurrenceBadge } from "@/components/tasks/MissedRecurrenceBadge";
 import { TASK_QUERY_KEY } from "@/lib/queryKeys";
 
 interface TaskRowProps {
@@ -278,6 +279,14 @@ export function TaskRow({
           <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
           {task.recurrence_rrule ? getRecurrenceLabelNew(JSON.parse(task.recurrence_rrule)) : 'Recurring'}
         </Badge>
+      )}
+      {/* Missed recurrence indicator */}
+      {isRecurring && !compact && (
+        <MissedRecurrenceBadge
+          nextRunAt={task.next_run_at || task.due_at}
+          isTemplate={isRecurringTemplate}
+          isInstance={isRecurringInstance}
+        />
       )}
       {isExternalDep && !compact && (
         <Badge variant="outline" className="text-metadata px-1 py-0 h-4 bg-warning/15 border-warning/30 text-warning flex-shrink-0 rounded-full">
