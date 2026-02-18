@@ -41,7 +41,7 @@ export function CreateCampaignDialog({ open, onOpenChange, defaultEntity, defaul
     if (defaultEntity) {
       setEntity(defaultEntity);
     } else if (!entity && systemEntities.length > 0) {
-      setEntity(systemEntities.find(e => e.name === "UAE")?.name || systemEntities[0].name);
+      setEntity(systemEntities[0].name);
     }
   }, [systemEntities, defaultEntity]);
 
