@@ -895,6 +895,86 @@ export function SearchPlannerStructurePanel({
               </Button>
               <Button
                 size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) { toast.error('Not authenticated'); return; }
+                  try {
+                    if (bulkSelectedAdGroupCount > 0) {
+                      const ids = Array.from(selectedAdGroupIds);
+                      for (const agId of ids) {
+                        const ag = adGroups.find(a => a.id === agId);
+                        if (!ag) continue;
+                        const { data: newAg, error: agErr } = await supabase.from('ad_groups').insert({
+                          name: `${ag.name} (Copy)`,
+                          campaign_id: ag.campaign_id,
+                          bidding_strategy: (ag as Record<string, unknown>).bidding_strategy as string | null ?? null,
+                          keywords: (ag as Record<string, unknown>).keywords as null ?? null,
+                          match_types: (ag as Record<string, unknown>).match_types as null ?? null,
+                          status: (ag as Record<string, unknown>).status as string | null ?? null,
+                        }).select().single();
+                        if (agErr) throw agErr;
+                        const agAds = ads.filter(ad => ad.ad_group_id === agId);
+                        for (const ad of agAds) {
+                          const adRec = ad as Record<string, unknown>;
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          await supabase.from('ads').insert({
+                            name: `${ad.name} (Copy)`,
+                            ad_group_id: newAg.id,
+                            created_by: user.id,
+                            ad_type: adRec.ad_type ?? null,
+                            headlines: adRec.headlines ?? [],
+                            descriptions: adRec.descriptions ?? [],
+                            sitelinks: adRec.sitelinks ?? [],
+                            callouts: adRec.callouts ?? [],
+                            landing_page: adRec.landing_page ?? null,
+                            business_name: adRec.business_name ?? null,
+                            language: adRec.language ?? null,
+                            entity: adRec.entity ?? null,
+                            approval_status: 'draft',
+                          } as any);
+                        }
+                      }
+                      toast.success(`Duplicated ${ids.length} ad group(s)`);
+                    } else {
+                      const ids = Array.from(selectedAdIds);
+                      for (const adId of ids) {
+                        const ad = ads.find(a => a.id === adId);
+                        if (!ad) continue;
+                        const adRec = ad as Record<string, unknown>;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        await supabase.from('ads').insert({
+                          name: `${ad.name} (Copy)`,
+                          ad_group_id: adRec.ad_group_id ?? null,
+                          created_by: user.id,
+                          ad_type: adRec.ad_type ?? null,
+                          headlines: adRec.headlines ?? [],
+                          descriptions: adRec.descriptions ?? [],
+                          sitelinks: adRec.sitelinks ?? [],
+                          callouts: adRec.callouts ?? [],
+                          landing_page: adRec.landing_page ?? null,
+                          business_name: adRec.business_name ?? null,
+                          language: adRec.language ?? null,
+                          entity: adRec.entity ?? null,
+                          approval_status: 'draft',
+                        } as any);
+                      }
+                      toast.success(`Duplicated ${ids.length} ad(s)`);
+                    }
+                    setSelectedAdGroupIds(new Set());
+                    setSelectedAdIds(new Set());
+                    handleRefresh();
+                  } catch (error: unknown) {
+                    toast.error(error instanceof Error ? error.message : 'Failed to duplicate');
+                  }
+                }}
+                className="transition-smooth"
+              >
+                <Copy className="w-4 h-4 mr-xs" />
+                Duplicate
+              </Button>
+              <Button
+                size="sm"
                 variant="destructive"
                 onClick={async () => {
                   if (bulkSelectedAdGroupCount > 0) {
