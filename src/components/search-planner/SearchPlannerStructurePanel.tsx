@@ -107,6 +107,12 @@ const CAMPAIGN_TYPE_BADGE_STYLES: Record<string, string> = {
   app: "bg-success-soft text-success-text",
 };
 
+const CAMPAIGN_TYPE_BORDER_COLORS: Record<string, string> = {
+  search: "border-l-blue-500",
+  display: "border-l-purple-500",
+  app: "border-l-green-500",
+};
+
 interface SearchPlannerStructurePanelProps {
   onEditAd: (ad: AdData, adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
   onCreateAd: (adGroup: AdGroupData, campaign: CampaignData, entity: string) => void;
@@ -479,6 +485,8 @@ export function SearchPlannerStructurePanel({
                     className={cn(
                       "group flex items-center gap-xs p-sm rounded-lg transition-smooth cursor-pointer",
                       "hover:bg-card-hover border border-transparent hover:border-border active:scale-[0.99]",
+                      "border-l-[3px]",
+                      CAMPAIGN_TYPE_BORDER_COLORS[campaignTypeLabel] || "border-l-transparent",
                       isSelected && "bg-primary/10 border-primary/30"
                     )}
                     onClick={() => {

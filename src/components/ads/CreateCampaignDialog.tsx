@@ -36,12 +36,14 @@ export function CreateCampaignDialog({ open, onOpenChange, defaultEntity, defaul
   const [languages, setLanguages] = useState<string[]>(["EN"]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Set default entity when entities load
+  // Sync entity when defaultEntity prop changes or entities load
   useEffect(() => {
-    if (!entity && systemEntities.length > 0 && !defaultEntity) {
+    if (defaultEntity) {
+      setEntity(defaultEntity);
+    } else if (!entity && systemEntities.length > 0) {
       setEntity(systemEntities.find(e => e.name === "UAE")?.name || systemEntities[0].name);
     }
-  }, [systemEntities, entity, defaultEntity]);
+  }, [systemEntities, defaultEntity]);
 
   // Sync defaultCampaignType prop
   useEffect(() => {
@@ -93,7 +95,6 @@ export function CreateCampaignDialog({ open, onOpenChange, defaultEntity, defaul
 
       toast.success("Campaign created successfully");
       setName("");
-      setEntity(defaultEntity || "UAE");
       setCampaignType(defaultCampaignType || "search");
       setLanguages(["EN"]);
       onSuccess?.();

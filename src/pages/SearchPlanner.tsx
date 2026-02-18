@@ -212,6 +212,8 @@ export default function SearchPlanner() {
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
         entity={selectedEntity}
+        selectedCampaignId={editorContext?.campaign?.id || campaignContext?.campaign?.id || adGroupContext?.campaign?.id}
+        selectedAdGroupId={editorContext?.adGroup?.id || adGroupContext?.adGroup?.id}
       />
 
       {/* Main Content - 3 Column Layout */}
