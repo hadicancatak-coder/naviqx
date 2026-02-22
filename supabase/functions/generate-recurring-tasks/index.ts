@@ -327,52 +327,61 @@ serve(async (req) => {
             .maybeSingle();
 
           if (!existing) {
-            // Create new task instance
-            const { data: newTask, error: createError } = await supabase
-              .from('tasks')
-              .insert({
-                title: template.title,
-                description: template.description,
-                priority: template.priority,
-                status: template.status || 'Backlog',
-                due_at: currentNextRun.toISOString(),
-                entity: template.entity,
-                project_id: template.project_id,
-                labels: template.labels,
-                created_by: template.created_by,
-                template_task_id: template.id,
-                occurrence_date: occurrenceDateStr,
-                task_type: 'recurring',
-                jira_link: template.jira_link,
-                is_collaborative: template.is_collaborative ?? false,
-                estimated_hours: template.estimated_hours,
-                teams: template.teams,
-              })
-              .select()
-              .single();
+            // Create new task instance - use try/catch to handle unique constraint violations
+            try {
+              const { data: newTask, error: createError } = await supabase
+                .from('tasks')
+                .insert({
+                  title: template.title,
+                  description: template.description,
+                  priority: template.priority,
+                  status: template.status || 'Backlog',
+                  due_at: currentNextRun.toISOString(),
+                  entity: template.entity,
+                  project_id: template.project_id,
+                  labels: template.labels,
+                  created_by: template.created_by,
+                  template_task_id: template.id,
+                  occurrence_date: occurrenceDateStr,
+                  task_type: 'recurring',
+                  jira_link: template.jira_link,
+                  is_collaborative: template.is_collaborative ?? false,
+                  estimated_hours: template.estimated_hours,
+                  teams: template.teams,
+                })
+                .select()
+                .single();
 
-            if (createError) {
-              console.error(`Error creating instance for template ${template.id}:`, createError);
-              results.errors.push(`Template ${template.id}: ${createError.message}`);
-              break; // Stop this template on error
+              if (createError) {
+                // Handle unique constraint violation (duplicate) gracefully
+                if (createError.code === '23505') {
+                  console.log(`Skipped duplicate for template ${template.id} on ${occurrenceDateStr}`);
+                } else {
+                  console.error(`Error creating instance for template ${template.id}:`, createError);
+                  results.errors.push(`Template ${template.id}: ${createError.message}`);
+                  break;
+                }
+              } else if (newTask) {
+                // Copy assignees only if insert succeeded
+                const assignees = template.task_assignees || [];
+                if (assignees.length > 0) {
+                  await supabase
+                    .from('task_assignees')
+                    .insert(
+                      assignees.map((a: { user_id: string }) => ({
+                        task_id: newTask.id,
+                        user_id: a.user_id,
+                      }))
+                    );
+                }
+
+                instancesCreated++;
+                results.created++;
+                console.log(`Created instance ${newTask.id} for template ${template.id} on ${occurrenceDateStr}`);
+              }
+            } catch (insertErr) {
+              console.warn(`Insert conflict for template ${template.id} on ${occurrenceDateStr}, skipping`);
             }
-
-            // Copy assignees
-            const assignees = template.task_assignees || [];
-            if (assignees.length > 0) {
-              await supabase
-                .from('task_assignees')
-                .insert(
-                  assignees.map((a: { user_id: string }) => ({
-                    task_id: newTask.id,
-                    user_id: a.user_id,
-                  }))
-                );
-            }
-
-            instancesCreated++;
-            results.created++;
-            console.log(`Created instance ${newTask.id} for template ${template.id} on ${occurrenceDateStr}`);
           }
 
           // Advance to next occurrence
