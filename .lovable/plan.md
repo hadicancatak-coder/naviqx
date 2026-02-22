@@ -1,47 +1,69 @@
 
-# Bulk Task Creation
+# Fix Recurring Task Duplicates + Bulk Task Creation
 
-## Overview
-Add a "Bulk Add" mode to the task creation flow, allowing users to quickly add multiple tasks at once with optional descriptions and due dates -- all from a single, clean dialog.
+## Problem Summary
+Two issues to fix:
+1. **Recurring tasks are duplicating** -- There are 26 duplicate occurrence pairs in the database. Tasks like "Meta Audience Updates", "Daily Checklist", "Seminars Report" all have 2 copies for the same date. This happens because the DB trigger and the edge function both try to create instances without a database-level uniqueness guarantee.
+2. **Bulk task creation** is already wired in but needs to be verified working.
 
-## User Experience
+## Root Cause: Recurring Duplicates
+The system has 3 layers generating recurring task instances:
+- Layer 1: DB trigger (`generate_next_recurring_instance`) fires on task completion
+- Layer 2: Edge function (`generate-recurring-tasks`) does batch catch-up
+- Layer 3: Client-side check in `useTasks` invokes the edge function on load
 
-### Entry Point
-- Add a small "Bulk add" icon button next to the existing "Add task" row in the `InlineTaskCreator` component
-- Clicking it opens a `BulkTaskCreateDialog`
+Both the trigger and edge function check for existing instances before inserting, but **without a unique constraint**, they can race and both insert.
 
-### Dialog Design
-- A modal dialog with a dynamic list of task rows
-- Each row contains:
-  - **Title** (required) -- text input, auto-focused
-  - **Due date** (optional) -- compact date picker button (calendar icon, shows date when set)
-  - **Description** (optional) -- expandable via a toggle/chevron per row
-  - **Remove row** button (X icon)
-- A "+ Add another" button at the bottom to append new empty rows
-- Pressing **Enter** on a title field automatically adds a new row below (fast keyboard flow)
-- Start with 3 empty rows by default
-- Footer: "Cancel" and "Create X Tasks" button (disabled until at least 1 title is filled)
+## Plan
 
-### After Creation
-- All tasks are inserted in a single batch
-- A toast confirms "X tasks created"
-- The dialog closes and the task list refreshes
+### Step 1: Add unique constraint to prevent future duplicates
+Add a database migration with a unique index on `(template_task_id, occurrence_date)` so duplicates are impossible at the DB level.
+
+### Step 2: Clean up existing duplicate data
+Delete one copy from each duplicate pair, keeping the oldest entry.
+
+### Step 3: Update the DB trigger to handle conflicts
+Modify `generate_next_recurring_instance` to use `ON CONFLICT DO NOTHING` (or catch the unique violation) so it silently skips if the edge function already created the instance.
+
+### Step 4: Update the edge function to handle conflicts
+Update the edge function insert to use upsert or conflict handling so it doesn't error when the trigger already created the instance.
 
 ## Technical Details
 
-### New File: `src/components/tasks/BulkTaskCreateDialog.tsx`
-- Dialog component using the existing `Dialog` UI primitives
-- Internal state: array of `{ title, description, dueDate }` objects
-- On submit: filters out empty rows, then calls `supabase.from('tasks').insert([...])` with all valid tasks (status: "Ongoing", priority: "Medium", created_by: user.id)
-- Invalidates the `TASK_QUERY_KEY` query after successful insert
+### Database Migration SQL
+```text
+-- 1. Delete duplicates (keep the oldest per template+date pair)
+DELETE FROM tasks
+WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (
+      PARTITION BY template_task_id, occurrence_date 
+      ORDER BY created_at ASC
+    ) as rn
+    FROM tasks
+    WHERE template_task_id IS NOT NULL AND occurrence_date IS NOT NULL
+  ) ranked
+  WHERE rn > 1
+);
 
-### Modified File: `src/components/tasks/InlineTaskCreator.tsx`
-- Add a `ListPlus` icon button next to the "Add task" trigger
-- Clicking it opens the `BulkTaskCreateDialog`
-- Manages `isBulkOpen` state
+-- 2. Add unique constraint
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_template_occurrence 
+ON tasks (template_task_id, occurrence_date) 
+WHERE template_task_id IS NOT NULL AND occurrence_date IS NOT NULL;
+```
 
-### Styling
-- Uses existing Prisma design tokens (bg-card, border-border, text-body-sm, gap-sm, rounded-lg, etc.)
-- Dialog uses `liquid-glass-dialog` styling via the standard `DialogContent`
-- Rows have subtle hover states and smooth transitions
-- Compact layout to keep the dialog scannable even with many rows
+### DB Trigger Update (`generate_next_recurring_instance`)
+Change the INSERT to include:
+```text
+ON CONFLICT (template_task_id, occurrence_date) 
+WHERE template_task_id IS NOT NULL AND occurrence_date IS NOT NULL
+DO NOTHING
+```
+And handle the case where `v_new_task_id` is null (conflict hit) by skipping the assignee copy.
+
+### Edge Function Update (`generate-recurring-tasks/index.ts`)
+After the existing check, add `ON CONFLICT` handling to the insert, or wrap in a try-catch that treats unique violations as "already exists -- skip".
+
+### Files Modified
+- `supabase/functions/generate-recurring-tasks/index.ts` -- add conflict handling to insert
+- Database migration -- clean duplicates + add unique index + update trigger function
