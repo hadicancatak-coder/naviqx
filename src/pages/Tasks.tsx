@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers, FolderKanban, Zap, Timer } from "lucide-react";
+import { Plus, ListTodo, AlertCircle, Clock, Shield, TrendingUp, X, CheckCircle2, RefreshCw, User, Layers, FolderKanban, Zap, Timer, ListPlus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BulkTaskCreateDialog } from "@/components/tasks/BulkTaskCreateDialog";
 import { useSprints } from "@/hooks/useSprints";
 import { isTaskStale } from "@/lib/staleTaskHelpers";
 import { useProjects } from "@/hooks/useProjects";
@@ -51,6 +58,7 @@ export default function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openTaskDrawer } = useTaskDrawer();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -476,13 +484,32 @@ export default function Tasks() {
           title="Tasks"
           description="Manage and track your team's tasks"
           actions={
-            <Button 
-              onClick={() => setDialogOpen(true)} 
-              size="icon"
-              className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-smooth"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="icon"
+                    className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-smooth"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setDialogOpen(true)} className="gap-sm">
+                    <Plus className="h-4 w-4" />
+                    New Task
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setBulkDialogOpen(true)} className="gap-sm">
+                    <ListPlus className="h-4 w-4" />
+                    Bulk Add Tasks
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <BulkTaskCreateDialog
+                open={bulkDialogOpen}
+                onOpenChange={setBulkDialogOpen}
+              />
+            </>
           }
         />
 
