@@ -38,6 +38,7 @@ import Performance from "./pages/Performance";
 
 // Lazy-loaded pages for better initial load
 const SprintsManagement = lazy(() => import("./pages/admin/SprintsManagement"));
+const RecurringTasksAudit = lazy(() => import("./pages/admin/RecurringTasksAudit"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const Overview = lazy(() => import("./pages/admin/Overview"));
 const UsersManagement = lazy(() => import("./pages/admin/UsersManagement"));
@@ -119,6 +120,7 @@ const App = () => (
                         <Route path="errors" element={<ErrorLogs />} />
                         <Route path="security-scans" element={<SecurityScans />} />
                         <Route path="sprints" element={<SprintsManagement />} />
+                        <Route path="recurring" element={<RecurringTasksAudit />} />
                         <Route path="settings" element={<AdminSettings />} />
                       </Route>
                       <Route path="/ads" element={<Navigate to="/ads/google" replace />} />
