@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, ListPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_QUERY_KEY } from "@/lib/queryKeys";
+import { BulkTaskCreateDialog } from "./BulkTaskCreateDialog";
 
 interface InlineTaskCreatorProps {
   onTaskCreated?: () => void;
@@ -20,6 +22,7 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -74,17 +77,32 @@ export function InlineTaskCreator({ onTaskCreated, className }: InlineTaskCreato
 
   if (!isEditing) {
     return (
-      <button
-        onClick={() => setIsEditing(true)}
-        className={cn(
-          "flex items-center gap-2 w-full h-row-compact px-sm text-body-sm text-muted-foreground",
-          "hover:text-foreground hover:bg-card-hover transition-smooth rounded-md cursor-pointer",
-          className
-        )}
-      >
-        <Plus className="h-4 w-4" />
-        <span>Add task</span>
-      </button>
+      <div className={cn("flex items-center gap-xs", className)}>
+        <button
+          onClick={() => setIsEditing(true)}
+          className={cn(
+            "flex items-center gap-2 flex-1 h-row-compact px-sm text-body-sm text-muted-foreground",
+            "hover:text-foreground hover:bg-card-hover transition-smooth rounded-md cursor-pointer"
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add task</span>
+        </button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => setIsBulkOpen(true)}
+          className="text-muted-foreground hover:text-foreground shrink-0"
+          title="Bulk add tasks"
+        >
+          <ListPlus className="h-4 w-4" />
+        </Button>
+        <BulkTaskCreateDialog
+          open={isBulkOpen}
+          onOpenChange={setIsBulkOpen}
+          onTasksCreated={onTaskCreated}
+        />
+      </div>
     );
   }
 
