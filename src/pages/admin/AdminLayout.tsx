@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContainer, PageHeader } from "@/components/layout";
-import { LayoutDashboard, Users, ShieldCheck, Activity, Database, Link2, Settings, Target, Zap } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Activity, Database, Link2, Settings, Target, Zap, Repeat } from "lucide-react";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -42,6 +42,10 @@ export default function AdminLayout() {
           <TabsTrigger value="external-links" className="gap-sm">
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">Links</span>
+          </TabsTrigger>
+          <TabsTrigger value="recurring" className="gap-sm">
+            <Repeat className="h-4 w-4" />
+            <span className="hidden sm:inline">Recurring</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-sm">
             <ShieldCheck className="h-4 w-4" />
