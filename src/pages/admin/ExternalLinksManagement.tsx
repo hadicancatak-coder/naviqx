@@ -359,8 +359,11 @@ export default function ExternalLinksManagement() {
       project: { icon: FolderKanban, label: "Project", variant: "outline" },
       lp_map: { icon: MapPin, label: "LP Map", variant: "outline" },
       search_ads: { icon: Search, label: "Search Ads", variant: "default" },
+      app_store: { icon: Globe, label: "App Store", variant: "secondary" },
     };
-    const { icon: Icon, label, variant } = config[link.resource_type];
+    const cfg = config[link.resource_type];
+    if (!cfg) return <Badge variant="outline">{link.resource_type}</Badge>;
+    const { icon: Icon, label, variant } = cfg;
     return (
       <div className="flex items-center gap-xs">
         <Badge variant={variant}>
@@ -410,6 +413,7 @@ export default function ExternalLinksManagement() {
     project: links.filter((l) => l.resource_type === "project").length,
     lp_map: links.filter((l) => l.resource_type === "lp_map").length,
     search_ads: links.filter((l) => l.resource_type === "search_ads").length,
+    app_store: links.filter((l) => l.resource_type === "app_store").length,
     active: links.filter((l) => l.is_active).length,
     totalClicks: links.reduce((sum, l) => sum + (l.click_count || 0), 0),
     legacy: links.filter((l) => isLegacyLink(l)).length,
@@ -425,7 +429,7 @@ export default function ExternalLinksManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-md">
+      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-md">
         <Card>
           <CardHeader className="pb-sm">
             <CardTitle className="text-body-sm text-muted-foreground">Total</CardTitle>
@@ -476,6 +480,14 @@ export default function ExternalLinksManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-sm">
+            <CardTitle className="text-body-sm text-muted-foreground">App Store</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-heading-lg font-semibold">{stats.app_store}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-sm">
             <CardTitle className="text-body-sm text-muted-foreground">Active</CardTitle>
           </CardHeader>
           <CardContent>
@@ -514,6 +526,7 @@ export default function ExternalLinksManagement() {
             <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
             <TabsTrigger value="project">Projects</TabsTrigger>
             <TabsTrigger value="lp_map">LP Maps</TabsTrigger>
+            <TabsTrigger value="app_store">App Store</TabsTrigger>
           </TabsList>
         </Tabs>
         <Input

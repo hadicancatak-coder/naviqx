@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { AppStoreListing } from "@/domain/app-store";
 import { Star, Download, ChevronRight, Shield } from "lucide-react";
 import logoEmblem from "@/assets/cfi-logo-emblem.png";
@@ -8,6 +9,9 @@ interface Props {
 
 export function GooglePlayPreview({ listing }: Props) {
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
+  const [shortDescExpanded, setShortDescExpanded] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [whatsNewExpanded, setWhatsNewExpanded] = useState(false);
 
   const filledNotes = (listing.screenshot_notes ?? []).filter((n) => n.trim().length > 0);
   const totalSlots = Math.max(filledNotes.length + 1, 3);
@@ -15,9 +19,9 @@ export function GooglePlayPreview({ listing }: Props) {
 
   return (
     <div className="flex flex-col items-center py-lg">
-      <div className="w-[300px] rounded-[28px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
+      <div className="w-[340px] rounded-[32px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
         {/* Status bar */}
-        <div className="h-6 bg-foreground/5 flex items-center justify-end px-sm flex-shrink-0">
+        <div className="h-7 bg-foreground/5 flex items-center justify-end px-sm flex-shrink-0">
           <div className="flex gap-1">
             {[1, 2, 3].map((i) => (
               <div key={i} className="w-3 h-2 rounded-sm bg-foreground/20" />
@@ -26,10 +30,10 @@ export function GooglePlayPreview({ listing }: Props) {
         </div>
 
         {/* Scrollable content area */}
-        <div className="h-[500px] overflow-y-auto px-md pb-lg space-y-sm" dir={dir}>
+        <div className="h-[600px] overflow-y-auto px-md pb-lg space-y-sm" dir={dir}>
           {/* App header */}
           <div className="flex items-start gap-sm pt-sm">
-            <img src={logoEmblem} alt="App icon" className="w-14 h-14 rounded-xl shadow-sm" />
+            <img src={logoEmblem} alt="App icon" className="w-16 h-16 rounded-xl shadow-sm" />
             <div className="flex-1 min-w-0">
               <p className="text-body font-semibold text-foreground truncate">{listing.app_name || "App Name"}</p>
               <p className="text-metadata text-primary">CFI Financial Group</p>
@@ -48,7 +52,7 @@ export function GooglePlayPreview({ listing }: Props) {
           </div>
 
           {/* Install button - pill style */}
-          <button className="w-full bg-primary text-primary-foreground text-body-sm font-medium py-2 rounded-full">
+          <button className="w-full bg-primary text-primary-foreground text-body-sm font-medium py-2.5 rounded-full">
             Install
           </button>
 
@@ -58,7 +62,7 @@ export function GooglePlayPreview({ listing }: Props) {
               {slots.map((note, i) => (
                 <div
                   key={i}
-                  className="w-[100px] h-[180px] rounded-lg flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  className="w-[110px] h-[196px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center"
                   style={{
                     background: note
                       ? "linear-gradient(180deg, hsl(var(--muted)), hsl(var(--accent)))"
@@ -68,8 +72,8 @@ export function GooglePlayPreview({ listing }: Props) {
                 >
                   {note ? (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full w-4 h-4 flex items-center justify-center">{i + 1}</span>
-                      <span className="text-metadata text-muted-foreground line-clamp-3">{note}</span>
+                      <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full w-5 h-5 flex items-center justify-center">{i + 1}</span>
+                      <span className="text-metadata text-muted-foreground line-clamp-4">{note}</span>
                     </div>
                   ) : (
                     <span className="text-heading-sm text-muted-foreground/40 font-light">+</span>
@@ -85,10 +89,34 @@ export function GooglePlayPreview({ listing }: Props) {
               <h4 className="text-body-sm font-semibold text-foreground">About this app</h4>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-body-sm text-foreground line-clamp-2">{listing.short_description || "Short description…"}</p>
+            {/* Short description - expandable */}
+            <p className={`text-body-sm text-foreground whitespace-pre-line ${!shortDescExpanded ? "line-clamp-2" : ""}`}>
+              {listing.short_description || "Short description…"}
+            </p>
+            {listing.short_description && listing.short_description.length > 50 && (
+              <button
+                onClick={() => setShortDescExpanded(!shortDescExpanded)}
+                className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+              >
+                {shortDescExpanded ? "less" : "more"}
+              </button>
+            )}
           </div>
 
-          <p className="text-metadata text-muted-foreground line-clamp-3">{listing.description || "Full description will appear here…"}</p>
+          {/* Full description - expandable */}
+          <div>
+            <p className={`text-body-sm text-muted-foreground whitespace-pre-line ${!descExpanded ? "line-clamp-3" : ""}`}>
+              {listing.description || "Full description will appear here…"}
+            </p>
+            {listing.description && listing.description.length > 80 && (
+              <button
+                onClick={() => setDescExpanded(!descExpanded)}
+                className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+              >
+                {descExpanded ? "less" : "more"}
+              </button>
+            )}
+          </div>
 
           {/* Tags */}
           {(listing.tags ?? []).length > 0 && (
@@ -119,11 +147,21 @@ export function GooglePlayPreview({ listing }: Props) {
             </div>
           </div>
 
-          {/* What's new */}
+          {/* What's new - expandable */}
           {listing.whats_new && (
             <div>
               <h4 className="text-body-sm font-semibold text-foreground mb-xs">What&apos;s new</h4>
-              <p className="text-metadata text-muted-foreground line-clamp-3">{listing.whats_new}</p>
+              <p className={`text-metadata text-muted-foreground whitespace-pre-line ${!whatsNewExpanded ? "line-clamp-3" : ""}`}>
+                {listing.whats_new}
+              </p>
+              {listing.whats_new.length > 60 && (
+                <button
+                  onClick={() => setWhatsNewExpanded(!whatsNewExpanded)}
+                  className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+                >
+                  {whatsNewExpanded ? "less" : "more"}
+                </button>
+              )}
             </div>
           )}
 

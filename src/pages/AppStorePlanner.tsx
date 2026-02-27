@@ -71,7 +71,13 @@ export default function AppStorePlanner() {
           <ResizablePanel defaultSize={45} minSize={30}>
             <div className="h-full overflow-hidden">
               {selected ? (
-                <AppStoreEditorForm key={selected.id} listing={selected} onUpdate={handleUpdate} />
+                <AppStoreEditorForm
+                  key={selected.id}
+                  listing={selected}
+                  onUpdate={handleUpdate}
+                  isSaving={updateListing.isPending}
+                  saveError={updateListing.isError}
+                />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-body-sm">
                   {isLoading ? "Loading…" : "Select or create a listing to start editing"}

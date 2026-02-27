@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Copy, Check, Link2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePublicAccessManagement, PublicAccessLink } from "@/hooks/usePublicAccess";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getUniversalReviewUrl } from "@/lib/urlHelpers";
 
@@ -26,11 +26,14 @@ export function AppStoreShareDialog({
 }: AppStoreShareDialogProps) {
   const [copied, setCopied] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
+  const queryClient = useQueryClient();
 
   const { generateLink, toggleActive } = usePublicAccessManagement();
 
+  const linkQueryKey = ['public-access-link', 'app_store', listingId];
+
   const { data: existingLink, isLoading: checkingLink } = useQuery({
-    queryKey: ['public-access-link', 'app_store', listingId],
+    queryKey: linkQueryKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('public_access_links')
@@ -38,6 +41,8 @@ export function AppStoreShareDialog({
         .eq('resource_type', 'app_store')
         .eq('resource_id', listingId)
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -59,6 +64,9 @@ export function AppStoreShareDialog({
         isPublic,
         metadata: { listingName },
       });
+      // Immediately refresh dialog-specific query + admin list
+      queryClient.invalidateQueries({ queryKey: linkQueryKey });
+      queryClient.invalidateQueries({ queryKey: ['public-access-links'] });
       toast.success('Review link created');
     } catch {
       toast.error('Failed to create link');
@@ -79,8 +87,12 @@ export function AppStoreShareDialog({
 
   const handleToggleActive = async () => {
     if (!existingLink) return;
-    await toggleActive.mutateAsync({ id: existingLink.id, isActive: !existingLink.is_active });
-    toast.success(existingLink.is_active ? 'Link deactivated' : 'Link activated');
+    const newState = !existingLink.is_active;
+    await toggleActive.mutateAsync({ id: existingLink.id, isActive: newState });
+    // Refresh both dialog and admin queries
+    queryClient.invalidateQueries({ queryKey: linkQueryKey });
+    queryClient.invalidateQueries({ queryKey: ['public-access-links'] });
+    toast.success(newState ? 'Link activated' : 'Link deactivated');
   };
 
   return (
