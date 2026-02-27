@@ -64,6 +64,7 @@ export default function AppStorePlanner() {
                 onSelect={setSelectedId}
                 onCreate={handleCreate}
                 onDelete={handleDelete}
+                isCreating={createListing.isPending}
               />
             </div>
           </ResizablePanel>

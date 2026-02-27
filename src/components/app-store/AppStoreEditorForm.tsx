@@ -16,7 +16,7 @@ interface Props {
 function Field({ label, children, counter }: { label: string; children: React.ReactNode; counter?: React.ReactNode }) {
   return (
     <div className="space-y-xs">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-sm">
         <Label className="text-metadata font-medium text-muted-foreground">{label}</Label>
         {counter}
       </div>
@@ -30,8 +30,32 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
   const limits = isApple ? FIELD_LIMITS.apple : FIELD_LIMITS.google_play;
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
 
-  const onField = useCallback(
-    (field: keyof AppStoreListing, value: string | null) => onUpdate({ [field]: value || null }),
+  const onTextField = useCallback(
+    (field: keyof AppStoreListing, value: string) => onUpdate({ [field]: value.trim() ? value : null }),
+    [onUpdate],
+  );
+
+  const onTagsChange = useCallback(
+    (value: string) => {
+      const tags = value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+      onUpdate({ tags });
+    },
+    [onUpdate],
+  );
+
+  const onScreenshotNotesChange = useCallback(
+    (value: string) => {
+      const notes = value
+        .split("\n")
+        .map((note) => note.trim())
+        .filter(Boolean)
+        .slice(0, 10);
+      onUpdate({ screenshot_notes: notes });
+    },
     [onUpdate],
   );
 
@@ -39,7 +63,6 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      {/* Locale tabs */}
       <div className="p-sm border-b border-border flex items-center justify-between">
         <h3 className="text-heading-sm font-semibold text-foreground truncate">{listing.name}</h3>
         <Tabs value={listing.locale} onValueChange={(v) => onUpdate({ locale: v as Locale })}>
@@ -51,21 +74,19 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
       </div>
 
       <div className="p-md space-y-md" dir={dir}>
-        {/* App Name */}
         <Field
           label="App Name"
           counter={<AppStoreFieldCounter current={listing.app_name?.length ?? 0} max={limits.app_name} />}
         >
           <Input
             value={listing.app_name ?? ""}
-            onChange={(e) => onField("app_name", e.target.value)}
+            onChange={(e) => onTextField("app_name", e.target.value)}
             maxLength={limits.app_name}
             placeholder="My App"
             className="text-body-sm"
           />
         </Field>
 
-        {/* Apple-specific: Subtitle */}
         {isApple && (
           <Field
             label="Subtitle"
@@ -73,7 +94,7 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           >
             <Input
               value={listing.subtitle ?? ""}
-              onChange={(e) => onField("subtitle", e.target.value)}
+              onChange={(e) => onTextField("subtitle", e.target.value)}
               maxLength={FIELD_LIMITS.apple.subtitle}
               placeholder="A short tagline"
               className="text-body-sm"
@@ -81,7 +102,6 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           </Field>
         )}
 
-        {/* Google Play: Short Description */}
         {!isApple && (
           <Field
             label="Short Description"
@@ -89,7 +109,7 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           >
             <Textarea
               value={listing.short_description ?? ""}
-              onChange={(e) => onField("short_description", e.target.value)}
+              onChange={(e) => onTextField("short_description", e.target.value)}
               maxLength={FIELD_LIMITS.google_play.short_description}
               placeholder="Brief summary…"
               className="text-body-sm min-h-[60px]"
@@ -97,7 +117,6 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           </Field>
         )}
 
-        {/* Apple: Promotional Text */}
         {isApple && (
           <Field
             label="Promotional Text"
@@ -105,7 +124,7 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           >
             <Textarea
               value={listing.promotional_text ?? ""}
-              onChange={(e) => onField("promotional_text", e.target.value)}
+              onChange={(e) => onTextField("promotional_text", e.target.value)}
               maxLength={FIELD_LIMITS.apple.promotional_text}
               placeholder="Highlight a timely event or promotion…"
               className="text-body-sm min-h-[60px]"
@@ -113,21 +132,19 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           </Field>
         )}
 
-        {/* Description */}
         <Field
-          label="Description"
+          label={isApple ? "Description" : "Full Description"}
           counter={<AppStoreFieldCounter current={listing.description?.length ?? 0} max={limits.description} />}
         >
           <Textarea
             value={listing.description ?? ""}
-            onChange={(e) => onField("description", e.target.value)}
+            onChange={(e) => onTextField("description", e.target.value)}
             maxLength={limits.description}
             placeholder="Full app description…"
             className="text-body-sm min-h-[120px]"
           />
         </Field>
 
-        {/* Apple: Keywords */}
         {isApple && (
           <Field
             label="Keywords"
@@ -135,7 +152,7 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           >
             <Input
               value={listing.keywords ?? ""}
-              onChange={(e) => onField("keywords", e.target.value)}
+              onChange={(e) => onTextField("keywords", e.target.value)}
               maxLength={FIELD_LIMITS.apple.keywords}
               placeholder="trading,forex,stocks"
               className="text-body-sm"
@@ -143,21 +160,33 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           </Field>
         )}
 
-        {/* What's New */}
+        {!isApple && (
+          <Field
+            label="Tags"
+            counter={<AppStoreFieldCounter current={listing.tags?.length ?? 0} max={5} />}
+          >
+            <Input
+              value={(listing.tags ?? []).join(", ")}
+              onChange={(e) => onTagsChange(e.target.value)}
+              placeholder="finance, trading, investing"
+              className="text-body-sm"
+            />
+          </Field>
+        )}
+
         <Field
           label="What's New"
           counter={<AppStoreFieldCounter current={listing.whats_new?.length ?? 0} max={isApple ? FIELD_LIMITS.apple.whats_new : FIELD_LIMITS.google_play.whats_new} />}
         >
           <Textarea
             value={listing.whats_new ?? ""}
-            onChange={(e) => onField("whats_new", e.target.value)}
+            onChange={(e) => onTextField("whats_new", e.target.value)}
             maxLength={isApple ? FIELD_LIMITS.apple.whats_new : FIELD_LIMITS.google_play.whats_new}
             placeholder="Release notes…"
             className="text-body-sm min-h-[80px]"
           />
         </Field>
 
-        {/* Category */}
         <Field label={isApple ? "Primary Category" : "Category"}>
           <Select
             value={listing.primary_category ?? ""}
@@ -174,7 +203,6 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
           </Select>
         </Field>
 
-        {/* Apple: Secondary Category */}
         {isApple && (
           <Field label="Secondary Category">
             <Select
@@ -192,6 +220,18 @@ export function AppStoreEditorForm({ listing, onUpdate }: Props) {
             </Select>
           </Field>
         )}
+
+        <Field
+          label="Screenshot Notes"
+          counter={<AppStoreFieldCounter current={listing.screenshot_notes?.length ?? 0} max={10} />}
+        >
+          <Textarea
+            value={(listing.screenshot_notes ?? []).join("\n")}
+            onChange={(e) => onScreenshotNotesChange(e.target.value)}
+            placeholder="One note per line for screenshot ideas"
+            className="text-body-sm min-h-[100px]"
+          />
+        </Field>
       </div>
     </div>
   );

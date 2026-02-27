@@ -6,6 +6,27 @@ import { toast } from "sonner";
 
 const QUERY_KEY = ["app-store-listings"];
 
+const asStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+};
+
+const normalizeListing = (row: Record<string, unknown>): AppStoreListing => ({
+  ...(row as AppStoreListing),
+  store_type: row.store_type === "google_play" ? "google_play" : "apple",
+  locale: row.locale === "ar" ? "ar" : "en",
+  tags: asStringArray(row.tags),
+  screenshot_notes: asStringArray(row.screenshot_notes),
+});
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error && "message" in error) {
+    return String((error as { message?: unknown }).message ?? "Unexpected error");
+  }
+  return "Unexpected error";
+};
+
 export function useAppStoreListings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -18,31 +39,39 @@ export function useAppStoreListings() {
         .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as AppStoreListing[];
+      return (data ?? []).map((row) => normalizeListing(row as Record<string, unknown>));
     },
     enabled: !!user,
   });
 
   const createListing = useMutation({
     mutationFn: async (input: { name: string; store_type: StoreType; locale: Locale }) => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      const currentUser = authUser ?? user;
+      if (!currentUser) throw new Error("You must be logged in to create listings");
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.from("app_store_listings") as any)
         .insert({
           ...input,
-          created_by: user!.id,
+          created_by: currentUser.id,
           tags: [],
           screenshot_notes: [],
         })
         .select()
         .single();
+
       if (error) throw error;
-      return data as AppStoreListing;
+      return normalizeListing(data as Record<string, unknown>);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success("Listing created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const updateListing = useMutation({
@@ -53,11 +82,12 @@ export function useAppStoreListings() {
         .eq("id", id)
         .select()
         .single();
+
       if (error) throw error;
-      return data as AppStoreListing;
+      return normalizeListing(data as Record<string, unknown>);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const deleteListing = useMutation({
@@ -72,8 +102,15 @@ export function useAppStoreListings() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success("Listing deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
-  return { listings: listingsQuery.data ?? [], isLoading: listingsQuery.isLoading, createListing, updateListing, deleteListing };
+  return {
+    listings: listingsQuery.data ?? [],
+    isLoading: listingsQuery.isLoading,
+    createListing,
+    updateListing,
+    deleteListing,
+  };
 }
+
