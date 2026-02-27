@@ -5764,6 +5764,7 @@ export type Database = {
         | "project"
         | "lp_map"
         | "search_ads"
+        | "app_store"
       location_type:
         | "Airport Media"
         | "LED Tower"
@@ -5952,6 +5953,7 @@ export const Constants = {
         "project",
         "lp_map",
         "search_ads",
+        "app_store",
       ],
       location_type: [
         "Airport Media",

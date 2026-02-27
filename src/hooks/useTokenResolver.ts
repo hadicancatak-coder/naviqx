@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type ResourceType = "campaign" | "search_ads" | "lp_map" | "knowledge" | "project";
+export type ResourceType = "campaign" | "search_ads" | "lp_map" | "knowledge" | "project" | "app_store";
 
 interface TokenResolution {
   resourceType: ResourceType;
