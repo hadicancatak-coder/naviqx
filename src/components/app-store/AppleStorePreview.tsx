@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { AppStoreListing } from "@/domain/app-store";
 import { Star, ChevronRight, Shield } from "lucide-react";
 import logoEmblem from "@/assets/cfi-logo-emblem.png";
@@ -8,6 +9,8 @@ interface Props {
 
 export function AppleStorePreview({ listing }: Props) {
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [whatsNewExpanded, setWhatsNewExpanded] = useState(false);
 
   const filledNotes = (listing.screenshot_notes ?? []).filter((n) => n.trim().length > 0);
   const totalSlots = Math.max(filledNotes.length + 1, 3);
@@ -15,14 +18,14 @@ export function AppleStorePreview({ listing }: Props) {
 
   return (
     <div className="flex flex-col items-center py-lg">
-      <div className="w-[300px] rounded-[36px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
+      <div className="w-[340px] rounded-[40px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
         {/* Notch */}
         <div className="flex justify-center pt-2 pb-1 flex-shrink-0">
-          <div className="w-20 h-5 rounded-full bg-foreground/10" />
+          <div className="w-24 h-6 rounded-full bg-foreground/10" />
         </div>
 
         {/* Scrollable content area */}
-        <div className="h-[520px] overflow-y-auto px-md pb-lg space-y-md" dir={dir}>
+        <div className="h-[620px] overflow-y-auto px-md pb-lg space-y-md" dir={dir}>
           {/* App header */}
           <div className="flex items-start gap-sm">
             <img src={logoEmblem} alt="App icon" className="w-16 h-16 rounded-2xl shadow-sm" />
@@ -40,7 +43,7 @@ export function AppleStorePreview({ listing }: Props) {
 
           {/* GET button */}
           <div className="flex justify-start">
-            <div className="bg-primary text-primary-foreground text-metadata font-semibold px-lg py-1 rounded-full">GET</div>
+            <div className="bg-primary text-primary-foreground text-metadata font-semibold px-lg py-1.5 rounded-full">GET</div>
           </div>
 
           {/* Info bar */}
@@ -73,7 +76,7 @@ export function AppleStorePreview({ listing }: Props) {
               {slots.map((note, i) => (
                 <div
                   key={i}
-                  className="w-[88px] h-[156px] rounded-lg flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  className="w-[100px] h-[178px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center"
                   style={{
                     background: note
                       ? "linear-gradient(135deg, hsl(var(--muted)), hsl(var(--accent)))"
@@ -83,8 +86,8 @@ export function AppleStorePreview({ listing }: Props) {
                 >
                   {note ? (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full w-4 h-4 flex items-center justify-center">{i + 1}</span>
-                      <span className="text-metadata text-muted-foreground line-clamp-3">{note}</span>
+                      <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full w-5 h-5 flex items-center justify-center">{i + 1}</span>
+                      <span className="text-metadata text-muted-foreground line-clamp-4">{note}</span>
                     </div>
                   ) : (
                     <span className="text-heading-sm text-muted-foreground/40 font-light">+</span>
@@ -107,19 +110,40 @@ export function AppleStorePreview({ listing }: Props) {
           </div>
 
           {/* Promotional text */}
-          {listing.promotional_text && <p className="text-body-sm text-foreground">{listing.promotional_text}</p>}
+          {listing.promotional_text && (
+            <p className="text-body-sm text-foreground whitespace-pre-line">{listing.promotional_text}</p>
+          )}
 
-          {/* Description */}
+          {/* Description - expandable */}
           <div>
-            <p className="text-body-sm text-foreground line-clamp-3">{listing.description || "App description will appear here…"}</p>
-            <button className="text-metadata text-primary font-medium mt-xs">more</button>
+            <p className={`text-body-sm text-foreground whitespace-pre-line ${!descExpanded ? "line-clamp-3" : ""}`}>
+              {listing.description || "App description will appear here…"}
+            </p>
+            {listing.description && listing.description.length > 80 && (
+              <button
+                onClick={() => setDescExpanded(!descExpanded)}
+                className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+              >
+                {descExpanded ? "less" : "more"}
+              </button>
+            )}
           </div>
 
-          {/* What's New */}
+          {/* What's New - expandable */}
           {listing.whats_new && (
             <div>
               <h4 className="text-body-sm font-semibold text-foreground mb-xs">What&apos;s New</h4>
-              <p className="text-metadata text-muted-foreground line-clamp-3">{listing.whats_new}</p>
+              <p className={`text-metadata text-muted-foreground whitespace-pre-line ${!whatsNewExpanded ? "line-clamp-3" : ""}`}>
+                {listing.whats_new}
+              </p>
+              {listing.whats_new.length > 60 && (
+                <button
+                  onClick={() => setWhatsNewExpanded(!whatsNewExpanded)}
+                  className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+                >
+                  {whatsNewExpanded ? "less" : "more"}
+                </button>
+              )}
             </div>
           )}
 

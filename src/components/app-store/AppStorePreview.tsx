@@ -26,13 +26,13 @@ function getCompleteness(listing: AppStoreListing) {
     const filled = fields.filter(Boolean).length;
     return { filled, total: fields.length };
   }
+  // Google Play: no secondary_category field in editor, so exclude it
   const fields = [
     listing.app_name,
     listing.short_description,
     listing.description,
     listing.whats_new,
     listing.primary_category,
-    listing.secondary_category,
     (listing.tags ?? []).length > 0 ? "filled" : null,
     (listing.screenshot_notes ?? []).length > 0 ? "filled" : null,
   ];

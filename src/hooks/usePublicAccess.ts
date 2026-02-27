@@ -291,8 +291,17 @@ export function usePublicAccessManagement() {
       // Generate unique token
       const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24);
 
-      // Deactivate existing links for same entity/resource_type (if entity-wide)
-      if (!resourceId) {
+      // Deactivate existing active links for same scope
+      if (resourceId) {
+        // Resource-specific: deactivate prior active links for same (resource_type, resource_id)
+        await supabase
+          .from('public_access_links')
+          .update({ is_active: false })
+          .eq('resource_type', resourceType)
+          .eq('resource_id', resourceId)
+          .eq('is_active', true);
+      } else {
+        // Entity-wide: deactivate prior active links for same (entity, resource_type) with no resource_id
         await supabase
           .from('public_access_links')
           .update({ is_active: false })
