@@ -18,14 +18,14 @@ export function AppleStorePreview({ listing }: Props) {
 
   return (
     <div className="flex flex-col items-center py-lg">
-      <div className="w-[340px] rounded-[40px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
+      <div className="w-[390px] rounded-[44px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
         {/* Notch */}
-        <div className="flex justify-center pt-2 pb-1 flex-shrink-0">
-          <div className="w-24 h-6 rounded-full bg-foreground/10" />
+        <div className="flex justify-center pt-2.5 pb-1.5 flex-shrink-0">
+          <div className="w-28 h-7 rounded-full bg-foreground/10" />
         </div>
 
         {/* Scrollable content area */}
-        <div className="h-[620px] overflow-y-auto px-md pb-lg space-y-md" dir={dir}>
+        <div className="h-[780px] overflow-y-auto px-md pb-lg space-y-md" dir={dir}>
           {/* App header */}
           <div className="flex items-start gap-sm">
             <img src={logoEmblem} alt="App icon" className="w-16 h-16 rounded-2xl shadow-sm" />
