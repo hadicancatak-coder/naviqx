@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppStoreFieldCounter } from "./AppStoreFieldCounter";
+import { DescriptionToolbar } from "./DescriptionToolbar";
 import { FIELD_LIMITS, APPLE_CATEGORIES, GOOGLE_PLAY_CATEGORIES } from "@/domain/app-store";
 import type { AppStoreListing, Locale } from "@/domain/app-store";
 import { Check, Loader2, AlertCircle } from "lucide-react";
@@ -69,7 +70,36 @@ function draftToPayload(draft: DraftFields): Partial<AppStoreListing> {
   };
 }
 
-export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: Props) {
+function DescriptionField({ label, value, onChange, maxLength, placeholder }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  maxLength: number;
+  placeholder: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  return (
+    <div className="space-y-xs">
+      <div className="flex items-center justify-between gap-sm">
+        <Label className="text-metadata font-medium text-muted-foreground">{label}</Label>
+        <AppStoreFieldCounter current={value.length} max={maxLength} />
+      </div>
+      <div className="rounded-lg border border-input overflow-hidden focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary/30">
+        <DescriptionToolbar textareaRef={textareaRef} value={value} onChange={onChange} maxLength={maxLength} />
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          className="w-full min-h-[280px] resize-y bg-card px-sm py-sm text-body-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none break-words [word-break:break-word] [overflow-wrap:break-word]"
+        />
+      </div>
+    </div>
+  );
+}
+
+
   const isApple = listing.store_type === "apple";
   const limits = isApple ? FIELD_LIMITS.apple : FIELD_LIMITS.google_play;
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
@@ -219,18 +249,13 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
           </Field>
         )}
 
-        <Field
+        <DescriptionField
           label={isApple ? "Description" : "Full Description"}
-          counter={<AppStoreFieldCounter current={draft.description.length} max={limits.description} />}
-        >
-          <Textarea
-            value={draft.description}
-            onChange={(e) => updateField("description", e.target.value)}
-            maxLength={limits.description}
-            placeholder="Full app description…"
-            className="text-body-sm min-h-[120px]"
-          />
-        </Field>
+          value={draft.description}
+          onChange={(v) => updateField("description", v)}
+          maxLength={limits.description}
+          placeholder="Full app description…"
+        />
 
         {isApple && (
           <Field
