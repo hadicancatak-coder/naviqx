@@ -35,6 +35,7 @@ import SearchPlanner from "./pages/SearchPlanner";
 import LpPlanner from "./pages/LpPlanner";
 import UtmPlanner from "./pages/UtmPlanner";
 import Performance from "./pages/Performance";
+import AppStorePlanner from "./pages/AppStorePlanner";
 
 // Lazy-loaded pages for better initial load
 const SprintsManagement = lazy(() => import("./pages/admin/SprintsManagement"));
@@ -131,6 +132,7 @@ const App = () => (
                       <Route path="/ads/library" element={<Navigate to="/ads/captions" replace />} />
                       <Route path="/ads/captions" element={<CaptionLibrary />} />
                       <Route path="/ads/lp" element={<LpPlanner />} />
+                      <Route path="/ads/app-store" element={<AppStorePlanner />} />
                       <Route path="/notifications" element={<Notifications />} />
                       <Route path="/profile/:userId?" element={<Profile />} />
                       <Route path="/utm-planner" element={<UtmPlanner />} />
