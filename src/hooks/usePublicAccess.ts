@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useReviewerSession } from "./useReviewerSession";
 import { toast } from "sonner";
 
-export type ResourceType = 'campaign' | 'knowledge' | 'project' | 'lp_map' | 'search_ads';
+export type ResourceType = 'campaign' | 'knowledge' | 'project' | 'lp_map' | 'search_ads' | 'app_store';
 
 export interface PublicAccessLink {
   id: string;

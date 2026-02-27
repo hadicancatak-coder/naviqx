@@ -5,10 +5,12 @@ import { LpMapReviewContent } from "@/components/external/LpMapReviewContent";
 import { CampaignReviewContent } from "@/components/external/CampaignReviewContent";
 import { KnowledgeReviewContent } from "@/components/external/KnowledgeReviewContent";
 import { ProjectReviewContent } from "@/components/external/ProjectReviewContent";
+import { AppStoreReviewContent } from "@/components/external/AppStoreReviewContent";
 import { usePublicAccess, ResourceType } from "@/hooks/usePublicAccess";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PhaseMilestone, PhaseTaskStats } from "@/hooks/useRoadmap";
+import type { AppStoreListing } from "@/domain/app-store";
 
 interface PublicReviewProps {
   resourceType: ResourceType;
@@ -304,6 +306,22 @@ export default function PublicReview({ resourceType }: PublicReviewProps) {
     resourceType
   );
 
+  // Fetch app store listing data if needed
+  const { data: appStoreListing, isLoading: appStoreLoading } = useQuery({
+    queryKey: ['app-store-review-data', accessData?.resource_id],
+    queryFn: async () => {
+      if (!accessData?.resource_id) return null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('app_store_listings') as any)
+        .select('*')
+        .eq('id', accessData.resource_id)
+        .single();
+      if (error) throw error;
+      return data as AppStoreListing;
+    },
+    enabled: !!accessData?.resource_id && resourceType === 'app_store',
+  });
+
   return (
     <ExternalReviewPage resourceType={resourceType}>
       {(accessDataFromShell, comments, actions) => {
@@ -361,6 +379,15 @@ export default function PublicReview({ resourceType }: PublicReviewProps) {
                 milestones={projectData.milestones}
                 taskStats={projectData.taskStats}
                 assignees={projectData.assignees}
+              />
+            );
+
+          case 'app_store':
+            return (
+              <AppStoreReviewContent
+                accessData={accessDataFromShell}
+                listing={appStoreListing}
+                isLoading={appStoreLoading}
               />
             );
           

@@ -148,6 +148,7 @@ function getDefaultTitle(resourceType: ResourceType): string {
     project: 'Project Overview',
     lp_map: 'Landing Page Review',
     search_ads: 'Search Ads Review',
+    app_store: 'App Store Listing Review',
   };
   return titles[resourceType];
 }

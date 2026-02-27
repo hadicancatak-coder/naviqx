@@ -25,13 +25,18 @@ export function useAppStoreListings() {
 
   const createListing = useMutation({
     mutationFn: async (input: { name: string; store_type: StoreType; locale: Locale }) => {
-      const { data, error } = await supabase
-        .from("app_store_listings")
-        .insert({ ...input, created_by: user!.id })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("app_store_listings") as any)
+        .insert({
+          ...input,
+          created_by: user!.id,
+          tags: [],
+          screenshot_notes: [],
+        })
         .select()
         .single();
       if (error) throw error;
-      return data as unknown as AppStoreListing;
+      return data as AppStoreListing;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -42,14 +47,14 @@ export function useAppStoreListings() {
 
   const updateListing = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<AppStoreListing> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("app_store_listings")
-        .update(updates as Record<string, unknown>)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("app_store_listings") as any)
+        .update(updates)
         .eq("id", id)
         .select()
         .single();
       if (error) throw error;
-      return data as unknown as AppStoreListing;
+      return data as AppStoreListing;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
     onError: (e: Error) => toast.error(e.message),
