@@ -1,5 +1,5 @@
 import type { AppStoreListing } from "@/domain/app-store";
-import { Star, PlayCircle } from "lucide-react";
+import { Star, ChevronRight, Shield } from "lucide-react";
 import logoEmblem from "@/assets/cfi-logo-emblem.png";
 
 interface Props {
@@ -8,17 +8,22 @@ interface Props {
 
 export function AppleStorePreview({ listing }: Props) {
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
-  const screenshotSlots = Array.from({ length: 10 }, (_, i) => listing.screenshot_notes?.[i] ?? `Screenshot ${i + 1}`);
-  const appPreviewSlots = Array.from({ length: 3 }, (_, i) => `App Preview ${i + 1}`);
+
+  const filledNotes = (listing.screenshot_notes ?? []).filter((n) => n.trim().length > 0);
+  const totalSlots = Math.max(filledNotes.length + 1, 3);
+  const slots = Array.from({ length: Math.min(totalSlots, 10) }, (_, i) => filledNotes[i] ?? null);
 
   return (
     <div className="flex flex-col items-center py-lg">
-      <div className="w-[300px] rounded-[36px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden">
-        <div className="flex justify-center pt-2 pb-1">
+      <div className="w-[300px] rounded-[36px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
+        {/* Notch */}
+        <div className="flex justify-center pt-2 pb-1 flex-shrink-0">
           <div className="w-20 h-5 rounded-full bg-foreground/10" />
         </div>
 
-        <div className="px-md pb-lg space-y-md" dir={dir}>
+        {/* Scrollable content area */}
+        <div className="h-[520px] overflow-y-auto px-md pb-lg space-y-md" dir={dir}>
+          {/* App header */}
           <div className="flex items-start gap-sm">
             <img src={logoEmblem} alt="App icon" className="w-16 h-16 rounded-2xl shadow-sm" />
             <div className="flex-1 min-w-0">
@@ -33,43 +38,84 @@ export function AppleStorePreview({ listing }: Props) {
             </div>
           </div>
 
+          {/* GET button */}
           <div className="flex justify-start">
             <div className="bg-primary text-primary-foreground text-metadata font-semibold px-lg py-1 rounded-full">GET</div>
           </div>
 
+          {/* Info bar */}
+          <div className="flex items-center justify-between border-y border-border py-sm text-center">
+            <div className="flex-1">
+              <p className="text-[10px] text-muted-foreground">Age</p>
+              <p className="text-metadata font-semibold text-foreground">4+</p>
+            </div>
+            <div className="w-px h-6 bg-border" />
+            <div className="flex-1">
+              <p className="text-[10px] text-muted-foreground">Category</p>
+              <p className="text-metadata font-semibold text-primary truncate px-1">{listing.primary_category || "Finance"}</p>
+            </div>
+            <div className="w-px h-6 bg-border" />
+            <div className="flex-1">
+              <p className="text-[10px] text-muted-foreground">Developer</p>
+              <p className="text-metadata font-semibold text-foreground">CFI</p>
+            </div>
+            <div className="w-px h-6 bg-border" />
+            <div className="flex-1">
+              <p className="text-[10px] text-muted-foreground">Size</p>
+              <p className="text-metadata font-semibold text-foreground">89 MB</p>
+            </div>
+          </div>
+
+          {/* Screenshots */}
           <div className="space-y-xs">
-            <h4 className="text-body-sm font-semibold text-foreground">Screenshots</h4>
+            <h4 className="text-body-sm font-semibold text-foreground">Preview</h4>
             <div className="flex gap-xs overflow-x-auto pb-xs">
-              {screenshotSlots.map((label, i) => (
+              {slots.map((note, i) => (
                 <div
                   key={i}
-                  className="w-[88px] h-[156px] rounded-lg bg-muted flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  className="w-[88px] h-[156px] rounded-lg flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  style={{
+                    background: note
+                      ? "linear-gradient(135deg, hsl(var(--muted)), hsl(var(--accent)))"
+                      : undefined,
+                    backgroundColor: note ? undefined : "hsl(var(--muted))",
+                  }}
                 >
-                  <span className="text-metadata text-muted-foreground line-clamp-3">{label}</span>
+                  {note ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full w-4 h-4 flex items-center justify-center">{i + 1}</span>
+                      <span className="text-metadata text-muted-foreground line-clamp-3">{note}</span>
+                    </div>
+                  ) : (
+                    <span className="text-heading-sm text-muted-foreground/40 font-light">+</span>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Ratings & Reviews */}
           <div className="space-y-xs">
-            <h4 className="text-body-sm font-semibold text-foreground">App Previews</h4>
-            <div className="flex gap-xs overflow-x-auto pb-xs">
-              {appPreviewSlots.map((label) => (
-                <div key={label} className="w-[140px] h-[78px] rounded-lg bg-muted flex-shrink-0 flex items-center justify-center gap-xs">
-                  <PlayCircle className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-metadata text-muted-foreground">{label}</span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between">
+              <h4 className="text-body-sm font-semibold text-foreground">Ratings & Reviews</h4>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex items-center gap-sm">
+              <span className="text-heading-lg font-bold text-foreground">4.8</span>
+              <span className="text-metadata text-muted-foreground">out of 5</span>
             </div>
           </div>
 
+          {/* Promotional text */}
           {listing.promotional_text && <p className="text-body-sm text-foreground">{listing.promotional_text}</p>}
 
+          {/* Description */}
           <div>
             <p className="text-body-sm text-foreground line-clamp-3">{listing.description || "App description will appear here…"}</p>
             <button className="text-metadata text-primary font-medium mt-xs">more</button>
           </div>
 
+          {/* What's New */}
           {listing.whats_new && (
             <div>
               <h4 className="text-body-sm font-semibold text-foreground mb-xs">What&apos;s New</h4>
@@ -77,22 +123,18 @@ export function AppleStorePreview({ listing }: Props) {
             </div>
           )}
 
-          {listing.keywords && (
-            <div>
-              <h4 className="text-body-sm font-semibold text-foreground mb-xs">Keywords</h4>
-              <p className="text-metadata text-muted-foreground">{listing.keywords}</p>
+          {/* Privacy */}
+          <div className="space-y-xs">
+            <h4 className="text-body-sm font-semibold text-foreground">App Privacy</h4>
+            <div className="flex items-center gap-xs text-muted-foreground">
+              <Shield className="h-3 w-3" />
+              <span className="text-metadata">Developer has not provided privacy details.</span>
             </div>
-          )}
-
-          {listing.primary_category && (
-            <div className="flex items-center gap-xs">
-              <span className="text-metadata text-muted-foreground">Category:</span>
-              <span className="text-metadata text-primary">{listing.primary_category}</span>
-            </div>
-          )}
+          </div>
         </div>
 
-        <div className="flex justify-center pb-2">
+        {/* Home indicator */}
+        <div className="flex justify-center pb-2 flex-shrink-0">
           <div className="w-28 h-1 rounded-full bg-foreground/20" />
         </div>
       </div>
