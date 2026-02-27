@@ -99,7 +99,7 @@ function DescriptionField({ label, value, onChange, maxLength, placeholder }: {
   );
 }
 
-
+export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: Props) {
   const isApple = listing.store_type === "apple";
   const limits = isApple ? FIELD_LIMITS.apple : FIELD_LIMITS.google_play;
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
