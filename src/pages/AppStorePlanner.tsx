@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { Smartphone } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -11,7 +11,6 @@ import type { AppStoreListing, StoreType } from "@/domain/app-store";
 export default function AppStorePlanner() {
   const { listings, isLoading, createListing, updateListing, deleteListing } = useAppStoreListings();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const selected = listings.find((l) => l.id === selectedId) ?? null;
 
@@ -27,10 +26,7 @@ export default function AppStorePlanner() {
   const handleUpdate = useCallback(
     (updates: Partial<AppStoreListing>) => {
       if (!selectedId) return;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        updateListing.mutate({ id: selectedId, ...updates });
-      }, 400);
+      updateListing.mutate({ id: selectedId, ...updates });
     },
     [selectedId, updateListing],
   );
@@ -75,7 +71,7 @@ export default function AppStorePlanner() {
           <ResizablePanel defaultSize={45} minSize={30}>
             <div className="h-full overflow-hidden">
               {selected ? (
-                <AppStoreEditorForm listing={selected} onUpdate={handleUpdate} />
+                <AppStoreEditorForm key={selected.id} listing={selected} onUpdate={handleUpdate} />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-body-sm">
                   {isLoading ? "Loading…" : "Select or create a listing to start editing"}
