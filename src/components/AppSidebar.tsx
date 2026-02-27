@@ -9,6 +9,7 @@ import {
   Link2, 
   PenTool, 
   Tv,
+  Smartphone,
   BookOpen,
   Server,
   BarChart3,
@@ -45,7 +46,7 @@ import {
 
 const adsItems = [
   { title: "Google Planner", url: "/ads/google", icon: Megaphone },
-  
+  { title: "App Store", url: "/ads/app-store", icon: Smartphone },
   { title: "Brief Planner", url: "/ads/lp", icon: Target },
   { title: "Caption Library", url: "/ads/captions", icon: PenTool },
   { title: "UTM Planner", url: "/utm-planner", icon: Link2 },

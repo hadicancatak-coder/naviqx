@@ -638,6 +638,69 @@ export type Database = {
         }
         Relationships: []
       }
+      app_store_listings: {
+        Row: {
+          app_name: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          keywords: string | null
+          locale: string
+          name: string
+          primary_category: string | null
+          promotional_text: string | null
+          screenshot_notes: Json | null
+          secondary_category: string | null
+          short_description: string | null
+          store_type: string
+          subtitle: string | null
+          tags: Json | null
+          updated_at: string
+          whats_new: string | null
+        }
+        Insert: {
+          app_name?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          keywords?: string | null
+          locale?: string
+          name: string
+          primary_category?: string | null
+          promotional_text?: string | null
+          screenshot_notes?: Json | null
+          secondary_category?: string | null
+          short_description?: string | null
+          store_type?: string
+          subtitle?: string | null
+          tags?: Json | null
+          updated_at?: string
+          whats_new?: string | null
+        }
+        Update: {
+          app_name?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          keywords?: string | null
+          locale?: string
+          name?: string
+          primary_category?: string | null
+          promotional_text?: string | null
+          screenshot_notes?: Json | null
+          secondary_category?: string | null
+          short_description?: string | null
+          store_type?: string
+          subtitle?: string | null
+          tags?: Json | null
+          updated_at?: string
+          whats_new?: string | null
+        }
+        Relationships: []
+      }
       approval_history: {
         Row: {
           ad_id: string
