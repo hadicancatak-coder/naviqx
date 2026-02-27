@@ -19,18 +19,18 @@ export function GooglePlayPreview({ listing }: Props) {
 
   return (
     <div className="flex flex-col items-center py-lg">
-      <div className="w-[340px] rounded-[32px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
+      <div className="w-[390px] rounded-[36px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
         {/* Status bar */}
-        <div className="h-7 bg-foreground/5 flex items-center justify-end px-sm flex-shrink-0">
+        <div className="h-8 bg-foreground/5 flex items-center justify-end px-sm flex-shrink-0">
           <div className="flex gap-1">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-3 h-2 rounded-sm bg-foreground/20" />
+              <div key={i} className="w-3.5 h-2.5 rounded-sm bg-foreground/20" />
             ))}
           </div>
         </div>
 
         {/* Scrollable content area */}
-        <div className="h-[600px] overflow-y-auto px-md pb-lg space-y-sm" dir={dir}>
+        <div className="h-[760px] overflow-y-auto px-md pb-lg space-y-sm" dir={dir}>
           {/* App header */}
           <div className="flex items-start gap-sm pt-sm">
             <img src={logoEmblem} alt="App icon" className="w-16 h-16 rounded-xl shadow-sm" />
