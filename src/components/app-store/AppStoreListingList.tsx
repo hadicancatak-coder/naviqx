@@ -12,15 +12,24 @@ interface Props {
   onSelect: (id: string) => void;
   onCreate: (name: string, storeType: StoreType) => void;
   onDelete: (id: string) => void;
+  isCreating?: boolean;
 }
 
-export function AppStoreListingList({ listings, selectedId, onSelect, onCreate, onDelete }: Props) {
+export function AppStoreListingList({
+  listings,
+  selectedId,
+  onSelect,
+  onCreate,
+  onDelete,
+  isCreating = false,
+}: Props) {
   const [newName, setNewName] = useState("");
   const [newStore, setNewStore] = useState<StoreType>("apple");
 
   const handleCreate = () => {
-    if (!newName.trim()) return;
-    onCreate(newName.trim(), newStore);
+    const fallbackName = `${newStore === "apple" ? "Apple" : "Play"} Listing ${listings.length + 1}`;
+    const name = newName.trim() || fallbackName;
+    onCreate(name, newStore);
     setNewName("");
   };
 
@@ -31,9 +40,14 @@ export function AppStoreListingList({ listings, selectedId, onSelect, onCreate, 
         <Input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="New listing name…"
+          placeholder="Optional custom name…"
           className="text-body-sm"
-          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleCreate();
+            }
+          }}
         />
         <div className="flex gap-xs">
           <Button
@@ -53,8 +67,8 @@ export function AppStoreListingList({ listings, selectedId, onSelect, onCreate, 
             <Play className="h-3.5 w-3.5 mr-1" /> Play
           </Button>
         </div>
-        <Button size="sm" className="w-full" onClick={handleCreate} disabled={!newName.trim()}>
-          <Plus className="h-4 w-4 mr-1" /> Create
+        <Button size="sm" className="w-full" onClick={handleCreate} disabled={isCreating}>
+          <Plus className="h-4 w-4 mr-1" /> {isCreating ? "Creating…" : "Create"}
         </Button>
       </div>
 
@@ -82,7 +96,10 @@ export function AppStoreListingList({ listings, selectedId, onSelect, onCreate, 
               </div>
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(l.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(l.id);
+              }}
               className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-smooth p-1"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -96,3 +113,4 @@ export function AppStoreListingList({ listings, selectedId, onSelect, onCreate, 
     </div>
   );
 }
+
