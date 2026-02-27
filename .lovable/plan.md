@@ -1,51 +1,46 @@
 
 
-# Fix Create Button + Add External Sharing for App Store Planner
+# Improve App Store Previews
 
-## Issues Found
+## What's Changing
 
-1. **Create button not working**: The `useAppStoreListings` hook inserts with typed Supabase client but the `tags` and `screenshot_notes` fields in the domain interface are `string[]` while the DB type is `jsonb`. The insert works but the `.select().single()` return is cast unsafely. More critically, the hook's `createListing` mutation doesn't pass `tags` or `screenshot_notes` defaults, and the Supabase typed client may reject unknown fields. Need to ensure the insert uses proper typing.
+### 1. Remove App Previews Section (Apple)
+The "App Previews" section (3 video placeholder slots) in `AppleStorePreview.tsx` will be removed entirely. It adds visual noise with no real utility since we don't support video uploads.
 
-2. **External sharing not implemented**: The `ResourceType` union (`'campaign' | 'knowledge' | 'project' | 'lp_map' | 'search_ads'`) does not include `'app_store'`. No share dialog or external review content exists for app store listings.
+### 2. Make Previews Scrollable Inside Device Frame
+Currently the device frame grows infinitely tall. Instead, the inner content area of both device frames will get a **fixed height with internal scrolling**, simulating a real phone screen. The user scrolls *inside* the device to see all content -- just like a real phone.
 
-3. **Build errors**: The playwright-core type errors are pre-existing and unrelated to our code -- they come from `node_modules`. No action needed.
+- Apple frame: ~520px visible content area with `overflow-y-auto`
+- Google Play frame: ~500px visible content area with `overflow-y-auto`
 
-## Plan
+### 3. Visual Polish -- More Realistic Previews
 
-### Step 1: Fix the Create Button
-- Update `useAppStoreListings.ts` to cast the Supabase client properly (same `as any` pattern used elsewhere) so the insert doesn't fail on type mismatches
-- Ensure `tags` and `screenshot_notes` default values are included in the insert payload
-- Verify the mutation's `onSuccess` callback correctly receives the created listing
+**Apple App Store Preview improvements:**
+- Add an info bar below the GET button (Age rating, Category, Developer, Language, Size) matching real App Store layout
+- Better screenshot slots with subtle gradient backgrounds and numbered indicators
+- Add "Ratings & Reviews" section header with star breakdown hint
+- Remove "Keywords" from preview (keywords are metadata, never shown to users on the actual App Store page)
+- Better spacing and typography hierarchy
 
-### Step 2: Add Share Button to App Store Planner
-- Add a "Share" button to the `AppStorePreview` header (or the main page header) that opens a share dialog
-- Create `AppStoreShareDialog.tsx` following the same pattern as `ExternalAccessDialog.tsx` and `LpMapShareDialog.tsx`
-- The dialog generates a public access link with `resource_type: 'app_store'` and `resource_id: listing.id`
+**Google Play Preview improvements:**
+- Move "Install" button styling to match current Play Store (rounded-full pill)
+- Add a "Data safety" placeholder section (matches real Play Store)
+- Remove Feature Graphic from being shown inline (it's used as a banner, not in the listing body in the current Play Store design)
+- Better About section with arrow indicator for expand
 
-### Step 3: Add `app_store` to ResourceType
-- Update `usePublicAccess.ts` to include `'app_store'` in the `ResourceType` union
-- Add RLS select policy on `app_store_listings` for anonymous access (needed for external preview) -- or use a security definer function
+### 4. Completion Indicator
+Add a small **completeness score** in the preview header showing how many fields are filled vs. total relevant fields (e.g., "6/9 fields complete"). Helps the user know at a glance what's missing.
 
-### Step 4: Create External Review Content for App Store
-- Create `AppStoreReviewContent.tsx` in `src/components/external/` that renders a read-only preview of the listing (reusing `AppleStorePreview` / `GooglePlayPreview`)
-- Add the `app_store` case to `PublicReview.tsx` with data fetching from `app_store_listings`
-
-### Step 5: Add Route for External App Store Review
-- Add route in `App.tsx`: `/app-store/review/:token` pointing to `PublicReview` with `resourceType="app_store"`
-- Or rely on the universal `/r/:token` resolver (preferred) -- update the token resolver to handle `app_store` resource type
+### 5. Screenshot Notes as Numbered Slots in Preview
+Instead of generic "Screenshot 1, 2, 3..." labels, only show slots for screenshots that have notes written. Empty slots beyond that show a faded "+" indicator. This makes the preview feel more intentional.
 
 ## Technical Details
 
-### Files to Create
-- `src/components/app-store/AppStoreShareDialog.tsx` -- Share dialog with reviewer name/email, entity selection, expiration
+### Files Modified
+- **`src/components/app-store/AppleStorePreview.tsx`** -- Remove App Previews, add fixed-height scroll, info bar, better visual hierarchy, remove Keywords display
+- **`src/components/app-store/GooglePlayPreview.tsx`** -- Add fixed-height scroll, data safety section, remove feature graphic from body, pill-style Install button
+- **`src/components/app-store/AppStorePreview.tsx`** -- Add completeness indicator in the header
 
-### Files to Modify
-- `src/hooks/useAppStoreListings.ts` -- Fix insert casting, add default values
-- `src/hooks/usePublicAccess.ts` -- Add `'app_store'` to ResourceType
-- `src/pages/AppStorePlanner.tsx` -- Add share button, integrate share dialog
-- `src/pages/PublicReview.tsx` -- Add `app_store` case with data fetching and review content
-- `src/components/app-store/AppStorePreview.tsx` -- Add share button in header
-
-### Database Migration
-- Add an anonymous SELECT policy on `app_store_listings` for public review access (matching by ID from public_access_links)
+### No Database Changes
+All changes are purely frontend/UI.
 
