@@ -51,7 +51,27 @@ export function useAppStoreListings() {
         .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((row) => normalizeListing(row as Record<string, unknown>));
+      const all = (data ?? []).map((row) => normalizeListing(row as Record<string, unknown>));
+
+      // Find the live product page to propagate app_name & subtitle to CPPs
+      const liveProductPage = all.find(
+        (l) => l.page_type === "product_page" && l.status === "live"
+      );
+
+      if (liveProductPage) {
+        return all.map((l) => {
+          if (l.page_type === "cpp") {
+            return {
+              ...l,
+              app_name: liveProductPage.app_name,
+              subtitle: liveProductPage.subtitle,
+            };
+          }
+          return l;
+        });
+      }
+
+      return all;
     },
     enabled: !!user,
   });
