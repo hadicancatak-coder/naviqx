@@ -641,6 +641,8 @@ export type Database = {
       app_store_listings: {
         Row: {
           app_name: string | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -650,17 +652,22 @@ export type Database = {
           name: string
           primary_category: string | null
           promotional_text: string | null
+          review_notes: string | null
           screenshot_notes: Json | null
           secondary_category: string | null
           short_description: string | null
+          status: string
           store_type: string
           subtitle: string | null
           tags: Json | null
           updated_at: string
+          version: number
           whats_new: string | null
         }
         Insert: {
           app_name?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -670,17 +677,22 @@ export type Database = {
           name: string
           primary_category?: string | null
           promotional_text?: string | null
+          review_notes?: string | null
           screenshot_notes?: Json | null
           secondary_category?: string | null
           short_description?: string | null
+          status?: string
           store_type?: string
           subtitle?: string | null
           tags?: Json | null
           updated_at?: string
+          version?: number
           whats_new?: string | null
         }
         Update: {
           app_name?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -690,13 +702,16 @@ export type Database = {
           name?: string
           primary_category?: string | null
           promotional_text?: string | null
+          review_notes?: string | null
           screenshot_notes?: Json | null
           secondary_category?: string | null
           short_description?: string | null
+          status?: string
           store_type?: string
           subtitle?: string | null
           tags?: Json | null
           updated_at?: string
+          version?: number
           whats_new?: string | null
         }
         Relationships: []
