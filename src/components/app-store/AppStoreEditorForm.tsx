@@ -343,34 +343,42 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
       </div>
 
       <div className="p-md space-y-md" dir={dir}>
-        {!isCpp && (
-          <Field
-            label="App Name"
-            counter={<AppStoreFieldCounter current={draft.app_name.length} max={limits.app_name} />}
-          >
-            <Input
-              value={draft.app_name}
-              onChange={(e) => updateField("app_name", e.target.value)}
-              maxLength={limits.app_name}
-              placeholder="My App"
-              className="text-body-sm"
-            />
-          </Field>
-        )}
+        {isCpp ? (
+          <div className="bg-muted/50 border border-border rounded-lg p-sm">
+            <p className="text-metadata text-muted-foreground">
+              <span className="font-medium text-foreground">App Name</span> &amp; <span className="font-medium text-foreground">Subtitle</span> are inherited from the Product Page and stay consistent across all CPPs.
+            </p>
+          </div>
+        ) : (
+          <>
+            <Field
+              label="App Name"
+              counter={<AppStoreFieldCounter current={draft.app_name.length} max={limits.app_name} />}
+            >
+              <Input
+                value={draft.app_name}
+                onChange={(e) => updateField("app_name", e.target.value)}
+                maxLength={limits.app_name}
+                placeholder="My App"
+                className="text-body-sm"
+              />
+            </Field>
 
-        {!isCpp && isApple && (
-          <Field
-            label="Subtitle"
-            counter={<AppStoreFieldCounter current={draft.subtitle.length} max={FIELD_LIMITS.apple.subtitle} />}
-          >
-            <Input
-              value={draft.subtitle}
-              onChange={(e) => updateField("subtitle", e.target.value)}
-              maxLength={FIELD_LIMITS.apple.subtitle}
-              placeholder="A short tagline"
-              className="text-body-sm"
-            />
-          </Field>
+            {isApple && (
+              <Field
+                label="Subtitle"
+                counter={<AppStoreFieldCounter current={draft.subtitle.length} max={FIELD_LIMITS.apple.subtitle} />}
+              >
+                <Input
+                  value={draft.subtitle}
+                  onChange={(e) => updateField("subtitle", e.target.value)}
+                  maxLength={FIELD_LIMITS.apple.subtitle}
+                  placeholder="A short tagline"
+                  className="text-body-sm"
+                />
+              </Field>
+            )}
+          </>
         )}
 
         {!isCpp && !isApple && (
