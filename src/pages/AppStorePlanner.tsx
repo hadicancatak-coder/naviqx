@@ -7,6 +7,7 @@ import { AppStoreListingList } from "@/components/app-store/AppStoreListingList"
 import { AppStoreEditorForm } from "@/components/app-store/AppStoreEditorForm";
 import { AppStorePreview } from "@/components/app-store/AppStorePreview";
 import { TranslationEditor } from "@/components/app-store/TranslationEditor";
+import { AppStoreListingComments } from "@/components/app-store/AppStoreListingComments";
 import { useAppStoreListings } from "@/hooks/useAppStoreListings";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { AppStoreListing } from "@/domain/app-store";
@@ -14,7 +15,7 @@ import type { AppStoreListing } from "@/domain/app-store";
 export default function AppStorePlanner() {
   const { listings, isLoading, createListing, updateListing, deleteListing, duplicateListing } = useAppStoreListings();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editorTab, setEditorTab] = useState<"editor" | "translations">("editor");
+  const [editorTab, setEditorTab] = useState<"editor" | "translations" | "comments">("editor");
 
   const selected = listings.find((l) => l.id === selectedId) ?? null;
 
@@ -110,13 +111,14 @@ export default function AppStorePlanner() {
                 <>
                   {/* Editor / Translations tab toggle */}
                   <div className="px-sm pt-sm border-b border-border">
-                    <Tabs value={editorTab} onValueChange={(v) => setEditorTab(v as "editor" | "translations")}>
+                     <Tabs value={editorTab} onValueChange={(v) => setEditorTab(v as "editor" | "translations" | "comments")}>
                       <TabsList className="h-8">
                         <TabsTrigger value="editor" className="text-metadata px-md h-7">Editor</TabsTrigger>
                         <TabsTrigger value="translations" className="text-metadata px-md h-7">Translations</TabsTrigger>
+                        <TabsTrigger value="comments" className="text-metadata px-md h-7">Comments</TabsTrigger>
                       </TabsList>
                     </Tabs>
-                  </div>
+                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
                     {editorTab === "editor" ? (
                       <AppStoreEditorForm
@@ -126,8 +128,10 @@ export default function AppStorePlanner() {
                         isSaving={updateListing.isPending}
                         saveError={updateListing.isError}
                       />
-                    ) : (
+                    ) : editorTab === "translations" ? (
                       <TranslationEditor key={`trans-${selected.id}`} listing={selected} />
+                    ) : (
+                      <AppStoreListingComments key={`comments-${selected.id}`} listingId={selected.id} />
                     )}
                   </div>
                 </>
