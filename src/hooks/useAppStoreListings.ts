@@ -27,6 +27,7 @@ const normalizeListing = (row: Record<string, unknown>): AppStoreListing => ({
   version: typeof row.version === "number" ? row.version : 1,
   tags: asStringArray(row.tags),
   screenshot_notes: asStringArray(row.screenshot_notes),
+  entities: asStringArray(row.entities),
 });
 
 const getErrorMessage = (error: unknown): string => {
@@ -70,6 +71,7 @@ export function useAppStoreListings() {
           created_by: currentUser.id,
           tags: [],
           screenshot_notes: [],
+          entities: [],
         })
         .select()
         .single();
