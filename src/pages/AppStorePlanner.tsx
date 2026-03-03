@@ -9,7 +9,7 @@ import { AppStorePreview } from "@/components/app-store/AppStorePreview";
 import { TranslationEditor } from "@/components/app-store/TranslationEditor";
 import { useAppStoreListings } from "@/hooks/useAppStoreListings";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import type { AppStoreListing, StoreType } from "@/domain/app-store";
+import type { AppStoreListing } from "@/domain/app-store";
 
 export default function AppStorePlanner() {
   const { listings, isLoading, createListing, updateListing, deleteListing, duplicateListing } = useAppStoreListings();
@@ -19,8 +19,8 @@ export default function AppStorePlanner() {
   const selected = listings.find((l) => l.id === selectedId) ?? null;
 
   const handleCreate = useCallback(
-    (name: string, storeType: StoreType) => {
-      createListing.mutate({ name, store_type: storeType, locale: "en" }, {
+    (name: string) => {
+      createListing.mutate({ name, store_type: "apple", locale: "en" }, {
         onSuccess: (data) => setSelectedId(data.id),
       });
     },
@@ -63,7 +63,7 @@ export default function AppStorePlanner() {
       key: "n",
       ctrl: true,
       callback: () => {
-        handleCreate("", "apple");
+        handleCreate("");
       },
     },
     {
