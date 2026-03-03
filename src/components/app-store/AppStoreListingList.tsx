@@ -36,7 +36,6 @@ export function AppStoreListingList({
   return (
     <div className="flex flex-col h-full">
       <div className="p-sm border-b border-border space-y-sm">
-        <h3 className="text-heading-sm font-semibold text-foreground">Listings</h3>
         <Input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
