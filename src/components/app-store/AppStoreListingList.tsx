@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Plus, Apple, Play, Trash2, Search, ChevronDown, Copy } from "lucide-react";
+import { Plus, Trash2, Search, ChevronDown, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import type { AppStoreListing, StoreType, ListingStatus } from "@/domain/app-store";
+import type { AppStoreListing, ListingStatus } from "@/domain/app-store";
 import { formatDistanceToNow } from "date-fns";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -13,7 +13,7 @@ interface Props {
   listings: AppStoreListing[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onCreate: (name: string, storeType: StoreType) => void;
+  onCreate: (name: string) => void;
   onDelete: (id: string) => void;
   onDuplicate: (listing: AppStoreListing) => void;
   isCreating?: boolean;
@@ -37,14 +37,12 @@ export function AppStoreListingList({
   isCreating = false,
 }: Props) {
   const [newName, setNewName] = useState("");
-  const [newStore, setNewStore] = useState<StoreType>("apple");
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const handleCreate = () => {
-    const fallbackName = `${newStore === "apple" ? "Apple" : "Play"} Listing ${listings.length + 1}`;
-    const name = newName.trim() || fallbackName;
-    onCreate(name, newStore);
+    const name = newName.trim() || `Listing ${listings.length + 1}`;
+    onCreate(name);
     setNewName("");
     setCreateOpen(false);
   };
@@ -76,24 +74,6 @@ export function AppStoreListingList({
                 if (e.key === "Enter") { e.preventDefault(); handleCreate(); }
               }}
             />
-            <div className="flex gap-xs">
-              <Button
-                size="sm"
-                variant={newStore === "apple" ? "default" : "outline"}
-                className="flex-1 text-metadata"
-                onClick={() => setNewStore("apple")}
-              >
-                <Apple className="h-3.5 w-3.5 mr-1" /> Apple
-              </Button>
-              <Button
-                size="sm"
-                variant={newStore === "google_play" ? "default" : "outline"}
-                className="flex-1 text-metadata"
-                onClick={() => setNewStore("google_play")}
-              >
-                <Play className="h-3.5 w-3.5 mr-1" /> Play
-              </Button>
-            </div>
             <Button size="sm" className="w-full" onClick={handleCreate} disabled={isCreating}>
               {isCreating ? "Creating…" : "Create"}
             </Button>
@@ -131,6 +111,11 @@ export function AppStoreListingList({
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-medium text-foreground truncate">{l.name}</p>
                 <div className="flex items-center gap-xs mt-xs flex-wrap">
+                  {l.page_type === "cpp" && (
+                    <Badge variant="outline" className="text-metadata px-1.5 py-0">
+                      CPP
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="text-metadata px-1.5 py-0">
                     {l.store_type === "apple" ? "Apple" : "Play"}
                   </Badge>
