@@ -115,12 +115,17 @@ export function AppleStorePreview({ listing }: Props) {
             <p className="text-body-sm text-foreground whitespace-pre-line">{listing.promotional_text}</p>
           )}
 
-          {/* Description - expandable */}
+          {/* Description - expandable at 255 chars */}
           <div>
-            <p className={`text-body-sm text-foreground whitespace-pre-line ${!descExpanded ? "line-clamp-3" : ""}`}>
-              {listing.description || "App description will appear here…"}
+            <p className="text-body-sm text-foreground whitespace-pre-line">
+              {listing.description
+                ? descExpanded
+                  ? listing.description
+                  : listing.description.slice(0, 255)
+                : "App description will appear here…"}
+              {!descExpanded && listing.description && listing.description.length > 255 && "…"}
             </p>
-            {listing.description && listing.description.length > 80 && (
+            {listing.description && listing.description.length > 255 && (
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
                 className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"
@@ -134,10 +139,11 @@ export function AppleStorePreview({ listing }: Props) {
           {listing.whats_new && (
             <div>
               <h4 className="text-body-sm font-semibold text-foreground mb-xs">What&apos;s New</h4>
-              <p className={`text-metadata text-muted-foreground whitespace-pre-line ${!whatsNewExpanded ? "line-clamp-3" : ""}`}>
-                {listing.whats_new}
+              <p className="text-metadata text-muted-foreground whitespace-pre-line">
+                {whatsNewExpanded ? listing.whats_new : listing.whats_new.slice(0, 255)}
+                {!whatsNewExpanded && listing.whats_new.length > 255 && "…"}
               </p>
-              {listing.whats_new.length > 60 && (
+              {listing.whats_new.length > 255 && (
                 <button
                   onClick={() => setWhatsNewExpanded(!whatsNewExpanded)}
                   className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"

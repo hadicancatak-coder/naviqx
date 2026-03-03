@@ -93,10 +93,15 @@ export function GooglePlayPreview({ listing }: Props) {
               <h4 className="text-body-sm font-semibold text-foreground">About this app</h4>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className={`text-body-sm text-foreground whitespace-pre-line ${!shortDescExpanded ? "line-clamp-2" : ""}`}>
-              {listing.short_description || "Short description…"}
+            <p className="text-body-sm text-foreground whitespace-pre-line">
+              {listing.short_description
+                ? shortDescExpanded
+                  ? listing.short_description
+                  : listing.short_description.slice(0, 255)
+                : "Short description…"}
+              {!shortDescExpanded && listing.short_description && listing.short_description.length > 255 && "…"}
             </p>
-            {listing.short_description && listing.short_description.length > 50 && (
+            {listing.short_description && listing.short_description.length > 255 && (
               <button
                 onClick={() => setShortDescExpanded(!shortDescExpanded)}
                 className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"
@@ -108,10 +113,15 @@ export function GooglePlayPreview({ listing }: Props) {
 
           {/* Full description */}
           <div>
-            <p className={`text-body-sm text-muted-foreground whitespace-pre-line ${!descExpanded ? "line-clamp-3" : ""}`}>
-              {listing.description || "Full description will appear here…"}
+            <p className="text-body-sm text-muted-foreground whitespace-pre-line">
+              {listing.description
+                ? descExpanded
+                  ? listing.description
+                  : listing.description.slice(0, 255)
+                : "Full description will appear here…"}
+              {!descExpanded && listing.description && listing.description.length > 255 && "…"}
             </p>
-            {listing.description && listing.description.length > 80 && (
+            {listing.description && listing.description.length > 255 && (
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
                 className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"
@@ -189,10 +199,11 @@ export function GooglePlayPreview({ listing }: Props) {
           {listing.whats_new && (
             <div>
               <h4 className="text-body-sm font-semibold text-foreground mb-xs">What&apos;s new</h4>
-              <p className={`text-metadata text-muted-foreground whitespace-pre-line ${!whatsNewExpanded ? "line-clamp-3" : ""}`}>
-                {listing.whats_new}
+              <p className="text-metadata text-muted-foreground whitespace-pre-line">
+                {whatsNewExpanded ? listing.whats_new : listing.whats_new.slice(0, 255)}
+                {!whatsNewExpanded && listing.whats_new.length > 255 && "…"}
               </p>
-              {listing.whats_new.length > 60 && (
+              {listing.whats_new.length > 255 && (
                 <button
                   onClick={() => setWhatsNewExpanded(!whatsNewExpanded)}
                   className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"
