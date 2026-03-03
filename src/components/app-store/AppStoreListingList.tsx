@@ -116,9 +116,6 @@ export function AppStoreListingList({
                       CPP
                     </Badge>
                   )}
-                  <Badge variant="outline" className="text-metadata px-1.5 py-0">
-                    {l.store_type === "apple" ? "Apple" : "Play"}
-                  </Badge>
                   <Badge variant="outline" className="text-metadata px-1.5 py-0 uppercase">
                     {l.locale}
                   </Badge>
