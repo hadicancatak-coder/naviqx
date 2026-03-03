@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AppStoreFieldCounter } from "./AppStoreFieldCounter";
 import { DescriptionToolbar } from "./DescriptionToolbar";
 import { FIELD_LIMITS, APPLE_CATEGORIES, GOOGLE_PLAY_CATEGORIES } from "@/domain/app-store";
-import type { AppStoreListing, Locale } from "@/domain/app-store";
+import type { AppStoreListing, Locale, PageType } from "@/domain/app-store";
 import { Check, Loader2, AlertCircle, ChevronDown, ChevronUp, Pencil, Building2 } from "lucide-react";
 import { LISTING_STATUSES } from "@/domain/app-store";
 import type { ListingStatus } from "@/domain/app-store";
@@ -147,6 +147,7 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
   }, [listing.entities, onUpdate]);
 
   const isApple = listing.store_type === "apple";
+  const isCpp = listing.page_type === "cpp";
   const limits = isApple ? FIELD_LIMITS.apple : FIELD_LIMITS.google_play;
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
 
@@ -271,6 +272,13 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
               </SelectContent>
             </Select>
 
+            <Tabs value={listing.page_type} onValueChange={(v) => onUpdate({ page_type: v as PageType } as Partial<AppStoreListing>)}>
+              <TabsList className="h-7">
+                <TabsTrigger value="product_page" className="text-metadata px-md h-6">Product Page</TabsTrigger>
+                <TabsTrigger value="cpp" className="text-metadata px-md h-6">CPP</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-7 text-metadata gap-xs">
@@ -335,20 +343,22 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
       </div>
 
       <div className="p-md space-y-md" dir={dir}>
-        <Field
-          label="App Name"
-          counter={<AppStoreFieldCounter current={draft.app_name.length} max={limits.app_name} />}
-        >
-          <Input
-            value={draft.app_name}
-            onChange={(e) => updateField("app_name", e.target.value)}
-            maxLength={limits.app_name}
-            placeholder="My App"
-            className="text-body-sm"
-          />
-        </Field>
+        {!isCpp && (
+          <Field
+            label="App Name"
+            counter={<AppStoreFieldCounter current={draft.app_name.length} max={limits.app_name} />}
+          >
+            <Input
+              value={draft.app_name}
+              onChange={(e) => updateField("app_name", e.target.value)}
+              maxLength={limits.app_name}
+              placeholder="My App"
+              className="text-body-sm"
+            />
+          </Field>
+        )}
 
-        {isApple && (
+        {!isCpp && isApple && (
           <Field
             label="Subtitle"
             counter={<AppStoreFieldCounter current={draft.subtitle.length} max={FIELD_LIMITS.apple.subtitle} />}
@@ -363,7 +373,7 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
           </Field>
         )}
 
-        {!isApple && (
+        {!isCpp && !isApple && (
           <Field
             label="Short Description"
             counter={<AppStoreFieldCounter current={draft.short_description.length} max={FIELD_LIMITS.google_play.short_description} />}
@@ -401,7 +411,7 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
           placeholder="Full app description…"
         />
 
-        {isApple && (
+        {!isCpp && isApple && (
           <Field
             label="Keywords"
             counter={<AppStoreFieldCounter current={draft.keywords.length} max={FIELD_LIMITS.apple.keywords} />}
@@ -416,7 +426,7 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
           </Field>
         )}
 
-        {!isApple && (
+        {!isCpp && !isApple && (
           <Field
             label="Tags"
             counter={<AppStoreFieldCounter current={(draft.tagsStr.split(",").map(t => t.trim()).filter(Boolean)).length} max={5} />}
@@ -430,36 +440,40 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
           </Field>
         )}
 
-        <Field
-          label="What's New"
-          counter={<AppStoreFieldCounter current={draft.whats_new.length} max={isApple ? FIELD_LIMITS.apple.whats_new : FIELD_LIMITS.google_play.whats_new} />}
-        >
-          <Textarea
-            value={draft.whats_new}
-            onChange={(e) => updateField("whats_new", e.target.value)}
-            maxLength={isApple ? FIELD_LIMITS.apple.whats_new : FIELD_LIMITS.google_play.whats_new}
-            placeholder="Release notes…"
-            className="text-body-sm min-h-[80px]"
-          />
-        </Field>
-
-        <Field label={isApple ? "Primary Category" : "Category"}>
-          <Select
-            value={listing.primary_category ?? ""}
-            onValueChange={(v) => onUpdate({ primary_category: v })}
+        {!isCpp && (
+          <Field
+            label="What's New"
+            counter={<AppStoreFieldCounter current={draft.whats_new.length} max={isApple ? FIELD_LIMITS.apple.whats_new : FIELD_LIMITS.google_play.whats_new} />}
           >
-            <SelectTrigger className="text-body-sm">
-              <SelectValue placeholder="Select category…" />
-            </SelectTrigger>
-            <SelectContent className="liquid-glass-dropdown">
-              {categories.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+            <Textarea
+              value={draft.whats_new}
+              onChange={(e) => updateField("whats_new", e.target.value)}
+              maxLength={isApple ? FIELD_LIMITS.apple.whats_new : FIELD_LIMITS.google_play.whats_new}
+              placeholder="Release notes…"
+              className="text-body-sm min-h-[80px]"
+            />
+          </Field>
+        )}
 
-        {isApple && (
+        {!isCpp && (
+          <Field label={isApple ? "Primary Category" : "Category"}>
+            <Select
+              value={listing.primary_category ?? ""}
+              onValueChange={(v) => onUpdate({ primary_category: v })}
+            >
+              <SelectTrigger className="text-body-sm">
+                <SelectValue placeholder="Select category…" />
+              </SelectTrigger>
+              <SelectContent className="liquid-glass-dropdown">
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
+
+        {!isCpp && isApple && (
           <Field label="Secondary Category">
             <Select
               value={listing.secondary_category ?? ""}

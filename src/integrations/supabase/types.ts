@@ -651,6 +651,7 @@ export type Database = {
           keywords: string | null
           locale: string
           name: string
+          page_type: string
           primary_category: string | null
           promotional_text: string | null
           review_notes: string | null
@@ -677,6 +678,7 @@ export type Database = {
           keywords?: string | null
           locale?: string
           name: string
+          page_type?: string
           primary_category?: string | null
           promotional_text?: string | null
           review_notes?: string | null
@@ -703,6 +705,7 @@ export type Database = {
           keywords?: string | null
           locale?: string
           name?: string
+          page_type?: string
           primary_category?: string | null
           promotional_text?: string | null
           review_notes?: string | null
