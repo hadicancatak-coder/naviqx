@@ -20,8 +20,8 @@ export default function AppStorePlanner() {
   const selected = listings.find((l) => l.id === selectedId) ?? null;
 
   const handleCreate = useCallback(
-    (name: string) => {
-      createListing.mutate({ name, store_type: "apple", locale: "en" }, {
+    (name: string, pageType: "product_page" | "cpp") => {
+      createListing.mutate({ name, store_type: "apple", locale: "en", page_type: pageType }, {
         onSuccess: (data) => setSelectedId(data.id),
       });
     },
