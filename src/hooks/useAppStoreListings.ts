@@ -115,12 +115,42 @@ export function useAppStoreListings() {
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
+  const duplicateListing = useMutation({
+    mutationFn: async (source: AppStoreListing) => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      const currentUser = authUser ?? user;
+      if (!currentUser) throw new Error("You must be logged in");
+
+      const { id, created_at, updated_at, created_by, version, approved_by, approved_at, review_notes, ...fields } = source;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from("app_store_listings") as any)
+        .insert({
+          ...fields,
+          name: `${source.name} (Copy)`,
+          status: "draft",
+          created_by: currentUser.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return normalizeListing(data as Record<string, unknown>);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success("Listing duplicated");
+    },
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
+  });
+
   return {
     listings: listingsQuery.data ?? [],
     isLoading: listingsQuery.isLoading,
     createListing,
     updateListing,
     deleteListing,
+    duplicateListing,
   };
 }
-
