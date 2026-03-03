@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Check, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExternalReviewHeaderProps {
   title: string;
@@ -40,9 +41,40 @@ export function ExternalReviewHeader({
       return;
     }
     
-    if (!email.trim() || !email.includes('@cfi.trade')) {
-      toast.error('Please enter a valid @cfi.trade email');
+    if (!email.trim() || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
       return;
+    }
+
+    // Validate email domain against app_settings dynamically
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: settingsData } = await (supabase.from("app_settings") as any)
+        .select("value")
+        .eq("key", "allowed_domains")
+        .single();
+      
+      let allowedDomains: string[] = ["cfi.trade"];
+      if (settingsData?.value) {
+        const val = settingsData.value;
+        if (Array.isArray(val)) {
+          allowedDomains = val.map((d: unknown) => String(d).toLowerCase());
+        } else if (typeof val === "string") {
+          allowedDomains = val.split(",").map((d: string) => d.trim().toLowerCase());
+        }
+      }
+      
+      const emailDomain = email.trim().toLowerCase().split("@")[1];
+      if (!allowedDomains.includes(emailDomain)) {
+        toast.error(`Only emails from ${allowedDomains.map(d => "@" + d).join(", ")} are allowed`);
+        return;
+      }
+    } catch {
+      // If we can't fetch settings, fall back to @cfi.trade
+      if (!email.includes('@cfi.trade')) {
+        toast.error('Please enter a valid @cfi.trade email');
+        return;
+      }
     }
 
     setIsSubmitting(true);
