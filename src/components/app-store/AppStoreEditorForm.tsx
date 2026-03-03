@@ -209,10 +209,23 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
             </TabsList>
           </Tabs>
         </div>
-        {listing.review_notes && (
-          <div className="bg-warning-soft border border-warning/30 rounded-md px-sm py-xs">
-            <p className="text-metadata font-medium text-warning-text">Reviewer feedback:</p>
-            <p className="text-metadata text-warning-text/80">{listing.review_notes}</p>
+      {listing.status === "needs_changes" && listing.review_notes && (
+          <div className="bg-warning-soft border border-warning/30 rounded-lg px-md py-sm space-y-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-body-sm font-semibold text-warning-text">⚠ Changes Requested</p>
+              {listing.approved_by && (
+                <span className="text-metadata text-warning-text/70">by {listing.approved_by}</span>
+              )}
+            </div>
+            <p className="text-body-sm text-warning-text/90 whitespace-pre-wrap">{listing.review_notes}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-xs text-metadata"
+              onClick={() => onUpdate({ status: "draft", review_notes: null })}
+            >
+              Dismiss & Mark as Draft
+            </Button>
           </div>
         )}
       </div>

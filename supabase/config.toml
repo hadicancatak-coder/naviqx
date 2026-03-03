@@ -13,3 +13,9 @@ verify_jwt = false
 
 [functions.generate-recurring-tasks]
 verify_jwt = false
+
+[functions.submit-app-translation]
+verify_jwt = false
+
+[functions.approve-app-listing]
+verify_jwt = false
