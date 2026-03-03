@@ -51,7 +51,7 @@ export function useAppStoreListings() {
         .select("*")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return all;
+      return (data ?? []).map((row) => normalizeListing(row as Record<string, unknown>));
     },
     enabled: !!user,
   });
