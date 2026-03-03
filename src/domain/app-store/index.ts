@@ -2,12 +2,26 @@ import { z } from "zod";
 
 export type StoreType = "apple" | "google_play";
 export type Locale = "en" | "ar";
+export type ListingStatus = "draft" | "ready_for_review" | "approved" | "needs_changes" | "live";
+
+export const LISTING_STATUSES: { value: ListingStatus; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "ready_for_review", label: "Ready for Review" },
+  { value: "approved", label: "Approved" },
+  { value: "needs_changes", label: "Needs Changes" },
+  { value: "live", label: "Live" },
+];
 
 export interface AppStoreListing {
   id: string;
   name: string;
   store_type: StoreType;
   locale: Locale;
+  status: ListingStatus;
+  version: number;
+  approved_by: string | null;
+  approved_at: string | null;
+  review_notes: string | null;
   app_name: string | null;
   subtitle: string | null;
   short_description: string | null;

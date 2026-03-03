@@ -11,10 +11,20 @@ const asStringArray = (value: unknown): string[] => {
   return value.filter((item): item is string => typeof item === "string");
 };
 
+const VALID_STATUSES = ["draft", "ready_for_review", "approved", "needs_changes", "live"] as const;
+type ListingStatus = (typeof VALID_STATUSES)[number];
+
+const normalizeStatus = (val: unknown): ListingStatus => {
+  if (typeof val === "string" && VALID_STATUSES.includes(val as ListingStatus)) return val as ListingStatus;
+  return "draft";
+};
+
 const normalizeListing = (row: Record<string, unknown>): AppStoreListing => ({
   ...(row as AppStoreListing),
   store_type: row.store_type === "google_play" ? "google_play" : "apple",
   locale: row.locale === "ar" ? "ar" : "en",
+  status: normalizeStatus(row.status),
+  version: typeof row.version === "number" ? row.version : 1,
   tags: asStringArray(row.tags),
   screenshot_notes: asStringArray(row.screenshot_notes),
 });

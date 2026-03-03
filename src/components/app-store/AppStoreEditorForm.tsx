@@ -9,6 +9,9 @@ import { DescriptionToolbar } from "./DescriptionToolbar";
 import { FIELD_LIMITS, APPLE_CATEGORIES, GOOGLE_PLAY_CATEGORIES } from "@/domain/app-store";
 import type { AppStoreListing, Locale } from "@/domain/app-store";
 import { Check, Loader2, AlertCircle } from "lucide-react";
+import { LISTING_STATUSES } from "@/domain/app-store";
+import type { ListingStatus } from "@/domain/app-store";
+import { Badge } from "@/components/ui/badge";
 
 interface Props {
   listing: AppStoreListing;
@@ -174,20 +177,44 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="p-sm border-b border-border flex items-center justify-between">
-        <h3 className="text-heading-sm font-semibold text-foreground truncate">{listing.name}</h3>
-        <div className="flex items-center gap-sm">
-          <div className="flex items-center gap-xs text-metadata">
+      <div className="p-sm border-b border-border space-y-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-sm min-w-0">
+            <h3 className="text-heading-sm font-semibold text-foreground truncate">{listing.name}</h3>
+            <Badge variant="outline" className="text-metadata shrink-0">v{listing.version}</Badge>
+          </div>
+          <div className="flex items-center gap-xs text-metadata shrink-0">
             <SaveIcon className={`h-3 w-3 ${saveStatus.className}`} />
             <span className={saveStatus.className}>{saveStatus.text}</span>
           </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <Select
+            value={listing.status}
+            onValueChange={(v) => onUpdate({ status: v as ListingStatus })}
+          >
+            <SelectTrigger className="text-metadata h-7 w-auto min-w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="liquid-glass-dropdown">
+              {LISTING_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value} className="text-metadata">{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Tabs value={listing.locale} onValueChange={(v) => onUpdate({ locale: v as Locale })}>
-            <TabsList className="h-8">
-              <TabsTrigger value="en" className="text-metadata px-md">EN</TabsTrigger>
-              <TabsTrigger value="ar" className="text-metadata px-md">AR</TabsTrigger>
+            <TabsList className="h-7">
+              <TabsTrigger value="en" className="text-metadata px-md h-6">EN</TabsTrigger>
+              <TabsTrigger value="ar" className="text-metadata px-md h-6">AR</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
+        {listing.review_notes && (
+          <div className="bg-warning-soft border border-warning/30 rounded-md px-sm py-xs">
+            <p className="text-metadata font-medium text-warning-text">Reviewer feedback:</p>
+            <p className="text-metadata text-warning-text/80">{listing.review_notes}</p>
+          </div>
+        )}
       </div>
 
       <div className="p-md space-y-md" dir={dir}>
