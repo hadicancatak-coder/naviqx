@@ -132,6 +132,41 @@ export function GooglePlayPreview({ listing }: Props) {
             </div>
           )}
 
+          {/* Ratings & Reviews */}
+          <div className="space-y-xs">
+            <div className="flex items-center justify-between">
+              <h4 className="text-body-sm font-semibold text-foreground">Ratings and reviews</h4>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex items-start gap-md">
+              <div className="text-center">
+                <span className="text-heading-lg font-bold text-foreground block">4.8</span>
+                <div className="flex gap-0.5 mt-0.5">
+                  {[1,2,3,4,5].map((i) => (
+                    <Star key={i} className={`h-3 w-3 ${i <= 4 ? "fill-primary text-primary" : "fill-primary/40 text-primary/40"}`} />
+                  ))}
+                </div>
+                <span className="text-metadata text-muted-foreground">10.2K</span>
+              </div>
+              <div className="flex-1 space-y-0.5">
+                {[
+                  { stars: 5, pct: 78 },
+                  { stars: 4, pct: 14 },
+                  { stars: 3, pct: 4 },
+                  { stars: 2, pct: 2 },
+                  { stars: 1, pct: 2 },
+                ].map((r) => (
+                  <div key={r.stars} className="flex items-center gap-xs">
+                    <span className="text-metadata text-muted-foreground w-2 text-right">{r.stars}</span>
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${r.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Data safety */}
           <div className="space-y-xs">
             <div className="flex items-center justify-between">

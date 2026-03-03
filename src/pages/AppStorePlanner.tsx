@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Smartphone } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -6,11 +6,13 @@ import { AppStoreListingList } from "@/components/app-store/AppStoreListingList"
 import { AppStoreEditorForm } from "@/components/app-store/AppStoreEditorForm";
 import { AppStorePreview } from "@/components/app-store/AppStorePreview";
 import { useAppStoreListings } from "@/hooks/useAppStoreListings";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { AppStoreListing, StoreType } from "@/domain/app-store";
 
 export default function AppStorePlanner() {
-  const { listings, isLoading, createListing, updateListing, deleteListing } = useAppStoreListings();
+  const { listings, isLoading, createListing, updateListing, deleteListing, duplicateListing } = useAppStoreListings();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const createTriggerRef = useRef<(() => void) | null>(null);
 
   const selected = listings.find((l) => l.id === selectedId) ?? null;
 
@@ -39,6 +41,41 @@ export default function AppStorePlanner() {
     [deleteListing, selectedId],
   );
 
+  const handleDuplicate = useCallback(
+    (listing: AppStoreListing) => {
+      duplicateListing.mutate(listing, {
+        onSuccess: (data) => setSelectedId(data.id),
+      });
+    },
+    [duplicateListing],
+  );
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: "s",
+      ctrl: true,
+      callback: () => {
+        // Force flush is handled by the editor's debounce - this prevents default browser save
+      },
+    },
+    {
+      key: "n",
+      ctrl: true,
+      callback: () => {
+        handleCreate("", "apple");
+      },
+    },
+    {
+      key: "d",
+      ctrl: true,
+      shift: true,
+      callback: () => {
+        if (selected) handleDuplicate(selected);
+      },
+    },
+  ]);
+
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <div className="px-lg pt-lg">
@@ -51,7 +88,6 @@ export default function AppStorePlanner() {
 
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Left: Listing list */}
           <ResizablePanel defaultSize={18} minSize={12} maxSize={25}>
             <div className="h-full liquid-glass-elevated border-r border-border overflow-hidden">
               <AppStoreListingList
@@ -60,6 +96,7 @@ export default function AppStorePlanner() {
                 onSelect={setSelectedId}
                 onCreate={handleCreate}
                 onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
                 isCreating={createListing.isPending}
               />
             </div>
@@ -67,7 +104,6 @@ export default function AppStorePlanner() {
 
           <ResizableHandle withHandle />
 
-          {/* Center: Editor */}
           <ResizablePanel defaultSize={40} minSize={25}>
             <div className="h-full overflow-hidden">
               {selected ? (
@@ -88,7 +124,6 @@ export default function AppStorePlanner() {
 
           <ResizableHandle withHandle />
 
-          {/* Right: Preview */}
           <ResizablePanel defaultSize={42} minSize={30}>
             <div className="h-full liquid-glass-elevated border-l border-border overflow-hidden">
               {selected ? (

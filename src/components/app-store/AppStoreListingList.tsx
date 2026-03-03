@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Apple, Play, Trash2, Search, ChevronDown } from "lucide-react";
+import { Plus, Apple, Play, Trash2, Search, ChevronDown, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { cn } from "@/lib/utils";
 import type { AppStoreListing, StoreType, ListingStatus } from "@/domain/app-store";
 import { formatDistanceToNow } from "date-fns";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   listings: AppStoreListing[];
@@ -14,6 +15,7 @@ interface Props {
   onSelect: (id: string) => void;
   onCreate: (name: string, storeType: StoreType) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (listing: AppStoreListing) => void;
   isCreating?: boolean;
 }
 
@@ -31,6 +33,7 @@ export function AppStoreListingList({
   onSelect,
   onCreate,
   onDelete,
+  onDuplicate,
   isCreating = false,
 }: Props) {
   const [newName, setNewName] = useState("");
@@ -142,15 +145,30 @@ export function AppStoreListingList({
                   {formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}
                 </p>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(l.id);
-                }}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-smooth p-1 mt-0.5"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-smooth mt-0.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDuplicate(l); }}
+                      className="text-muted-foreground hover:text-foreground p-1"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-metadata">Duplicate</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(l.id); }}
+                      className="text-muted-foreground hover:text-destructive p-1"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-metadata">Delete</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           );
         })}
