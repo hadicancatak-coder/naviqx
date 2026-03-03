@@ -13,7 +13,7 @@ interface Props {
   listings: AppStoreListing[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onCreate: (name: string) => void;
+  onCreate: (name: string, pageType: "product_page" | "cpp") => void;
   onDelete: (id: string) => void;
   onDuplicate: (listing: AppStoreListing) => void;
   isCreating?: boolean;
@@ -37,13 +37,15 @@ export function AppStoreListingList({
   isCreating = false,
 }: Props) {
   const [newName, setNewName] = useState("");
+  const [newPageType, setNewPageType] = useState<"product_page" | "cpp">("product_page");
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const handleCreate = () => {
     const name = newName.trim() || `Listing ${listings.length + 1}`;
-    onCreate(name);
+    onCreate(name, newPageType);
     setNewName("");
+    setNewPageType("product_page");
     setCreateOpen(false);
   };
 
@@ -65,6 +67,24 @@ export function AppStoreListingList({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-sm space-y-sm">
+            <div className="flex gap-xs">
+              <Button
+                size="sm"
+                variant={newPageType === "product_page" ? "default" : "outline"}
+                className="flex-1 text-metadata h-7"
+                onClick={() => setNewPageType("product_page")}
+              >
+                Product Page
+              </Button>
+              <Button
+                size="sm"
+                variant={newPageType === "cpp" ? "default" : "outline"}
+                className="flex-1 text-metadata h-7"
+                onClick={() => setNewPageType("cpp")}
+              >
+                CPP
+              </Button>
+            </div>
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}

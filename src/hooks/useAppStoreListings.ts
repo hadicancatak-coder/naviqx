@@ -57,7 +57,7 @@ export function useAppStoreListings() {
   });
 
   const createListing = useMutation({
-    mutationFn: async (input: { name: string; store_type: StoreType; locale: Locale }) => {
+    mutationFn: async (input: { name: string; store_type: StoreType; locale: Locale; page_type?: string }) => {
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
