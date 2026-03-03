@@ -73,6 +73,33 @@ export const GOOGLE_PLAY_CATEGORIES = [
   "Video Players & Editors", "Weather",
 ] as const;
 
+export interface AppStoreTranslation {
+  id: string;
+  listing_id: string;
+  locale: string;
+  status: ListingStatus;
+  app_name: string | null;
+  subtitle: string | null;
+  short_description: string | null;
+  promotional_text: string | null;
+  description: string | null;
+  keywords: string | null;
+  whats_new: string | null;
+  translated_by: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const TRANSLATION_LOCALES = [
+  { value: "ar", label: "Arabic (AR)" },
+  { value: "fr", label: "French (FR)" },
+  { value: "es", label: "Spanish (ES)" },
+  { value: "de", label: "German (DE)" },
+  { value: "tr", label: "Turkish (TR)" },
+  { value: "az", label: "Azerbaijani (AZ)" },
+] as const;
+
 export const appStoreListingSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
   store_type: z.enum(["apple", "google_play"]),

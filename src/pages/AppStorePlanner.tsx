@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import { Smartphone } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AppStoreListingList } from "@/components/app-store/AppStoreListingList";
 import { AppStoreEditorForm } from "@/components/app-store/AppStoreEditorForm";
 import { AppStorePreview } from "@/components/app-store/AppStorePreview";
+import { TranslationEditor } from "@/components/app-store/TranslationEditor";
 import { useAppStoreListings } from "@/hooks/useAppStoreListings";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { AppStoreListing, StoreType } from "@/domain/app-store";
@@ -12,7 +14,7 @@ import type { AppStoreListing, StoreType } from "@/domain/app-store";
 export default function AppStorePlanner() {
   const { listings, isLoading, createListing, updateListing, deleteListing, duplicateListing } = useAppStoreListings();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const createTriggerRef = useRef<(() => void) | null>(null);
+  const [editorTab, setEditorTab] = useState<"editor" | "translations">("editor");
 
   const selected = listings.find((l) => l.id === selectedId) ?? null;
 
@@ -55,9 +57,7 @@ export default function AppStorePlanner() {
     {
       key: "s",
       ctrl: true,
-      callback: () => {
-        // Force flush is handled by the editor's debounce - this prevents default browser save
-      },
+      callback: () => {},
     },
     {
       key: "n",
@@ -93,7 +93,7 @@ export default function AppStorePlanner() {
               <AppStoreListingList
                 listings={listings}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={(id) => { setSelectedId(id); setEditorTab("editor"); }}
                 onCreate={handleCreate}
                 onDelete={handleDelete}
                 onDuplicate={handleDuplicate}
@@ -105,15 +105,32 @@ export default function AppStorePlanner() {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={40} minSize={25}>
-            <div className="h-full overflow-hidden">
+            <div className="h-full overflow-hidden flex flex-col">
               {selected ? (
-                <AppStoreEditorForm
-                  key={selected.id}
-                  listing={selected}
-                  onUpdate={handleUpdate}
-                  isSaving={updateListing.isPending}
-                  saveError={updateListing.isError}
-                />
+                <>
+                  {/* Editor / Translations tab toggle */}
+                  <div className="px-sm pt-sm border-b border-border">
+                    <Tabs value={editorTab} onValueChange={(v) => setEditorTab(v as "editor" | "translations")}>
+                      <TabsList className="h-8">
+                        <TabsTrigger value="editor" className="text-metadata px-md h-7">Editor</TabsTrigger>
+                        <TabsTrigger value="translations" className="text-metadata px-md h-7">Translations</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    {editorTab === "editor" ? (
+                      <AppStoreEditorForm
+                        key={selected.id}
+                        listing={selected}
+                        onUpdate={handleUpdate}
+                        isSaving={updateListing.isPending}
+                        saveError={updateListing.isError}
+                      />
+                    ) : (
+                      <TranslationEditor key={`trans-${selected.id}`} listing={selected} />
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-body-sm">
                   {isLoading ? "Loading…" : "Select or create a listing to start editing"}

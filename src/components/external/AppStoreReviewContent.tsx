@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { PublicAccessLink } from "@/hooks/usePublicAccess";
 import type { AppStoreListing } from "@/domain/app-store";
+import type { AppStoreTranslation } from "@/domain/app-store";
 import { AppleStorePreview } from "@/components/app-store/AppleStorePreview";
 import { GooglePlayPreview } from "@/components/app-store/GooglePlayPreview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Apple, Play, Check, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Apple, Play, Check, MessageSquare, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface Props {
   accessData: PublicAccessLink;
@@ -21,6 +25,23 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
   const [feedbackText, setFeedbackText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<"approve" | "request_changes" | null>(null);
+
+  // Translation state
+  const [translations, setTranslations] = useState<AppStoreTranslation[]>([]);
+  const [selectedLocale, setSelectedLocale] = useState<string | null>(null);
+
+  // Fetch translations for this listing
+  useEffect(() => {
+    if (!listing?.id) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("app_store_translations") as any)
+      .select("*")
+      .eq("listing_id", listing.id)
+      .order("locale")
+      .then(({ data }: { data: AppStoreTranslation[] | null }) => {
+        setTranslations(data ?? []);
+      });
+  }, [listing?.id]);
 
   if (isLoading) {
     return (
@@ -38,6 +59,21 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
       </div>
     );
   }
+
+  // Build the listing to preview (overlay translation fields if a locale is selected)
+  const selectedTranslation = translations.find((t) => t.locale === selectedLocale);
+  const previewListing: AppStoreListing = selectedTranslation
+    ? {
+        ...listing,
+        app_name: selectedTranslation.app_name ?? listing.app_name,
+        subtitle: selectedTranslation.subtitle ?? listing.subtitle,
+        short_description: selectedTranslation.short_description ?? listing.short_description,
+        promotional_text: selectedTranslation.promotional_text ?? listing.promotional_text,
+        description: selectedTranslation.description ?? listing.description,
+        keywords: selectedTranslation.keywords ?? listing.keywords,
+        whats_new: selectedTranslation.whats_new ?? listing.whats_new,
+      }
+    : listing;
 
   const handleAction = async (action: "approve" | "request_changes") => {
     setSubmitting(true);
@@ -72,12 +108,13 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
       <div className="text-center">
         <h2 className="text-heading-md font-semibold text-foreground">{listing.name}</h2>
         <p className="text-body-sm text-muted-foreground mt-xs">
-          {listing.store_type === "apple" ? "Apple App Store" : "Google Play Store"} · {listing.locale.toUpperCase()}
+          {listing.store_type === "apple" ? "Apple App Store" : "Google Play Store"} · {selectedLocale ? selectedLocale.toUpperCase() : listing.locale.toUpperCase()}
         </p>
       </div>
 
-      {/* Store toggle */}
-      <div className="flex justify-center">
+      {/* Controls row: store toggle + locale toggle */}
+      <div className="flex justify-center gap-md flex-wrap">
+        {/* Store toggle */}
         <div className="flex items-center rounded-lg border border-border overflow-hidden">
           <button
             onClick={() => setPreviewStore("apple")}
@@ -100,14 +137,56 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
             <Play className="h-4 w-4" /> Android
           </button>
         </div>
+
+        {/* Locale toggle (only if translations exist) */}
+        {translations.length > 0 && (
+          <div className="flex items-center gap-xs rounded-lg border border-border overflow-hidden px-1">
+            <Globe className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+            <button
+              onClick={() => setSelectedLocale(null)}
+              className={cn(
+                "px-2 py-1.5 text-body-sm font-medium transition-smooth uppercase",
+                !selectedLocale
+                  ? "bg-primary text-primary-foreground rounded-md"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {listing.locale}
+            </button>
+            {translations.map((t) => {
+              const statusColors: Record<string, string> = {
+                draft: "bg-muted",
+                ready_for_review: "bg-info",
+                approved: "bg-success",
+                needs_changes: "bg-warning",
+                live: "bg-primary",
+              };
+              return (
+                <button
+                  key={t.locale}
+                  onClick={() => setSelectedLocale(t.locale)}
+                  className={cn(
+                    "px-2 py-1.5 text-body-sm font-medium transition-smooth uppercase flex items-center gap-1",
+                    selectedLocale === t.locale
+                      ? "bg-primary text-primary-foreground rounded-md"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {t.locale}
+                  <span className={cn("w-1.5 h-1.5 rounded-full", statusColors[t.status] ?? "bg-muted")} />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Preview */}
       <div className="flex justify-center">
         {previewStore === "apple" ? (
-          <AppleStorePreview listing={listing} />
+          <AppleStorePreview listing={previewListing} />
         ) : (
-          <GooglePlayPreview listing={listing} />
+          <GooglePlayPreview listing={previewListing} />
         )}
       </div>
 

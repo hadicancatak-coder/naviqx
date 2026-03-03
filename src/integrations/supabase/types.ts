@@ -716,6 +716,68 @@ export type Database = {
         }
         Relationships: []
       }
+      app_store_translations: {
+        Row: {
+          app_name: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          keywords: string | null
+          listing_id: string
+          locale: string
+          promotional_text: string | null
+          short_description: string | null
+          status: string
+          subtitle: string | null
+          translated_by: string | null
+          updated_at: string
+          whats_new: string | null
+        }
+        Insert: {
+          app_name?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          keywords?: string | null
+          listing_id: string
+          locale?: string
+          promotional_text?: string | null
+          short_description?: string | null
+          status?: string
+          subtitle?: string | null
+          translated_by?: string | null
+          updated_at?: string
+          whats_new?: string | null
+        }
+        Update: {
+          app_name?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          keywords?: string | null
+          listing_id?: string
+          locale?: string
+          promotional_text?: string | null
+          short_description?: string | null
+          status?: string
+          subtitle?: string | null
+          translated_by?: string | null
+          updated_at?: string
+          whats_new?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_store_translations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "app_store_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_history: {
         Row: {
           ad_id: string
