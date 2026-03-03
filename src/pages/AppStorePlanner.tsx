@@ -52,7 +52,7 @@ export default function AppStorePlanner() {
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left: Listing list */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+          <ResizablePanel defaultSize={18} minSize={12} maxSize={25}>
             <div className="h-full liquid-glass-elevated border-r border-border overflow-hidden">
               <AppStoreListingList
                 listings={listings}
@@ -68,7 +68,7 @@ export default function AppStorePlanner() {
           <ResizableHandle withHandle />
 
           {/* Center: Editor */}
-          <ResizablePanel defaultSize={45} minSize={30}>
+          <ResizablePanel defaultSize={40} minSize={25}>
             <div className="h-full overflow-hidden">
               {selected ? (
                 <AppStoreEditorForm
@@ -89,7 +89,7 @@ export default function AppStorePlanner() {
           <ResizableHandle withHandle />
 
           {/* Right: Preview */}
-          <ResizablePanel defaultSize={35} minSize={25}>
+          <ResizablePanel defaultSize={42} minSize={30}>
             <div className="h-full liquid-glass-elevated border-l border-border overflow-hidden">
               {selected ? (
                 <AppStorePreview listing={selected} />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { AppStoreListing } from "@/domain/app-store";
-import { Star, ChevronRight, Shield } from "lucide-react";
+import { Star, ChevronRight, ChevronDown, ChevronUp, Shield } from "lucide-react";
 import logoEmblem from "@/assets/cfi-logo-emblem.png";
 
 interface Props {
@@ -18,23 +18,24 @@ export function AppleStorePreview({ listing }: Props) {
 
   return (
     <div className="flex flex-col items-center py-lg">
-      <div className="w-[390px] rounded-[44px] border-[3px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col">
-        {/* Notch */}
-        <div className="flex justify-center pt-2.5 pb-1.5 flex-shrink-0">
-          <div className="w-28 h-7 rounded-full bg-foreground/10" />
+      {/* iPhone 15 Pro frame */}
+      <div className="w-[430px] rounded-[50px] border-[4px] border-foreground/20 bg-background shadow-xl overflow-hidden flex flex-col relative">
+        {/* Dynamic Island */}
+        <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
+          <div className="w-[120px] h-[35px] rounded-[18px] bg-foreground/90" />
         </div>
 
         {/* Scrollable content area */}
-        <div className="h-[780px] overflow-y-auto px-md pb-lg space-y-md" dir={dir}>
+        <div className="h-[860px] overflow-y-auto px-lg pb-lg space-y-md" dir={dir}>
           {/* App header */}
           <div className="flex items-start gap-sm">
-            <img src={logoEmblem} alt="App icon" className="w-16 h-16 rounded-2xl shadow-sm" />
+            <img src={logoEmblem} alt="App icon" className="w-[72px] h-[72px] rounded-2xl shadow-sm" />
             <div className="flex-1 min-w-0">
               <p className="text-body font-semibold text-foreground truncate">{listing.app_name || "App Name"}</p>
-              <p className="text-metadata text-muted-foreground truncate">{listing.subtitle || "Subtitle"}</p>
+              <p className="text-body-sm text-muted-foreground truncate">{listing.subtitle || "Subtitle"}</p>
               <div className="flex items-center gap-xs mt-xs">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="h-3 w-3 fill-warning text-warning" />
+                  <Star key={i} className="h-3.5 w-3.5 fill-warning text-warning" />
                 ))}
                 <span className="text-metadata text-muted-foreground">4.8</span>
               </div>
@@ -43,40 +44,40 @@ export function AppleStorePreview({ listing }: Props) {
 
           {/* GET button */}
           <div className="flex justify-start">
-            <div className="bg-primary text-primary-foreground text-metadata font-semibold px-lg py-1.5 rounded-full">GET</div>
+            <div className="bg-primary text-primary-foreground text-body-sm font-semibold px-xl py-2 rounded-full">GET</div>
           </div>
 
           {/* Info bar */}
           <div className="flex items-center justify-between border-y border-border py-sm text-center">
             <div className="flex-1">
-              <p className="text-[10px] text-muted-foreground">Age</p>
-              <p className="text-metadata font-semibold text-foreground">4+</p>
+              <p className="text-[11px] text-muted-foreground">Age</p>
+              <p className="text-body-sm font-semibold text-foreground">4+</p>
             </div>
-            <div className="w-px h-6 bg-border" />
+            <div className="w-px h-7 bg-border" />
             <div className="flex-1">
-              <p className="text-[10px] text-muted-foreground">Category</p>
-              <p className="text-metadata font-semibold text-primary truncate px-1">{listing.primary_category || "Finance"}</p>
+              <p className="text-[11px] text-muted-foreground">Category</p>
+              <p className="text-body-sm font-semibold text-primary truncate px-1">{listing.primary_category || "Finance"}</p>
             </div>
-            <div className="w-px h-6 bg-border" />
+            <div className="w-px h-7 bg-border" />
             <div className="flex-1">
-              <p className="text-[10px] text-muted-foreground">Developer</p>
-              <p className="text-metadata font-semibold text-foreground">CFI</p>
+              <p className="text-[11px] text-muted-foreground">Developer</p>
+              <p className="text-body-sm font-semibold text-foreground">CFI</p>
             </div>
-            <div className="w-px h-6 bg-border" />
+            <div className="w-px h-7 bg-border" />
             <div className="flex-1">
-              <p className="text-[10px] text-muted-foreground">Size</p>
-              <p className="text-metadata font-semibold text-foreground">89 MB</p>
+              <p className="text-[11px] text-muted-foreground">Size</p>
+              <p className="text-body-sm font-semibold text-foreground">89 MB</p>
             </div>
           </div>
 
           {/* Screenshots */}
           <div className="space-y-xs">
             <h4 className="text-body-sm font-semibold text-foreground">Preview</h4>
-            <div className="flex gap-xs overflow-x-auto pb-xs">
+            <div className="flex gap-sm overflow-x-auto pb-xs">
               {slots.map((note, i) => (
                 <div
                   key={i}
-                  className="w-[100px] h-[178px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  className="w-[120px] h-[214px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center"
                   style={{
                     background: note
                       ? "linear-gradient(135deg, hsl(var(--muted)), hsl(var(--accent)))"
@@ -86,7 +87,7 @@ export function AppleStorePreview({ listing }: Props) {
                 >
                   {note ? (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full w-5 h-5 flex items-center justify-center">{i + 1}</span>
+                      <span className="text-[11px] font-medium text-primary bg-primary/10 rounded-full w-5 h-5 flex items-center justify-center">{i + 1}</span>
                       <span className="text-metadata text-muted-foreground line-clamp-4">{note}</span>
                     </div>
                   ) : (
@@ -122,9 +123,9 @@ export function AppleStorePreview({ listing }: Props) {
             {listing.description && listing.description.length > 80 && (
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
-                className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+                className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"
               >
-                {descExpanded ? "less" : "more"}
+                {descExpanded ? (<>less <ChevronUp className="h-3 w-3" /></>) : (<>more <ChevronDown className="h-3 w-3" /></>)}
               </button>
             )}
           </div>
@@ -139,9 +140,9 @@ export function AppleStorePreview({ listing }: Props) {
               {listing.whats_new.length > 60 && (
                 <button
                   onClick={() => setWhatsNewExpanded(!whatsNewExpanded)}
-                  className="text-metadata text-primary font-medium mt-xs cursor-pointer"
+                  className="text-metadata text-primary font-medium mt-xs cursor-pointer flex items-center gap-0.5"
                 >
-                  {whatsNewExpanded ? "less" : "more"}
+                  {whatsNewExpanded ? (<>less <ChevronUp className="h-3 w-3" /></>) : (<>more <ChevronDown className="h-3 w-3" /></>)}
                 </button>
               )}
             </div>
@@ -151,15 +152,15 @@ export function AppleStorePreview({ listing }: Props) {
           <div className="space-y-xs">
             <h4 className="text-body-sm font-semibold text-foreground">App Privacy</h4>
             <div className="flex items-center gap-xs text-muted-foreground">
-              <Shield className="h-3 w-3" />
+              <Shield className="h-3.5 w-3.5" />
               <span className="text-metadata">Developer has not provided privacy details.</span>
             </div>
           </div>
         </div>
 
         {/* Home indicator */}
-        <div className="flex justify-center pb-2 flex-shrink-0">
-          <div className="w-28 h-1 rounded-full bg-foreground/20" />
+        <div className="flex justify-center pb-2.5 flex-shrink-0">
+          <div className="w-32 h-[5px] rounded-full bg-foreground/20" />
         </div>
       </div>
     </div>
