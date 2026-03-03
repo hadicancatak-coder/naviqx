@@ -1,0 +1,1 @@
+ALTER TABLE public.app_store_listings ADD COLUMN page_type text NOT NULL DEFAULT 'product_page';

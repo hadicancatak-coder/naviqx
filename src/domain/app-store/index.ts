@@ -3,6 +3,7 @@ import { z } from "zod";
 export type StoreType = "apple" | "google_play";
 export type Locale = "en" | "ar";
 export type ListingStatus = "draft" | "ready_for_review" | "approved" | "needs_changes" | "live";
+export type PageType = "product_page" | "cpp";
 
 export const LISTING_STATUSES: { value: ListingStatus; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -16,6 +17,7 @@ export interface AppStoreListing {
   id: string;
   name: string;
   store_type: StoreType;
+  page_type: PageType;
   locale: Locale;
   status: ListingStatus;
   version: number;
