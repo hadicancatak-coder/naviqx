@@ -5,9 +5,10 @@ import logoEmblem from "@/assets/cfi-logo-emblem.png";
 
 interface Props {
   listing: AppStoreListing;
+  onScreenshotClick?: (index: number, note: string) => void;
 }
 
-export function GooglePlayPreview({ listing }: Props) {
+export function GooglePlayPreview({ listing, onScreenshotClick }: Props) {
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
   const [shortDescExpanded, setShortDescExpanded] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -66,7 +67,8 @@ export function GooglePlayPreview({ listing }: Props) {
               {slots.map((note, i) => (
                 <div
                   key={i}
-                  className="w-[130px] h-[230px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  className={`w-[130px] h-[230px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center${note && onScreenshotClick ? " cursor-pointer hover:ring-2 hover:ring-primary/40 transition-smooth" : ""}`}
+                  onClick={() => note && onScreenshotClick?.(i, note)}
                   style={{
                     background: note
                       ? "linear-gradient(180deg, hsl(var(--muted)), hsl(var(--accent)))"
