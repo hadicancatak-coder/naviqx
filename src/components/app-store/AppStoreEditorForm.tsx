@@ -8,7 +8,7 @@ import { AppStoreFieldCounter } from "./AppStoreFieldCounter";
 import { DescriptionToolbar } from "./DescriptionToolbar";
 import { FIELD_LIMITS, APPLE_CATEGORIES, GOOGLE_PLAY_CATEGORIES } from "@/domain/app-store";
 import type { AppStoreListing, Locale } from "@/domain/app-store";
-import { Check, Loader2, AlertCircle } from "lucide-react";
+import { Check, Loader2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { LISTING_STATUSES } from "@/domain/app-store";
 import type { ListingStatus } from "@/domain/app-store";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,12 @@ type DraftFields = {
   keywords: string;
   whats_new: string;
   tagsStr: string;
-  screenshotStr: string;
+  ss1: string;
+  ss2: string;
+  ss3: string;
+  ss4: string;
+  ss5: string;
+  ss6: string;
 };
 
 function buildDraft(listing: AppStoreListing): DraftFields {
@@ -54,7 +59,12 @@ function buildDraft(listing: AppStoreListing): DraftFields {
     keywords: listing.keywords ?? "",
     whats_new: listing.whats_new ?? "",
     tagsStr: (listing.tags ?? []).join(", "),
-    screenshotStr: (listing.screenshot_notes ?? []).join("\n"),
+    ss1: (listing.screenshot_notes ?? [])[0] ?? "",
+    ss2: (listing.screenshot_notes ?? [])[1] ?? "",
+    ss3: (listing.screenshot_notes ?? [])[2] ?? "",
+    ss4: (listing.screenshot_notes ?? [])[3] ?? "",
+    ss5: (listing.screenshot_notes ?? [])[4] ?? "",
+    ss6: (listing.screenshot_notes ?? [])[5] ?? "",
   };
 }
 
@@ -69,7 +79,7 @@ function draftToPayload(draft: DraftFields): Partial<AppStoreListing> {
     keywords: toNull(draft.keywords),
     whats_new: toNull(draft.whats_new),
     tags: draft.tagsStr.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 5),
-    screenshot_notes: draft.screenshotStr.split("\n").map((n) => n.trim()).filter(Boolean).slice(0, 10),
+    screenshot_notes: [draft.ss1, draft.ss2, draft.ss3, draft.ss4, draft.ss5, draft.ss6].map(s => s.trim()).filter(Boolean),
   };
 }
 
@@ -109,6 +119,7 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
 
   // Draft state - full snapshot, not individual fields
   const [draft, setDraft] = useState<DraftFields>(() => buildDraft(listing));
+  const [screenshotExpanded, setScreenshotExpanded] = useState(false);
   const pendingRef = useRef<Partial<AppStoreListing> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const listingIdRef = useRef(listing.id);
@@ -373,17 +384,43 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
           </Field>
         )}
 
-        <Field
-          label="Screenshot Notes"
-          counter={<AppStoreFieldCounter current={(draft.screenshotStr.split("\n").map(n => n.trim()).filter(Boolean)).length} max={10} />}
-        >
-          <Textarea
-            value={draft.screenshotStr}
-            onChange={(e) => updateField("screenshotStr", e.target.value)}
-            placeholder="One note per line for screenshot ideas"
-            className="text-body-sm min-h-[100px]"
-          />
-        </Field>
+        <div className="space-y-xs">
+          <div className="flex items-center justify-between gap-sm">
+            <Label className="text-metadata font-medium text-muted-foreground">Screenshot Notes</Label>
+            <AppStoreFieldCounter current={[draft.ss1, draft.ss2, draft.ss3, draft.ss4, draft.ss5, draft.ss6].filter(s => s.trim()).length} max={6} />
+          </div>
+          <div className="space-y-xs">
+            {([["ss1", 1], ["ss2", 2], ["ss3", 3]] as const).map(([key, num]) => (
+              <Input
+                key={key}
+                value={draft[key]}
+                onChange={(e) => updateField(key, e.target.value)}
+                placeholder={`Screenshot ${num} note`}
+                className="text-body-sm"
+              />
+            ))}
+          </div>
+          {screenshotExpanded && (
+            <div className="space-y-xs">
+              {([["ss4", 4], ["ss5", 5], ["ss6", 6]] as const).map(([key, num]) => (
+                <Input
+                  key={key}
+                  value={draft[key]}
+                  onChange={(e) => updateField(key, e.target.value)}
+                  placeholder={`Screenshot ${num} note`}
+                  className="text-body-sm"
+                />
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setScreenshotExpanded(!screenshotExpanded)}
+            className="text-metadata text-primary font-medium cursor-pointer flex items-center gap-0.5 transition-smooth"
+          >
+            {screenshotExpanded ? (<>Show less <ChevronUp className="h-3 w-3" /></>) : (<>Show more (4–6) <ChevronDown className="h-3 w-3" /></>)}
+          </button>
+        </div>
       </div>
     </div>
   );
