@@ -5,9 +5,10 @@ import logoEmblem from "@/assets/cfi-logo-emblem.png";
 
 interface Props {
   listing: AppStoreListing;
+  onScreenshotClick?: (index: number, note: string) => void;
 }
 
-export function AppleStorePreview({ listing }: Props) {
+export function AppleStorePreview({ listing, onScreenshotClick }: Props) {
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
   const [descExpanded, setDescExpanded] = useState(false);
   const [whatsNewExpanded, setWhatsNewExpanded] = useState(false);
@@ -77,7 +78,8 @@ export function AppleStorePreview({ listing }: Props) {
               {slots.map((note, i) => (
                 <div
                   key={i}
-                  className="w-[120px] h-[214px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center"
+                  className={`w-[120px] h-[214px] rounded-xl flex-shrink-0 flex items-center justify-center px-xs text-center${note && onScreenshotClick ? " cursor-pointer hover:ring-2 hover:ring-primary/40 transition-smooth" : ""}`}
+                  onClick={() => note && onScreenshotClick?.(i, note)}
                   style={{
                     background: note
                       ? "linear-gradient(135deg, hsl(var(--muted)), hsl(var(--accent)))"

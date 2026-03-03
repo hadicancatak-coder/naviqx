@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Apple, Play, Check, MessageSquare, Globe, Languages, Loader2 } from "lucide-react";
+import { Apple, Play, Check, MessageSquare, Globe, Languages, Loader2, X, Image } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -113,7 +113,7 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
   const [feedbackText, setFeedbackText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<"approve" | "request_changes" | null>(null);
-
+  const [screenshotBrief, setScreenshotBrief] = useState<{ index: number; note: string } | null>(null);
   // Mode: preview or translate
   const [mode, setMode] = useState<"preview" | "translate">("preview");
 
@@ -365,9 +365,9 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
           {/* Preview */}
           <div className="flex justify-center">
             {previewStore === "apple" ? (
-              <AppleStorePreview listing={previewListing} />
+              <AppleStorePreview listing={previewListing} onScreenshotClick={(i, note) => setScreenshotBrief({ index: i, note })} />
             ) : (
-              <GooglePlayPreview listing={previewListing} />
+              <GooglePlayPreview listing={previewListing} onScreenshotClick={(i, note) => setScreenshotBrief({ index: i, note })} />
             )}
           </div>
 
@@ -578,6 +578,27 @@ export function AppStoreReviewContent({ accessData, listing, isLoading }: Props)
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Screenshot brief modal */}
+      {screenshotBrief && (
+        <div className="fixed inset-0 z-modal flex items-center justify-center bg-foreground/40 backdrop-blur-sm" onClick={() => setScreenshotBrief(null)}>
+          <div
+            className="bg-card border border-border rounded-2xl shadow-xl max-w-md w-full mx-md p-lg space-y-sm animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-sm">
+                <Image className="h-5 w-5 text-primary" />
+                <h3 className="text-heading-sm font-semibold text-foreground">Screenshot {screenshotBrief.index + 1}</h3>
+              </div>
+              <button onClick={() => setScreenshotBrief(null)} className="text-muted-foreground hover:text-foreground transition-smooth rounded-full p-1 hover:bg-subtle">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-body-sm text-foreground whitespace-pre-wrap">{screenshotBrief.note}</p>
+          </div>
         </div>
       )}
     </div>
