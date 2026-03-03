@@ -2,16 +2,20 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppStoreFieldCounter } from "./AppStoreFieldCounter";
 import { DescriptionToolbar } from "./DescriptionToolbar";
 import { FIELD_LIMITS, APPLE_CATEGORIES, GOOGLE_PLAY_CATEGORIES } from "@/domain/app-store";
 import type { AppStoreListing, Locale } from "@/domain/app-store";
-import { Check, Loader2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Loader2, AlertCircle, ChevronDown, ChevronUp, Pencil, Building2 } from "lucide-react";
 import { LISTING_STATUSES } from "@/domain/app-store";
 import type { ListingStatus } from "@/domain/app-store";
 import { Badge } from "@/components/ui/badge";
+import { useSystemEntities } from "@/hooks/useSystemEntities";
 
 interface Props {
   listing: AppStoreListing;
@@ -113,6 +117,35 @@ function DescriptionField({ label, value, onChange, maxLength, placeholder }: {
 }
 
 export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: Props) {
+  const { data: systemEntities = [] } = useSystemEntities();
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(listing.name);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync name when listing changes
+  useEffect(() => {
+    setNameValue(listing.name);
+    setEditingName(false);
+  }, [listing.id, listing.name]);
+
+  const commitName = useCallback(() => {
+    const trimmed = nameValue.trim();
+    if (trimmed && trimmed !== listing.name) {
+      onUpdate({ name: trimmed });
+    } else {
+      setNameValue(listing.name);
+    }
+    setEditingName(false);
+  }, [nameValue, listing.name, onUpdate]);
+
+  const toggleEntity = useCallback((entityName: string) => {
+    const current = listing.entities ?? [];
+    const next = current.includes(entityName)
+      ? current.filter(e => e !== entityName)
+      : [...current, entityName];
+    onUpdate({ entities: next } as Partial<AppStoreListing>);
+  }, [listing.entities, onUpdate]);
+
   const isApple = listing.store_type === "apple";
   const limits = isApple ? FIELD_LIMITS.apple : FIELD_LIMITS.google_play;
   const dir = listing.locale === "ar" ? "rtl" : "ltr";
@@ -190,8 +223,29 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="p-sm border-b border-border space-y-xs">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-sm min-w-0">
-            <h3 className="text-heading-sm font-semibold text-foreground truncate">{listing.name}</h3>
+          <div className="flex items-center gap-sm min-w-0 flex-1">
+            {editingName ? (
+              <Input
+                ref={nameInputRef}
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={commitName}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitName();
+                  if (e.key === "Escape") { setNameValue(listing.name); setEditingName(false); }
+                }}
+                className="text-heading-sm font-semibold h-8 max-w-[240px]"
+                autoFocus
+              />
+            ) : (
+              <button
+                onClick={() => { setEditingName(true); setTimeout(() => nameInputRef.current?.focus(), 0); }}
+                className="flex items-center gap-xs group cursor-pointer min-w-0"
+              >
+                <h3 className="text-heading-sm font-semibold text-foreground truncate">{listing.name}</h3>
+                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-smooth shrink-0" />
+              </button>
+            )}
             <Badge variant="outline" className="text-metadata shrink-0">v{listing.version}</Badge>
           </div>
           <div className="flex items-center gap-xs text-metadata shrink-0">
@@ -199,20 +253,59 @@ export function AppStoreEditorForm({ listing, onUpdate, isSaving, saveError }: P
             <span className={saveStatus.className}>{saveStatus.text}</span>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <Select
-            value={listing.status}
-            onValueChange={(v) => onUpdate({ status: v as ListingStatus })}
-          >
-            <SelectTrigger className="text-metadata h-7 w-auto min-w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="liquid-glass-dropdown">
-              {LISTING_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value} className="text-metadata">{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+        {/* Entity multi-select + Status + Locale row */}
+        <div className="flex items-center justify-between gap-sm">
+          <div className="flex items-center gap-sm">
+            <Select
+              value={listing.status}
+              onValueChange={(v) => onUpdate({ status: v as ListingStatus })}
+            >
+              <SelectTrigger className="text-metadata h-7 w-auto min-w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="liquid-glass-dropdown">
+                {LISTING_STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value} className="text-metadata">{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-metadata gap-xs">
+                  <Building2 className="h-3 w-3" />
+                  {(listing.entities ?? []).length > 0
+                    ? `${(listing.entities ?? []).length} entit${(listing.entities ?? []).length === 1 ? "y" : "ies"}`
+                    : "Entities"}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="liquid-glass-dropdown w-56 p-xs" align="start">
+                <div className="space-y-xs max-h-[240px] overflow-y-auto">
+                  {systemEntities.map((entity) => (
+                    <label
+                      key={entity.id}
+                      className="flex items-center gap-sm px-sm py-xs rounded-md cursor-pointer hover:bg-card-hover transition-smooth"
+                    >
+                      <Checkbox
+                        checked={(listing.entities ?? []).includes(entity.name)}
+                        onCheckedChange={() => toggleEntity(entity.name)}
+                        className="size-3.5"
+                      />
+                      <span className="text-body-sm">
+                        {entity.emoji && `${entity.emoji} `}{entity.name}
+                      </span>
+                    </label>
+                  ))}
+                  {systemEntities.length === 0 && (
+                    <p className="text-metadata text-muted-foreground text-center py-sm">No entities configured</p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <Tabs value={listing.locale} onValueChange={(v) => onUpdate({ locale: v as Locale })}>
             <TabsList className="h-7">
               <TabsTrigger value="en" className="text-metadata px-md h-6">EN</TabsTrigger>

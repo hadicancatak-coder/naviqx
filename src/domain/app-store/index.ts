@@ -33,6 +33,7 @@ export interface AppStoreListing {
   secondary_category: string | null;
   tags: string[];
   screenshot_notes: string[];
+  entities: string[];
   created_by: string;
   created_at: string;
   updated_at: string;

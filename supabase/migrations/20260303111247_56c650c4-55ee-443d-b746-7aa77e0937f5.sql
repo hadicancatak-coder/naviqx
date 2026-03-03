@@ -1,0 +1,1 @@
+ALTER TABLE public.app_store_listings ADD COLUMN entities text[] DEFAULT '{}'::text[];
