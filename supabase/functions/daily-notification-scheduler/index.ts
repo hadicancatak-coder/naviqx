@@ -72,15 +72,51 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // NOTE: Recurring task generation is handled by the DB trigger
-
-    // NOTE: Recurring task generation is handled by the DB trigger
     // (generate_next_recurring_instance) and the generate-recurring-tasks
-    // edge function — not by this scheduler. A previous block here queried
-    // a non-existent "recurring_tasks" table and RPC; it was removed as dead code.
+    // edge function — not by this scheduler.
 
     const now = new Date();
+    const todayStart = now.toISOString().split("T")[0] + "T00:00:00.000Z";
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    // ========== DEDUPLICATION HELPER ==========
+    // Checks if a notification with the same user_id, type, and entity ID
+    // (task_id or campaign_id inside payload_json) was already sent today.
+    // Prevents duplicates if the scheduler runs more than once per day.
+    const alreadySentToday = async (
+      userId: string,
+      type: string,
+      entityId: string,
+      entityKey: "task_id" | "campaign_id" = "task_id"
+    ): Promise<boolean> => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("type", type)
+        .gte("created_at", todayStart)
+        .limit(100);
+
+      if (!data || data.length === 0) return false;
+
+      // We found notifications of the same type today for this user.
+      // Now check if any contain the same entity ID in payload_json.
+      // Since we can't filter JSONB fields with the PostgREST client easily,
+      // we do a second targeted query using the containment operator.
+      const { data: match } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("type", type)
+        .gte("created_at", todayStart)
+        .contains("payload_json", { [entityKey]: entityId })
+        .limit(1);
+
+      return (match && match.length > 0) || false;
+    };
+
+    let dedupSkipped = 0;
 
     // ========== COLLECT ALL DEADLINE TASKS FOR EMAIL DIGEST ==========
     const userDigestMap = new Map<string, UserDigestData>();
@@ -112,6 +148,12 @@ serve(async (req) => {
       for (const assignee of task.task_assignees) {
         const userId = assignee.profiles?.user_id;
         if (userId) {
+          // Dedup check: skip if already notified today for this task+type
+          if (await alreadySentToday(userId, "deadline_reminder_3days", task.id)) {
+            dedupSkipped++;
+            continue;
+          }
+
           // In-app notification
           await supabase.rpc("send_notification", {
             p_user_id: userId,
@@ -155,7 +197,11 @@ serve(async (req) => {
       for (const assignee of task.task_assignees) {
         const userId = assignee.profiles?.user_id;
         if (userId) {
-          // In-app notification
+          if (await alreadySentToday(userId, "deadline_reminder_1day", task.id)) {
+            dedupSkipped++;
+            continue;
+          }
+
           await supabase.rpc("send_notification", {
             p_user_id: userId,
             p_type: "deadline_reminder_1day",
@@ -167,7 +213,6 @@ serve(async (req) => {
             },
           });
           
-          // Add to email digest
           addToDigest(userId, {
             id: task.id,
             title: task.title,
@@ -199,7 +244,11 @@ serve(async (req) => {
       for (const assignee of task.task_assignees) {
         const userId = assignee.profiles?.user_id;
         if (userId) {
-          // In-app notification
+          if (await alreadySentToday(userId, "deadline_reminder_overdue", task.id)) {
+            dedupSkipped++;
+            continue;
+          }
+
           await supabase.rpc("send_notification", {
             p_user_id: userId,
             p_type: "deadline_reminder_overdue",
@@ -211,7 +260,6 @@ serve(async (req) => {
             },
           });
           
-          // Add to email digest
           addToDigest(userId, {
             id: task.id,
             title: task.title,
@@ -289,16 +337,24 @@ serve(async (req) => {
     
     for (const campaign of upcomingCampaigns) {
       for (const assignee of campaign.launch_campaign_assignees) {
-        await supabase.rpc("send_notification", {
-          p_user_id: assignee.profiles?.user_id,
-          p_type: "campaign_starting_soon",
-          p_payload_json: {
-            campaign_id: campaign.id,
-            campaign_title: campaign.title,
-            launch_date: campaign.launch_date,
-            days_remaining: 3,
-          },
-        });
+        const userId = assignee.profiles?.user_id;
+        if (userId) {
+          if (await alreadySentToday(userId, "campaign_starting_soon", campaign.id, "campaign_id")) {
+            dedupSkipped++;
+            continue;
+          }
+
+          await supabase.rpc("send_notification", {
+            p_user_id: userId,
+            p_type: "campaign_starting_soon",
+            p_payload_json: {
+              campaign_id: campaign.id,
+              campaign_title: campaign.title,
+              launch_date: campaign.launch_date,
+              days_remaining: 3,
+            },
+          });
+        }
       }
     }
 
@@ -323,15 +379,23 @@ serve(async (req) => {
 
       if (daysPending >= 2) {
         for (const assignee of task.task_assignees) {
-          await supabase.rpc("send_notification", {
-            p_user_id: assignee.profiles?.user_id,
-            p_type: "approval_pending",
-            p_payload_json: {
-              task_id: task.id,
-              task_title: task.title,
-              days_pending: daysPending,
-            },
-          });
+          const userId = assignee.profiles?.user_id;
+          if (userId) {
+            if (await alreadySentToday(userId, "approval_pending", task.id)) {
+              dedupSkipped++;
+              continue;
+            }
+
+            await supabase.rpc("send_notification", {
+              p_user_id: userId,
+              p_type: "approval_pending",
+              p_payload_json: {
+                task_id: task.id,
+                task_title: task.title,
+                days_pending: daysPending,
+              },
+            });
+          }
         }
       }
     }
@@ -348,6 +412,7 @@ serve(async (req) => {
           approvals: pendingApprovals.length,
           digest_emails_sent: emailsSent,
           digest_emails_skipped: emailsSkipped,
+          dedup_skipped: dedupSkipped,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
