@@ -3,42 +3,9 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from '@/lib/queryKeys';
 import { mapStatusToUi } from '@/domain';
+import type { TaskAssignee, TaskWithAssignees } from '@/types/tasks';
 
-export interface TaskAssignee {
-  id: string;
-  user_id: string;
-  name: string;
-  username?: string;
-  avatar_url?: string;
-  working_days?: string | null;
-}
-
-export interface TaskWithAssignees {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  priority: 'Low' | 'Medium' | 'High';
-  due_at: string | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  project_id: string | null;
-  phase_id: string | null;
-  sprint: string | null;
-  labels: string[] | null;
-  parent_id: string | null;
-  is_collaborative?: boolean;
-  is_recurring?: boolean;
-  is_recurrence_template?: boolean;
-  template_task_id?: string | null;
-  recurrence_rrule?: string | null;
-  blocker_reason?: string | null;
-  failure_reason?: string | null;
-  assignees: TaskAssignee[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB extensibility requires index signature
-  [key: string]: any;
-}
+export type { TaskAssignee, TaskWithAssignees };
 
 /**
  * React Query hook for fetching a single task by ID.
