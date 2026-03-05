@@ -915,11 +915,11 @@ export type Database = {
           due_date: string | null
           fix_process: string | null
           id: string
-          resolved: boolean | null
+          resolved: boolean
           stuck_reason: string | null
           task_id: string
           timeline: string | null
-          title: string | null
+          title: string
           updated_at: string
           updated_by: string | null
         }
@@ -930,11 +930,11 @@ export type Database = {
           due_date?: string | null
           fix_process?: string | null
           id?: string
-          resolved?: boolean | null
+          resolved?: boolean
           stuck_reason?: string | null
           task_id: string
           timeline?: string | null
-          title?: string | null
+          title?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -945,11 +945,11 @@ export type Database = {
           due_date?: string | null
           fix_process?: string | null
           id?: string
-          resolved?: boolean | null
+          resolved?: boolean
           stuck_reason?: string | null
           task_id?: string
           timeline?: string | null
-          title?: string | null
+          title?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -1378,22 +1378,22 @@ export type Database = {
       }
       comment_mentions: {
         Row: {
-          comment_id: string | null
+          comment_id: string
           created_at: string
           id: string
-          mentioned_user_id: string | null
+          mentioned_user_id: string
         }
         Insert: {
-          comment_id?: string | null
+          comment_id: string
           created_at?: string
           id?: string
-          mentioned_user_id?: string | null
+          mentioned_user_id: string
         }
         Update: {
-          comment_id?: string | null
+          comment_id?: string
           created_at?: string
           id?: string
-          mentioned_user_id?: string | null
+          mentioned_user_id?: string
         }
         Relationships: [
           {
@@ -1614,21 +1614,21 @@ export type Database = {
           id: string
           mentioned_by: string
           mentioned_user_id: string
-          task_id: string | null
+          task_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           mentioned_by: string
           mentioned_user_id: string
-          task_id?: string | null
+          task_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           mentioned_by?: string
           mentioned_user_id?: string
-          task_id?: string | null
+          task_id?: string
         }
         Relationships: [
           {
