@@ -31,19 +31,22 @@ export const useTaskChangeLogs = (taskId: string) => {
 
       if (error) throw error;
 
-      // Fetch profiles for each change log
-      const logsWithProfiles = await Promise.all(
-        (data || []).map(async (log) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", log.changed_by)
-            .single();
-          return { ...log, profiles: profile };
-        })
-      );
+      const logs = data || [];
+      const authorIds = [...new Set(logs.map(l => l.changed_by))];
 
-      return logsWithProfiles as TaskChangeLog[];
+      if (authorIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("name, avatar_url, user_id")
+          .in("user_id", authorIds);
+
+        return logs.map(log => ({
+          ...log,
+          profiles: profilesData?.find(p => p.user_id === log.changed_by) || undefined,
+        })) as TaskChangeLog[];
+      }
+
+      return logs as TaskChangeLog[];
     },
     enabled: !!taskId && taskId !== "undefined" && taskId !== "",
     staleTime: 2 * 60 * 1000,
