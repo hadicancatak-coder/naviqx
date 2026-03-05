@@ -304,6 +304,14 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: TASK_QUERY_KEY });
       const previousTasks = queryClient.getQueryData(TASK_QUERY_KEY);
       
+      // Snapshot detail caches for all affected tasks
+      const previousDetails: Record<string, unknown> = {};
+      for (const id of taskIds) {
+        await queryClient.cancelQueries({ queryKey: TASK_DETAIL_KEY(id) });
+        const detail = queryClient.getQueryData(TASK_DETAIL_KEY(id));
+        if (detail) previousDetails[id] = detail;
+      }
+      
       queryClient.setQueryData(TASK_QUERY_KEY, (old: TaskListItem[] | undefined) => {
         if (!old) return old;
         return old.map((task) =>
@@ -312,12 +320,26 @@ export const useTaskMutations = () => {
             : task
         );
       });
+
+      // Optimistically update detail caches
+      const patchedData = { sprint: sprintId, updated_at: new Date().toISOString() };
+      for (const id of taskIds) {
+        queryClient.setQueryData(TASK_DETAIL_KEY(id), (old: Record<string, unknown> | undefined) => {
+          if (!old) return old;
+          return { ...old, ...patchedData };
+        });
+      }
       
-      return { previousTasks };
+      return { previousTasks, previousDetails };
     },
     onError: (err: Error, _, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(TASK_QUERY_KEY, context.previousTasks);
+      }
+      if (context?.previousDetails) {
+        for (const [id, data] of Object.entries(context.previousDetails)) {
+          queryClient.setQueryData(TASK_DETAIL_KEY(id), data);
+        }
       }
       toast({ title: "Failed to update sprint", description: err.message, variant: "destructive" });
     },
@@ -325,7 +347,12 @@ export const useTaskMutations = () => {
       const action = sprintId ? 'added to sprint' : 'moved to backlog';
       toast({ title: `${taskIds.length} task${taskIds.length > 1 ? 's' : ''} ${action}`, duration: 2000 });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY })
+    onSettled: (_, __, { taskIds }) => {
+      queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+      for (const id of taskIds) {
+        queryClient.invalidateQueries({ queryKey: TASK_DETAIL_KEY(id) });
+      }
+    }
   });
 
   // Update recurrence rule for recurring task templates
