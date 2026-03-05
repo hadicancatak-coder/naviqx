@@ -4347,6 +4347,7 @@ export type Database = {
           sort_order: number | null
           source: Database["public"]["Enums"]["task_source"]
           sprint: string | null
+          sprint_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           task_type: Database["public"]["Enums"]["task_type"] | null
           teams: Json | null
@@ -4405,6 +4406,7 @@ export type Database = {
           sort_order?: number | null
           source?: Database["public"]["Enums"]["task_source"]
           sprint?: string | null
+          sprint_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           task_type?: Database["public"]["Enums"]["task_type"] | null
           teams?: Json | null
@@ -4463,6 +4465,7 @@ export type Database = {
           sort_order?: number | null
           source?: Database["public"]["Enums"]["task_source"]
           sprint?: string | null
+          sprint_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           task_type?: Database["public"]["Enums"]["task_type"] | null
           teams?: Json | null
@@ -4513,6 +4516,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
             referencedColumns: ["id"]
           },
           {
