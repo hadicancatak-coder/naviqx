@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ALTER COLUMN status SET DEFAULT 'Backlog';
