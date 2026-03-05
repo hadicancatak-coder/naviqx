@@ -97,7 +97,7 @@ function calculateNextOccurrence(
 
     case 'custom':
       if (rule.days_of_week && rule.days_of_week.length > 0) {
-        nextDate = findNextWeekday(startOfFromDate, rule.days_of_week, 1);
+        nextDate = findNextWeekday(startOfFromDate, rule.days_of_week, rule.interval);
       } else {
         nextDate = addDays(startOfFromDate, rule.interval);
       }
