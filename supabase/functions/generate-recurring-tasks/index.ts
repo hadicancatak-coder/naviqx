@@ -188,6 +188,33 @@ serve(async (req) => {
   }
 
   try {
+    // Security: Verify cron secret, service role JWT, or authenticated user JWT
+    const cronSecret = req.headers.get('X-Cron-Secret');
+    const expectedSecret = Deno.env.get('CRON_SECRET');
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    const hasCronSecret = expectedSecret && cronSecret === expectedSecret;
+    const hasServiceRole = serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`;
+
+    let hasValidUserJwt = false;
+    if (!hasCronSecret && !hasServiceRole && authHeader?.startsWith('Bearer ')) {
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data, error } = await userClient.auth.getUser();
+      hasValidUserJwt = !error && !!data?.user;
+    }
+
+    if (!hasCronSecret && !hasServiceRole && !hasValidUserJwt) {
+      console.error('Unauthorized generate-recurring-tasks attempt');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
