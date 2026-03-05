@@ -71,33 +71,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+    // NOTE: Recurring task generation is handled by the DB trigger
 
-    // Skip recurring task generation on weekends (Saturday and Sunday)
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      // Fetch all active recurring tasks
-      const { data: recurringTasks, error: recurringTasksError } = await supabase
-        .from("recurring_tasks")
-        .select("*")
-        .eq("is_active", true);
-
-      if (recurringTasksError) {
-        console.error("Error fetching recurring tasks:", recurringTasksError);
-        throw recurringTasksError;
-      }
-
-      // Generate tasks for each recurring task
-      for (const recurringTask of recurringTasks ?? []) {
-        const { error: taskGenerationError } = await supabase.rpc("generate_recurring_task", {
-          recurring_task_id: recurringTask.id,
-        });
-
-        if (taskGenerationError) {
-          console.error("Error generating task:", taskGenerationError);
-        }
-      }
-    }
+    // NOTE: Recurring task generation is handled by the DB trigger
+    // (generate_next_recurring_instance) and the generate-recurring-tasks
+    // edge function — not by this scheduler. A previous block here queried
+    // a non-existent "recurring_tasks" table and RPC; it was removed as dead code.
 
     const now = new Date();
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
