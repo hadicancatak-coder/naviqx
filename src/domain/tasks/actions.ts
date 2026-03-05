@@ -632,30 +632,12 @@ export async function setAssigneesBulk(
 
   const results = await Promise.allSettled(
     taskIds.map(async (taskId) => {
-      // Delete existing assignees
-      const { error: deleteError } = await supabase
-        .from('task_assignees')
-        .delete()
-        .eq('task_id', taskId);
+      const { error } = await supabase.rpc('set_task_assignees', {
+        p_task_id: taskId,
+        p_assignee_ids: userIds,
+      });
       
-      if (deleteError) throw deleteError;
-
-      // Insert new assignees
-      if (userIds.length > 0) {
-        const { error: insertError } = await supabase
-          .from('task_assignees')
-          .insert(userIds.map(userId => ({ task_id: taskId, user_id: userId })));
-        
-        if (insertError) throw insertError;
-      }
-
-      // Update task timestamp
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', taskId);
-      
-      if (updateError) throw updateError;
+      if (error) throw error;
       
       return { success: true };
     })
