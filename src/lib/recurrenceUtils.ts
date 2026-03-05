@@ -244,13 +244,6 @@ export function parseLegacyRrule(rrule: string | null): RecurrenceRule | null {
 }
 
 /**
- * Convert RecurrenceRule to JSON string for storage
- */
-export function serializeRecurrenceRule(rule: RecurrenceRule): string {
-  return JSON.stringify(rule);
-}
-
-/**
  * Build recurrence config for creating a template task
  */
 export function buildRecurrenceConfig(
@@ -268,24 +261,3 @@ export function buildRecurrenceConfig(
   };
 }
 
-/**
- * Check if a recurrence has ended based on conditions
- */
-export function isRecurrenceEnded(
-  rule: RecurrenceRule,
-  occurrenceCount: number,
-  currentDate: Date = new Date()
-): boolean {
-  if (rule.end_condition === 'never') return false;
-
-  if (rule.end_condition === 'after_n' && typeof rule.end_value === 'number') {
-    return occurrenceCount >= rule.end_value;
-  }
-
-  if (rule.end_condition === 'until_date' && typeof rule.end_value === 'string') {
-    const endDate = parseISO(rule.end_value);
-    return isAfter(currentDate, endDate);
-  }
-
-  return false;
-}

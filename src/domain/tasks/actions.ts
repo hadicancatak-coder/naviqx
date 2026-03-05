@@ -7,8 +7,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { 
-  TaskStatusDBType, 
-  STATUS_UI_TO_DB, 
+  type TaskStatusType, 
   mapStatusToDb as mapStatusToDbFromConstants 
 } from './constants';
 
@@ -16,14 +15,13 @@ import {
  * Maps any UI or DB status to a valid DB status value.
  * Logs warning if invalid status is passed.
  */
-const mapStatusToDbLocal = (status: string): TaskStatusDBType => {
+const mapStatusToDbLocal = (status: string): TaskStatusType => {
   // Handle legacy 'Pending' value
   if (status === 'Pending') return 'Backlog';
   
-  const dbStatus = STATUS_UI_TO_DB[status as keyof typeof STATUS_UI_TO_DB] || 
-                   mapStatusToDbFromConstants(status);
+  const dbStatus = mapStatusToDbFromConstants(status);
   if (!dbStatus) {
-    logger.error(`[Task Actions] Invalid status: "${status}". Valid values: ${Object.keys(STATUS_UI_TO_DB).join(', ')}`);
+    logger.error(`[Task Actions] Invalid status: "${status}".`);
     // Default to Backlog rather than throwing to prevent complete failure
     return 'Backlog';
   }
@@ -130,7 +128,7 @@ export async function completeTask(taskId: string, userId?: string): Promise<Tas
 
     const { data, error } = await supabase
       .from('tasks')
-      .update({ status: 'Completed' as TaskStatusDBType, updated_at: new Date().toISOString() })
+      .update({ status: 'Completed' as TaskStatusType, updated_at: new Date().toISOString() })
       .eq('id', taskId)
       .select()
       .single();

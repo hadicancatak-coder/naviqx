@@ -355,5 +355,3 @@ export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTa
     removeFromAgenda: removeFromAgenda.mutate,
   };
 }
-
-export { useMyTasks as useUserAgenda };
