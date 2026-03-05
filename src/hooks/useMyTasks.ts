@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { format, startOfDay, isSameDay, isToday } from 'date-fns';
+import { format, startOfDay, isSameDay } from 'date-fns';
 import { logger } from '@/lib/logger';
+import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 
 interface AgendaItem {
   id: string;
@@ -40,28 +41,10 @@ interface UseMyTasksOptions {
 export function useMyTasks({ userId, date, allTasks, completions = [] }: UseMyTasksOptions) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const currentProfile = useCurrentProfile();
   const effectiveUserId = userId || user?.id;
   const agendaDate = format(date, 'yyyy-MM-dd');
-  const [profileId, setProfileId] = useState<string | null>(null);
-
-  // Fetch user's profile ID once
-  useEffect(() => {
-    if (!effectiveUserId) return;
-    
-    const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', effectiveUserId)
-        .single();
-      
-      if (data) {
-        setProfileId(data.id);
-      }
-    };
-    
-    fetchProfile();
-  }, [effectiveUserId]);
+  const profileId = effectiveUserId === user?.id ? currentProfile?.id ?? null : null;
 
   // Fetch agenda items for user on specific date
   const { data: agendaItems = [], isLoading, refetch } = useQuery({
