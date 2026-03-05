@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
@@ -27,9 +28,37 @@ interface Comment {
   } | null;
 }
 
+const COMMENTS_KEY = (taskId: string) => ['taskComments', taskId];
+
+async function fetchCommentsData(taskId: string): Promise<Comment[]> {
+  const { data: commentsData, error } = await supabase
+    .from("comments")
+    .select("id, task_id, author_id, body, created_at, attachments")
+    .eq("task_id", taskId)
+    .order("created_at", { ascending: true });
+
+  if (error || !commentsData) return [];
+
+  const authorIds = [...new Set(commentsData.map(c => c.author_id))];
+
+  if (authorIds.length > 0) {
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, name, avatar_url, user_id")
+      .in("user_id", authorIds);
+
+    return commentsData.map(comment => ({
+      ...comment,
+      author: profilesData?.find(p => p.user_id === comment.author_id) || null
+    }));
+  }
+
+  return commentsData;
+}
+
 export function useTaskComments(taskId: string, user: User | null) {
   const { toast } = useToast();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
@@ -37,39 +66,18 @@ export function useTaskComments(taskId: string, user: User | null) {
   const [users, setUsers] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch comments
-  const fetchComments = useCallback(async () => {
-    if (!taskId) return;
-    
-    const { data: commentsData, error } = await supabase
-      .from("comments")
-      .select("id, task_id, author_id, body, created_at, attachments")
-      .eq("task_id", taskId)
-      .order("created_at", { ascending: true });
+  // Fetch comments via React Query
+  const { data: comments = [] } = useQuery({
+    queryKey: COMMENTS_KEY(taskId),
+    queryFn: () => fetchCommentsData(taskId),
+    enabled: !!taskId,
+    staleTime: 2 * 60 * 1000,
+  });
 
-    if (error || !commentsData) {
-      setComments([]);
-      return;
-    }
-
-    const authorIds = [...new Set(commentsData.map(c => c.author_id))];
-    
-    if (authorIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, name, avatar_url, user_id")
-        .in("user_id", authorIds);
-
-      const commentsWithAuthors = commentsData.map(comment => ({
-        ...comment,
-        author: profilesData?.find(p => p.user_id === comment.author_id) || null
-      }));
-
-      setComments(commentsWithAuthors);
-    } else {
-      setComments(commentsData);
-    }
-  }, [taskId]);
+  // Stable invalidation helper
+  const fetchComments = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: COMMENTS_KEY(taskId) });
+  }, [taskId, queryClient]);
 
   // Fetch users for mentions
   const fetchUsers = useCallback(async () => {
@@ -77,12 +85,10 @@ export function useTaskComments(taskId: string, user: User | null) {
     setUsers(data || []);
   }, []);
 
-  // Initial fetch + realtime subscription
+  // Initial user fetch + realtime subscription
   useEffect(() => {
-    fetchComments();
     fetchUsers();
-    
-    // Subscribe to realtime comment changes
+
     const channel = supabase
       .channel(`comments-${taskId}`)
       .on(
@@ -94,8 +100,7 @@ export function useTaskComments(taskId: string, user: User | null) {
           filter: `task_id=eq.${taskId}`
         },
         () => {
-          // Refetch comments when any change occurs
-          fetchComments();
+          queryClient.invalidateQueries({ queryKey: COMMENTS_KEY(taskId) });
         }
       )
       .subscribe();
@@ -103,7 +108,7 @@ export function useTaskComments(taskId: string, user: User | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [taskId, fetchComments, fetchUsers]);
+  }, [taskId, queryClient, fetchUsers]);
 
   // Add comment
   const addComment = useCallback(async () => {
@@ -189,12 +194,12 @@ export function useTaskComments(taskId: string, user: User | null) {
 
       setNewComment("");
       setPendingAttachments([]);
-      fetchComments();
+      queryClient.invalidateQueries({ queryKey: COMMENTS_KEY(taskId) });
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } finally {
       setIsSubmitting(false);
     }
-  }, [newComment, pendingAttachments, taskId, isSubmitting, user, users, toast, fetchComments]);
+  }, [newComment, pendingAttachments, taskId, isSubmitting, user, users, toast, queryClient]);
 
   return {
     comments,
