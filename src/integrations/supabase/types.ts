@@ -5806,22 +5806,10 @@ export type Database = {
           workspace_id: string
         }[]
       }
-      send_notification:
-        | {
-            Args: { p_payload_json: Json; p_type: string; p_user_id: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_link?: string
-              p_message: string
-              p_metadata?: Json
-              p_title: string
-              p_type: string
-              p_user_id: string
-            }
-            Returns: string
-          }
+      send_notification: {
+        Args: { p_payload_json: Json; p_type: string; p_user_id: string }
+        Returns: undefined
+      }
       validate_mfa_session: {
         Args: { session_token: string }
         Returns: boolean
