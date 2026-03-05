@@ -4158,6 +4158,29 @@ export type Database = {
           },
         ]
       }
+      task_comment_counts: {
+        Row: {
+          comment_count: number
+          task_id: string
+        }
+        Insert: {
+          comment_count?: number
+          task_id: string
+        }
+        Update: {
+          comment_count?: number
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comment_counts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_dependencies: {
         Row: {
           created_at: string
@@ -5687,21 +5710,6 @@ export type Database = {
           name: string | null
         }
         Relationships: []
-      }
-      task_comment_counts: {
-        Row: {
-          comment_count: number | null
-          task_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comments_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Functions: {
