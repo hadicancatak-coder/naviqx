@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { setTaskCollaborative, getCollaborativeStatus } from "@/domain/tasks/actions";
 import { TASK_QUERY_KEY, TASK_DETAIL_KEY } from "@/lib/queryKeys";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 interface CollaborativeStatus {
   assignees: Array<{ id: string; name: string; completed: boolean; completedAt: string | null }>;
@@ -16,7 +16,7 @@ export function useCollaborativeTask(
   userId: string | undefined
 ) {
   const [status, setStatus] = useState<CollaborativeStatus | null>(null);
-  const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
+  const currentProfile = useCurrentProfile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -33,20 +33,6 @@ export function useCollaborativeTask(
       setStatus(null);
     }
   }, [isCollaborative, taskId]);
-
-  // Fetch current user's profile ID
-  useEffect(() => {
-    if (userId) {
-      supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .single()
-        .then(({ data }) => {
-          if (data) setCurrentUserProfileId(data.id);
-        });
-    }
-  }, [userId]);
 
   // Toggle collaborative mode
   const setIsCollaborative = useCallback(async (value: boolean) => {
@@ -74,7 +60,7 @@ export function useCollaborativeTask(
 
   // Check if current user has completed their part
   const currentUserCompleted = status?.assignees.find(
-    a => a.id === currentUserProfileId
+    a => a.id === currentProfile?.id
   )?.completed || false;
 
   return { 
