@@ -4302,7 +4302,6 @@ export type Database = {
           actual_hours: number | null
           approval_requested_at: string | null
           approval_requested_by: string | null
-          assignee_id: string | null
           auto_rescheduled_at: string | null
           blocker_id: string | null
           blocker_reason: string | null
@@ -4341,7 +4340,6 @@ export type Database = {
           project_key: string | null
           recurrence_day_of_month: number | null
           recurrence_day_of_week: number | null
-          recurrence_days_of_week: number[] | null
           recurrence_end_type: string | null
           recurrence_end_value: string | null
           recurrence_rrule: string | null
@@ -4362,7 +4360,6 @@ export type Database = {
           actual_hours?: number | null
           approval_requested_at?: string | null
           approval_requested_by?: string | null
-          assignee_id?: string | null
           auto_rescheduled_at?: string | null
           blocker_id?: string | null
           blocker_reason?: string | null
@@ -4401,7 +4398,6 @@ export type Database = {
           project_key?: string | null
           recurrence_day_of_month?: number | null
           recurrence_day_of_week?: number | null
-          recurrence_days_of_week?: number[] | null
           recurrence_end_type?: string | null
           recurrence_end_value?: string | null
           recurrence_rrule?: string | null
@@ -4422,7 +4418,6 @@ export type Database = {
           actual_hours?: number | null
           approval_requested_at?: string | null
           approval_requested_by?: string | null
-          assignee_id?: string | null
           auto_rescheduled_at?: string | null
           blocker_id?: string | null
           blocker_reason?: string | null
@@ -4461,7 +4456,6 @@ export type Database = {
           project_key?: string | null
           recurrence_day_of_month?: number | null
           recurrence_day_of_week?: number | null
-          recurrence_days_of_week?: number[] | null
           recurrence_end_type?: string | null
           recurrence_end_value?: string | null
           recurrence_rrule?: string | null

@@ -52,7 +52,6 @@ export const taskSchema = z.object({
   completed_at: z.string().datetime().nullable(),
   created_by: z.string().uuid(),
   updated_by: z.string().uuid().nullable(),
-  assignee_id: z.string().uuid().nullable(),
   campaign_id: z.string().uuid().nullable(),
   project_id: z.string().uuid().nullable(),
   teams: z.array(z.string()).nullable(),
