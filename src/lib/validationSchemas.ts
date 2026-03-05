@@ -52,8 +52,6 @@ export const taskSchema = z.object({
     .max(31, "Day of month must be 1-31")
     .optional()
     .nullable(),
-  
-  assignee_id: z.string().uuid().optional().nullable(),
   project_id: z.string().uuid().optional().nullable(),
   due_at: z.string().datetime().optional().nullable(),
   task_type: z.enum(["generic", "campaign", "recurring"]).optional(),
