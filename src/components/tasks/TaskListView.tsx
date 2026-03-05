@@ -242,7 +242,8 @@ export function TaskListView({
     setProcessingId(task.id);
     try {
       if (userRole === 'admin') {
-        await supabase.from('tasks').delete().eq('id', task.id);
+        const { error } = await supabase.rpc('soft_delete_task', { p_task_id: task.id });
+        if (error) throw error;
         toast({ title: "Task deleted" });
       } else {
         await supabase.from('tasks').update({

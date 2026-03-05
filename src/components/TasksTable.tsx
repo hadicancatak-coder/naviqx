@@ -61,7 +61,7 @@ export const TasksTable = ({
 
   const deleteMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+      const { error } = await supabase.rpc("soft_delete_task", { p_task_id: taskId });
       if (error) throw error;
     },
     onMutate: async (taskId) => {

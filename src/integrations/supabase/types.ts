@@ -4290,6 +4290,7 @@ export type Database = {
           created_by: string
           delete_requested_at: string | null
           delete_requested_by: string | null
+          deleted_at: string | null
           description: string | null
           due_at: string | null
           entity: string[] | null
@@ -4349,6 +4350,7 @@ export type Database = {
           created_by?: string
           delete_requested_at?: string | null
           delete_requested_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           due_at?: string | null
           entity?: string[] | null
@@ -4408,6 +4410,7 @@ export type Database = {
           created_by?: string
           delete_requested_at?: string | null
           delete_requested_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           due_at?: string | null
           entity?: string[] | null
@@ -5794,6 +5797,7 @@ export type Database = {
       notify_overdue_tasks: { Args: never; Returns: undefined }
       regenerate_backup_codes: { Args: never; Returns: string[] }
       reschedule_overdue_tasks: { Args: never; Returns: undefined }
+      restore_task: { Args: { p_task_id: string }; Returns: undefined }
       search_content: {
         Args: { limit_results?: number; query_text: string }
         Returns: {
@@ -5814,6 +5818,7 @@ export type Database = {
         Args: { p_assignee_ids: string[]; p_task_id: string }
         Returns: undefined
       }
+      soft_delete_task: { Args: { p_task_id: string }; Returns: undefined }
       validate_mfa_session: {
         Args: { session_token: string }
         Returns: boolean

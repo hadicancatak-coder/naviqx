@@ -112,7 +112,7 @@ export function TaskDetailProvider({
 
   // Delete task
   const deleteTask = useCallback(async () => {
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+    const { error } = await supabase.rpc("soft_delete_task", { p_task_id: taskId });
     if (error) {
       toast({ title: "Error", description: "Failed to delete task", variant: "destructive" });
     } else {
