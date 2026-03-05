@@ -93,8 +93,9 @@ export function useTasks(filters?: TaskFilters) {
 
     const todayKey = `ensureToday_${new Date().toISOString().split('T')[0]}`;
     if (sessionStorage.getItem(todayKey)) return;
-    // Set immediately to prevent concurrent calls from other remounts
-    sessionStorage.setItem(todayKey, '1');
+    // Set flag in-progress to prevent concurrent calls from other remounts
+    // but only persist on success so failures retry next mount
+    sessionStorage.setItem(todayKey, 'pending');
 
     const checkOverdueTemplates = async () => {
       try {
@@ -111,7 +112,11 @@ export function useTasks(filters?: TaskFilters) {
           await supabase.functions.invoke('generate-recurring-tasks');
           queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
         }
+        // Only mark as done after success
+        sessionStorage.setItem(todayKey, '1');
       } catch (err) {
+        // Remove pending flag so next mount retries
+        sessionStorage.removeItem(todayKey);
         logger.warn('[useTasks] Ensure-today check failed:', err);
       }
     };
