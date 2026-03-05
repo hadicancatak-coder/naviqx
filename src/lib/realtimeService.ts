@@ -10,6 +10,7 @@ import type { UnsafeAny } from '@/types/unsafe';
 class RealtimeService {
   private channels: Map<string, RealtimeChannel> = new Map();
   private listeners: Map<string, Set<(payload: UnsafeAny) => void>> = new Map();
+  private debounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   subscribe(table: string, callback: (payload: UnsafeAny) => void) {
     if (!this.channels.has(table)) {
@@ -24,8 +25,19 @@ class RealtimeService {
             table,
           },
           (payload) => {
-            // Notify ALL listeners for this table
-            this.listeners.get(table)?.forEach((cb) => cb(payload));
+            // Debounce: coalesce rapid realtime events into a single notification
+            // This prevents stale server data from overwriting in-flight optimistic updates
+            const timerKey = table;
+            const existing = this.debounceTimers.get(timerKey);
+            if (existing) clearTimeout(existing);
+
+            this.debounceTimers.set(
+              timerKey,
+              setTimeout(() => {
+                this.debounceTimers.delete(timerKey);
+                this.listeners.get(table)?.forEach((cb) => cb(payload));
+              }, 1500)
+            );
           }
         )
         .subscribe();
@@ -42,6 +54,11 @@ class RealtimeService {
       
       // Cleanup channel if no more listeners
       if (this.listeners.get(table)?.size === 0) {
+        const timer = this.debounceTimers.get(table);
+        if (timer) {
+          clearTimeout(timer);
+          this.debounceTimers.delete(table);
+        }
         const channel = this.channels.get(table);
         if (channel) {
           supabase.removeChannel(channel);
