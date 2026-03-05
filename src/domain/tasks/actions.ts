@@ -358,7 +358,7 @@ export async function deleteTasksBulk(taskIds: string[]): Promise<{
 
   const results = await Promise.allSettled(
     taskIds.map(async (id) => {
-      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      const { error } = await supabase.rpc('soft_delete_task', { p_task_id: id });
       if (error) throw error;
       return { success: true };
     })
