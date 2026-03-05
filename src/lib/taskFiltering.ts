@@ -3,30 +3,7 @@
  * Ensures consistent ID handling across all task views
  */
 
-export interface TaskAssignee {
-  id?: string;          // profiles.id
-  user_id?: string;     // profiles.user_id (auth.users.id)
-  name?: string;
-  avatar_url?: string;
-  profiles?: {
-    id?: string;
-    user_id?: string;
-    name?: string;
-    avatar_url?: string;
-  };
-}
-
-export interface TaskWithAssignees {
-  id: string;
-  title?: string;
-  status?: string;
-  priority?: string;
-  due_at?: string;
-  assignees?: TaskAssignee[];
-  task_assignees?: { user_id: string; profiles?: TaskAssignee }[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
+import type { TaskAssignee, TaskWithAssignees } from '@/types/tasks';
 
 /**
  * Check if a specific user (by auth user ID) is assigned to a task
@@ -43,15 +20,7 @@ export function isUserAssignedToTask(task: TaskWithAssignees, authUserId: string
   if (task.assignees && task.assignees.length > 0) {
     return task.assignees.some((assignee) => {
       // assignee.user_id is profiles.user_id which equals auth.users.id
-      const userId = assignee.user_id || assignee.profiles?.user_id;
-      return userId === authUserId;
-    });
-  }
-  
-  // Fallback: check raw task_assignees if assignees not populated
-  if (task.task_assignees && task.task_assignees.length > 0) {
-    return task.task_assignees.some((ta) => {
-      const userId = ta.profiles?.user_id;
+      const userId = assignee.user_id;
       return userId === authUserId;
     });
   }
@@ -72,22 +41,10 @@ export function taskMatchesAssigneeFilter(task: TaskWithAssignees, selectedUserI
   
   if (task.assignees && task.assignees.length > 0) {
     return task.assignees.some((assignee) => {
-      const userId = assignee.user_id || assignee.profiles?.user_id;
+      const userId = assignee.user_id;
       return userId && selectedUserIds.includes(userId);
     });
   }
   
   return false;
-}
-
-/**
- * Get all auth user IDs from a task's assignees
- * Useful for UI display and filtering logic
- */
-export function getTaskAssigneeUserIds(task: TaskWithAssignees): string[] {
-  if (!task.assignees) return [];
-  
-  return task.assignees
-    .map((assignee) => assignee.user_id || assignee.profiles?.user_id)
-    .filter((id): id is string => !!id);
 }
