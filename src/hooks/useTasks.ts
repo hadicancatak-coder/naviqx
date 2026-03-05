@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { realtimeService } from "@/lib/realtimeService";
 import { mapStatusToUi } from '@/domain';
 import { TASK_QUERY_KEY, TASK_WITH_TEMPLATES_KEY } from "@/lib/queryKeys";
@@ -85,11 +85,16 @@ export function useTasks(filters?: TaskFilters) {
     };
   }, [user, queryClient]);
 
-  // "Ensure Today" check: if any templates are overdue, call the edge function once per session
-  const ensureTodayRan = useRef(false);
+  // "Ensure Today" check: if any templates are overdue, call the edge function once per calendar day.
+  // Uses sessionStorage with a date-stamped key so it survives remounts/route changes
+  // but resets on a new day or new browser session.
   useEffect(() => {
-    if (!user || ensureTodayRan.current) return;
-    ensureTodayRan.current = true;
+    if (!user) return;
+
+    const todayKey = `ensureToday_${new Date().toISOString().split('T')[0]}`;
+    if (sessionStorage.getItem(todayKey)) return;
+    // Set immediately to prevent concurrent calls from other remounts
+    sessionStorage.setItem(todayKey, '1');
 
     const checkOverdueTemplates = async () => {
       try {
