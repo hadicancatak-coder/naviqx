@@ -5810,6 +5810,10 @@ export type Database = {
         Args: { p_payload_json: Json; p_type: string; p_user_id: string }
         Returns: undefined
       }
+      set_task_assignees: {
+        Args: { p_assignee_ids: string[]; p_task_id: string }
+        Returns: undefined
+      }
       validate_mfa_session: {
         Args: { session_token: string }
         Returns: boolean
