@@ -90,7 +90,7 @@ export async function prefetchTasksData(): Promise<void> {
 
         if (error) throw error;
 
-        return ((data || []) as TaskQueryResult[]).map((task) => ({
+        return ((data || []) as unknown as TaskQueryResult[]).map((task) => ({
           ...task,
           status: mapStatusToUi(task.status),
           assignees: task.task_assignees?.map((ta) => ta.profiles).filter(Boolean) || [],
