@@ -1,7 +1,7 @@
 // @density: compact
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, isToday, subDays } from "date-fns";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, ClipboardPaste } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import { CarryForwardBanner } from "@/components/daily-log/CarryForwardBanner";
 import { DailyLogEntryRow } from "@/components/daily-log/DailyLogEntryRow";
 import { DailyLogEntryDialog } from "@/components/daily-log/DailyLogEntryDialog";
 import { DailyLogUserSection } from "@/components/daily-log/DailyLogUserSection";
+import { DailyLogInlineComposer, AddEntryTrigger } from "@/components/daily-log/DailyLogInlineComposer";
+import { DailyLogBulkPasteDialog } from "@/components/daily-log/DailyLogBulkPasteDialog";
 import { EmptyState } from "@/components/layout/EmptyState";
 import type { DailyLogEntry } from "@/domain/daily-log";
 
@@ -36,8 +38,10 @@ export default function DailyLog() {
   const { isAdmin } = useUserRole();
   const [date, setDate] = useState(new Date());
   const [selectedUserId, setSelectedUserId] = useState<string>("me");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DailyLogEntry | null>(null);
+  const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
 
   const logDate = format(date, "yyyy-MM-dd");
@@ -81,7 +85,7 @@ export default function DailyLog() {
     return Object.entries(groups).sort(([, a], [, b]) => a.profile.name.localeCompare(b.profile.name));
   }, [isViewingAllUsers, entries, profiles]);
 
-  // User's open tasks for the reference section
+  // User's open tasks for reference
   const { data: myTasks } = useQuery({
     queryKey: ["my-open-tasks-daily-log"],
     queryFn: async () => {
@@ -100,12 +104,7 @@ export default function DailyLog() {
 
   const handleEdit = (entry: DailyLogEntry) => {
     setEditingEntry(entry);
-    setDialogOpen(true);
-  };
-
-  const handleAdd = () => {
-    setEditingEntry(null);
-    setDialogOpen(true);
+    setEditDialogOpen(true);
   };
 
   const usersForDialog = useMemo(() => {
@@ -118,38 +117,51 @@ export default function DailyLog() {
   // Yesterday banner
   const isYesterday = format(subDays(new Date(), 1), "yyyy-MM-dd") === logDate;
 
+  // Keyboard shortcut: 'n' to open composer
+  const handleGlobalKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "n" && !composerOpen && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement)?.isContentEditable)) {
+      e.preventDefault();
+      setComposerOpen(true);
+    }
+  }, [composerOpen]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [handleGlobalKeyDown]);
+
   return (
     <PageContainer>
       <PageHeader
         title="Daily Log"
         description="Plan your day. Track what gets done."
         icon={ClipboardList}
-        actions={
-          <Button onClick={handleAdd} size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Add Entry
-          </Button>
-        }
       />
 
       {/* Filter bar */}
       <div className="flex items-center justify-between gap-md p-sm rounded-xl liquid-glass">
         <DailyLogDateNav date={date} onDateChange={setDate} />
 
-        {isAdmin && profiles && (
-          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Users" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="me">My Log</SelectItem>
-              <SelectItem value="all">All Users</SelectItem>
-              {profiles.map((p) => (
-                <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-sm">
+          {isAdmin && profiles && (
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Users" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="me">My Log</SelectItem>
+                <SelectItem value="all">All Users</SelectItem>
+                {profiles.map((p) => (
+                  <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => setBulkPasteOpen(true)} title="Paste list">
+            <ClipboardPaste className="h-4 w-4 mr-1" />
+            Paste list
+          </Button>
+        </div>
       </div>
 
       {/* Yesterday banner */}
@@ -195,17 +207,37 @@ export default function DailyLog() {
           </div>
         ) : (
           <div className="p-sm">
-            {(!entries || entries.length === 0) ? (
+            {(!entries || entries.length === 0) && !composerOpen ? (
               <EmptyState
                 icon={ClipboardList}
                 title="No entries yet"
                 description="Start planning your day by adding an entry."
-                action={{ label: "Add Entry", onClick: handleAdd }}
+                action={{ label: "Add Entry", onClick: () => setComposerOpen(true) }}
               />
             ) : (
-              entries.map((entry) => (
-                <DailyLogEntryRow key={entry.id} entry={entry} onEdit={handleEdit} />
-              ))
+              <>
+                {entries?.map((entry) => (
+                  <DailyLogEntryRow key={entry.id} entry={entry} onEdit={handleEdit} />
+                ))}
+              </>
+            )}
+
+            {/* Inline composer or trigger */}
+            {!isViewingAllUsers && (
+              composerOpen ? (
+                <DailyLogInlineComposer
+                  logDate={logDate}
+                  forUserId={dialogForUserId}
+                  isAdmin={isAdmin}
+                  users={usersForDialog}
+                  onClose={() => setComposerOpen(false)}
+                  onSaved={() => {/* stay open for next entry */}}
+                />
+              ) : (
+                (entries && entries.length > 0) && (
+                  <AddEntryTrigger onClick={() => setComposerOpen(true)} />
+                )
+              )
             )}
           </div>
         )}
@@ -242,14 +274,23 @@ export default function DailyLog() {
         </Collapsible>
       )}
 
-      {/* Dialog */}
+      {/* Edit Details Dialog (existing entries only) */}
       <DailyLogEntryDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
         entry={editingEntry}
         logDate={logDate}
         forUserId={dialogForUserId}
         users={usersForDialog}
+        isAdmin={isAdmin}
+      />
+
+      {/* Bulk Paste Dialog */}
+      <DailyLogBulkPasteDialog
+        open={bulkPasteOpen}
+        onOpenChange={setBulkPasteOpen}
+        logDate={logDate}
+        forUserId={dialogForUserId}
         isAdmin={isAdmin}
       />
     </PageContainer>
