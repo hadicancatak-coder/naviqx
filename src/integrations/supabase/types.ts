@@ -5795,11 +5795,16 @@ export type Database = {
         }[]
       }
       calculate_actual_hours: { Args: { task_uuid: string }; Returns: number }
+      check_recurring_system_health: { Args: never; Returns: Json }
       cleanup_expired_mfa_sessions: { Args: never; Returns: undefined }
       cleanup_old_mfa_attempts: { Args: never; Returns: undefined }
       cleanup_rate_limit: { Args: never; Returns: undefined }
       detect_language: { Args: { content_text: string }; Returns: string }
       extract_client_ip: { Args: { ip_chain: string }; Returns: string }
+      force_advance_stuck_templates: {
+        Args: { p_stuck_threshold_hours?: number }
+        Returns: Json
+      }
       generate_recurring_log_entries: {
         Args: { p_date: string; p_user_id: string }
         Returns: undefined

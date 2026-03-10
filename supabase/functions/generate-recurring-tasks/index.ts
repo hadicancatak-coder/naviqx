@@ -431,6 +431,23 @@ serve(async (req) => {
           }
         }
 
+        }
+
+        // If the loop exited because of the instance cap with schedule still in the past,
+        // force-advance next_run_at to break the stuck loop
+        if (currentNextRun <= today && instancesCreated >= MAX_INSTANCES_PER_TEMPLATE) {
+          console.warn(`Template ${template.id} hit instance cap — force-advancing next_run_at from today.`);
+          const nextFromToday = calculateNextOccurrence(rule, today, occurrenceCount);
+          await supabase
+            .from('tasks')
+            .update({
+              next_run_at: nextFromToday ? nextFromToday.toISOString() : null,
+              occurrence_count: occurrenceCount,
+            })
+            .eq('id', template.id);
+          results.fast_forwarded++;
+        }
+
         results.processed++;
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
