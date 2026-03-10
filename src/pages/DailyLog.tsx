@@ -82,11 +82,8 @@ export default function DailyLog() {
       }
       groups[entry.user_id].entries.push(entry);
     }
-    // Exclude current user — their log is in "My Log"
-    return Object.entries(groups)
-      .filter(([userId]) => userId !== user?.id)
-      .sort(([, a], [, b]) => a.profile.name.localeCompare(b.profile.name));
-  }, [isViewingAllUsers, entries, profiles, user?.id]);
+    return Object.entries(groups).sort(([, a], [, b]) => a.profile.name.localeCompare(b.profile.name));
+  }, [isViewingAllUsers, entries, profiles]);
 
   // User's open tasks for reference
   const { data: myTasks } = useQuery({
