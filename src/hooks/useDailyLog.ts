@@ -176,9 +176,10 @@ export function useReorderDailyLogEntries() {
   return useMutation({
     mutationFn: async (entries: { id: string; sort_order: number }[]) => {
       const promises = entries.map((e) =>
-        supabase
-          .from('daily_log_entries')
-          .update({ sort_order: e.sort_order } as unknown as Record<string, unknown>)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase
+          .from('daily_log_entries') as any)
+          .update({ sort_order: e.sort_order })
           .eq('id', e.id)
       );
       await Promise.all(promises);
