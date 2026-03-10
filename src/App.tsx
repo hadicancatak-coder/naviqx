@@ -35,6 +35,7 @@ import SearchPlanner from "./pages/SearchPlanner";
 import LpPlanner from "./pages/LpPlanner";
 import UtmPlanner from "./pages/UtmPlanner";
 import Performance from "./pages/Performance";
+const DailyLog = lazy(() => import("./pages/DailyLog"));
 import AppStorePlanner from "./pages/AppStorePlanner";
 
 // Lazy-loaded pages for better initial load
@@ -107,6 +108,7 @@ const App = () => (
                       <Route path="/dashboard" element={<Navigate to="/" replace />} />
                       <Route path="/tasks" element={<Tasks />} />
                       <Route path="/sprints" element={<Sprints />} />
+                      <Route path="/daily-log" element={<Suspense fallback={<PageLoader />}><DailyLog /></Suspense>} />
                       
                       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                         <Route index element={<Navigate to="overview" replace />} />
