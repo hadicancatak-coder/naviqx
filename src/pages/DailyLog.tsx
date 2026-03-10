@@ -151,7 +151,7 @@ export default function DailyLog() {
               <SelectContent>
                 <SelectItem value="me">My Log</SelectItem>
                 <SelectItem value="all">All Users</SelectItem>
-                {profiles.map((p) => (
+                {profiles.filter((p) => p.user_id !== user?.id).map((p) => (
                   <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
