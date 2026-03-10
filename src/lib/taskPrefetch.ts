@@ -85,6 +85,7 @@ export async function prefetchTasksData(): Promise<void> {
           `)
           .is('parent_id', null)
           .or('is_recurrence_template.is.null,is_recurrence_template.eq.false')
+          .is('template_task_id', null) // Exclude recurring instances from main list
           .order("created_at", { ascending: false });
 
         if (error) throw error;
