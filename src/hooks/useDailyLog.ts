@@ -136,9 +136,10 @@ export function useUpdateDailyLogEntry() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DailyLogEntry> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('daily_log_entries')
-        .update(updates as unknown as Record<string, unknown>)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase
+        .from('daily_log_entries') as any)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
