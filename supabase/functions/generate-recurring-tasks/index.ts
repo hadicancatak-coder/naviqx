@@ -449,7 +449,7 @@ serve(async (req) => {
         }
 
         results.processed++;
-      } catch (err: unknown) {
+      } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.error(`Error processing template ${template.id}:`, err);
         results.errors.push(`Template ${template.id}: ${errorMessage}`);
@@ -462,7 +462,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error: unknown) {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Error in generate-recurring-tasks:", error);
     return new Response(
