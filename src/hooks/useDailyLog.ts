@@ -157,8 +157,9 @@ export function useDeleteDailyLogEntry() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('daily_log_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase
+        .from('daily_log_entries') as any)
         .delete()
         .eq('id', id);
       if (error) throw error;
