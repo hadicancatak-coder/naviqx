@@ -19,6 +19,7 @@ export function TopHeader() {
     if (path === "/" || path === "/dashboard") return "Dashboard";
     if (path === "/tasks") return "Tasks";
     if (path === "/sprints") return "Sprints";
+    if (path === "/daily-log") return "Daily Log";
     if (path === "/calendar") return "Agenda";
     
     // Ads - specific paths first

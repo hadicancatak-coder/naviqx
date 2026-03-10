@@ -108,6 +108,7 @@ const App = () => (
                       <Route path="/dashboard" element={<Navigate to="/" replace />} />
                       <Route path="/tasks" element={<Tasks />} />
                       <Route path="/sprints" element={<Sprints />} />
+                      <Route path="/daily-log" element={<Suspense fallback={<PageLoader />}><DailyLog /></Suspense>} />
                       
                       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                         <Route index element={<Navigate to="overview" replace />} />

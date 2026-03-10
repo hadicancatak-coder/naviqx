@@ -9,3 +9,6 @@ export * from './tasks';
 
 // Campaign Domain
 export * from './campaigns';
+
+// Daily Log Domain
+export * from './daily-log';

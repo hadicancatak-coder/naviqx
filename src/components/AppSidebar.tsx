@@ -43,6 +43,7 @@ import {
   const coreItems = [
     { title: "Tasks", url: "/tasks", icon: CheckSquare },
     { title: "Sprints", url: "/sprints", icon: Zap },
+    { title: "Daily Log", url: "/daily-log", icon: ClipboardList },
   ];
 
 const adsItems = [
