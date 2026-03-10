@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { Plus, X, CalendarIcon, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Plus, X, CalendarIcon, Loader2, Users, Tag } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -24,22 +23,31 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { TASK_QUERY_KEY } from "@/lib/queryKeys";
+import { BulkRowAssigneePopover } from "./bulk/BulkRowAssigneePopover";
+import { BulkRowTagPopover } from "./bulk/BulkRowTagPopover";
 
 interface BulkTaskRow {
   id: string;
   title: string;
-  description: string;
   dueDate: Date | undefined;
-  showDescription: boolean;
+  assigneeIds: string[];
+  tags: string[];
 }
 
 const createEmptyRow = (): BulkTaskRow => ({
   id: crypto.randomUUID(),
   title: "",
-  description: "",
   dueDate: undefined,
-  showDescription: false,
+  assigneeIds: [],
+  tags: [],
 });
+
+interface ProfileUser {
+  id: string;
+  user_id: string;
+  name: string;
+  username?: string;
+}
 
 interface BulkTaskCreateDialogProps {
   open: boolean;
@@ -61,9 +69,20 @@ export function BulkTaskCreateDialog({
     createEmptyRow(),
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState<ProfileUser[]>([]);
   const titleRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   const validRows = rows.filter((r) => r.title.trim().length > 0);
+
+  // Fetch users when dialog opens
+  useEffect(() => {
+    if (open) {
+      supabase
+        .from("profiles")
+        .select("id, user_id, name, username")
+        .then(({ data }) => setUsers(data || []));
+    }
+  }, [open]);
 
   const updateRow = useCallback(
     (id: string, updates: Partial<BulkTaskRow>) => {
@@ -84,7 +103,6 @@ export function BulkTaskCreateDialog({
   const addRow = useCallback(() => {
     const newRow = createEmptyRow();
     setRows((prev) => [...prev, newRow]);
-    // Focus the new row after render
     setTimeout(() => {
       titleRefs.current.get(newRow.id)?.focus();
     }, 50);
@@ -111,17 +129,49 @@ export function BulkTaskCreateDialog({
 
     setIsSubmitting(true);
     try {
+      // Get current user's profile id for assigned_by
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
       const insertData = validRows.map((r) => ({
         title: r.title.trim(),
-        description: r.description.trim() || null,
+        description: null,
         due_at: r.dueDate ? r.dueDate.toISOString() : null,
         status: "Ongoing" as const,
         priority: "Medium" as const,
         created_by: user.id,
+        labels: r.tags.length > 0 ? r.tags : null,
       }));
 
-      const { error } = await supabase.from("tasks").insert(insertData);
+      const { data: createdTasks, error } = await supabase
+        .from("tasks")
+        .insert(insertData)
+        .select("id");
       if (error) throw error;
+
+      // Insert assignees for tasks that have them
+      if (createdTasks && profile) {
+        const assigneeInserts: { task_id: string; user_id: string; assigned_by: string }[] = [];
+        validRows.forEach((row, idx) => {
+          const taskId = createdTasks[idx]?.id;
+          if (taskId && row.assigneeIds.length > 0) {
+            row.assigneeIds.forEach((uid) => {
+              assigneeInserts.push({
+                task_id: taskId,
+                user_id: uid,
+                assigned_by: profile.id,
+              });
+            });
+          }
+        });
+
+        if (assigneeInserts.length > 0) {
+          await supabase.from("task_assignees").insert(assigneeInserts);
+        }
+      }
 
       queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
       toast({
@@ -130,7 +180,6 @@ export function BulkTaskCreateDialog({
       });
       onTasksCreated?.();
       onOpenChange(false);
-      // Reset rows for next open
       setRows([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
     } catch (error: unknown) {
       toast({
@@ -153,7 +202,7 @@ export function BulkTaskCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Bulk Add Tasks</DialogTitle>
           <DialogDescription>
@@ -167,6 +216,7 @@ export function BulkTaskCreateDialog({
               key={row.id}
               className="group rounded-lg border border-border bg-card p-sm transition-smooth hover:bg-card-hover"
             >
+              {/* Main row: number + title + action icons */}
               <div className="flex items-center gap-sm">
                 <span className="text-metadata text-muted-foreground w-5 text-center shrink-0">
                   {index + 1}
@@ -187,25 +237,20 @@ export function BulkTaskCreateDialog({
                   autoFocus={index === 0}
                 />
 
-                {/* Description toggle */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() =>
-                    updateRow(row.id, {
-                      showDescription: !row.showDescription,
-                    })
+                {/* Assignee popover */}
+                <BulkRowAssigneePopover
+                  users={users}
+                  selectedIds={row.assigneeIds}
+                  onSelectionChange={(ids) =>
+                    updateRow(row.id, { assigneeIds: ids })
                   }
-                  className="text-muted-foreground hover:text-foreground shrink-0"
-                  title="Toggle description"
-                >
-                  {row.showDescription ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
-                </Button>
+                />
+
+                {/* Tags popover */}
+                <BulkRowTagPopover
+                  value={row.tags}
+                  onChange={(tags) => updateRow(row.id, { tags })}
+                />
 
                 {/* Date picker */}
                 <Popover>
@@ -256,13 +301,6 @@ export function BulkTaskCreateDialog({
                   </PopoverContent>
                 </Popover>
 
-                {/* Due date badge */}
-                {row.dueDate && (
-                  <span className="text-metadata text-primary shrink-0 hidden sm:inline">
-                    {format(row.dueDate, "MMM d")}
-                  </span>
-                )}
-
                 {/* Remove row */}
                 <Button
                   type="button"
@@ -277,18 +315,27 @@ export function BulkTaskCreateDialog({
                 </Button>
               </div>
 
-              {/* Expandable description */}
-              {row.showDescription && (
-                <div className="mt-sm ml-7">
-                  <Textarea
-                    value={row.description}
-                    onChange={(e) =>
-                      updateRow(row.id, { description: e.target.value })
-                    }
-                    placeholder="Add a description..."
-                    className="min-h-[60px] text-body-sm resize-none"
-                    rows={2}
-                  />
+              {/* Inline chips for selected metadata */}
+              {(row.assigneeIds.length > 0 || row.tags.length > 0 || row.dueDate) && (
+                <div className="flex items-center gap-xs mt-xs ml-7 flex-wrap">
+                  {row.dueDate && (
+                    <span className="inline-flex items-center gap-1 text-metadata text-primary bg-primary/10 px-2 py-0.5 rounded-sm">
+                      <CalendarIcon className="h-3 w-3" />
+                      {format(row.dueDate, "MMM d")}
+                    </span>
+                  )}
+                  {row.assigneeIds.length > 0 && (
+                    <span className="inline-flex items-center gap-1 text-metadata text-muted-foreground bg-muted px-2 py-0.5 rounded-sm">
+                      <Users className="h-3 w-3" />
+                      {row.assigneeIds.length} assignee{row.assigneeIds.length !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {row.tags.length > 0 && (
+                    <span className="inline-flex items-center gap-1 text-metadata text-muted-foreground bg-muted px-2 py-0.5 rounded-sm">
+                      <Tag className="h-3 w-3" />
+                      {row.tags.length} tag{row.tags.length !== 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
