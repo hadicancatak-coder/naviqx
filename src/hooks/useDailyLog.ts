@@ -118,7 +118,7 @@ export function useCreateDailyLogEntry() {
     mutationFn: async (input: CreateEntryInput) => {
       const { data, error } = await supabase
         .from('daily_log_entries')
-        .insert(input as Record<string, unknown>)
+        .insert(input as unknown as Record<string, unknown>)
         .select()
         .single();
       if (error) throw error;
