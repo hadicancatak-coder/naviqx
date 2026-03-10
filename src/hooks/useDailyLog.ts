@@ -116,9 +116,10 @@ export function useCreateDailyLogEntry() {
 
   return useMutation({
     mutationFn: async (input: CreateEntryInput) => {
-      const { data, error } = await supabase
-        .from('daily_log_entries')
-        .insert([input as unknown as Record<string, unknown>])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase
+        .from('daily_log_entries') as any)
+        .insert(input)
         .select()
         .single();
       if (error) throw error;
