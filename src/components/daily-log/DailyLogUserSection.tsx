@@ -21,13 +21,9 @@ export function DailyLogUserSection({ userName, avatarUrl, entries, onEdit }: Da
         className="flex items-center gap-sm w-full px-sm py-xs rounded-lg hover:bg-card-hover transition-smooth"
       >
         {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={userName} className="h-6 w-6 rounded-full" />
-        ) : (
-          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-metadata text-primary font-medium">
-            {userName?.charAt(0)?.toUpperCase()}
-          </div>
-        )}
+        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-metadata text-primary font-medium shrink-0">
+          {userName?.charAt(0)?.toUpperCase()}
+        </div>
         <span className="text-body-sm font-medium text-foreground">{userName}</span>
         <span className="text-metadata text-muted-foreground">({entries.length})</span>
       </button>
