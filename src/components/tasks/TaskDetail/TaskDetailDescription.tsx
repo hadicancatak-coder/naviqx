@@ -20,13 +20,18 @@ export function TaskDetailDescription() {
     valueRef.current = value;
   }, [value]);
   
-  // Sync when task changes (switching between tasks)
+  // Sync when task data arrives or changes (e.g., reopening same task with fresh data)
+  // Only overwrite local state if the user hasn't made unsaved edits
   useEffect(() => {
     const newDescription = task?.description || "";
-    setValue(newDescription);
-    valueRef.current = newDescription;
-    lastSavedRef.current = newDescription;
-  }, [task?.id]);
+    const hasUnsavedEdits = valueRef.current !== lastSavedRef.current;
+    
+    if (!hasUnsavedEdits && newDescription !== lastSavedRef.current) {
+      setValue(newDescription);
+      valueRef.current = newDescription;
+      lastSavedRef.current = newDescription;
+    }
+  }, [task?.id, task?.description]);
 
   // Save using mutation
   const saveDescription = useCallback((descValue: string) => {
