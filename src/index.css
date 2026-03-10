@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -33,7 +36,7 @@ All colors MUST be HSL.
     --card: 0 0% 100%;               /* #ffffff - pure white cards */
     --card-foreground: 0 0% 9%;
     --card-hover: 240 5% 98%;        /* #f7f7fa - subtle hover */
-    
+
     /* Glass effect variables */
     --glass-bg: 0 0% 100% / 0.6;
     --glass-border: 0 0% 100% / 0.5;
@@ -42,12 +45,12 @@ All colors MUST be HSL.
     --glass-dropdown-bg: 0 0% 100% / 0.88;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 9%;
-    
+
     /* Primary - iOS Blue */
     --primary: 211 100% 50%;         /* #007aff */
     --primary-foreground: 0 0% 100%;
     --primary-hover: 211 100% 46%;   /* #006be6 */
-    
+
     /* Secondary & Muted */
     --secondary: 240 5% 96%;         /* #f2f2f7 */
     --secondary-foreground: 0 0% 9%;
@@ -55,23 +58,23 @@ All colors MUST be HSL.
     --muted: 240 5% 96%;
     --muted-foreground: 220 9% 46%;  /* #6e6e73 */
     --muted-hover: 240 4% 93%;
-    
+
     /* Accent */
     --accent: 211 100% 96%;          /* Light blue tint */
     --accent-foreground: 211 100% 50%;
     --accent-hover: 211 100% 93%;
-    
+
     /* Destructive - iOS Red */
     --destructive: 0 100% 59%;       /* #ff3b30 */
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Borders */
     --border: 240 6% 90%;            /* #e3e3ea - subtle */
     --border-subtle: 240 6% 90%;
     --input: 240 6% 90%;
     --ring: 211 100% 50%;
     --radius: 0.5rem;
-    
+
     /* Status colors */
     --success: 142 71% 45%;          /* iOS green */
     --success-foreground: 0 0% 100%;
@@ -93,7 +96,7 @@ All colors MUST be HSL.
     --destructive-text: 0 100% 35%;  /* Dark red text */
     --neutral-soft: 240 5% 96%;      /* Light gray background */
     --neutral-text: 220 9% 35%;      /* Dark gray text */
-    
+
     /* Extended status colors */
     --purple: 271 81% 56%;           /* Purple */
     --purple-foreground: 0 0% 100%;
@@ -115,7 +118,7 @@ All colors MUST be HSL.
     --amber-foreground: 0 0% 100%;
     --amber-soft: 45 93% 95%;
     --amber-text: 45 93% 30%;
-    
+
     /* Priority colors */
     --priority-high: 0 72% 51%;
     --priority-high-soft: 0 72% 95%;
@@ -126,11 +129,11 @@ All colors MUST be HSL.
     --priority-low: 142 71% 45%;
     --priority-low-soft: 142 71% 95%;
     --priority-low-text: 142 71% 30%;
-    
+
     /* Danger soft for alerts (alias) */
     --danger-soft: 0 100% 97%;       /* #ffe9ea */
     --danger-text: 0 100% 35%;       /* #b40000 */
-    
+
     /* Sidebar - Light (high contrast for readability) */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 14% 25%;
@@ -169,49 +172,49 @@ All colors MUST be HSL.
      ======================================== */
   .dark {
     /* Canvas & Surfaces - Lighter, more readable */
-    --background: 220 20% 8%;         /* Darker background for glass contrast */
+    --background: 222 47% 11%;         /* Darker background for glass contrast */
     --foreground: 210 40% 98%;       /* #f9fafb - crisp white text */
-    --card: 220 14% 13%;             /* Elevated card surfaces */
+    --card: 217 32% 17%;             /* Elevated card surfaces */
     --card-foreground: 210 40% 98%;
     --card-hover: 220 16% 16%;       /* Subtle hover state */
-    --popover: 220 14% 13%;
+    --popover: 215 24% 26%;
     --popover-foreground: 210 40% 98%;
-    
+
     /* Glass effect variables (dark) */
     --glass-bg: 220 20% 15% / 0.65;
     --glass-border: 0 0% 100% / 0.1;
     --glass-shadow: 0 0% 0% / 0.4;
     --glass-elevated-bg: 220 18% 14% / 0.85;
     --glass-dropdown-bg: 220 16% 16% / 0.92;
-    
+
     /* Primary - iOS Blue (dark) */
-    --primary: 211 100% 50%;         /* #0a84ff */
-    --primary-foreground: 0 0% 100%;
+    --primary: 198 93% 59%;         /* #0a84ff */
+    --primary-foreground: 204 80% 15%;
     --primary-hover: 211 100% 55%;
-    
+
     /* Secondary & Muted - Better contrast */
-    --secondary: 220 14% 13%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 212 26% 83%;
+    --secondary-foreground: 228 84% 4%;
     --secondary-hover: 220 16% 16%;
-    --muted: 220 14% 18%;            /* Lighter muted areas */
-    --muted-foreground: 220 13% 65%; /* Better readable secondary text */
+    --muted: 215 16% 46%;            /* Lighter muted areas */
+    --muted-foreground: 210 40% 98%; /* Better readable secondary text */
     --muted-hover: 220 14% 22%;
-    
+
     /* Accent */
-    --accent: 211 100% 50% / 0.12;
-    --accent-foreground: 211 100% 60%;
+    --accent: 228 84% 4%;
+    --accent-foreground: 215 20% 65%;
     --accent-hover: 211 100% 50% / 0.18;
-    
+
     /* Destructive */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 85% 97%;
+
     /* Borders - More visible */
-    --border: 220 18% 26%;           /* Clearer borders */
+    --border: 215 19% 34%;           /* Clearer borders */
     --border-subtle: 220 16% 22%;
-    --input: 220 16% 14%;            /* Input backgrounds */
-    --ring: 211 100% 50%;
-    
+    --input: 215 19% 34%;            /* Input backgrounds */
+    --ring: 198 93% 59%;
+
     /* Status colors - Adjusted for dark mode */
     --success: 142 76% 42%;
     --success-foreground: 0 0% 100%;
@@ -233,7 +236,7 @@ All colors MUST be HSL.
     --destructive-text: 0 72% 70%;   /* Light red text */
     --neutral-soft: 220 14% 18%;     /* Dark gray background */
     --neutral-text: 220 13% 70%;     /* Light gray text */
-    
+
     /* Extended status colors - dark mode */
     --purple: 271 81% 60%;
     --purple-foreground: 0 0% 100%;
@@ -255,7 +258,7 @@ All colors MUST be HSL.
     --amber-foreground: 0 0% 100%;
     --amber-soft: 45 50% 15%;
     --amber-text: 45 93% 65%;
-    
+
     /* Priority colors - dark mode */
     --priority-high: 0 72% 55%;
     --priority-high-soft: 0 50% 15%;
@@ -266,20 +269,20 @@ All colors MUST be HSL.
     --priority-low: 142 76% 42%;
     --priority-low-soft: 142 50% 15%;
     --priority-low-text: 142 76% 60%;
-    
+
     /* Danger soft for alerts (dark) - alias */
     --danger-soft: 0 72% 51% / 0.12;
     --danger-text: 0 72% 70%;
-    
+
     /* Sidebar - Brighter, more readable text for dark mode */
     --sidebar-background: 220 20% 8% / 0.6;
-    --sidebar-foreground: 210 25% 95%;
-    --sidebar-primary: 211 100% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 22%;
-    --sidebar-accent-foreground: 211 100% 65%;
-    --sidebar-border: 210 40% 35%;
-    --sidebar-ring: 211 100% 55%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 198 93% 59%;
+    --sidebar-primary-foreground: 204 80% 15%;
+    --sidebar-accent: 215 20% 65%;
+    --sidebar-accent-foreground: 228 84% 4%;
+    --sidebar-border: 215 19% 34%;
+    --sidebar-ring: 198 93% 59%;
 
     /* Grayscale palette - dark mode (consistent with new tokens) */
     --gray-50: 210 40% 98%;
@@ -302,6 +305,20 @@ All colors MUST be HSL.
     --z-tooltip: 400;
     --z-toast: 500;
     --z-overlay: 9999;
+    --chart-1: 199 95% 73%;
+    --chart-2: 211 96% 78%;
+    --chart-3: 215 20% 65%;
+    --chart-4: 215 16% 46%;
+    --chart-5: 215 19% 34%;
+    --sidebar: 217 32% 17%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   }
 
   /* Typography Scale - Semantic sizing */
@@ -313,12 +330,12 @@ All colors MUST be HSL.
     --text-heading-md: 1.25rem;    /* 20px */
     --text-heading-lg: 1.5rem;     /* 24px */
     --text-page-title: 1.875rem;   /* 30px */
-    
+
     /* Row Height Scale (Density) */
     --row-compact: 1.875rem;       /* 30px - task rows, table rows */
     --row-default: 2.25rem;        /* 36px - standard interactive rows */
     --row-comfortable: 2.5rem;     /* 40px - spacious rows */
-    
+
     /* Spacing Scale */
     --space-xxs: 0.25rem;          /* 4px - tight spacing */
     --space-xs: 0.5rem;            /* 8px */
@@ -329,7 +346,7 @@ All colors MUST be HSL.
     --space-2xl: 3rem;             /* 48px */
     --space-card: 1.25rem;         /* 20px - card padding */
     --space-section: 3rem;         /* 48px - section margins */
-    
+
     /* Legacy spacing vars */
     --spacing-1: 0.25rem;
     --spacing-2: 0.5rem;
@@ -340,7 +357,7 @@ All colors MUST be HSL.
     --spacing-12: 3rem;
     --spacing-16: 4rem;
     --spacing-24: 6rem;
-    
+
     /* Border Radius Scale */
     --radius-sm: 0.375rem;         /* 6px */
     --radius-md: 0.5rem;           /* 8px */
@@ -350,6 +367,52 @@ All colors MUST be HSL.
     /* Transitions */
     --transition: 150ms ease-in-out;
     --transition-smooth: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --background: 209 40% 96%;
+    --foreground: 222 47% 11%;
+    --card: 210 40% 98%;
+    --card-foreground: 222 47% 11%;
+    --popover: 214 31% 91%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 200 98% 39%;
+    --primary-foreground: 204 100% 97%;
+    --secondary: 215 24% 26%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 20% 65%;
+    --muted-foreground: 222 47% 11%;
+    --accent: 210 40% 98%;
+    --accent-foreground: 215 19% 34%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 85% 97%;
+    --border: 212 26% 83%;
+    --input: 212 26% 83%;
+    --ring: 200 98% 39%;
+    --chart-1: 198 93% 59%;
+    --chart-2: 213 93% 67%;
+    --chart-3: 215 20% 65%;
+    --chart-4: 215 16% 46%;
+    --chart-5: 215 19% 34%;
+    --sidebar: 210 40% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 200 98% 39%;
+    --sidebar-primary-foreground: 204 100% 97%;
+    --sidebar-accent: 215 24% 26%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 212 26% 83%;
+    --sidebar-ring: 200 98% 39%;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --radius: 0.5rem;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
   }
 }
 
@@ -548,7 +611,7 @@ All colors MUST be HSL.
      True glassmorphism with curved highlights,
      3D depth, and light refraction effects
      ======================================== */
-  
+
   /* Liquid Glass - Base header style (Apple-level iOS 26 inspired) */
   .liquid-glass {
     position: relative;
@@ -609,7 +672,7 @@ All colors MUST be HSL.
       hsl(0 0% 100% / 0.02) 100%
     );
   }
-  
+
   /* Liquid Glass - Elevated panels (sidebar, sheets) */
   .liquid-glass-elevated {
     position: relative;
@@ -714,11 +777,11 @@ All colors MUST be HSL.
   .glass {
     @apply liquid-glass;
   }
-  
+
   .glass-elevated {
     @apply liquid-glass-elevated;
   }
-  
+
   .glass-dropdown {
     @apply liquid-glass-dropdown;
   }
@@ -745,7 +808,7 @@ All colors MUST be HSL.
     --rdg-border-color: hsl(var(--border));
     --rdg-color: hsl(var(--foreground));
     --rdg-selection-color: hsl(var(--primary));
-    
+
     border: 1px solid var(--rdg-border-color);
     border-radius: 8px;
     overflow: hidden;
@@ -856,7 +919,7 @@ All colors MUST be HSL.
     color: hsl(var(--muted-foreground));
     font-size: 11px;
   }
-  
+
   /* Legacy typography aliases */
   .text-heading-lg { font-size: 1.5rem; line-height: 1.3; font-weight: 600; color: hsl(var(--foreground)); }
   .text-heading-md { font-size: 1.25rem; line-height: 1.35; font-weight: 600; color: hsl(var(--foreground)); }
@@ -885,7 +948,7 @@ All colors MUST be HSL.
   .status-neutral {
     @apply bg-neutral-soft text-neutral-text border border-border;
   }
-  
+
   /* Extended status utilities */
   .status-purple {
     @apply bg-purple-soft text-purple-text border border-purple/30;
@@ -902,7 +965,7 @@ All colors MUST be HSL.
   .status-amber {
     @apply bg-amber-soft text-amber-text border border-amber/30;
   }
-  
+
   /* Priority utilities */
   .priority-high {
     @apply bg-priority-high-soft text-priority-high-text border border-priority-high/30;
