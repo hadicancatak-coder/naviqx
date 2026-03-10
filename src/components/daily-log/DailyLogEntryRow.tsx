@@ -27,7 +27,7 @@ export function DailyLogEntryRow({ entry, onEdit, showUser, userProfile }: Daily
   const titleRef = useRef<HTMLInputElement>(null);
   const updateEntry = useUpdateDailyLogEntry();
   const deleteEntry = useDeleteDailyLogEntry();
-  const { openTask } = useTaskDrawer();
+  const { openTaskDrawer } = useTaskDrawer();
 
   const statusConfig = DAILY_LOG_STATUSES.find((s) => s.value === entry.status) ?? DAILY_LOG_STATUSES[0];
 
