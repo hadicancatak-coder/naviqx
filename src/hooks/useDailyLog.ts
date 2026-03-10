@@ -58,8 +58,9 @@ export function useAllUsersDailyLogEntries(logDate: string) {
   return useQuery({
     queryKey: ['daily-log-entries', logDate, 'all-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('daily_log_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase
+        .from('daily_log_entries') as any)
         .select('*')
         .eq('log_date', logDate)
         .order('user_id')
