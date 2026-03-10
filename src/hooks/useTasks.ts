@@ -41,10 +41,12 @@ export function useTasks(filters?: TaskFilters) {
       .is('parent_id', null) // Only fetch top-level tasks, not subtasks
       .order("created_at", { ascending: false });
 
-    // Filter out recurrence templates by default - they should not appear in main task list
+    // Filter out recurrence templates AND recurring instances by default
     // Templates only exist to generate instances, not to be worked on directly
+    // Instances appear in RecurringTasksToday widget and Agenda, not in the main list
     if (!filters?.includeTemplates) {
       query = query.or('is_recurrence_template.is.null,is_recurrence_template.eq.false');
+      query = query.is('template_task_id', null);
     }
 
     const { data, error } = await query;
