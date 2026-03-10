@@ -35,6 +35,7 @@ import SearchPlanner from "./pages/SearchPlanner";
 import LpPlanner from "./pages/LpPlanner";
 import UtmPlanner from "./pages/UtmPlanner";
 import Performance from "./pages/Performance";
+const DailyLog = lazy(() => import("./pages/DailyLog"));
 import AppStorePlanner from "./pages/AppStorePlanner";
 
 // Lazy-loaded pages for better initial load
