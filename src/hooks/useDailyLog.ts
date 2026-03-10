@@ -175,7 +175,7 @@ export function useReorderDailyLogEntries() {
       const promises = entries.map((e) =>
         supabase
           .from('daily_log_entries')
-          .update({ sort_order: e.sort_order } as Record<string, unknown>)
+          .update({ sort_order: e.sort_order } as unknown as Record<string, unknown>)
           .eq('id', e.id)
       );
       await Promise.all(promises);

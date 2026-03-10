@@ -132,7 +132,7 @@ export function DailyLogEntryRow({ entry, onEdit, showUser, userProfile }: Daily
         <Badge
           variant="outline"
           className="text-metadata bg-subtle shrink-0 cursor-pointer hover:bg-card-hover transition-smooth"
-          onClick={() => openTask(entry.linked_task_id!)}
+          onClick={() => openTaskDrawer(entry.linked_task_id!)}
         >
           🔗 Task
         </Badge>

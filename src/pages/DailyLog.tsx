@@ -200,12 +200,7 @@ export default function DailyLog() {
                 icon={ClipboardList}
                 title="No entries yet"
                 description="Start planning your day by adding an entry."
-                action={
-                  <Button onClick={handleAdd} size="sm">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Entry
-                  </Button>
-                }
+                action={{ label: "Add Entry", onClick: handleAdd }}
               />
             ) : (
               entries.map((entry) => (
