@@ -83,8 +83,9 @@ export function useYesterdayUnresolved() {
   return useQuery({
     queryKey: ['daily-log-unresolved', yesterdayStr],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('daily_log_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase
+        .from('daily_log_entries') as any)
         .select('id')
         .eq('user_id', user!.id)
         .eq('log_date', yesterdayStr)
