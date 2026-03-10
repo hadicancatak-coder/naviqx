@@ -462,7 +462,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error: unknown) {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Error in generate-recurring-tasks:", error);
     return new Response(
