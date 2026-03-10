@@ -16,6 +16,7 @@ import {
   Search,
   FolderKanban,
   Zap,
+  ClipboardList,
   
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
