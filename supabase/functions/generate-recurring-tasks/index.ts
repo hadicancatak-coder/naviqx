@@ -431,8 +431,6 @@ serve(async (req) => {
           }
         }
 
-        }
-
         // If the loop exited because of the instance cap with schedule still in the past,
         // force-advance next_run_at to break the stuck loop
         if (currentNextRun <= today && instancesCreated >= MAX_INSTANCES_PER_TEMPLATE) {
