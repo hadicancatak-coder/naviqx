@@ -1536,6 +1536,71 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_log_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          is_recurring: boolean
+          linked_task_id: string | null
+          log_date: string
+          needs_help: boolean
+          notes: string | null
+          priority: string | null
+          recur_pattern: string | null
+          sort_order: number | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean
+          linked_task_id?: string | null
+          log_date?: string
+          needs_help?: boolean
+          notes?: string | null
+          priority?: string | null
+          recur_pattern?: string | null
+          sort_order?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean
+          linked_task_id?: string | null
+          log_date?: string
+          needs_help?: boolean
+          notes?: string | null
+          priority?: string | null
+          recur_pattern?: string | null
+          sort_order?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_log_entries_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_campaigns: {
         Row: {
           campaign_id: string | null
@@ -5735,6 +5800,10 @@ export type Database = {
       cleanup_rate_limit: { Args: never; Returns: undefined }
       detect_language: { Args: { content_text: string }; Returns: string }
       extract_client_ip: { Args: { ip_chain: string }; Returns: string }
+      generate_recurring_log_entries: {
+        Args: { p_date: string; p_user_id: string }
+        Returns: undefined
+      }
       get_admin_user_ids: {
         Args: never
         Returns: {
