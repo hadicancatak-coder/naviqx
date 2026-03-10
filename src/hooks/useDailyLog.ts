@@ -29,8 +29,9 @@ export function useDailyLogEntries(logDate: string, userId?: string) {
     queryFn: async () => {
       const targetUserId = userId || user!.id;
 
-      let query = supabase
-        .from('daily_log_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query = (supabase
+        .from('daily_log_entries') as any)
         .select('*')
         .eq('log_date', logDate)
         .order('sort_order', { ascending: true })
