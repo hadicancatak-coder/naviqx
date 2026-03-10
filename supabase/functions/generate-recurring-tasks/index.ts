@@ -449,7 +449,7 @@ serve(async (req) => {
         }
 
         results.processed++;
-      } catch (err: unknown) {
+      } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.error(`Error processing template ${template.id}:`, err);
         results.errors.push(`Template ${template.id}: ${errorMessage}`);
