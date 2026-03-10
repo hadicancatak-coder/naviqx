@@ -129,7 +129,7 @@ export const useTaskMutations = () => {
       toast({ title: "Failed to complete task", description: err.message, variant: "destructive" });
     },
     onSuccess: (data, id, context) => {
-      if (data?.partialComplete === true) {
+      if ((data as { partialComplete?: boolean })?.partialComplete === true) {
         // Collaborative task not fully complete — revert optimistic "Completed" status
         rollback(queryClient, id, context);
         toast({ title: "Your part is marked complete", description: "Waiting for other assignees", duration: 3000 });

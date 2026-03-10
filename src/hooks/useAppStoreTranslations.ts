@@ -14,7 +14,7 @@ const normalizeStatus = (val: unknown): ListingStatus => {
 };
 
 const normalize = (row: Record<string, unknown>): AppStoreTranslation => ({
-  ...(row as AppStoreTranslation),
+  ...(row as unknown as AppStoreTranslation),
   status: normalizeStatus(row.status),
 });
 

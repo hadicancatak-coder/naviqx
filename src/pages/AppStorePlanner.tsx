@@ -64,7 +64,7 @@ export default function AppStorePlanner() {
       key: "n",
       ctrl: true,
       callback: () => {
-        handleCreate("");
+        handleCreate("", "product_page");
       },
     },
     {
