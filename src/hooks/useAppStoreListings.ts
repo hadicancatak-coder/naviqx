@@ -20,7 +20,7 @@ const normalizeStatus = (val: unknown): ListingStatus => {
 };
 
 const normalizeListing = (row: Record<string, unknown>): AppStoreListing => ({
-  ...(row as AppStoreListing),
+  ...(row as unknown as AppStoreListing),
   store_type: row.store_type === "google_play" ? "google_play" : "apple",
   page_type: row.page_type === "cpp" ? "cpp" : "product_page",
   locale: row.locale === "ar" ? "ar" : "en",
