@@ -68,6 +68,7 @@ const operationsItems = [
 const resourcesItems = [
   { title: "Library", url: "/library", icon: BookOpen },
   { title: "Projects", url: "/projects", icon: FolderKanban },
+  { title: "Tickets", url: "/tickets", icon: Ticket },
 ];
 
 export function AppSidebar() {
