@@ -51,6 +51,7 @@ export function TopHeader() {
     if (path.startsWith("/admin")) return "Admin";
     if (path === "/how-to") return "How To";
     if (path === "/about") return "About";
+    if (path === "/tickets") return "Tickets";
     
     return null;
   };

@@ -152,6 +152,7 @@ const App = () => (
                       <Route path="/tech-stack" element={<Navigate to="/library" replace />} />
                       <Route path="/projects" element={<Projects />} />
                       <Route path="/performance" element={<Performance />} />
+                      <Route path="/tickets" element={<Tickets />} />
                       
                     </Route>
                     <Route path="*" element={<NotFound />} />

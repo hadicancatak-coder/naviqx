@@ -17,7 +17,7 @@ import {
   FolderKanban,
   Zap,
   ClipboardList,
-  
+  Ticket,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
