@@ -35,6 +35,7 @@ import SearchPlanner from "./pages/SearchPlanner";
 import LpPlanner from "./pages/LpPlanner";
 import UtmPlanner from "./pages/UtmPlanner";
 import Performance from "./pages/Performance";
+import Tickets from "./pages/Tickets";
 const DailyLog = lazy(() => import("./pages/DailyLog"));
 import AppStorePlanner from "./pages/AppStorePlanner";
 
@@ -151,6 +152,7 @@ const App = () => (
                       <Route path="/tech-stack" element={<Navigate to="/library" replace />} />
                       <Route path="/projects" element={<Projects />} />
                       <Route path="/performance" element={<Performance />} />
+                      <Route path="/tickets" element={<Tickets />} />
                       
                     </Route>
                     <Route path="*" element={<NotFound />} />
