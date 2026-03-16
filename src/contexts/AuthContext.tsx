@@ -102,7 +102,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                              location.pathname.startsWith('/lp-planner/public/');
 
   // Validate MFA session with server - Phase 1: Fix closure race condition
-  const validateMfaSession = async (currentUser?: User): Promise<boolean> => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const validateMfaSession = useCallback(async (currentUser?: User): Promise<boolean> => {
     const userToCheck = currentUser || user;
     
     if (skipNextValidation) {
