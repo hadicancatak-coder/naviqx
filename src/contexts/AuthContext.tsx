@@ -449,7 +449,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, forcePasswordReset]);
 
   // Clear force password reset flag after successful password change
-  const clearForcePasswordReset = () => {
+  const clearForcePasswordReset = useCallback(() => {
     logger.debug('Clearing force password reset flag');
     setForcePasswordReset(false);
     
@@ -466,7 +466,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     }
-  };
+  }, [user]);
 
   const signOut = async () => {
     // CRITICAL: Clear all state SYNCHRONOUSLY before async operations
