@@ -221,7 +221,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setMfaVerified(false);
       return false;
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, mfaVerified, skipNextValidation]);
 
   // Fetch MFA status once per session - cached in context AND sessionStorage
   // Validate and load MFA status from cache or fetch from DB
