@@ -411,7 +411,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoleLoading(false);
   };
 
-  const setMfaVerifiedStatus = (verified: boolean, sessionToken?: string, expiresAt?: string) => {
+  const setMfaVerifiedStatus = useCallback((verified: boolean, sessionToken?: string, expiresAt?: string) => {
     logger.debug('Setting MFA status', { verified, hasToken: !!sessionToken });
     
     // CRITICAL: Write localStorage BEFORE state update to prevent race condition
@@ -429,7 +429,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // State update happens AFTER localStorage is committed
     setMfaVerified(verified);
-  };
+  }, []);
 
   // Refresh MFA status after setup completes - updates cache immediately
   const refreshMfaStatus = () => {
