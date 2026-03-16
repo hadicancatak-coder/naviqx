@@ -432,7 +432,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Refresh MFA status after setup completes - updates cache immediately
-  const refreshMfaStatus = () => {
+  const refreshMfaStatus = useCallback(() => {
     logger.debug('Refreshing MFA status cache - setting mfaEnabled=true');
     setMfaEnabled(true);
     
@@ -446,7 +446,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         cachedAt: Date.now()
       }));
     }
-  };
+  }, [user, forcePasswordReset]);
 
   // Clear force password reset flag after successful password change
   const clearForcePasswordReset = () => {
