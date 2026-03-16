@@ -468,7 +468,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     // CRITICAL: Clear all state SYNCHRONOUSLY before async operations
     // This prevents race conditions where stale cache persists during navigation
     setMfaSessionToken(null);
@@ -480,7 +480,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Now do async signout
     await supabase.auth.signOut();
     navigate("/auth", { replace: true });
-  };
+  }, [navigate]);
 
   // For public access pages, provide a simplified context without auth
   if (isPublicAccessPage) {
