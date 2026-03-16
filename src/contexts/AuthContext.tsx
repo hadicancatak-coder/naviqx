@@ -482,6 +482,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/auth", { replace: true });
   }, [navigate]);
 
+  const contextValue = useMemo(() => ({
+    user, 
+    session, 
+    loading, 
+    roleLoading, 
+    userRole, 
+    mfaVerified,
+    mfaEnabled,
+    mfaEnrollmentRequired,
+    mfaStatusLoading,
+    forcePasswordReset,
+    forcePasswordResetLoading,
+    validateMfaSession,
+    setMfaVerifiedStatus,
+    refreshMfaStatus,
+    clearForcePasswordReset,
+    signOut 
+  }), [user, session, loading, roleLoading, userRole, mfaVerified, mfaEnabled, mfaEnrollmentRequired, mfaStatusLoading, forcePasswordReset, forcePasswordResetLoading, validateMfaSession, setMfaVerifiedStatus, refreshMfaStatus, clearForcePasswordReset, signOut]);
+
   // For public access pages, provide a simplified context without auth
   if (isPublicAccessPage) {
     logger.debug('Public access page detected, bypassing auth', { path: location.pathname });
@@ -502,33 +521,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setMfaVerifiedStatus: () => {},
         refreshMfaStatus: () => {},
         clearForcePasswordReset: () => {},
-        signOut: async () => {
-          // Sign out on external review page is a no-op
-        },
+        signOut: async () => {},
       }}>
         {children}
       </AuthContext.Provider>
     );
   }
-
-  const contextValue = useMemo(() => ({
-    user, 
-    session, 
-    loading, 
-    roleLoading, 
-    userRole, 
-    mfaVerified,
-    mfaEnabled,
-    mfaEnrollmentRequired,
-    mfaStatusLoading,
-    forcePasswordReset,
-    forcePasswordResetLoading,
-    validateMfaSession,
-    setMfaVerifiedStatus,
-    refreshMfaStatus,
-    clearForcePasswordReset,
-    signOut 
-  }), [user, session, loading, roleLoading, userRole, mfaVerified, mfaEnabled, mfaEnrollmentRequired, mfaStatusLoading, forcePasswordReset, forcePasswordResetLoading, validateMfaSession, setMfaVerifiedStatus, refreshMfaStatus, clearForcePasswordReset, signOut]);
 
   return (
     <AuthContext.Provider value={contextValue}>
