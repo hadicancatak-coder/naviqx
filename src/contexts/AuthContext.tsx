@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -102,7 +102,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                              location.pathname.startsWith('/lp-planner/public/');
 
   // Validate MFA session with server - Phase 1: Fix closure race condition
-  const validateMfaSession = async (currentUser?: User): Promise<boolean> => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const validateMfaSession = useCallback(async (currentUser?: User): Promise<boolean> => {
     const userToCheck = currentUser || user;
     
     if (skipNextValidation) {
@@ -220,7 +221,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setMfaVerified(false);
       return false;
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, mfaVerified, skipNextValidation]);
 
   // Fetch MFA status once per session - cached in context AND sessionStorage
   // Validate and load MFA status from cache or fetch from DB
@@ -409,7 +411,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoleLoading(false);
   };
 
-  const setMfaVerifiedStatus = (verified: boolean, sessionToken?: string, expiresAt?: string) => {
+  const setMfaVerifiedStatus = useCallback((verified: boolean, sessionToken?: string, expiresAt?: string) => {
     logger.debug('Setting MFA status', { verified, hasToken: !!sessionToken });
     
     // CRITICAL: Write localStorage BEFORE state update to prevent race condition
@@ -427,10 +429,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // State update happens AFTER localStorage is committed
     setMfaVerified(verified);
-  };
+  }, []);
 
   // Refresh MFA status after setup completes - updates cache immediately
-  const refreshMfaStatus = () => {
+  const refreshMfaStatus = useCallback(() => {
     logger.debug('Refreshing MFA status cache - setting mfaEnabled=true');
     setMfaEnabled(true);
     
@@ -444,10 +446,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         cachedAt: Date.now()
       }));
     }
-  };
+  }, [user, forcePasswordReset]);
 
   // Clear force password reset flag after successful password change
-  const clearForcePasswordReset = () => {
+  const clearForcePasswordReset = useCallback(() => {
     logger.debug('Clearing force password reset flag');
     setForcePasswordReset(false);
     
@@ -464,9 +466,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     }
-  };
+  }, [user]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     // CRITICAL: Clear all state SYNCHRONOUSLY before async operations
     // This prevents race conditions where stale cache persists during navigation
     setMfaSessionToken(null);
@@ -478,7 +480,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Now do async signout
     await supabase.auth.signOut();
     navigate("/auth", { replace: true });
-  };
+  }, [navigate]);
+
+  const contextValue = useMemo(() => ({
+    user, 
+    session, 
+    loading, 
+    roleLoading, 
+    userRole, 
+    mfaVerified,
+    mfaEnabled,
+    mfaEnrollmentRequired,
+    mfaStatusLoading,
+    forcePasswordReset,
+    forcePasswordResetLoading,
+    validateMfaSession,
+    setMfaVerifiedStatus,
+    refreshMfaStatus,
+    clearForcePasswordReset,
+    signOut 
+  }), [user, session, loading, roleLoading, userRole, mfaVerified, mfaEnabled, mfaEnrollmentRequired, mfaStatusLoading, forcePasswordReset, forcePasswordResetLoading, validateMfaSession, setMfaVerifiedStatus, refreshMfaStatus, clearForcePasswordReset, signOut]);
 
   // For public access pages, provide a simplified context without auth
   if (isPublicAccessPage) {
@@ -500,9 +521,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setMfaVerifiedStatus: () => {},
         refreshMfaStatus: () => {},
         clearForcePasswordReset: () => {},
-        signOut: async () => {
-          // Sign out on external review page is a no-op
-        },
+        signOut: async () => {},
       }}>
         {children}
       </AuthContext.Provider>
@@ -510,26 +529,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        session, 
-        loading, 
-        roleLoading, 
-        userRole, 
-        mfaVerified,
-        mfaEnabled,
-        mfaEnrollmentRequired,
-        mfaStatusLoading,
-        forcePasswordReset,
-        forcePasswordResetLoading,
-        validateMfaSession,
-        setMfaVerifiedStatus,
-        refreshMfaStatus,
-        clearForcePasswordReset,
-        signOut 
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
