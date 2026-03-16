@@ -511,27 +511,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
   }
 
+  const contextValue = useMemo(() => ({
+    user, 
+    session, 
+    loading, 
+    roleLoading, 
+    userRole, 
+    mfaVerified,
+    mfaEnabled,
+    mfaEnrollmentRequired,
+    mfaStatusLoading,
+    forcePasswordReset,
+    forcePasswordResetLoading,
+    validateMfaSession,
+    setMfaVerifiedStatus,
+    refreshMfaStatus,
+    clearForcePasswordReset,
+    signOut 
+  }), [user, session, loading, roleLoading, userRole, mfaVerified, mfaEnabled, mfaEnrollmentRequired, mfaStatusLoading, forcePasswordReset, forcePasswordResetLoading, validateMfaSession, setMfaVerifiedStatus, refreshMfaStatus, clearForcePasswordReset, signOut]);
+
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        session, 
-        loading, 
-        roleLoading, 
-        userRole, 
-        mfaVerified,
-        mfaEnabled,
-        mfaEnrollmentRequired,
-        mfaStatusLoading,
-        forcePasswordReset,
-        forcePasswordResetLoading,
-        validateMfaSession,
-        setMfaVerifiedStatus,
-        refreshMfaStatus,
-        clearForcePasswordReset,
-        signOut 
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
