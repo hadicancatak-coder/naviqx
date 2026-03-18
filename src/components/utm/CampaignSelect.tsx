@@ -138,10 +138,23 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0 liquid-glass-dropdown" align="start">
+          {/* Search input */}
+          <div className="p-xs border-b border-border">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search campaigns..."
+                className="h-7 text-metadata pl-7"
+                autoFocus
+              />
+            </div>
+          </div>
           {/* Scrollable campaign list */}
           <div className="max-h-[200px] overflow-y-auto p-xs">
             {/* Campaign list */}
-            {campaigns?.map((campaign) => (
+            {filteredCampaigns.map((campaign) => (
               <div
                 key={campaign.id}
                 className={cn(
