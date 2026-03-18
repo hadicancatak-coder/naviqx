@@ -156,9 +156,16 @@ function SortableRow({
         </div>
       </TableCell>
 
-      {/* LP Name - Read only */}
+      {/* LP Name - Read only, with "New" badge for recently added */}
       <TableCell className="font-medium text-body-sm">
-        {row.lpName}
+        <div className="flex items-center gap-xs">
+          {row.lpName}
+          {row.lpCreatedAt && isNewLp(row.lpCreatedAt) && (
+            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/15 text-primary">
+              New
+            </Badge>
+          )}
+        </div>
       </TableCell>
 
       {/* Language dropdown */}

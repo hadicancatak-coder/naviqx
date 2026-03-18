@@ -239,9 +239,9 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
             ))}
 
             {/* Empty state */}
-            {(!campaigns || campaigns.length === 0) && !isAdding && (
+            {filteredCampaigns.length === 0 && !isAdding && (
               <div className="px-sm py-md text-center text-muted-foreground text-metadata">
-                No campaigns yet
+                {searchQuery ? `No campaigns matching "${searchQuery}"` : "No campaigns yet"}
               </div>
             )}
           </div>
