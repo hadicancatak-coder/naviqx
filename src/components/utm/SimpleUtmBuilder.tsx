@@ -57,11 +57,20 @@ interface UtmRow {
   id: string;
   lpLinkId: string;
   lpName: string;
+  lpCreatedAt: string | null;
   language: string;
   campaign: string;
   platform: string;
   content: string;
   archivedAt: string | null;
+}
+
+// Helper: consider LPs created within the last 7 days as "new"
+function isNewLp(createdAt: string): boolean {
+  const created = new Date(createdAt);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  return created > sevenDaysAgo;
 }
 
 interface SortableRowProps {
