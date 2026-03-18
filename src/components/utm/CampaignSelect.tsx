@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
+import { ChevronDown, Plus, Pencil, Trash2, Check, X, Loader2, Search } from "lucide-react";
 import {
   useUtmCampaigns,
   useCreateUtmCampaign,
