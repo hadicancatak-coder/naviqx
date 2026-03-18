@@ -369,6 +369,7 @@ export function SimpleUtmBuilder() {
         id: crypto.randomUUID(),
         lpLinkId: lp.id,
         lpName: lp.name || "Unnamed",
+        lpCreatedAt: lp.created_at || null,
         language: "EN",
         campaign: currentCampaigns[0]?.id || "",
         platform: currentPlatforms[0]?.id || "",
