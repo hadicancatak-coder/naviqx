@@ -49,6 +49,14 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
 
   const selectedCampaign = campaigns?.find((c) => c.id === value);
 
+  const filteredCampaigns = useMemo(() => {
+    if (!campaigns) return [];
+    if (!searchQuery.trim()) return campaigns;
+    return campaigns.filter((c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [campaigns, searchQuery]);
+
   const handleCreate = useCallback(async () => {
     if (!newName.trim()) return;
     try {
