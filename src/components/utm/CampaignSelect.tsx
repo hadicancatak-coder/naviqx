@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
+import { ChevronDown, Plus, Pencil, Trash2, Check, X, Loader2, Search } from "lucide-react";
 import {
   useUtmCampaigns,
   useCreateUtmCampaign,
@@ -40,6 +40,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
   const [newName, setNewName] = useState("");
   const [editName, setEditName] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: campaigns, isLoading } = useUtmCampaigns();
   const createCampaign = useCreateUtmCampaign();
@@ -47,6 +48,14 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
   const deleteCampaign = useDeleteUtmCampaign();
 
   const selectedCampaign = campaigns?.find((c) => c.id === value);
+
+  const filteredCampaigns = useMemo(() => {
+    if (!campaigns) return [];
+    if (!searchQuery.trim()) return campaigns;
+    return campaigns.filter((c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [campaigns, searchQuery]);
 
   const handleCreate = useCallback(async () => {
     if (!newName.trim()) return;
@@ -110,7 +119,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearchQuery(""); }}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -129,10 +138,23 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0 liquid-glass-dropdown" align="start">
+          {/* Search input */}
+          <div className="p-xs border-b border-border">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search campaigns..."
+                className="h-7 text-metadata pl-7"
+                autoFocus
+              />
+            </div>
+          </div>
           {/* Scrollable campaign list */}
           <div className="max-h-[200px] overflow-y-auto p-xs">
             {/* Campaign list */}
-            {campaigns?.map((campaign) => (
+            {filteredCampaigns.map((campaign) => (
               <div
                 key={campaign.id}
                 className={cn(
@@ -217,9 +239,9 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
             ))}
 
             {/* Empty state */}
-            {(!campaigns || campaigns.length === 0) && !isAdding && (
+            {filteredCampaigns.length === 0 && !isAdding && (
               <div className="px-sm py-md text-center text-muted-foreground text-metadata">
-                No campaigns yet
+                {searchQuery ? `No campaigns matching "${searchQuery}"` : "No campaigns yet"}
               </div>
             )}
           </div>

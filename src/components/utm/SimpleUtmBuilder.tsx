@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -56,11 +57,20 @@ interface UtmRow {
   id: string;
   lpLinkId: string;
   lpName: string;
+  lpCreatedAt: string | null;
   language: string;
   campaign: string;
   platform: string;
   content: string;
   archivedAt: string | null;
+}
+
+// Helper: consider LPs created within the last 7 days as "new"
+function isNewLp(createdAt: string): boolean {
+  const created = new Date(createdAt);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  return created > sevenDaysAgo;
 }
 
 interface SortableRowProps {
@@ -155,9 +165,16 @@ function SortableRow({
         </div>
       </TableCell>
 
-      {/* LP Name - Read only */}
+      {/* LP Name - Read only, with "New" badge for recently added */}
       <TableCell className="font-medium text-body-sm">
-        {row.lpName}
+        <div className="flex items-center gap-xs">
+          {row.lpName}
+          {row.lpCreatedAt && isNewLp(row.lpCreatedAt) && (
+            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/15 text-primary">
+              New
+            </Badge>
+          )}
+        </div>
       </TableCell>
 
       {/* Language dropdown */}
@@ -352,6 +369,7 @@ export function SimpleUtmBuilder() {
         id: crypto.randomUUID(),
         lpLinkId: lp.id,
         lpName: lp.name || "Unnamed",
+        lpCreatedAt: lp.created_at || null,
         language: "EN",
         campaign: currentCampaigns[0]?.id || "",
         platform: currentPlatforms[0]?.id || "",
