@@ -40,6 +40,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
   const [newName, setNewName] = useState("");
   const [editName, setEditName] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: campaigns, isLoading } = useUtmCampaigns();
   const createCampaign = useCreateUtmCampaign();
