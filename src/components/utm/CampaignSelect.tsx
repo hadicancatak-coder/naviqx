@@ -119,7 +119,7 @@ export function CampaignSelect({ value, onValueChange, className }: CampaignSele
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearchQuery(""); }}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
