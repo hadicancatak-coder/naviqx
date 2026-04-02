@@ -5,6 +5,7 @@ import { useTaskDetailContext } from "./TaskDetailContext";
 
 export function TaskDetailDescription() {
   const { task, mutations } = useTaskDetailContext();
+  const updateDescriptionMutation = mutations.updateDescription;
   
   // Local state for the editor
   const [value, setValue] = useState(task?.description || "");
@@ -14,11 +15,21 @@ export function TaskDetailDescription() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Track current value in a ref for closure access in cleanup
   const valueRef = useRef<string>(value);
+  const taskIdRef = useRef<string | undefined>(task?.id);
+  const mutateDescriptionRef = useRef(updateDescriptionMutation.mutate);
   
   // Keep valueRef in sync
   useEffect(() => {
     valueRef.current = value;
   }, [value]);
+
+  useEffect(() => {
+    taskIdRef.current = task?.id;
+  }, [task?.id]);
+
+  useEffect(() => {
+    mutateDescriptionRef.current = updateDescriptionMutation.mutate;
+  }, [updateDescriptionMutation]);
   
   // Sync when task data arrives or changes (e.g., reopening same task with fresh data)
   // Only overwrite local state if the user hasn't made unsaved edits
@@ -35,10 +46,12 @@ export function TaskDetailDescription() {
 
   // Save using mutation
   const saveDescription = useCallback((descValue: string) => {
-    if (task?.id) {
-      mutations.updateDescription.mutate({ id: task.id, description: descValue });
+    const currentTaskId = taskIdRef.current;
+
+    if (currentTaskId) {
+      mutateDescriptionRef.current({ id: currentTaskId, description: descValue });
     }
-  }, [task?.id, mutations]);
+  }, []);
 
   // Auto-save with debounce when content changes
   const handleChange = useCallback((newValue: string) => {
@@ -87,6 +100,7 @@ export function TaskDetailDescription() {
       if (currentValue !== lastSavedRef.current) {
         // Fire and forget - component is unmounting
         saveDescription(currentValue);
+        lastSavedRef.current = currentValue;
       }
     };
   }, [saveDescription]);
