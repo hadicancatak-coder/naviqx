@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const sessionToken = getMfaSessionToken();
     return !!sessionToken; // Trust local token immediately for faster rendering
   });
-  const [skipNextValidation, setSkipNextValidation] = useState(false);
+  const skipNextValidationRef = useRef(false);
   
   // MFA status caching - fetched once per session, not on every navigation
   // NOTE: We don't initialize from cache here - we validate userId first in useEffect
