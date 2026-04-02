@@ -94,6 +94,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const lastActivityTime = useRef<number>(Date.now());
   const mfaVerifiedRef = useRef(mfaVerified);
   
+  // Keep ref in sync for use in callbacks without causing re-renders
+  useEffect(() => {
+    mfaVerifiedRef.current = mfaVerified;
+  }, [mfaVerified]);
+
   // Check for public access pages - must be after hooks
   const isPublicAccessPage = location.pathname.startsWith('/review/') ||
                              location.pathname.startsWith('/campaigns-log/review/') || 
