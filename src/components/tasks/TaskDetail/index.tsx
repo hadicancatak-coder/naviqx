@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { BlockerDialog } from "@/components/BlockerDialog";
 import { TaskDetailSkeleton } from "@/components/skeletons/TaskDetailSkeleton";
@@ -47,7 +46,11 @@ function TaskDetailContent({ onClose }: { onClose?: () => void }) {
     <div className="h-full flex flex-col liquid-glass-elevated rounded-l-xl">
       <TaskDetailHeader onClose={onClose} />
       
-      <ScrollArea className="flex-1">
+      <div
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto hide-scrollbar"
+        role="region"
+        aria-label="Task details"
+      >
         <div className="p-md space-y-md">
           {/* Core Info: Title, Priority Card, Assignees */}
           <TaskDetailFields />
@@ -77,7 +80,7 @@ function TaskDetailContent({ onClose }: { onClose?: () => void }) {
           {/* Details - Tags, Project, Sprint, Metadata - Collapsed by default */}
           <TaskDetailDetails />
         </div>
-      </ScrollArea>
+      </div>
       
       <TaskDetailCommentInput />
       

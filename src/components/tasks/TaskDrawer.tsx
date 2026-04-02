@@ -1,4 +1,4 @@
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { TaskDetail } from "./TaskDetail";
 import { useTaskDrawer } from "@/contexts/TaskDrawerContext";
 
@@ -15,6 +15,10 @@ export function TaskDrawer() {
         className="w-full sm:max-w-xl !p-0 overflow-hidden"
         hideCloseButton
       >
+        <SheetTitle className="sr-only">{task?.title ? `Task details for ${task.title}` : "Task details"}</SheetTitle>
+        <SheetDescription className="sr-only">
+          Review and edit task details, comments, subtasks, dependencies, and status.
+        </SheetDescription>
         <TaskDetail 
           taskId={taskId} 
           task={task} 
