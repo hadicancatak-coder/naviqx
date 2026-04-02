@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronRight, Settings2, FolderKanban, Clock, Users, Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight, Settings2, Clock, Users, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
 import { SprintSelector } from "@/components/tasks/SprintSelector";
