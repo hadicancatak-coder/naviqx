@@ -1,16 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, MoreHorizontal, Trash2, X, CornerDownRight, Link2 } from "lucide-react";
+import { Check, Trash2, X, CornerDownRight, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_BASE_URL } from "@/lib/constants";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -105,27 +98,26 @@ export function TaskDetailHeader({ onClose, showCloseButton = true }: TaskDetail
           
           {/* Right: Menu and close */}
           <div className="flex items-center gap-xs">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-sm">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleCopyLink}>
-                  <Link2 className="h-4 w-4 mr-2" />
-                  Copy Link
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Task
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleCopyLink}
+              title="Copy task link"
+              aria-label="Copy task link"
+            >
+              <Link2 className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowDeleteDialog(true)}
+              title="Delete task"
+              aria-label="Delete task"
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             
             {showCloseButton && onClose && (
               <Button variant="ghost" size="icon-sm" onClick={onClose}>
