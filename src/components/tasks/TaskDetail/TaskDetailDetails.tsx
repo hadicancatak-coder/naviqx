@@ -147,24 +147,21 @@ export function TaskDetailDetails() {
           />
         </div>
 
-        {/* Project */}
         <div className="space-y-xs">
           <Label className="text-metadata text-muted-foreground">Project</Label>
-          <Select 
-            value={projectId || "none"} 
-            onValueChange={handleProjectChange}
+          <select
+            value={projectId || "none"}
+            onChange={(event) => handleProjectChange(event.target.value)}
+            className="h-9 w-full rounded-lg border border-input bg-card px-sm text-body-sm text-foreground outline-none transition-smooth focus:border-primary/30 focus:ring-2 focus:ring-ring"
+            aria-label="Project"
           >
-            <SelectTrigger className="w-full">
-              <FolderKanban className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="No project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No project</SelectItem>
-              {projects?.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="none">No project</option>
+            {projects?.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Phase Selector - only show when project is selected */}

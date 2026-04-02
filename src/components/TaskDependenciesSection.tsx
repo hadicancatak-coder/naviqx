@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Link2, Trash2, AlertCircle, ArrowRight, ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -33,7 +32,6 @@ interface AvailableTask {
   status: string;
 }
 
-// Raw row from Supabase before narrowing
 interface DependencyRow {
   id: string;
   depends_on_task_id: string;
@@ -51,6 +49,14 @@ interface TaskDependenciesSectionProps {
   taskId: string;
   currentStatus: string;
 }
+
+const dependencyTypeOptions = [
+  { value: "blocks", label: "Blocks" },
+  { value: "related", label: "Related" },
+] as const;
+
+const nativeSelectClass =
+  "h-9 w-full rounded-lg border border-input bg-card px-sm text-body-sm text-foreground outline-none transition-smooth focus:border-primary/30 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
 export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenciesSectionProps) {
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
@@ -79,7 +85,6 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
 
     if (!error && data) {
       const rows = data as unknown as DependencyRow[];
-      // Filter and narrow to valid dependencies
       const validDeps: Dependency[] = rows
         .filter((row): row is DependencyRow & { task: TaskInfo } => row.task !== null)
         .map((row) => ({
@@ -177,24 +182,26 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
     }
   };
 
-  const hasIncompleteDependencies = dependencies.some(
-    (dep) => dep.task.status !== "Completed"
-  );
+  const hasIncompleteDependencies = dependencies.some((dep) => dep.task.status !== "Completed");
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case "Completed": return "default";
-      case "Ongoing": return "secondary";
-      case "Blocked": return "destructive";
-      default: return "outline";
+      case "Completed":
+        return "default" as const;
+      case "Ongoing":
+        return "secondary" as const;
+      case "Blocked":
+        return "destructive" as const;
+      default:
+        return "outline" as const;
     }
   };
 
   return (
     <div className="space-y-md">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-sm">
         <Link2 className="h-4 w-4" />
-        <h3 className="font-semibold">Dependencies</h3>
+        <h3 className="text-body-sm font-semibold">Dependencies</h3>
         {(dependencies.length > 0 || reverseDependencies.length > 0) && (
           <Badge variant="secondary" className="text-metadata">
             {dependencies.length + reverseDependencies.length}
@@ -211,34 +218,26 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
         </Alert>
       )}
 
-      {/* This task depends on (blocked by) */}
       {dependencies.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-body-sm font-medium text-muted-foreground">
+        <div className="space-y-sm">
+          <div className="flex items-center gap-sm text-body-sm font-medium text-muted-foreground">
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Depends on ({dependencies.length})</span>
           </div>
           {dependencies.map((dep) => (
-            <div key={dep.id} className="flex items-center justify-between p-sm border rounded-lg bg-muted/30">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-body-sm truncate">{dep.task.title}</p>
-                <div className="flex gap-2 mt-1">
+            <div key={dep.id} className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-sm">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-body-sm font-medium">{dep.task.title}</p>
+                <div className="mt-1 flex gap-sm">
                   <Badge variant="outline" className="text-metadata">
                     {dep.dependency_type}
                   </Badge>
-                  <Badge
-                    variant={getStatusBadgeVariant(dep.task.status)}
-                    className="text-metadata"
-                  >
+                  <Badge variant={getStatusBadgeVariant(dep.task.status)} className="text-metadata">
                     {dep.task.status}
                   </Badge>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => removeDependency(dep.id)}
-              >
+              <Button variant="ghost" size="icon-sm" onClick={() => removeDependency(dep.id)}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -246,39 +245,29 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
         </div>
       )}
 
-      {/* Tasks that depend on this task (blocks) */}
       {reverseDependencies.length > 0 && (
         <Collapsible open={showBlocking} onOpenChange={setShowBlocking}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-between px-0 hover:bg-transparent">
-              <div className="flex items-center gap-2 text-body-sm font-medium text-muted-foreground">
+              <div className="flex items-center gap-sm text-body-sm font-medium text-muted-foreground">
                 <ArrowRight className="h-3.5 w-3.5" />
                 <span>Blocks ({reverseDependencies.length})</span>
               </div>
-              {showBlocking ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
+              {showBlocking ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 mt-2">
+          <CollapsibleContent className="mt-2 space-y-sm">
             {reverseDependencies.map((dep) => (
-              <div 
-                key={dep.id} 
+              <div
+                key={dep.id}
                 className={cn(
-                  "flex items-center justify-between p-sm border rounded-lg",
-                  dep.task.status === "Blocked" 
-                    ? "bg-warning-soft/30 border-warning/30" 
-                    : "bg-muted/30"
+                  "flex items-center justify-between rounded-lg border p-sm",
+                  dep.task.status === "Blocked" ? "border-warning/30 bg-warning-soft/30" : "bg-muted/30"
                 )}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-body-sm truncate">{dep.task.title}</p>
-                  <Badge
-                    variant={getStatusBadgeVariant(dep.task.status)}
-                    className="text-metadata mt-1"
-                  >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-body-sm font-medium">{dep.task.title}</p>
+                  <Badge variant={getStatusBadgeVariant(dep.task.status)} className="mt-1 text-metadata">
                     {dep.task.status}
                   </Badge>
                 </div>
@@ -288,32 +277,35 @@ export function TaskDependenciesSection({ taskId, currentStatus }: TaskDependenc
         </Collapsible>
       )}
 
-      {/* Add new dependency */}
-      <div className="flex gap-2">
-        <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Select task" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableTasks.map((task) => (
-              <SelectItem key={task.id} value={task.id}>
-                {task.title} ({task.status})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 gap-sm sm:grid-cols-[minmax(0,1fr)_140px_auto]">
+        <select
+          value={selectedTaskId}
+          onChange={(event) => setSelectedTaskId(event.target.value)}
+          className={nativeSelectClass}
+          aria-label="Select dependency task"
+        >
+          <option value="">Select task</option>
+          {availableTasks.map((task) => (
+            <option key={task.id} value={task.id}>
+              {task.title} ({task.status})
+            </option>
+          ))}
+        </select>
 
-        <Select value={dependencyType} onValueChange={setDependencyType}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="blocks">Blocks</SelectItem>
-            <SelectItem value="related">Related</SelectItem>
-          </SelectContent>
-        </Select>
+        <select
+          value={dependencyType}
+          onChange={(event) => setDependencyType(event.target.value)}
+          className={nativeSelectClass}
+          aria-label="Dependency type"
+        >
+          {dependencyTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-        <Button onClick={addDependency} size="sm">
+        <Button onClick={addDependency} size="sm" className="w-full sm:w-auto">
           Add
         </Button>
       </div>
