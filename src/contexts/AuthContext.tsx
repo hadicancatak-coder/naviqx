@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const sessionToken = getMfaSessionToken();
     return !!sessionToken; // Trust local token immediately for faster rendering
   });
-  const [skipNextValidation, setSkipNextValidation] = useState(false);
+  const skipNextValidationRef = useRef(false);
   
   // MFA status caching - fetched once per session, not on every navigation
   // NOTE: We don't initialize from cache here - we validate userId first in useEffect
@@ -108,13 +108,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                              location.pathname.startsWith('/lp-planner/public/');
 
   // Validate MFA session with server - Phase 1: Fix closure race condition
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const validateMfaSession = useCallback(async (currentUser?: User): Promise<boolean> => {
     const userToCheck = currentUser || user;
     
-    if (skipNextValidation) {
+    if (skipNextValidationRef.current) {
       logger.debug('Skipping validation (just verified)');
-      setSkipNextValidation(false);
+      skipNextValidationRef.current = false;
       return true;
     }
 
@@ -228,7 +227,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, skipNextValidation]);
+  }, [user]);
 
   // Fetch MFA status once per session - cached in context AND sessionStorage
   // Validate and load MFA status from cache or fetch from DB
@@ -424,7 +423,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // ProtectedRoute checks localStorage synchronously, so it must be committed first
     if (verified && sessionToken && expiresAt) {
       setMfaSessionToken(sessionToken, expiresAt);
-      setSkipNextValidation(true); // Skip immediate re-validation
+      skipNextValidationRef.current = true; // Skip immediate re-validation
       
       // Prefetch task data immediately after MFA verification for instant navigation
       logger.debug('Prefetching task data after MFA verification');
