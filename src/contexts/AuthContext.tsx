@@ -423,7 +423,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // ProtectedRoute checks localStorage synchronously, so it must be committed first
     if (verified && sessionToken && expiresAt) {
       setMfaSessionToken(sessionToken, expiresAt);
-      setSkipNextValidation(true); // Skip immediate re-validation
+      skipNextValidationRef.current = true; // Skip immediate re-validation
       
       // Prefetch task data immediately after MFA verification for instant navigation
       logger.debug('Prefetching task data after MFA verification');
