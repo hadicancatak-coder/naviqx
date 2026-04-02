@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const SKIP_VALIDATION_THRESHOLD = 5 * 60 * 1000; // 5 minutes - trust local token if active
     
     // If user was active recently and we already verified, trust the local token
-    if (idleTime < SKIP_VALIDATION_THRESHOLD && mfaVerified) {
+    if (idleTime < SKIP_VALIDATION_THRESHOLD && mfaVerifiedRef.current) {
       logger.debug('User active recently, skipping validation (using cached result)');
       return true;
     }
