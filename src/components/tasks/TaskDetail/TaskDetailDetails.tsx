@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronRight, Settings2, FolderKanban, Clock, Users, Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight, Settings2, Clock, Users, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TagsMultiSelect } from "@/components/tasks/TagsMultiSelect";
 import { SprintSelector } from "@/components/tasks/SprintSelector";
@@ -147,24 +147,21 @@ export function TaskDetailDetails() {
           />
         </div>
 
-        {/* Project */}
         <div className="space-y-xs">
           <Label className="text-metadata text-muted-foreground">Project</Label>
-          <Select 
-            value={projectId || "none"} 
-            onValueChange={handleProjectChange}
+          <select
+            value={projectId || "none"}
+            onChange={(event) => handleProjectChange(event.target.value)}
+            className="h-9 w-full rounded-lg border border-input bg-card px-sm text-body-sm text-foreground outline-none transition-smooth focus:border-primary/30 focus:ring-2 focus:ring-ring"
+            aria-label="Project"
           >
-            <SelectTrigger className="w-full">
-              <FolderKanban className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="No project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No project</SelectItem>
-              {projects?.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="none">No project</option>
+            {projects?.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Phase Selector - only show when project is selected */}
