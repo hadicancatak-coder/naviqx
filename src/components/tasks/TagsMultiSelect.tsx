@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, ChevronsUpDown, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -16,7 +14,20 @@ interface TagsMultiSelectProps {
 
 export function TagsMultiSelect({ value, onChange, disabled = false }: TagsMultiSelectProps) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [customTagInput, setCustomTagInput] = useState("");
+
+  const filteredTags = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return TASK_TAGS;
+    }
+
+    return TASK_TAGS.filter((tag) => {
+      return tag.label.toLowerCase().includes(query) || tag.value.toLowerCase().includes(query);
+    });
+  }, [searchQuery]);
 
   const getTagStyle = (tag: string) => {
     const predefined = TASK_TAGS.find(t => t.value === tag.toLowerCase());
@@ -53,86 +64,97 @@ export function TagsMultiSelect({ value, onChange, disabled = false }: TagsMulti
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={true}>
-      <PopoverTrigger asChild>
-        <div
-          role="combobox"
-          aria-expanded={open}
-          tabIndex={disabled ? -1 : 0}
-          className={cn(
-            "flex items-center w-full justify-between h-auto min-h-[44px] py-2 px-3 rounded border border-input bg-background",
-            "hover:bg-accent hover:text-accent-foreground transition-smooth cursor-pointer",
-            disabled && "pointer-events-none opacity-50"
+    <div className="space-y-xs">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => {
+          if (!disabled) {
+            setOpen((previousOpen) => !previousOpen);
+          }
+        }}
+        className={cn(
+          "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-card px-sm py-xs text-left transition-smooth",
+          "hover:bg-accent hover:text-accent-foreground",
+          disabled && "pointer-events-none opacity-50",
+        )}
+      >
+        <div className="flex flex-1 flex-wrap gap-xs">
+          {value.length === 0 ? (
+            <span className="text-muted-foreground">Select tags...</span>
+          ) : (
+            value.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={cn("gap-xs border", getTagStyle(tag))}
+              >
+                {getTagLabel(tag)}
+                {!disabled && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => removeTag(tag, e)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        removeTag(tag, e as unknown as React.MouseEvent);
+                      }
+                    }}
+                    className="rounded-full p-xs transition-smooth hover:bg-foreground/10"
+                  >
+                    <X className="h-3 w-3" />
+                  </span>
+                )}
+              </Badge>
+            ))
           )}
-        >
-          <div className="flex flex-wrap gap-1.5 flex-1">
-            {value.length === 0 ? (
-              <span className="text-muted-foreground">Select tags...</span>
+        </div>
+        <ChevronsUpDown className={cn("ml-xs h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && !disabled && (
+        <div className="rounded-lg border border-border bg-card p-xs shadow-sm">
+          <Input
+            placeholder="Search tags..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="h-9"
+          />
+
+          <div className="mt-xs max-h-[200px] space-y-1 overflow-y-auto hide-scrollbar">
+            {filteredTags.length === 0 ? (
+              <div className="py-md text-center text-body-sm text-muted-foreground">No tags found.</div>
             ) : (
-              value.map(tag => (
-                <Badge 
-                  key={tag} 
-                  variant="outline"
-                  className={cn("gap-1 pr-1 border", getTagStyle(tag))}
-                >
-                  {getTagLabel(tag)}
-                  {!disabled && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => removeTag(tag, e)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          removeTag(tag, e as unknown as React.MouseEvent);
-                        }
-                      }}
-                      className="ml-1 rounded-full hover:bg-foreground/10 p-xs transition-smooth cursor-pointer"
+              filteredTags.map((tag) => {
+                const isSelected = value.includes(tag.value);
+
+                return (
+                  <button
+                    key={tag.value}
+                    type="button"
+                    onClick={() => toggleTag(tag.value)}
+                    className="flex w-full items-center gap-sm rounded-md px-sm py-xs text-left transition-smooth hover:bg-muted"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-5 w-5 items-center justify-center rounded border transition-smooth",
+                        isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                      )}
                     >
-                      <X className="h-3 w-3" />
-                    </span>
-                  )}
-                </Badge>
-              ))
+                      {isSelected && <Check className="h-3.5 w-3.5" />}
+                    </div>
+
+                    <Badge variant="outline" className={cn("border", tag.color)}>
+                      {tag.label}
+                    </Badge>
+                  </button>
+                );
+              })
             )}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </div>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[300px] p-0 bg-popover border-border z-popover" 
-        align="start" 
-        side="bottom" 
-        sideOffset={5}
-      >
-        <Command>
-          <CommandInput placeholder="Search tags..." className="border-none" />
-          <CommandEmpty>No tags found.</CommandEmpty>
-          <CommandList className="max-h-[200px] hide-scrollbar">
-            <CommandGroup heading="Tags">
-              {TASK_TAGS.map((tag) => (
-                <CommandItem
-                  key={tag.value}
-                  value={tag.label}
-                  onSelect={() => toggleTag(tag.value)}
-                  className="cursor-pointer transition-smooth"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 transition-opacity",
-                      value.includes(tag.value) ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <Badge variant="outline" className={cn("border", tag.color)}>
-                    {tag.label}
-                  </Badge>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-          
-          {/* Custom tag input */}
-          <div className="p-2 border-t border-border">
-            <div className="flex gap-2">
+
+          <div className="mt-xs border-t border-border pt-xs">
+            <div className="flex gap-xs">
               <Input
                 placeholder="Add custom tag..."
                 value={customTagInput}
@@ -145,20 +167,20 @@ export function TagsMultiSelect({ value, onChange, disabled = false }: TagsMulti
                 }}
                 className="h-8 text-body-sm"
               />
-              <Button 
-                type="button" 
-                size="sm" 
+              <Button
+                type="button"
+                size="sm"
                 variant="secondary"
                 onClick={addCustomTag}
                 disabled={!customTagInput.trim()}
-                className="h-8 px-2"
+                className="h-8 px-sm"
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        </div>
+      )}
+    </div>
   );
 }

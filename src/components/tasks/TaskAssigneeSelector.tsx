@@ -5,10 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Check, ChevronDown, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface User {
   id: string;
@@ -36,9 +34,27 @@ export function TaskAssigneeSelector({
   disabled = false,
 }: TaskAssigneeSelectorProps) {
   const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const { user } = useAuth();
 
-  const selectedUsers = users.filter(u => selectedIds.includes(u.id));
+  const selectedUsers = React.useMemo(
+    () => users.filter((selectedUser) => selectedIds.includes(selectedUser.id)),
+    [selectedIds, users],
+  );
+
+  const filteredUsers = React.useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return users;
+    }
+
+    return users.filter((candidate) => {
+      const matchesName = candidate.name.toLowerCase().includes(query);
+      const matchesUsername = candidate.username?.toLowerCase().includes(query) ?? false;
+      return matchesName || matchesUsername;
+    });
+  }, [searchQuery, users]);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -98,103 +114,116 @@ export function TaskAssigneeSelector({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={true}>
-      <PopoverTrigger asChild>
-        <div
-          role="combobox"
-          aria-expanded={open}
-          tabIndex={disabled ? -1 : 0}
-          className={cn(
-            "flex items-center w-full justify-between min-h-[44px] h-auto py-2 px-3 rounded border border-input bg-background",
-            "hover:bg-accent hover:text-accent-foreground transition-smooth cursor-pointer",
-            disabled && "pointer-events-none opacity-50",
-            selectedUsers.length === 0 && "text-muted-foreground"
+    <div className="space-y-xs">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => {
+          if (!disabled) {
+            setOpen((previousOpen) => !previousOpen);
+          }
+        }}
+        className={cn(
+          "flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-card px-sm py-xs text-left transition-smooth",
+          "hover:bg-accent hover:text-accent-foreground",
+          disabled && "pointer-events-none opacity-50",
+          selectedUsers.length === 0 && "text-muted-foreground",
+        )}
+      >
+        <div className="flex flex-1 flex-wrap items-center gap-sm">
+          {selectedUsers.length === 0 ? (
+            <span className="flex items-center gap-sm">
+              <UserPlus className="h-4 w-4" />
+              Select assignees
+            </span>
+          ) : (
+            <div className="flex flex-wrap gap-xs">
+              {selectedUsers.map((selectedUser) => (
+                <Badge
+                  key={selectedUser.id}
+                  variant="secondary"
+                  className="flex items-center gap-xs pr-xs"
+                >
+                  <Avatar className="h-5 w-5">
+                    <AvatarFallback className="text-metadata bg-primary/20 text-primary">
+                      {getInitials(selectedUser.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-metadata">{selectedUser.name}</span>
+                  {!disabled && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => removeUser(selectedUser.id, e)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          removeUser(selectedUser.id, e as unknown as React.MouseEvent);
+                        }
+                      }}
+                      className="rounded-full p-xs transition-smooth hover:bg-destructive/20 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </span>
+                  )}
+                </Badge>
+              ))}
+            </div>
           )}
-        >
-          <div className="flex items-center gap-sm flex-wrap flex-1">
-            {selectedUsers.length === 0 ? (
-              <span className="flex items-center gap-sm">
-                <UserPlus className="h-4 w-4" />
-                Select assignees
-              </span>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {selectedUsers.map((selectedUser) => (
-                  <Badge
-                    key={selectedUser.id}
-                    variant="secondary"
-                    className="flex items-center gap-1.5 pr-1 py-0.5"
-                  >
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-                        {getInitials(selectedUser.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-metadata">{selectedUser.name}</span>
-                    {!disabled && (
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => removeUser(selectedUser.id, e)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            removeUser(selectedUser.id, e as unknown as React.MouseEvent);
-                          }
-                        }}
-                        className="ml-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive p-xs transition-smooth cursor-pointer"
-                      >
-                        <X className="h-3 w-3" />
-                      </span>
-                    )}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </div>
-      </PopoverTrigger>
-      <PopoverContent className="w-[320px] p-0 bg-popover z-popover" align="start">
-        <Command>
-          <CommandInput placeholder="Search users..." className="h-10" />
-          <CommandList className="max-h-[250px] hide-scrollbar">
-            <CommandEmpty>No users found.</CommandEmpty>
-            <CommandGroup>
-              {users.map((u) => {
-                const isSelected = selectedIds.includes(u.id);
+        <ChevronDown className={cn("h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && !disabled && (
+        <div className="rounded-lg border border-border bg-card p-xs shadow-sm">
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search users..."
+            className="h-9"
+          />
+
+          <div className="mt-xs max-h-[250px] space-y-1 overflow-y-auto hide-scrollbar">
+            {filteredUsers.length === 0 ? (
+              <div className="py-md text-center text-body-sm text-muted-foreground">No users found.</div>
+            ) : (
+              filteredUsers.map((listedUser) => {
+                const isSelected = selectedIds.includes(listedUser.id);
+
                 return (
-                  <CommandItem
-                    key={u.id}
-                    value={u.name}
-                    onSelect={() => toggleUser(u.id)}
-                    className="flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+                  <button
+                    key={listedUser.id}
+                    type="button"
+                    onClick={() => void toggleUser(listedUser.id)}
+                    className="flex w-full items-center gap-sm rounded-md px-sm py-xs text-left transition-smooth hover:bg-muted"
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-metadata bg-primary/10 text-primary">
-                        {getInitials(u.name)}
+                        {getInitials(listedUser.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-body-sm truncate">{u.name}</div>
-                      {u.username && (
-                        <div className="text-metadata text-muted-foreground truncate">@{u.username}</div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-body-sm font-medium">{listedUser.name}</div>
+                      {listedUser.username && (
+                        <div className="truncate text-metadata text-muted-foreground">@{listedUser.username}</div>
                       )}
                     </div>
-                    <div className={cn(
-                      "flex items-center justify-center h-5 w-5 rounded border transition-smooth",
-                      isSelected 
-                        ? "bg-primary border-primary text-primary-foreground" 
-                        : "border-input"
-                    )}>
+
+                    <div
+                      className={cn(
+                        "flex h-5 w-5 items-center justify-center rounded border transition-smooth",
+                        isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                      )}
+                    >
                       {isSelected && <Check className="h-3.5 w-3.5" />}
                     </div>
-                  </CommandItem>
+                  </button>
                 );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,6 +1,4 @@
 import { useMemo } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CalendarIcon, Flag, AlertTriangle, Clock, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -88,6 +86,20 @@ export function TaskDetailPriorityCard() {
     }
   };
 
+  const dueInputValue = dueDate ? format(dueDate, "yyyy-MM-dd") : "";
+
+  const handleDateInputChange = (value: string) => {
+    if (!value) {
+      handleDateChange(undefined);
+      return;
+    }
+
+    const parsedDate = new Date(`${value}T12:00:00`);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      handleDateChange(parsedDate);
+    }
+  };
+
   return (
     <div className="space-y-sm">
       <div className="grid grid-cols-1 gap-sm rounded-lg border border-border bg-card p-sm sm:grid-cols-3">
@@ -112,27 +124,53 @@ export function TaskDetailPriorityCard() {
 
         <div className="flex min-w-0 flex-col gap-xs">
           <span className="text-metadata text-muted-foreground">Due</span>
-          <Popover>
-            <PopoverTrigger asChild>
+          <div
+            className={cn(
+              "flex min-h-9 w-full min-w-0 items-center gap-xs rounded-md border px-2.5 transition-colors",
+              getDueDateStyles(),
+            )}
+          >
+            {isOverdue ? (
+              <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+            ) : (
+              <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
+            )}
+
+            <input
+              type="date"
+              value={dueInputValue}
+              onChange={(event) => handleDateInputChange(event.target.value)}
+              disabled={mutations.updateDeadline.isPending}
+              aria-label="Task due date"
+              className="min-w-0 flex-1 bg-transparent text-body-sm font-medium outline-none disabled:cursor-not-allowed"
+            />
+
+            {dueInputValue && (
               <button
                 type="button"
-                className={cn(
-                  "flex h-9 w-full min-w-0 items-center gap-xs rounded-md border px-2.5 text-left text-body-sm font-medium transition-colors",
-                  getDueDateStyles()
-                )}
+                onClick={() => handleDateChange(undefined)}
+                disabled={mutations.updateDeadline.isPending}
+                className="text-metadata text-muted-foreground transition-smooth hover:text-foreground disabled:opacity-50"
               >
-                {isOverdue ? (
-                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                ) : (
-                  <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                )}
-                <span className="flex-1 truncate">{getDueDateLabel()}</span>
+                Clear
               </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={dueDate} onSelect={handleDateChange} initialFocus />
-            </PopoverContent>
-          </Popover>
+            )}
+          </div>
+
+          <span
+            className={cn(
+              "truncate text-metadata",
+              isOverdue
+                ? "text-destructive"
+                : isDueToday
+                  ? "text-warning-text"
+                  : isDueTomorrow
+                    ? "text-info-text"
+                    : "text-muted-foreground",
+            )}
+          >
+            {getDueDateLabel()}
+          </span>
         </div>
 
         <div className="flex min-w-0 flex-col gap-xs">
