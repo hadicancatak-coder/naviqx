@@ -92,7 +92,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
+  const mfaVerifiedRef = useRef(mfaVerified);
   
+  // Keep ref in sync for use in callbacks without causing re-renders
+  useEffect(() => {
+    mfaVerifiedRef.current = mfaVerified;
+  }, [mfaVerified]);
+
   // Check for public access pages - must be after hooks
   const isPublicAccessPage = location.pathname.startsWith('/review/') ||
                              location.pathname.startsWith('/campaigns-log/review/') || 
@@ -130,7 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const SKIP_VALIDATION_THRESHOLD = 5 * 60 * 1000; // 5 minutes - trust local token if active
     
     // If user was active recently and we already verified, trust the local token
-    if (idleTime < SKIP_VALIDATION_THRESHOLD && mfaVerified) {
+    if (idleTime < SKIP_VALIDATION_THRESHOLD && mfaVerifiedRef.current) {
       logger.debug('User active recently, skipping validation (using cached result)');
       return true;
     }
@@ -222,7 +228,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, mfaVerified, skipNextValidation]);
+  }, [user, skipNextValidation]);
 
   // Fetch MFA status once per session - cached in context AND sessionStorage
   // Validate and load MFA status from cache or fetch from DB
