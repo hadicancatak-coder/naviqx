@@ -92,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const roleCache = useRef<Map<string, "admin" | "member">>(new Map());
   const lastActivityTime = useRef<number>(Date.now());
+  const mfaVerifiedRef = useRef(mfaVerified);
   
   // Check for public access pages - must be after hooks
   const isPublicAccessPage = location.pathname.startsWith('/review/') ||
