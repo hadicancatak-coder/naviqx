@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -396,16 +397,37 @@ export const useTaskMutations = () => {
     }
   });
 
-  return { 
-    updateTask, 
-    completeTask, 
-    updateDeadline, 
-    updateStatus, 
-    updatePriority,
-    updateDescription,
-    updateTitle,
-    updateRecurrence,
-    setSprintBulk: (taskIds: string[], sprintId: string | null) => setSprintBulk.mutate({ taskIds, sprintId }),
-    isSettingSprintBulk: setSprintBulk.isPending,
-  };
+  const setSprintBulkMutation = useCallback(
+    (taskIds: string[], sprintId: string | null) => {
+      setSprintBulk.mutate({ taskIds, sprintId });
+    },
+    [setSprintBulk],
+  );
+
+  return useMemo(
+    () => ({
+      updateTask,
+      completeTask,
+      updateDeadline,
+      updateStatus,
+      updatePriority,
+      updateDescription,
+      updateTitle,
+      updateRecurrence,
+      setSprintBulk: setSprintBulkMutation,
+      isSettingSprintBulk: setSprintBulk.isPending,
+    }),
+    [
+      updateTask,
+      completeTask,
+      updateDeadline,
+      updateStatus,
+      updatePriority,
+      updateDescription,
+      updateTitle,
+      updateRecurrence,
+      setSprintBulkMutation,
+      setSprintBulk.isPending,
+    ],
+  );
 };
